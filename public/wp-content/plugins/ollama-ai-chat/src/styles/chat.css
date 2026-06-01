@@ -1,0 +1,35 @@
+@import 'highlight.js/styles/github-dark.min.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Highlight.js theme overrides for chat */
+.oac-chat-markdown pre {
+	@apply oac-overflow-x-auto oac-rounded-lg oac-bg-gray-900 oac-p-4 oac-text-sm oac-my-2;
+}
+
+.oac-chat-markdown code {
+	@apply oac-text-sm;
+}
+
+.oac-chat-markdown p {
+	@apply oac-mb-2;
+}
+
+.oac-chat-markdown p:last-child {
+	@apply oac-mb-0;
+}
+
+.oac-chat-markdown ul,
+.oac-chat-markdown ol {
+	@apply oac-list-inside oac-mb-2 oac-pl-2;
+}
+
+.oac-chat-markdown a {
+	@apply oac-text-ollama-primary oac-underline;
+}
+
+.ollama-ai-chat-root--inline {
+	@apply oac-w-full oac-relative;
+}

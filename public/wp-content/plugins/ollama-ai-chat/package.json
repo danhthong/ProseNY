@@ -1,0 +1,27 @@
+{
+  "name": "ollama-ai-chat",
+  "version": "1.0.0",
+  "description": "WordPress AI chat plugin powered by Ollama",
+  "scripts": {
+    "build:js": "esbuild src/chat/index.js --bundle --outfile=assets/js/chat.js --minify --target=es2020",
+    "build:css": "tailwindcss -i ./src/styles/chat.css -o ./assets/css/chat.css --minify",
+    "build:block": "mkdir -p build/block && cp src/block/block.json build/block/block.json",
+    "build": "npm run build:js && npm run build:css && npm run build:block",
+    "start:js": "esbuild src/chat/index.js --bundle --outfile=assets/js/chat.js --watch --target=es2020",
+    "start:css": "tailwindcss -i ./src/styles/chat.css -o ./assets/css/chat.css --watch",
+    "start": "npm run start:js & npm run start:css"
+  },
+  "keywords": [],
+  "author": "Prose",
+  "license": "GPL-2.0-or-later",
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "esbuild": "^0.25.12",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17"
+  },
+  "dependencies": {
+    "highlight.js": "^11.11.1",
+    "marked": "^15.0.6"
+  }
+}

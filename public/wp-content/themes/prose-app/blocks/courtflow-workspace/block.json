@@ -1,0 +1,14 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "courtflow/workspace",
+  "title": "CourtFlow Workspace",
+  "category": "design",
+  "icon": "layout",
+  "keywords": ["courtflow", "workspace", "intake", "case"],
+  "description": "Three-pane guided procedural workspace for CourtFlow AI.",
+  "supports": { "html": false, "align": ["wide", "full"] },
+  "textdomain": "prose-app",
+  "editorScript": "file:./index.js",
+  "render": "file:./render.php"
+}

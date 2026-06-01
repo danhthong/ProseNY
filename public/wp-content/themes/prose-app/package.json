@@ -1,0 +1,20 @@
+{
+  "name": "prose-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tailwindcss -i ./assets/src/main.css -o ./assets/css/main.css --watch",
+    "build": "tailwindcss -i ./assets/src/main.css -o ./assets/css/main.css --minify",
+    "build:courtflow": "tailwindcss -i ./assets/src/courtflow.css -o ./assets/css/courtflow.css --minify"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "autoprefixer": "^10.5.0",
+    "postcss": "^8.5.14",
+    "tailwindcss": "^3.4.19"
+  }
+}

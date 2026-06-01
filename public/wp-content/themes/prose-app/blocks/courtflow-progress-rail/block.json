@@ -1,0 +1,9 @@
+{
+  "apiVersion": 3,
+  "name": "courtflow/progress-rail",
+  "title": "Progress Rail",
+  "category": "widgets",
+  "parent": ["courtflow/workspace"],
+  "supports": { "html": false, "interactivity": true },
+  "render": "file:./render.php"
+}

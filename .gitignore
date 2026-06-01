@@ -1,0 +1,31 @@
+# LocalWP
+
+logs/
+sql/
+
+# macOS
+
+.DS_Store
+
+# Node
+
+node_modules/
+
+# Composer
+
+vendor/
+
+# WordPress uploads
+
+public/wp-content/uploads/
+
+# Cache
+
+public/wp-content/cache/
+
+# Optional: ignore WP core if managed separately
+
+# public/wp-admin/
+
+# public/wp-includes/
+

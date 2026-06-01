@@ -1,0 +1,21 @@
+Before making plans:
+
+1. Read AGENTS.md
+2. Read docs/*
+3. Analyze existing code
+
+CourtFlow AI is a deterministic workflow platform.
+
+AI never determines workflows.
+
+Rules Engine determines:
+
+- court
+- workflow
+- forms
+- validation
+- next steps
+
+Never hardcode workflow logic.
+
+Always reuse existing architecture.

@@ -1,0 +1,8 @@
+{
+  "apiVersion": 3,
+  "name": "courtflow/document-library",
+  "title": "Document Library",
+  "category": "widgets",
+  "supports": { "html": false },
+  "render": "file:./render.php"
+}

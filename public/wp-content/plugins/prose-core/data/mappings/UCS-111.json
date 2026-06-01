@@ -1,0 +1,8 @@
+{
+  "form": "UCS-111",
+  "field_mappings": {
+    "PartyName": "user.full_name",
+    "County": "case.county",
+    "CaseType": "case.case_type"
+  }
+}

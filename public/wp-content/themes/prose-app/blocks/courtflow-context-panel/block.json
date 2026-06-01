@@ -1,0 +1,13 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "courtflow/context-panel",
+  "title": "CourtFlow Context Panel",
+  "category": "design",
+  "icon": "info",
+  "keywords": ["courtflow", "context", "facts", "validation"],
+  "description": "Structured case information and validation panel.",
+  "supports": { "html": false },
+  "textdomain": "prose-app",
+  "render": "file:./render.php"
+}

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/theme.json",
+  "version": 3,
+  "settings": {
+    "color": {
+      "palette": [
+        { "slug": "primary", "color": "#2271b1", "name": "Primary" },
+        { "slug": "warning", "color": "#f0c040", "name": "Warning" },
+        { "slug": "error", "color": "#b32d2e", "name": "Error" },
+        { "slug": "surface", "color": "#f6f7f7", "name": "Surface" },
+        { "slug": "cf-ink", "color": "#0F172A", "name": "CF Ink" },
+        { "slug": "cf-ink-muted", "color": "#64748B", "name": "CF Ink Muted" },
+        { "slug": "cf-surface", "color": "#F8FAFC", "name": "CF Surface" },
+        { "slug": "cf-surface-raised", "color": "#FFFFFF", "name": "CF Surface Raised" },
+        { "slug": "cf-border", "color": "#E2E8F0", "name": "CF Border" },
+        { "slug": "cf-accent", "color": "#1E4D7B", "name": "CF Accent" },
+        { "slug": "cf-accent-soft", "color": "#E8F0F8", "name": "CF Accent Soft" },
+        { "slug": "cf-success", "color": "#15803D", "name": "CF Success" },
+        { "slug": "cf-warning", "color": "#B45309", "name": "CF Warning" },
+        { "slug": "cf-error", "color": "#B91C1C", "name": "CF Error" }
+      ]
+    },
+    "layout": {
+      "contentSize": "1200px",
+      "wideSize": "1400px"
+    }
+  },
+  "styles": {
+    "typography": {
+      "fontFamily": "Inter, system-ui, -apple-system, sans-serif"
+    }
+  }
+}

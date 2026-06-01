@@ -1,0 +1,9 @@
+{
+  "apiVersion": 3,
+  "name": "courtflow/intake-chat",
+  "title": "Intake Chat",
+  "category": "widgets",
+  "parent": ["courtflow/workspace"],
+  "supports": { "html": false },
+  "render": "file:./render.php"
+}

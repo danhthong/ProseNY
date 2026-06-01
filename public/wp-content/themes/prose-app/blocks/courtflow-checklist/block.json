@@ -1,0 +1,8 @@
+{
+  "apiVersion": 3,
+  "name": "courtflow/checklist",
+  "title": "Filing Checklist",
+  "category": "widgets",
+  "supports": { "html": false },
+  "render": "file:./render.php"
+}
