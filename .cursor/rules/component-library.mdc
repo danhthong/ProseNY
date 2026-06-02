@@ -1,0 +1,16 @@
+Never build UI directly.
+
+Always check existing components first.
+
+Create reusable:
+
+- Card
+- Stepper
+- Modal
+- Drawer
+- Alert
+- FormField
+- ProgressTracker
+- DocumentChecklist
+
+before creating new UI.

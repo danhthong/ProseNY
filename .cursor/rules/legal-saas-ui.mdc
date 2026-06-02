@@ -1,0 +1,23 @@
+When building legal workflows:
+
+Show:
+
+- Progress Tracker
+- Case Status
+- Missing Information
+- Required Documents
+- Next Steps
+
+Layout:
+
+Header
+
+Progress Stepper
+
+Main Area
+├── Chat Assistant
+└── Case Summary
+
+Footer Actions
+
+Always keep important information visible.

@@ -1,0 +1,22 @@
+Always think as a Senior Product Designer.
+
+Before coding:
+
+1. Design layout.
+2. Design UX.
+3. Design information hierarchy.
+4. Then write code.
+
+Never create plain forms.
+
+Prefer:
+
+- cards
+- sections
+- sidebars
+- progress indicators
+- responsive layouts
+- empty states
+- loading states
+
+Use modern SaaS design patterns.
