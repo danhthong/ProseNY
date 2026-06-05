@@ -210,3 +210,97 @@ Stack trace:
 [22-May-2026 05:10:39 UTC] [CourtFlow:info] llm.complete {"agent":"explanation","tokens":1515,"cost_usd":0.00026055000000000002}
 [25-May-2026 03:28:19 UTC] Automatic updates starting...
 [25-May-2026 03:28:21 UTC] Automatic updates complete.
+[05-Jun-2026 07:46:36 UTC] PHP Fatal error:  Uncaught Error: Class "ContactN_Database" not found in C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-plugin.php:85
+Stack trace:
+#0 C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-plugin.php(77): ContactN_Plugin->initialize_components()
+#1 C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-plugin.php(59): ContactN_Plugin->__construct()
+#2 C:\Users\Thong\Sites\proseny\app\public\wp-includes\class-wp-hook.php(341): ContactN_Plugin::get_instance('')
+#3 C:\Users\Thong\Sites\proseny\app\public\wp-includes\class-wp-hook.php(365): WP_Hook->apply_filters(NULL, Array)
+#4 C:\Users\Thong\Sites\proseny\app\public\wp-includes\plugin.php(522): WP_Hook->do_action(Array)
+#5 C:\Users\Thong\Sites\proseny\app\public\wp-settings.php(593): do_action('plugins_loaded')
+#6 C:\Users\Thong\Sites\proseny\app\public\wp-config.php(107): require_once('C:\\Users\\Thong\\...')
+#7 C:\Users\Thong\Sites\proseny\app\public\wp-load.php(50): require_once('C:\\Users\\Thong\\...')
+#8 C:\Users\Thong\Sites\proseny\app\public\wp-admin\admin.php(35): require_once('C:\\Users\\Thong\\...')
+#9 C:\Users\Thong\Sites\proseny\app\public\wp-admin\plugins.php(10): require_once('C:\\Users\\Thong\\...')
+#10 {main}
+  thrown in C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-plugin.php on line 85
+[05-Jun-2026 07:46:39 UTC] PHP Fatal error:  Uncaught Error: Class "ContactN_Database" not found in C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-plugin.php:85
+Stack trace:
+#0 C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-plugin.php(77): ContactN_Plugin->initialize_components()
+#1 C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-plugin.php(59): ContactN_Plugin->__construct()
+#2 C:\Users\Thong\Sites\proseny\app\public\wp-includes\class-wp-hook.php(341): ContactN_Plugin::get_instance('')
+#3 C:\Users\Thong\Sites\proseny\app\public\wp-includes\class-wp-hook.php(365): WP_Hook->apply_filters(NULL, Array)
+#4 C:\Users\Thong\Sites\proseny\app\public\wp-includes\plugin.php(522): WP_Hook->do_action(Array)
+#5 C:\Users\Thong\Sites\proseny\app\public\wp-settings.php(593): do_action('plugins_loaded')
+#6 C:\Users\Thong\Sites\proseny\app\public\wp-config.php(107): require_once('C:\\Users\\Thong\\...')
+#7 C:\Users\Thong\Sites\proseny\app\public\wp-load.php(50): require_once('C:\\Users\\Thong\\...')
+#8 C:\Users\Thong\Sites\proseny\app\public\wp-admin\admin.php(35): require_once('C:\\Users\\Thong\\...')
+#9 C:\Users\Thong\Sites\proseny\app\public\wp-admin\plugins.php(10): require_once('C:\\Users\\Thong\\...')
+#10 {main}
+  thrown in C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-plugin.php on line 85
+[05-Jun-2026 07:46:39 UTC] PHP Fatal error:  Uncaught Error: Class "ContactN_Database" not found in C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-plugin.php:85
+Stack trace:
+#0 C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-plugin.php(77): ContactN_Plugin->initialize_components()
+#1 C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-plugin.php(59): ContactN_Plugin->__construct()
+#2 C:\Users\Thong\Sites\proseny\app\public\wp-includes\class-wp-hook.php(341): ContactN_Plugin::get_instance('')
+#3 C:\Users\Thong\Sites\proseny\app\public\wp-includes\class-wp-hook.php(365): WP_Hook->apply_filters(NULL, Array)
+#4 C:\Users\Thong\Sites\proseny\app\public\wp-includes\plugin.php(522): WP_Hook->do_action(Array)
+#5 C:\Users\Thong\Sites\proseny\app\public\wp-settings.php(593): do_action('plugins_loaded')
+#6 C:\Users\Thong\Sites\proseny\app\public\wp-config.php(107): require_once('C:\\Users\\Thong\\...')
+#7 C:\Users\Thong\Sites\proseny\app\public\wp-load.php(50): require_once('C:\\Users\\Thong\\...')
+#8 C:\Users\Thong\Sites\proseny\app\public\wp-blog-header.php(13): require_once('C:\\Users\\Thong\\...')
+#9 C:\Users\Thong\Sites\proseny\app\public\index.php(17): require('C:\\Users\\Thong\\...')
+#10 {main}
+  thrown in C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-plugin.php on line 85
+[05-Jun-2026 07:47:35 UTC] PHP Fatal error:  Uncaught Error: Class "ContactN_Database" not found in C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-plugin.php:85
+Stack trace:
+#0 C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-plugin.php(77): ContactN_Plugin->initialize_components()
+#1 C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-plugin.php(59): ContactN_Plugin->__construct()
+#2 C:\Users\Thong\Sites\proseny\app\public\wp-includes\class-wp-hook.php(341): ContactN_Plugin::get_instance('')
+#3 C:\Users\Thong\Sites\proseny\app\public\wp-includes\class-wp-hook.php(365): WP_Hook->apply_filters(NULL, Array)
+#4 C:\Users\Thong\Sites\proseny\app\public\wp-includes\plugin.php(522): WP_Hook->do_action(Array)
+#5 C:\Users\Thong\Sites\proseny\app\public\wp-settings.php(593): do_action('plugins_loaded')
+#6 C:\Users\Thong\Sites\proseny\app\public\wp-config.php(107): require_once('C:\\Users\\Thong\\...')
+#7 C:\Users\Thong\Sites\proseny\app\public\wp-load.php(50): require_once('C:\\Users\\Thong\\...')
+#8 C:\Users\Thong\Sites\proseny\app\public\wp-admin\admin.php(35): require_once('C:\\Users\\Thong\\...')
+#9 C:\Users\Thong\Sites\proseny\app\public\wp-admin\plugins.php(10): require_once('C:\\Users\\Thong\\...')
+#10 {main}
+  thrown in C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-plugin.php on line 85
+[05-Jun-2026 07:47:35 UTC] PHP Fatal error:  Uncaught Error: Class "ContactN_Database" not found in C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-plugin.php:85
+Stack trace:
+#0 C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-plugin.php(77): ContactN_Plugin->initialize_components()
+#1 C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-plugin.php(59): ContactN_Plugin->__construct()
+#2 C:\Users\Thong\Sites\proseny\app\public\wp-includes\class-wp-hook.php(341): ContactN_Plugin::get_instance('')
+#3 C:\Users\Thong\Sites\proseny\app\public\wp-includes\class-wp-hook.php(365): WP_Hook->apply_filters(NULL, Array)
+#4 C:\Users\Thong\Sites\proseny\app\public\wp-includes\plugin.php(522): WP_Hook->do_action(Array)
+#5 C:\Users\Thong\Sites\proseny\app\public\wp-settings.php(593): do_action('plugins_loaded')
+#6 C:\Users\Thong\Sites\proseny\app\public\wp-config.php(107): require_once('C:\\Users\\Thong\\...')
+#7 C:\Users\Thong\Sites\proseny\app\public\wp-load.php(50): require_once('C:\\Users\\Thong\\...')
+#8 C:\Users\Thong\Sites\proseny\app\public\wp-blog-header.php(13): require_once('C:\\Users\\Thong\\...')
+#9 C:\Users\Thong\Sites\proseny\app\public\index.php(17): require('C:\\Users\\Thong\\...')
+#10 {main}
+  thrown in C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-plugin.php on line 85
+[05-Jun-2026 07:51:40 UTC] PHP Fatal error:  Uncaught Error: Class "WP_List_Table" not found in C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-submission-table.php:15
+Stack trace:
+#0 C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-plugin.php(17): require_once()
+#1 C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\contact-n.php(29): require_once('C:\\Users\\Thong\\...')
+#2 C:\Users\Thong\Sites\proseny\app\public\wp-settings.php(560): include_once('C:\\Users\\Thong\\...')
+#3 C:\Users\Thong\Sites\proseny\app\public\wp-config.php(107): require_once('C:\\Users\\Thong\\...')
+#4 C:\Users\Thong\Sites\proseny\app\public\wp-load.php(50): require_once('C:\\Users\\Thong\\...')
+#5 C:\Users\Thong\Sites\proseny\app\public\wp-admin\admin.php(35): require_once('C:\\Users\\Thong\\...')
+#6 C:\Users\Thong\Sites\proseny\app\public\wp-admin\plugins.php(10): require_once('C:\\Users\\Thong\\...')
+#7 {main}
+  thrown in C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-submission-table.php on line 15
+[05-Jun-2026 07:51:40 UTC] PHP Fatal error:  Uncaught Error: Class "WP_List_Table" not found in C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-submission-table.php:15
+Stack trace:
+#0 C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-plugin.php(17): require_once()
+#1 C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\contact-n.php(29): require_once('C:\\Users\\Thong\\...')
+#2 C:\Users\Thong\Sites\proseny\app\public\wp-settings.php(560): include_once('C:\\Users\\Thong\\...')
+#3 C:\Users\Thong\Sites\proseny\app\public\wp-config.php(107): require_once('C:\\Users\\Thong\\...')
+#4 C:\Users\Thong\Sites\proseny\app\public\wp-load.php(50): require_once('C:\\Users\\Thong\\...')
+#5 C:\Users\Thong\Sites\proseny\app\public\wp-blog-header.php(13): require_once('C:\\Users\\Thong\\...')
+#6 C:\Users\Thong\Sites\proseny\app\public\index.php(17): require('C:\\Users\\Thong\\...')
+#7 {main}
+  thrown in C:\Users\Thong\Sites\proseny\app\public\wp-content\plugins\contact-n\includes\class-submission-table.php on line 15
+[05-Jun-2026 08:10:23 UTC] Automatic updates starting...
+[05-Jun-2026 08:10:23 UTC] Automatic updates complete.
