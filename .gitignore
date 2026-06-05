@@ -35,17 +35,22 @@ public/wp-config.php
 public/wp-config-sample.php
 public/xmlrpc.php
 public/authorize.php
-public/cron.php
-public-load.php
+public/wp-activate.php
+public/.htaccess
+public/wp-cron.php
+public/wp-load.php
 public/wp-comments-post.php
 public/wp-links-opml.php
-public/wp-load.php
 public/wp-login.php
 public/wp-mail.php
 public/wp-settings.php
 public/wp-signup.php
 public/wp-trackback.php
 public/wp-upload.php
+public/license.txt
+public/local-xdebuginfo.php
+public/wp-blog-header.php
+public/readme.html
 
 # WordPress core content (except custom themes/plugins)
 public/wp-content/languages/
@@ -54,6 +59,7 @@ public/wp-content/backups/
 public/wp-content/blogs.dir/
 public/wp-content/upgrade/
 public/wp-content/mu-plugins/
+public/wp-content/debug.log
 
 # Exclude everything in wp-content, then re-include your custom code
 !public/wp-content/plugins/prose-core/
