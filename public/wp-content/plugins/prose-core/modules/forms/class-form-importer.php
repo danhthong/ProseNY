@@ -499,18 +499,18 @@ class Form_Importer {
 	 * @return array<string, mixed>
 	 */
 	private function import_row( array $row, array $column_map ): array {
-		$form_id   = $this->get_column_value( $row, $column_map, 'form_number' );
+		$form_id   = $this->normalize_form_number( $this->get_column_value( $row, $column_map, 'form_number' ) );
 		$title     = $this->get_column_value( $row, $column_map, 'form_title' );
 		$case_type = $this->get_column_value( $row, $column_map, 'case_type' );
 		$filenames = $this->get_column_value( $row, $column_map, 'pdf_filenames' );
 		$pdf_urls  = $this->get_column_value( $row, $column_map, 'resolved_pdf_urls' );
 
-		if ( '' === $form_id ) {
+		if ( '' === $title && '' === $form_id ) {
 			return array(
 				'form_id' => '',
-				'title'   => $title,
+				'title'   => '',
 				'status'  => 'failed',
-				'message' => __( 'Missing Form Number.', 'prose-core' ),
+				'message' => __( 'Missing form title.', 'prose-core' ),
 			);
 		}
 
@@ -532,7 +532,7 @@ class Form_Importer {
 
 			$download = $this->file_manager->download_pdf(
 				$pdf_pair['url'],
-				$form_id,
+				'' !== $form_id ? $form_id : sanitize_title( $title ),
 				$pdf_pair['filename'] ?? ''
 			);
 
@@ -570,25 +570,34 @@ class Form_Importer {
 	 * Build a normalized column map from CSV headers.
 	 *
 	 * @param array<int, string|null> $header CSV header row.
-	 * @return array<string, int>
+	 * @return array<string, int[]>
 	 */
 	private function build_column_map( array $header ): array {
 		$aliases = array(
-			'form_number'       => array( 'form number', 'extracted form number' ),
+			'form_number'       => array( 'form number', 'extracted form number', 'original form number' ),
 			'form_title'        => array( 'form title', 'original form title' ),
 			'case_type'         => array( 'case type' ),
 			'pdf_filenames'     => array( 'pdf filenames' ),
 			'resolved_pdf_urls' => array( 'resolved pdf urls' ),
 		);
 
-		$map = array();
+		$normalized_header = array();
 
 		foreach ( $header as $index => $column ) {
-			$normalized = strtolower( trim( (string) $column ) );
+			$normalized_header[ (int) $index ] = strtolower( trim( (string) $column ) );
+		}
 
-			foreach ( $aliases as $key => $names ) {
-				if ( in_array( $normalized, $names, true ) && ! isset( $map[ $key ] ) ) {
-					$map[ $key ] = (int) $index;
+		$map = array();
+
+		foreach ( $aliases as $key => $names ) {
+			$map[ $key ] = array();
+
+			foreach ( $names as $alias ) {
+				foreach ( $normalized_header as $index => $normalized ) {
+					if ( $alias === $normalized ) {
+						$map[ $key ][] = $index;
+						break;
+					}
 				}
 			}
 		}
@@ -597,10 +606,26 @@ class Form_Importer {
 	}
 
 	/**
+	 * Normalize a form number value.
+	 *
+	 * @param string $value Raw form number.
+	 * @return string
+	 */
+	private function normalize_form_number( string $value ): string {
+		$value = trim( $value );
+
+		if ( '' === $value || '--' === $value ) {
+			return '';
+		}
+
+		return $value;
+	}
+
+	/**
 	 * Get a column value from a row using the map.
 	 *
 	 * @param array<int, string|null> $row        CSV row.
-	 * @param array<string, int>      $column_map Column map.
+	 * @param array<string, int[]>    $column_map Column index map.
 	 * @param string                  $key        Column key.
 	 * @return string
 	 */
@@ -609,9 +634,23 @@ class Form_Importer {
 			return '';
 		}
 
-		$index = $column_map[ $key ];
+		foreach ( $column_map[ $key ] as $index ) {
+			if ( ! isset( $row[ $index ] ) ) {
+				continue;
+			}
 
-		return isset( $row[ $index ] ) ? trim( (string) $row[ $index ] ) : '';
+			$value = trim( (string) $row[ $index ] );
+
+			if ( 'form_number' === $key ) {
+				$value = $this->normalize_form_number( $value );
+			}
+
+			if ( '' !== $value ) {
+				return $value;
+			}
+		}
+
+		return '';
 	}
 
 	/**

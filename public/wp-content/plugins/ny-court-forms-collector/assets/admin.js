@@ -26,6 +26,14 @@
 		return status.charAt(0).toUpperCase() + status.slice(1);
 	}
 
+	function formatPhase(phase) {
+		if (!phase) {
+			return 'Collect';
+		}
+
+		return phase.charAt(0).toUpperCase() + phase.slice(1);
+	}
+
 	function formatEta(minutes) {
 		if (!isFinite(minutes) || minutes <= 0) {
 			return 'N/A';
@@ -84,10 +92,10 @@
 		$log.scrollTop($log[0].scrollHeight);
 	}
 
-	function updateButtons(progress, hasRows, hasExport) {
+	function updateButtons(progress, hasExport) {
 		const status = progress.crawl_status || 'idle';
 
-		$('#nycfc-start-btn').prop('disabled', !hasRows || status === 'running');
+		$('#nycfc-start-btn').prop('disabled', status === 'running');
 		$('#nycfc-pause-btn').prop('disabled', status !== 'running');
 		$('#nycfc-resume-btn').prop('disabled', status !== 'paused');
 
@@ -98,8 +106,17 @@
 		}
 	}
 
-	function updateProgressBar(total, processed) {
-		const percent = total > 0 ? Math.min(100, Math.round((processed / total) * 100)) : 0;
+	function updateProgressBar(total, processed, phase, pagesCrawled) {
+		let percent = 0;
+
+		if ('collect' === phase) {
+			percent = pagesCrawled > 0 ? Math.min( 50, pagesCrawled * 5 ) : 0;
+		} else if (total > 0) {
+			percent = 50 + Math.min(50, Math.round((processed / total) * 50));
+		} else if ('completed' === (window.nycfcLastStatus || '')) {
+			percent = 100;
+		}
+
 		$('#nycfc-progress-bar').css('width', percent + '%');
 	}
 
@@ -114,14 +131,28 @@
 		const remaining = parseInt(payload.rows_remaining, 10);
 		const speed = calculateSpeed(processed, startedAt);
 		const status = progress.crawl_status || 'idle';
+		const phase = progress.phase || 'collect';
+		const pagesCrawled = parseInt(progress.pages_crawled, 10) || 0;
 
-		updateProgressBar(total, processed);
+		window.nycfcLastStatus = status;
 
+		updateProgressBar(total, processed, phase, pagesCrawled);
+
+		$('#nycfc-phase').text(formatPhase(phase));
+		$('#nycfc-pages-crawled').text(pagesCrawled);
 		$('#nycfc-current-row').text(currentRow);
 		$('#nycfc-current-url').text(progress.current_url || 'None');
-		$('#nycfc-progress-text').text(processed + ' / ' + total);
-		$('#nycfc-rows-completed').text(processed);
-		$('#nycfc-rows-remaining').text(isNaN(remaining) ? Math.max(0, total - processed) : remaining);
+
+		if ('collect' === phase) {
+			$('#nycfc-progress-text').text('Collecting links…');
+			$('#nycfc-rows-completed').text(processed);
+			$('#nycfc-rows-remaining').text('—');
+		} else {
+			$('#nycfc-progress-text').text(processed + ' / ' + total);
+			$('#nycfc-rows-completed').text(processed);
+			$('#nycfc-rows-remaining').text(isNaN(remaining) ? Math.max(0, total - processed) : remaining);
+		}
+
 		$('#nycfc-success-count').text(success);
 		$('#nycfc-failed-count').text(failed);
 		$('#nycfc-speed').text(speed + ' rows/min');
@@ -132,7 +163,7 @@
 			$('#nycfc-download-btn').attr('href', payload.download_url);
 		}
 
-		updateButtons(progress, !!payload.has_rows, !!payload.has_export);
+		updateButtons(progress, !!payload.has_export);
 		updateLog(payload.log || []);
 
 		if (status === 'running' && !batchRunning) {
@@ -219,54 +250,35 @@
 		startPolling();
 		pollProgress();
 
-		$('#nycfc-upload-form').on('submit', function (event) {
+		$('#nycfc-start-form').on('submit', function (event) {
 			event.preventDefault();
 
-			const fileInput = document.getElementById('nycfc-csv-file');
-			const $message = $('#nycfc-upload-message');
+			const listingUrl = $('#nycfc-listing-url').val();
+			const $message = $('#nycfc-start-message');
 
-			if (!fileInput || !fileInput.files.length) {
-				showMessage($message, config.strings.uploadError, true);
+			if (!listingUrl) {
+				showMessage($message, config.strings.invalidUrl, true);
 				return;
 			}
 
-			const formData = new FormData();
-			formData.append('action', 'nycfc_upload_csv');
-			formData.append('nonce', config.nonce);
-			formData.append('csv_file', fileInput.files[0]);
+			$('#nycfc-start-btn').prop('disabled', true);
 
-			$('#nycfc-upload-btn').prop('disabled', true);
-
-			$.ajax({
-				url: config.ajaxUrl,
-				method: 'POST',
-				data: formData,
-				processData: false,
-				contentType: false
-			})
+			ajax('nycfc_start_collection', { listing_url: listingUrl })
 				.done(function (response) {
 					if (response.success) {
-						showMessage($message, response.data.message || config.strings.uploadSuccess, false);
+						showMessage($message, response.data.message || config.strings.startSuccess, false);
 						updateUi(response.data);
+						runBatchLoop();
 					} else {
-						showMessage($message, (response.data && response.data.message) || config.strings.uploadError, true);
+						showMessage($message, (response.data && response.data.message) || config.strings.startError, true);
 					}
 				})
 				.fail(function () {
-					showMessage($message, config.strings.uploadError, true);
+					showMessage($message, config.strings.startError, true);
 				})
 				.always(function () {
-					$('#nycfc-upload-btn').prop('disabled', false);
+					$('#nycfc-start-btn').prop('disabled', false);
 				});
-		});
-
-		$('#nycfc-start-btn').on('click', function () {
-			ajax('nycfc_start_crawl').done(function (response) {
-				if (response.success) {
-					updateUi(response.data);
-					runBatchLoop();
-				}
-			});
 		});
 
 		$('#nycfc-pause-btn').on('click', function () {
@@ -297,8 +309,7 @@
 			ajax('nycfc_reset_crawl').done(function (response) {
 				if (response.success) {
 					updateUi(response.data);
-					$('#nycfc-upload-message').hide().text('');
-					$('#nycfc-csv-file').val('');
+					$('#nycfc-start-message').hide().text('');
 				}
 			});
 		});

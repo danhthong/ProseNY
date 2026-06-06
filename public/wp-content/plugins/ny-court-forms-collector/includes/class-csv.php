@@ -1,4 +1,9 @@
 <?php
+/**
+ * CSV session state and export row storage.
+ *
+ * @package NYCourtFormsCollector
+ */
 
 namespace NYCourtFormsCollector\Includes;
 
@@ -7,170 +12,205 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * CSV parsing, validation, and storage.
+ * Class CSV
  */
 class CSV {
 
-	public const OPTION_ROWS    = 'nycfc_csv_rows';
-	public const OPTION_RESULTS = 'nycfc_crawl_results';
-	public const OPTION_ERRORS  = 'nycfc_crawl_errors';
+	public const OPTION_ROWS     = 'nycfc_csv_rows';
+	public const OPTION_RESULTS  = 'nycfc_crawl_results';
+	public const OPTION_ERRORS   = 'nycfc_crawl_errors';
 	public const OPTION_PROGRESS = 'nycfc_crawl_progress';
-	public const OPTION_LOG     = 'nycfc_activity_log';
-	public const OPTION_EXPORT  = 'nycfc_export_file';
+	public const OPTION_LOG      = 'nycfc_activity_log';
+	public const OPTION_EXPORT   = 'nycfc_export_file';
+	public const OPTION_VISITED  = 'nycfc_visited_pages';
 
 	/**
-	 * Required CSV columns.
+	 * Export columns matching forms_enriched.csv.
 	 *
 	 * @var string[]
 	 */
-	private const REQUIRED_COLUMNS = [ 'Form Number', 'Form Title', 'Form URL' ];
+	public const EXPORT_COLUMNS = array(
+		'Original Form Number',
+		'Original Form Title',
+		'Form URL',
+		'Extracted Form Number',
+		'Case Type',
+		'Legal Action',
+		'Original PDF URLs',
+		'Resolved PDF URLs',
+		'PDF Filenames',
+	);
 
 	/**
-	 * Handle uploaded CSV file.
+	 * Start a new crawl session from a listing URL.
 	 *
-	 * @param array $file Uploaded file from $_FILES.
+	 * @param string $listing_url Listing page URL.
 	 * @return array|\WP_Error
 	 */
-	public static function handle_upload( array $file ) {
-		if ( empty( $file['tmp_name'] ) || ! is_uploaded_file( $file['tmp_name'] ) ) {
-			return new \WP_Error( 'upload_error', __( 'No CSV file uploaded.', 'ny-court-forms-collector' ) );
+	public static function start_session( string $listing_url ) {
+		$listing_url = esc_url_raw( trim( $listing_url ) );
+
+		if ( '' === $listing_url || ! filter_var( $listing_url, FILTER_VALIDATE_URL ) ) {
+			return new \WP_Error( 'invalid_url', __( 'Please enter a valid listing URL.', 'ny-court-forms-collector' ) );
 		}
 
-		if ( UPLOAD_ERR_OK !== (int) $file['error'] ) {
-			return new \WP_Error( 'upload_error', __( 'CSV upload failed.', 'ny-court-forms-collector' ) );
-		}
+		$host = wp_parse_url( $listing_url, PHP_URL_HOST );
 
-		$rows = self::parse_csv( $file['tmp_name'] );
-
-		if ( is_wp_error( $rows ) ) {
-			return $rows;
-		}
-
-		if ( empty( $rows ) ) {
-			return new \WP_Error( 'empty_csv', __( 'CSV contains no valid rows.', 'ny-court-forms-collector' ) );
-		}
-
-		self::reset_session_data();
-		update_option( self::OPTION_ROWS, $rows, false );
-
-		self::init_progress( count( $rows ) );
-		self::add_log_entry( sprintf(
-			/* translators: %d: number of rows */
-			__( 'Uploaded CSV with %d rows.', 'ny-court-forms-collector' ),
-			count( $rows )
-		) );
-
-		return [
-			'total_rows' => count( $rows ),
-			'message'    => __( 'CSV uploaded successfully.', 'ny-court-forms-collector' ),
-		];
-	}
-
-	/**
-	 * Parse CSV file.
-	 *
-	 * @param string $file_path File path.
-	 * @return array|\WP_Error
-	 */
-	public static function parse_csv( string $file_path ) {
-		if ( ! is_readable( $file_path ) ) {
-			return new \WP_Error( 'file_error', __( 'CSV file is not readable.', 'ny-court-forms-collector' ) );
-		}
-
-		$handle = fopen( $file_path, 'rb' );
-
-		if ( false === $handle ) {
-			return new \WP_Error( 'file_open', __( 'Could not open CSV file.', 'ny-court-forms-collector' ) );
-		}
-
-		$headers_raw = fgetcsv( $handle, 0, ',' );
-
-		if ( false === $headers_raw || empty( $headers_raw ) ) {
-			fclose( $handle );
-			return new \WP_Error( 'header_error', __( 'CSV headers are missing.', 'ny-court-forms-collector' ) );
-		}
-
-		$headers = array_map(
-			static function ( $header ) {
-				return trim( preg_replace( '/^\xEF\xBB\xBF/', '', (string) $header ) );
-			},
-			$headers_raw
-		);
-
-		$missing = array_diff( self::REQUIRED_COLUMNS, $headers );
-
-		if ( ! empty( $missing ) ) {
-			fclose( $handle );
+		if ( ! is_string( $host ) || ! str_contains( strtolower( $host ), 'nycourts.gov' ) ) {
 			return new \WP_Error(
-				'missing_columns',
-				sprintf(
-					/* translators: %s: comma-separated column names */
-					__( 'Missing required columns: %s', 'ny-court-forms-collector' ),
-					implode( ', ', $missing )
-				)
+				'invalid_host',
+				__( 'Listing URL must be on nycourts.gov.', 'ny-court-forms-collector' )
 			);
 		}
 
-		$header_map = array_flip( $headers );
-		$rows       = [];
+		self::reset_session_data();
 
-		while ( ( $data = fgetcsv( $handle, 0, ',' ) ) !== false ) {
-			if ( empty( array_filter( $data, static fn( $value ) => '' !== trim( (string) $value ) ) ) ) {
-				continue;
-			}
+		update_option( self::OPTION_ROWS, array(), false );
+		update_option( self::OPTION_VISITED, array(), false );
 
-			if ( count( $data ) !== count( $headers ) ) {
-				continue;
-			}
+		self::init_progress(
+			array(
+				'total_rows'     => 0,
+				'processed_rows' => 0,
+				'success_rows'   => 0,
+				'failed_rows'    => 0,
+				'current_row'    => 0,
+				'current_url'    => $listing_url,
+				'crawl_status'   => 'running',
+				'phase'          => 'collect',
+				'listing_url'    => $listing_url,
+				'next_url'       => $listing_url,
+				'pages_crawled'  => 0,
+				'started_at'     => time(),
+			)
+		);
 
-			$row = [
-				'Form Number' => sanitize_text_field( trim( (string) $data[ $header_map['Form Number'] ] ) ),
-				'Form Title'  => sanitize_text_field( trim( (string) $data[ $header_map['Form Title'] ] ) ),
-				'Form URL'    => esc_url_raw( trim( (string) $data[ $header_map['Form URL'] ] ) ),
-			];
+		self::add_log_entry(
+			sprintf(
+				/* translators: %s: listing URL */
+				__( 'Started collection from %s', 'ny-court-forms-collector' ),
+				$listing_url
+			)
+		);
 
-			if ( empty( $row['Form URL'] ) || ! filter_var( $row['Form URL'], FILTER_VALIDATE_URL ) ) {
-				continue;
-			}
-
-			$rows[] = $row;
-		}
-
-		fclose( $handle );
-
-		return $rows;
+		return array(
+			'listing_url' => $listing_url,
+			'message'     => __( 'Collection started.', 'ny-court-forms-collector' ),
+		);
 	}
 
 	/**
-	 * Get stored CSV rows.
+	 * Append collected form links, deduping by Form URL.
+	 *
+	 * @param array<int, array<string, string>> $links Form link rows.
+	 * @return int Number of new rows added.
+	 */
+	public static function append_links( array $links ): int {
+		$rows     = self::get_rows();
+		$existing = array();
+
+		foreach ( $rows as $row ) {
+			$url = $row['Form URL'] ?? '';
+
+			if ( '' !== $url ) {
+				$existing[ $url ] = true;
+			}
+		}
+
+		$added = 0;
+
+		foreach ( $links as $link ) {
+			$url = $link['Form URL'] ?? '';
+
+			if ( '' === $url || isset( $existing[ $url ] ) ) {
+				continue;
+			}
+
+			$rows[]           = array(
+				'Form Number' => sanitize_text_field( $link['Form Number'] ?? '' ),
+				'Form Title'  => sanitize_text_field( $link['Form Title'] ?? '' ),
+				'Form URL'    => esc_url_raw( $url ),
+			);
+			$existing[ $url ] = true;
+			++$added;
+		}
+
+		update_option( self::OPTION_ROWS, $rows, false );
+
+		return $added;
+	}
+
+	/**
+	 * Get stored form rows.
 	 *
 	 * @return array<int, array<string, string>>
 	 */
 	public static function get_rows(): array {
-		$rows = get_option( self::OPTION_ROWS, [] );
+		$rows = get_option( self::OPTION_ROWS, array() );
 
-		return is_array( $rows ) ? $rows : [];
+		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
+	 * Get visited listing page URLs.
+	 *
+	 * @return string[]
+	 */
+	public static function get_visited_pages(): array {
+		$visited = get_option( self::OPTION_VISITED, array() );
+
+		return is_array( $visited ) ? $visited : array();
+	}
+
+	/**
+	 * Mark a listing page URL as visited.
+	 *
+	 * @param string $url Page URL.
+	 * @return void
+	 */
+	public static function mark_page_visited( string $url ): void {
+		$visited   = self::get_visited_pages();
+		$visited[] = esc_url_raw( $url );
+		$visited   = array_values( array_unique( array_filter( $visited ) ) );
+
+		update_option( self::OPTION_VISITED, $visited, false );
 	}
 
 	/**
 	 * Initialize crawl progress.
 	 *
-	 * @param int $total_rows Total row count.
+	 * @param array<string, mixed> $data Progress data.
+	 * @return void
 	 */
-	public static function init_progress( int $total_rows ): void {
-		$progress = [
-			'total_rows'     => $total_rows,
+	public static function init_progress( array $data ): void {
+		$defaults = self::get_progress_defaults();
+		$progress = array_merge( $defaults, $data );
+		$progress['updated_at'] = time();
+
+		update_option( self::OPTION_PROGRESS, $progress, false );
+	}
+
+	/**
+	 * Default progress structure.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private static function get_progress_defaults(): array {
+		return array(
+			'total_rows'     => 0,
 			'processed_rows' => 0,
 			'success_rows'   => 0,
 			'failed_rows'    => 0,
 			'current_row'    => 0,
 			'current_url'    => '',
 			'crawl_status'   => 'idle',
+			'phase'          => 'collect',
+			'listing_url'    => '',
+			'next_url'       => '',
+			'pages_crawled'  => 0,
 			'started_at'     => 0,
-			'updated_at'     => time(),
-		];
-
-		update_option( self::OPTION_PROGRESS, $progress, false );
+			'updated_at'     => 0,
+		);
 	}
 
 	/**
@@ -179,27 +219,16 @@ class CSV {
 	 * @return array<string, mixed>
 	 */
 	public static function get_progress(): array {
-		$defaults = [
-			'total_rows'     => 0,
-			'processed_rows' => 0,
-			'success_rows'   => 0,
-			'failed_rows'    => 0,
-			'current_row'    => 0,
-			'current_url'    => '',
-			'crawl_status'   => 'idle',
-			'started_at'     => 0,
-			'updated_at'     => 0,
-		];
+		$progress = get_option( self::OPTION_PROGRESS, self::get_progress_defaults() );
 
-		$progress = get_option( self::OPTION_PROGRESS, $defaults );
-
-		return wp_parse_args( is_array( $progress ) ? $progress : [], $defaults );
+		return wp_parse_args( is_array( $progress ) ? $progress : array(), self::get_progress_defaults() );
 	}
 
 	/**
 	 * Update crawl progress.
 	 *
 	 * @param array<string, mixed> $data Progress data.
+	 * @return void
 	 */
 	public static function update_progress( array $data ): void {
 		$progress = self::get_progress();
@@ -212,28 +241,31 @@ class CSV {
 	/**
 	 * Store crawl result for a row.
 	 *
-	 * @param int                  $row_index Row index.
-	 * @param array<string, mixed> $row Original row.
+	 * @param int                   $row_index Row index.
+	 * @param array<string, mixed>  $row Original row.
 	 * @param array<string, string> $extracted Extracted data.
-	 * @param string               $error Error message.
+	 * @param string                $error Error message.
+	 * @return void
 	 */
 	public static function store_result( int $row_index, array $row, array $extracted, string $error = '' ): void {
-		$results = get_option( self::OPTION_RESULTS, [] );
+		$results = get_option( self::OPTION_RESULTS, array() );
 
 		if ( ! is_array( $results ) ) {
-			$results = [];
+			$results = array();
 		}
 
-		$results[ $row_index ] = [
-			'original_form_number' => $row['Form Number'] ?? '',
-			'original_form_title'  => $row['Form Title'] ?? '',
-			'form_url'             => $row['Form URL'] ?? '',
-			'form_number_detail'   => $extracted['form_number_detail'] ?? '',
-			'case_type'            => $extracted['case_type'] ?? '',
-			'legal_action'         => $extracted['legal_action'] ?? '',
-			'pdf_urls'             => $extracted['pdf_urls'] ?? '',
-			'error'                => $error,
-		];
+		$results[ $row_index ] = array(
+			'original_form_number'  => $row['Form Number'] ?? '',
+			'original_form_title'   => $row['Form Title'] ?? '',
+			'form_url'              => $row['Form URL'] ?? '',
+			'extracted_form_number' => $extracted['extracted_form_number'] ?? '',
+			'case_type'             => $extracted['case_type'] ?? '',
+			'legal_action'          => $extracted['legal_action'] ?? '',
+			'original_pdf_urls'     => $extracted['original_pdf_urls'] ?? '',
+			'resolved_pdf_urls'     => $extracted['resolved_pdf_urls'] ?? '',
+			'pdf_filenames'         => $extracted['pdf_filenames'] ?? '',
+			'error'                 => $error,
+		);
 
 		update_option( self::OPTION_RESULTS, $results, false );
 
@@ -248,19 +280,20 @@ class CSV {
 	 * @param int    $row_index Row index.
 	 * @param string $url URL.
 	 * @param string $error Error message.
+	 * @return void
 	 */
 	public static function store_error( int $row_index, string $url, string $error ): void {
-		$errors = get_option( self::OPTION_ERRORS, [] );
+		$errors = get_option( self::OPTION_ERRORS, array() );
 
 		if ( ! is_array( $errors ) ) {
-			$errors = [];
+			$errors = array();
 		}
 
-		$errors[] = [
+		$errors[] = array(
 			'row'   => $row_index,
 			'url'   => $url,
 			'error' => $error,
-		];
+		);
 
 		update_option( self::OPTION_ERRORS, $errors, false );
 	}
@@ -271,9 +304,9 @@ class CSV {
 	 * @return array<int, array<string, mixed>>
 	 */
 	public static function get_errors(): array {
-		$errors = get_option( self::OPTION_ERRORS, [] );
+		$errors = get_option( self::OPTION_ERRORS, array() );
 
-		return is_array( $errors ) ? $errors : [];
+		return is_array( $errors ) ? $errors : array();
 	}
 
 	/**
@@ -283,33 +316,28 @@ class CSV {
 	 */
 	public static function get_export_rows(): array {
 		$rows    = self::get_rows();
-		$results = get_option( self::OPTION_RESULTS, [] );
+		$results = get_option( self::OPTION_RESULTS, array() );
 
 		if ( ! is_array( $results ) ) {
-			$results = [];
+			$results = array();
 		}
 
-		$export = [];
+		$export = array();
 
 		foreach ( $rows as $index => $row ) {
-			$result = $results[ $index ] ?? [
-				'form_number_detail' => '',
-				'case_type'          => '',
-				'legal_action'       => '',
-				'pdf_urls'           => '',
-				'error'              => '',
-			];
+			$result = $results[ $index ] ?? array();
 
-			$export[] = [
-				'Original Form Number' => $row['Form Number'] ?? '',
-				'Original Form Title'  => $row['Form Title'] ?? '',
-				'Form URL'               => $row['Form URL'] ?? '',
-				'Extracted Form Number'  => $result['form_number_detail'] ?? '',
-				'Case Type'              => $result['case_type'] ?? '',
-				'Legal Action'           => $result['legal_action'] ?? '',
-				'PDF URLs'               => $result['pdf_urls'] ?? '',
-				'Error'                  => $result['error'] ?? '',
-			];
+			$export[] = array(
+				'Original Form Number'  => $row['Form Number'] ?? '',
+				'Original Form Title'   => $row['Form Title'] ?? '',
+				'Form URL'              => $row['Form URL'] ?? '',
+				'Extracted Form Number' => $result['extracted_form_number'] ?? '',
+				'Case Type'             => $result['case_type'] ?? '',
+				'Legal Action'          => $result['legal_action'] ?? '',
+				'Original PDF URLs'     => $result['original_pdf_urls'] ?? '',
+				'Resolved PDF URLs'     => $result['resolved_pdf_urls'] ?? '',
+				'PDF Filenames'         => $result['pdf_filenames'] ?? '',
+			);
 		}
 
 		return $export;
@@ -319,18 +347,19 @@ class CSV {
 	 * Append activity log entry.
 	 *
 	 * @param string $message Log message.
+	 * @return void
 	 */
 	public static function add_log_entry( string $message ): void {
-		$log = get_option( self::OPTION_LOG, [] );
+		$log = get_option( self::OPTION_LOG, array() );
 
 		if ( ! is_array( $log ) ) {
-			$log = [];
+			$log = array();
 		}
 
-		$log[] = [
+		$log[] = array(
 			'time'    => current_time( 'H:i:s' ),
 			'message' => sanitize_text_field( $message ),
-		];
+		);
 
 		if ( count( $log ) > 100 ) {
 			$log = array_slice( $log, -100 );
@@ -345,15 +374,16 @@ class CSV {
 	 * @return array<int, array<string, string>>
 	 */
 	public static function get_log_entries(): array {
-		$log = get_option( self::OPTION_LOG, [] );
+		$log = get_option( self::OPTION_LOG, array() );
 
-		return is_array( $log ) ? $log : [];
+		return is_array( $log ) ? $log : array();
 	}
 
 	/**
 	 * Set export file path.
 	 *
 	 * @param string $path File path.
+	 * @return void
 	 */
 	public static function set_export_file( string $path ): void {
 		update_option( self::OPTION_EXPORT, $path, false );
@@ -370,6 +400,8 @@ class CSV {
 
 	/**
 	 * Reset crawl session data.
+	 *
+	 * @return void
 	 */
 	public static function reset_session_data(): void {
 		delete_option( self::OPTION_ROWS );
@@ -378,5 +410,6 @@ class CSV {
 		delete_option( self::OPTION_PROGRESS );
 		delete_option( self::OPTION_LOG );
 		delete_option( self::OPTION_EXPORT );
+		delete_option( self::OPTION_VISITED );
 	}
 }

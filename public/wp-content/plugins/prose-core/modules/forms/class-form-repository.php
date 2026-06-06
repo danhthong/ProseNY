@@ -27,7 +27,7 @@ class Form_Repository {
 	public function get_by_form_id( string $form_id ): ?\WP_Post {
 		$form_id = sanitize_text_field( $form_id );
 
-		if ( '' === $form_id ) {
+		if ( '' === $form_id || '--' === $form_id ) {
 			return null;
 		}
 
@@ -54,6 +54,24 @@ class Form_Repository {
 	}
 
 	/**
+	 * Find a form post by exact title (for numberless forms).
+	 *
+	 * @param string $title Post title.
+	 * @return \WP_Post|null
+	 */
+	public function get_by_title( string $title ): ?\WP_Post {
+		$title = sanitize_text_field( $title );
+
+		if ( '' === $title ) {
+			return null;
+		}
+
+		$post = get_page_by_title( $title, OBJECT, Form_CPT::POST_TYPE );
+
+		return ( $post instanceof \WP_Post ) ? $post : null;
+	}
+
+	/**
 	 * Create or update a form post.
 	 *
 	 * @param array{
@@ -69,18 +87,29 @@ class Form_Repository {
 	 */
 	public function create_or_update( array $data ) {
 		$form_id = isset( $data['form_id'] ) ? sanitize_text_field( $data['form_id'] ) : '';
+		$form_id = ( '--' === $form_id ) ? '' : $form_id;
+		$title   = isset( $data['title'] ) ? sanitize_text_field( $data['title'] ) : '';
 
-		if ( '' === $form_id ) {
-			return new \WP_Error( 'prose_missing_form_id', __( 'Form number is required.', 'prose-core' ) );
+		if ( '' === $title && '' === $form_id ) {
+			return new \WP_Error( 'prose_missing_identity', __( 'Form title is required when no form number is provided.', 'prose-core' ) );
 		}
 
-		$existing = isset( $data['post_id'] ) ? get_post( (int) $data['post_id'] ) : $this->get_by_form_id( $form_id );
-		$created  = false;
+		if ( isset( $data['post_id'] ) ) {
+			$existing = get_post( (int) $data['post_id'] );
+		} elseif ( '' !== $form_id ) {
+			$existing = $this->get_by_form_id( $form_id );
+		} elseif ( '' !== $title ) {
+			$existing = $this->get_by_title( $title );
+		} else {
+			$existing = null;
+		}
+
+		$created = false;
 
 		$post_data = array(
 			'post_type'   => Form_CPT::POST_TYPE,
 			'post_status' => 'publish',
-			'post_title'  => isset( $data['title'] ) ? sanitize_text_field( $data['title'] ) : $form_id,
+			'post_title'  => '' !== $title ? $title : $form_id,
 		);
 
 		if ( $existing instanceof \WP_Post ) {

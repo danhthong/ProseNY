@@ -1,4 +1,9 @@
 <?php
+/**
+ * Export crawl results to CSV file.
+ *
+ * @package NYCourtFormsCollector
+ */
 
 namespace NYCourtFormsCollector\Includes;
 
@@ -7,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Export crawl results to CSV file.
+ * Class Export
  */
 class Export {
 
@@ -35,25 +40,30 @@ class Export {
 			return new \WP_Error( 'mkdir_failed', __( 'Could not create export directory.', 'ny-court-forms-collector' ) );
 		}
 
-		$filename = 'ny-court-forms-export-' . gmdate( 'Y-m-d-His' ) . '.csv';
+		$filename = 'forms_enriched-' . gmdate( 'Y-m-d-His' ) . '.csv';
 		$filepath = trailingslashit( $export_dir ) . $filename;
 
-		$handle = fopen( $filepath, 'wb' );
+		$handle = fopen( $filepath, 'wb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 
 		if ( false === $handle ) {
 			return new \WP_Error( 'file_open', __( 'Could not create export file.', 'ny-court-forms-collector' ) );
 		}
 
-		fwrite( $handle, "\xEF\xBB\xBF" );
+		fwrite( $handle, "\xEF\xBB\xBF" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite
 
-		$headers = array_keys( $rows[0] );
-		fputcsv( $handle, $headers );
+		fputcsv( $handle, CSV::EXPORT_COLUMNS );
 
 		foreach ( $rows as $row ) {
-			fputcsv( $handle, array_values( $row ) );
+			$line = array();
+
+			foreach ( CSV::EXPORT_COLUMNS as $column ) {
+				$line[] = $row[ $column ] ?? '';
+			}
+
+			fputcsv( $handle, $line );
 		}
 
-		fclose( $handle );
+		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 
 		CSV::set_export_file( $filepath );
 		CSV::add_log_entry( __( 'Export CSV generated.', 'ny-court-forms-collector' ) );
@@ -63,6 +73,8 @@ class Export {
 
 	/**
 	 * Stream export file to browser.
+	 *
+	 * @return void
 	 */
 	public static function download_file(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -90,14 +102,14 @@ class Export {
 		header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
 		header( 'Content-Length: ' . filesize( $filepath ) );
 
-		$handle = fopen( $filepath, 'rb' );
+		$handle = fopen( $filepath, 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 
 		if ( false === $handle ) {
 			wp_die( esc_html__( 'Could not read export file.', 'ny-court-forms-collector' ) );
 		}
 
 		while ( ! feof( $handle ) ) {
-			echo fread( $handle, 8192 );
+			echo fread( $handle, 8192 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
 			if ( ob_get_level() > 0 ) {
 				ob_flush();
@@ -106,19 +118,28 @@ class Export {
 			flush();
 		}
 
-		fclose( $handle );
+		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 		exit;
 	}
 
 	/**
 	 * Get export download URL.
 	 *
+	 * Returns a raw URL with literal ampersands (not HTML-entity encoded).
+	 * wp_nonce_url() esc_html-encodes the URL (turning & into &#038;), which
+	 * corrupts the _wpnonce key when the string is assigned to an anchor href
+	 * via JavaScript, causing a "link has expired" nonce failure. The PHP
+	 * template wraps this value in esc_url() for safe HTML output.
+	 *
 	 * @return string
 	 */
 	public static function get_download_url(): string {
-		return wp_nonce_url(
-			admin_url( 'admin-post.php?action=nycfc_download_export' ),
-			'nycfc_download_export'
+		return add_query_arg(
+			array(
+				'action'   => 'nycfc_download_export',
+				'_wpnonce' => wp_create_nonce( 'nycfc_download_export' ),
+			),
+			admin_url( 'admin-post.php' )
 		);
 	}
 }
