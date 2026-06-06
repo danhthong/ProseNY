@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: NY Court Forms Collector
- * Description: Collect and process NY court forms from CSV uploads with web crawling.
+ * Description: Collect and enrich NY court forms from a listing URL and export forms_enriched.csv.
  * Version: 1.0.0
  * Author: Proseny
  * Text Domain: ny-court-forms-collector
@@ -19,6 +19,7 @@ define( 'NYCFC_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'NYCFC_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'NYCFC_BATCH_SIZE', 5 );
 
+require_once NYCFC_PLUGIN_DIR . 'includes/class-http.php';
 require_once NYCFC_PLUGIN_DIR . 'includes/class-csv.php';
 require_once NYCFC_PLUGIN_DIR . 'includes/class-crawler.php';
 require_once NYCFC_PLUGIN_DIR . 'includes/class-export.php';

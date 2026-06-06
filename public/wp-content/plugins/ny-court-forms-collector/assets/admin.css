@@ -1,3 +1,13 @@
+.nycfc-wrap #nycfc-listing-url {
+	width: 100%;
+	max-width: 900px;
+}
+
+.nycfc-wrap #nycfc-phase {
+	font-weight: 600;
+	text-transform: capitalize;
+}
+
 .nycfc-wrap .nycfc-panel {
 	background: #fff;
 	border: 1px solid #ccd0d4;

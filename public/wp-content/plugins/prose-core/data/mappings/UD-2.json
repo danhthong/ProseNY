@@ -1,9 +1,0 @@
-{
-  "form": "UD-2",
-  "field_mappings": {
-    "PetitionerName": "user.full_name",
-    "County": "case.county",
-    "DefendantName": "case.spouse_name",
-    "MarriageDate": "case.marriage_date"
-  }
-}

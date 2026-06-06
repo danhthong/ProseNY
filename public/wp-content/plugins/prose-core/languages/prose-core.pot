@@ -1,0 +1,255 @@
+# Copyright (C) 2026 ProSe
+# This file is distributed under the GPL-2.0-or-later.
+msgid ""
+msgstr ""
+"Project-Id-Version: ProSe Core 1.0.0\n"
+"Report-Msgid-Bugs-To: https://prose.ai\n"
+"POT-Creation-Date: 2026-06-06 00:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: includes/class-admin.php
+msgid "ProSe"
+msgstr ""
+
+#: includes/class-admin.php
+msgid "Forms"
+msgstr ""
+
+#: includes/class-admin.php
+msgid "You do not have permission to access this page."
+msgstr ""
+
+#: includes/class-admin.php
+msgid "Welcome to ProSe — court navigation, forms, and workflow automation."
+msgstr ""
+
+#: includes/class-admin.php
+msgid "Manage Forms"
+msgstr ""
+
+#: includes/class-admin.php
+msgid "Import Forms"
+msgstr ""
+
+#: modules/forms/class-form-cpt.php
+msgid "Form"
+msgstr ""
+
+#: modules/forms/class-form-cpt.php
+msgid "Add New Form"
+msgstr ""
+
+#: modules/forms/class-form-cpt.php
+msgid "Edit Form"
+msgstr ""
+
+#: modules/forms/class-form-cpt.php
+msgid "New Form"
+msgstr ""
+
+#: modules/forms/class-form-cpt.php
+msgid "View Form"
+msgstr ""
+
+#: modules/forms/class-form-cpt.php
+msgid "Search Forms"
+msgstr ""
+
+#: modules/forms/class-form-cpt.php
+msgid "No forms found."
+msgstr ""
+
+#: modules/forms/class-form-cpt.php
+msgid "No forms found in Trash."
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "Please select a CSV file to upload."
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "File upload failed."
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "Only CSV files are allowed."
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "Import complete: %1$d created, %2$d updated, %3$d failed."
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "Upload a CSV file to import court forms. Expected columns include Form Number, Form Title, Case Type, PDF Filenames, and Resolved PDF URLs."
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "CSV File"
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "Supported headers: Form Number (or Extracted Form Number), Form Title (or Original Form Title), Case Type, PDF Filenames, Resolved PDF URLs."
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "Import Results"
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "Form Number"
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "Title"
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "Status"
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "Message"
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "Could not open CSV file."
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "CSV file has no header row."
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "Row %d: missing Form Number."
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "Imported successfully."
+msgstr ""
+
+#: modules/forms/class-form-repository.php
+msgid "Form number is required."
+msgstr ""
+
+#: modules/forms/class-form-file-manager.php
+msgid "Could not create the ProSe forms upload directory."
+msgstr ""
+
+#: modules/forms/class-form-file-manager.php
+msgid "Invalid PDF URL."
+msgstr ""
+
+#: modules/forms/class-form-file-manager.php
+msgid "Failed to save downloaded PDF."
+msgstr ""
+
+#: modules/forms/class-form-file-manager.php
+msgid "Invalid filename."
+msgstr ""
+
+#: modules/forms/class-form-file-manager.php
+msgid "Download failed with HTTP status %d."
+msgstr ""
+
+#: modules/forms/class-form-file-manager.php
+msgid "Downloaded PDF was empty."
+msgstr ""
+
+#: modules/forms/class-form-cpt.php
+msgid "PDF"
+msgstr ""
+
+#: modules/forms/class-form-cpt.php
+msgid "Source URL"
+msgstr ""
+
+#: modules/forms/class-form-cpt.php
+msgid "View PDF"
+msgstr ""
+
+#: modules/forms/class-form-cpt.php
+msgid "Source"
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "Upload and Import"
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "Starting import..."
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "Processing %1$d of %2$d forms..."
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "An error occurred during import."
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "Importing %d forms. Please keep this page open."
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "Import another file"
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "View imported forms"
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "Permission denied."
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "Import job not found or expired."
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "Could not store the uploaded file."
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "Could not read the CSV file."
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "Could not create the imports directory."
+msgstr ""
+
+#: modules/forms/class-form-importer.php
+msgid "Missing Form Number."
+msgstr ""
+
+#: modules/forms/class-form-file-manager.php
+msgid "Failed to download PDF."
+msgstr ""
+
+#: modules/forms/class-form-file-manager.php
+msgid "proc_open is disabled; cannot run curl."
+msgstr ""
+
+#: modules/forms/class-form-file-manager.php
+msgid "The curl binary could not be found."
+msgstr ""
+
+#: modules/forms/class-form-file-manager.php
+msgid "Could not start the curl process."
+msgstr ""
+
+#: modules/forms/class-form-file-manager.php
+msgid "curl failed: %s"
+msgstr ""
+
+#: modules/forms/class-form-file-manager.php
+msgid "curl failed with exit code %d."
+msgstr ""

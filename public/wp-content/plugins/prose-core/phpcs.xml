@@ -1,9 +1,0 @@
-<?xml version="1.0"?>
-<ruleset name="CourtFlow">
-    <description>CourtFlow coding standards</description>
-    <file>app</file>
-    <file>prose-core.php</file>
-    <rule ref="WordPress-Core"/>
-    <rule ref="WordPress-Docs"/>
-    <config name="testVersion" value="8.3-"/>
-</ruleset>

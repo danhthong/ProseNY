@@ -1,19 +1,16 @@
 <?php
 /**
- * Fired when the plugin is uninstalled.
+ * Plugin uninstall handler.
  *
- * @package ProseCore
+ * Conservatively removes plugin options only.
+ * Form posts, taxonomy terms, and uploaded PDFs are preserved by default.
+ *
+ * @package ProSeCore
  */
 
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
 
-require_once plugin_dir_path( __FILE__ ) . 'vendor/autoload.php';
-
-\Prose\Core\Database\Schema::drop_all();
-
+// Extension point: add destructive cleanup here if explicitly required in the future.
 delete_option( 'prose_core_version' );
-delete_option( 'courtflow_db_version' );
-delete_option( 'courtflow_settings' );
-delete_option( 'courtflow_seeded' );
