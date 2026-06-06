@@ -1,8 +1,0 @@
-{
-  "form": "UD-3",
-  "field_mappings": {
-    "PlaintiffName": "user.full_name",
-    "County": "case.county",
-    "IndexNumber": "case.index_number"
-  }
-}

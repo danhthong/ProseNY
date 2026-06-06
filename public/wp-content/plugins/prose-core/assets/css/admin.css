@@ -1,0 +1,56 @@
+/**
+ * ProSe Core admin styles.
+ *
+ * @package ProSeCore
+ */
+
+.prose-admin-wrap {
+	max-width: 960px;
+}
+
+.prose-import-form {
+	margin-top: 1.5em;
+}
+
+.prose-import-results {
+	margin-top: 2em;
+}
+
+.prose-import-results th,
+.prose-import-results td {
+	vertical-align: top;
+}
+
+.prose-import-progress {
+	margin-top: 1em;
+	max-width: 900px;
+}
+
+.prose-progress-bar {
+	background: #e2e4e7;
+	border-radius: 4px;
+	height: 22px;
+	overflow: hidden;
+	width: 100%;
+}
+
+.prose-progress-bar__fill {
+	background: #2271b1;
+	height: 100%;
+	transition: width 0.2s ease;
+	width: 0;
+}
+
+.prose-progress-status {
+	font-weight: 600;
+	margin: 0.75em 0;
+}
+
+.prose-import-results tr.prose-status-failed td {
+	color: #b32d2e;
+}
+
+.prose-import-results tr.prose-status-created td:nth-child(3) {
+	color: #007017;
+	font-weight: 600;
+}
