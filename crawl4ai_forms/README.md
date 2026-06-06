@@ -14,8 +14,29 @@ For every `Form URL` in the input CSV the script:
    - **Case Type** — `.form-details-sidebar .field--name-field-case-type .field__item` (comma-joined)
    - **Legal Action** — `.form-details-sidebar .field--name-field-legal-action .field__item` (comma-joined)
    - **PDF URLs** — `.field--name-field-file-set .field--name-field-files .field--name-field-file a` (`href`s, pipe-joined)
-3. Writes an intermediate checkpoint every 50 rows.
-4. Exports `forms_enriched.csv` and logs failures to `errors.csv`.
+3. Resolves every extracted PDF URL (which are `…/media/<id>` redirects) to its
+   final location and filename, up to 20 concurrently (aiohttp HEAD → GET, with
+   a `curl` fallback — see note below).
+4. Writes an intermediate checkpoint every 50 rows.
+5. Exports `forms_enriched.csv` and logs failures to `errors.csv`.
+
+### PDF redirect resolution
+
+NY Courts PDF links look like `https://nycourts.gov/media/14576` — these are
+redirects, not the final PDF. The crawler resolves each to its final URL and
+filename, e.g.:
+
+```
+https://nycourts.gov/media/14461
+  -> https://webfiles.nycourts.gov/public/2025-12/doh-2168.pdf  (doh-2168.pdf)
+```
+
+> **Note on Cloudflare:** NY Courts sits behind Cloudflare, which rejects plain
+> HTTP clients (including aiohttp) with HTTP 403 based on TLS fingerprinting.
+> The resolver tries aiohttp first (HEAD then GET) as required, and falls back
+> to `curl` (bundled with Windows 10+/macOS/most Linux) which is allowed
+> through. If `curl` is unavailable and aiohttp is blocked, the original URL is
+> kept and the filename is left blank — the crawler never raises.
 
 ## Input
 
@@ -35,9 +56,25 @@ For every `Form URL` in the input CSV the script:
 - Extracted Form Number
 - Case Type
 - Legal Action
-- PDF URLs
+- Original PDF URLs (pipe-joined `…/media/<id>` redirect URLs)
+- Resolved PDF URLs (pipe-joined final PDF URLs)
+- PDF Filenames (pipe-joined, from `Content-Disposition` or the final URL path)
+- Local PDF Path (only present when `--download-pdfs` is used)
 
 Failures are written to `errors.csv`.
+
+## Downloading PDFs (optional)
+
+Disabled by default. Pass `--download-pdfs` to download each resolved PDF into
+`download_pdfs/` (created automatically), saving with the resolved filename and
+skipping files that already exist. The local path is recorded in the
+`Local PDF Path` column.
+
+```powershell
+.\run.ps1 --download-pdfs
+# custom directory:
+.\run.ps1 --download-pdfs --download-dir my_pdfs
+```
 
 ## Environment note
 
