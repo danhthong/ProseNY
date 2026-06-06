@@ -84,27 +84,32 @@ fails without a local `libxml2`. Use **Python 3.11 or 3.12** instead.
 
 Requires [`uv`](https://docs.astral.sh/uv/) for the recommended setup scripts below.
 
-## Quick start (Windows)
+## Part of the forms pipeline
 
-One-time setup:
-
-```powershell
-.\crawl4ai_forms\setup.ps1
-```
-
-Run enrichment later:
+This enricher is **stage 2** of the `collect_forms` pipeline. The environment
+(`collect_forms/.venv`) and setup are managed by the parent project — see
+`../README.md`. Set it up once with:
 
 ```powershell
-.\crawl4ai_forms\run.ps1
+.\collect_forms\setup.ps1
 ```
 
-Optional arguments are passed through to `enrich_forms.py`:
+Run the full collect → enrich pipeline with:
 
 ```powershell
-.\crawl4ai_forms\run.ps1 --output forms_enriched.csv --errors errors.csv
+.\collect_forms\run.ps1
 ```
 
-## Setup (manual)
+## Running this stage on its own
+
+From the `collect_forms` folder, using the shared venv:
+
+```powershell
+.\.venv\Scripts\python.exe crawl4ai_forms\enrich_forms.py
+.\.venv\Scripts\python.exe crawl4ai_forms\enrich_forms.py --output forms_enriched.csv --errors errors.csv
+```
+
+## Setup (manual, standalone)
 
 ```bash
 cd crawl4ai_forms

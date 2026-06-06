@@ -1,6 +1,6 @@
-# Setup Crawl4AI forms enricher (Python 3.11 venv + dependencies + Chromium).
-# Run from anywhere:  .\crawl4ai_forms\setup.ps1
-# After setup, run:   .\crawl4ai_forms\run.ps1
+# Setup the forms pipeline (Python 3.11 venv + dependencies + Chromium).
+# Run from anywhere:  .\collect_forms\setup.ps1
+# After setup, run:   .\collect_forms\run.ps1
 
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
@@ -20,4 +20,5 @@ Write-Host "Installing Playwright Chromium..." -ForegroundColor Cyan
 
 Write-Host ""
 Write-Host "Setup complete." -ForegroundColor Green
-Write-Host "Run enrichment with:  .\run.ps1" -ForegroundColor Yellow
+Write-Host "Run the full pipeline with:  .\run.ps1" -ForegroundColor Yellow
+Write-Host "Or pass a custom listing URL: .\run.ps1 'https://www.nycourts.gov/forms?...'" -ForegroundColor Yellow
