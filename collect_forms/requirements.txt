@@ -1,0 +1,6 @@
+crawl4ai
+beautifulsoup4
+lxml
+pandas
+aiohttp
+tqdm

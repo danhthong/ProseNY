@@ -1,0 +1,85 @@
+.nycfc-wrap .nycfc-panel {
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	border-radius: 4px;
+	margin: 20px 0;
+	padding: 20px;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.nycfc-wrap .nycfc-controls {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+}
+
+.nycfc-wrap .nycfc-message {
+	display: none;
+	margin-top: 10px;
+	padding: 10px 12px;
+	border-left: 4px solid #72aee6;
+	background: #f0f6fc;
+}
+
+.nycfc-wrap .nycfc-message.is-success {
+	border-left-color: #00a32a;
+	background: #edfaef;
+}
+
+.nycfc-wrap .nycfc-message.is-error {
+	border-left-color: #d63638;
+	background: #fcf0f1;
+}
+
+.nycfc-wrap .nycfc-progress-wrap {
+	margin: 15px 0 20px;
+}
+
+.nycfc-wrap .nycfc-progress-track {
+	background: #e5e5e5;
+	border-radius: 4px;
+	height: 28px;
+	overflow: hidden;
+}
+
+.nycfc-wrap .nycfc-progress-bar {
+	background: #2271b1;
+	height: 100%;
+	transition: width 0.3s ease;
+}
+
+.nycfc-wrap .nycfc-stats {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 10px 20px;
+}
+
+.nycfc-wrap .nycfc-stats div {
+	word-break: break-word;
+}
+
+.nycfc-wrap #nycfc-current-url {
+	font-family: Consolas, Monaco, monospace;
+	font-size: 12px;
+}
+
+.nycfc-wrap .nycfc-activity-log {
+	background: #111;
+	color: #d9d9d9;
+	font-family: Consolas, Monaco, monospace;
+	font-size: 12px;
+	height: 280px;
+	overflow-y: auto;
+	padding: 12px;
+	border-radius: 4px;
+}
+
+.nycfc-wrap .nycfc-log-entry {
+	line-height: 1.5;
+	margin-bottom: 4px;
+}
+
+.nycfc-wrap #nycfc-status {
+	font-weight: 600;
+	text-transform: capitalize;
+}
