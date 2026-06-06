@@ -438,25 +438,44 @@ class Crawler {
 			return esc_url_raw( $href );
 		}
 
-		$scheme = $base_parts['scheme'] ?? 'https';
-		$host   = $base_parts['host'] ?? '';
-		$port   = isset( $base_parts['port'] ) ? ':' . $base_parts['port'] : '';
+		$scheme    = $base_parts['scheme'] ?? 'https';
+		$host      = $base_parts['host'] ?? '';
+		$port      = isset( $base_parts['port'] ) ? ':' . $base_parts['port'] : '';
+		$authority = $scheme . '://' . $host . $port;
+		$base_path = $base_parts['path'] ?? '/';
+
+		if ( '' === $base_path ) {
+			$base_path = '/';
+		}
 
 		if ( str_starts_with( $href, '//' ) ) {
 			return esc_url_raw( $scheme . ':' . $href );
 		}
 
+		// Query-only reference: keep the base path, replace the query. This is
+		// how the NY Courts pager links work (e.g. "?...&page=1").
+		if ( str_starts_with( $href, '?' ) ) {
+			return esc_url_raw( $authority . $base_path . $href );
+		}
+
+		// Fragment-only reference: keep base path and query.
+		if ( str_starts_with( $href, '#' ) ) {
+			$base_query = isset( $base_parts['query'] ) ? '?' . $base_parts['query'] : '';
+			return esc_url_raw( $authority . $base_path . $base_query . $href );
+		}
+
 		if ( str_starts_with( $href, '/' ) ) {
-			return esc_url_raw( $scheme . '://' . $host . $port . $href );
+			return esc_url_raw( $authority . $href );
 		}
 
-		$path = $base_parts['path'] ?? '/';
-
-		if ( ! str_ends_with( $path, '/' ) ) {
-			$path = dirname( $path );
+		if ( str_ends_with( $base_path, '/' ) ) {
+			$dir = $base_path;
+		} else {
+			$slash = strrpos( $base_path, '/' );
+			$dir   = false === $slash ? '/' : substr( $base_path, 0, $slash + 1 );
 		}
 
-		return esc_url_raw( $scheme . '://' . $host . $port . trailingslashit( $path ) . ltrim( $href, '/' ) );
+		return esc_url_raw( $authority . trailingslashit( $dir ) . ltrim( $href, '/' ) );
 	}
 
 	/**
