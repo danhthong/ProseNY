@@ -45,17 +45,38 @@ Crawl4AI and its dependencies (`lxml`, Playwright) do **not** yet ship
 prebuilt wheels for Python 3.14, and building `lxml` from source on Windows
 fails without a local `libxml2`. Use **Python 3.11 or 3.12** instead.
 
-If you have [`uv`](https://docs.astral.sh/uv/) installed, the quickest path is:
+Requires [`uv`](https://docs.astral.sh/uv/) for the recommended setup scripts below.
+
+## Quick start (Windows)
+
+One-time setup:
+
+```powershell
+.\crawl4ai_forms\setup.ps1
+```
+
+Run enrichment later:
+
+```powershell
+.\crawl4ai_forms\run.ps1
+```
+
+Optional arguments are passed through to `enrich_forms.py`:
+
+```powershell
+.\crawl4ai_forms\run.ps1 --output forms_enriched.csv --errors errors.csv
+```
+
+## Setup (manual)
 
 ```bash
 cd crawl4ai_forms
 uv venv --python 3.11 .venv
-uv pip install -r requirements.txt
+uv pip install --python .venv\Scripts\python.exe -r requirements.txt
 .venv\Scripts\python.exe -m playwright install chromium
-.venv\Scripts\python.exe enrich_forms.py
 ```
 
-## Setup
+Alternative without `uv`:
 
 ```bash
 cd crawl4ai_forms
@@ -66,20 +87,18 @@ python -m venv .venv
 # source .venv/bin/activate
 
 pip install -r requirements.txt
-# One-time browser install used by Crawl4AI (Playwright)
 crawl4ai-setup
-# or, if the above is unavailable:
-# python -m playwright install chromium
+# or: python -m playwright install chromium
 ```
 
-## Run
+## Run (manual)
 
-```bash
-python enrich_forms.py
+```powershell
+.\crawl4ai_forms\.venv\Scripts\python.exe enrich_forms.py
 ```
 
 Optional arguments:
 
-```bash
-python enrich_forms.py --input ../Divorce_Forms_Extract.csv --output forms_enriched.csv --errors errors.csv
+```powershell
+.\crawl4ai_forms\.venv\Scripts\python.exe enrich_forms.py --input ../Divorce_Forms_Extract.csv --output forms_enriched.csv --errors errors.csv
 ```
