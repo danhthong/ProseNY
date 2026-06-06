@@ -65,3 +65,5 @@ public/wp-content/debug.log
 !public/wp-content/plugins/prose-core/
 !public/wp-content/themes/prose-app/
 
+# Don't track the download_pdfs folder
+collect_forms/crawl4ai_forms/download_pdfs
