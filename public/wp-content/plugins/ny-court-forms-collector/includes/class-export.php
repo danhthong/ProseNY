@@ -1,99 +1,124 @@
 <?php
-/**
- * Export Utility Class for generating output CSV files
- *
- * @package NYCFC
- */
 
-declare( strict_types = 1 );
+namespace NYCourtFormsCollector\Includes;
 
-namespace NYCFC;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 /**
- * Class to handle export functionality.
+ * Export crawl results to CSV file.
  */
 class Export {
 
 	/**
-	 * Generate output CSV from processed data.
+	 * Generate export CSV file on disk.
 	 *
-	 * @param array $data Array of processed form data.
-	 * @return string File path to generated CSV.
+	 * @return string|\WP_Error File path.
 	 */
-	public function generate_csv( array $data ): string {
-		if ( empty( $data ) ) {
-			return '';
+	public static function generate_file() {
+		$rows = CSV::get_export_rows();
+
+		if ( empty( $rows ) ) {
+			return new \WP_Error( 'no_data', __( 'No export data available.', 'ny-court-forms-collector' ) );
 		}
 
 		$upload_dir = wp_upload_dir();
-		$target_dir = $upload_dir['path'];
-		
-		if ( ! file_exists( $target_dir ) ) {
-			wp_mkdir_p( $target_dir );
+
+		if ( ! empty( $upload_dir['error'] ) ) {
+			return new \WP_Error( 'upload_dir', $upload_dir['error'] );
 		}
 
-		$filename = 'ny-court-forms-export-' . gmdate( 'Ymd-His' ) . '.csv';
-		$filepath = trailingslashit( $target_dir ) . $filename;
+		$export_dir = trailingslashit( $upload_dir['basedir'] ) . 'nycfc-exports';
 
-		// Open file handle.
-		$handle = fopen( $filepath, 'w' );
-
-		if ( ! $handle ) {
-			return '';
+		if ( ! wp_mkdir_p( $export_dir ) ) {
+			return new \WP_Error( 'mkdir_failed', __( 'Could not create export directory.', 'ny-court-forms-collector' ) );
 		}
 
-		// Write header row.
-		fputcsv( $handle, array(
-			__( 'Original Form Number', 'ny-court-forms-collector' ),
-			__( 'Original Form Title', 'ny-court-forms-collector' ),
-			__( 'Form URL', 'ny-court-forms-collector' ),
-			__( 'Extracted Form Number', 'ny-court-forms-collector' ),
-			__( 'Case Type', 'ny-court-forms-collector' ),
-			__( 'Legal Action', 'ny-court-forms-collector' ),
-			__( 'PDF URLs', 'ny-court-forms-collector' ),
-		) );
+		$filename = 'ny-court-forms-export-' . gmdate( 'Y-m-d-His' ) . '.csv';
+		$filepath = trailingslashit( $export_dir ) . $filename;
 
-		// Write data rows.
-		foreach ( $data as $row ) {
-			fputcsv( $handle, array(
-				$row['original_form_number'],
-				$row['original_form_title'],
-				$row['form_url'],
-				$row['form_number_detail'] ?? '',
-				$row['case_type'] ?? '',
-				$row['legal_action'] ?? '',
-				$row['pdf_urls'] ?? '',
-			) );
+		$handle = fopen( $filepath, 'wb' );
+
+		if ( false === $handle ) {
+			return new \WP_Error( 'file_open', __( 'Could not create export file.', 'ny-court-forms-collector' ) );
+		}
+
+		fwrite( $handle, "\xEF\xBB\xBF" );
+
+		$headers = array_keys( $rows[0] );
+		fputcsv( $handle, $headers );
+
+		foreach ( $rows as $row ) {
+			fputcsv( $handle, array_values( $row ) );
 		}
 
 		fclose( $handle );
+
+		CSV::set_export_file( $filepath );
+		CSV::add_log_entry( __( 'Export CSV generated.', 'ny-court-forms-collector' ) );
 
 		return $filepath;
 	}
 
 	/**
-	 * Send file for download.
-	 *
-	 * @param string $filepath File path.
-	 * @return void
+	 * Stream export file to browser.
 	 */
-	public function send_download( string $filepath ): void {
-		if ( ! file_exists( $filepath ) ) {
-			wp_send_json_error( array(
-				'message' => __( 'Export file not found.', 'ny-court-forms-collector' ),
-			) );
+	public static function download_file(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Permission denied.', 'ny-court-forms-collector' ) );
+		}
+
+		check_admin_referer( 'nycfc_download_export' );
+
+		$filepath = CSV::get_export_file();
+
+		if ( empty( $filepath ) || ! file_exists( $filepath ) ) {
+			$generated = self::generate_file();
+
+			if ( is_wp_error( $generated ) ) {
+				wp_die( esc_html( $generated->get_error_message() ) );
+			}
+
+			$filepath = $generated;
 		}
 
 		$filename = basename( $filepath );
 
-		header( 'Content-Description: File Transfer' );
-		header( 'Content-Type: text/csv' );
+		nocache_headers();
+		header( 'Content-Type: text/csv; charset=utf-8' );
 		header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
-		header( 'Expires: 0' );
-		header( 'Cache-Control: must-revalidate' );
-		header( 'Pragma: public' );
+		header( 'Content-Length: ' . filesize( $filepath ) );
 
-		readfile( $filepath );
+		$handle = fopen( $filepath, 'rb' );
+
+		if ( false === $handle ) {
+			wp_die( esc_html__( 'Could not read export file.', 'ny-court-forms-collector' ) );
+		}
+
+		while ( ! feof( $handle ) ) {
+			echo fread( $handle, 8192 );
+
+			if ( ob_get_level() > 0 ) {
+				ob_flush();
+			}
+
+			flush();
+		}
+
+		fclose( $handle );
 		exit;
+	}
+
+	/**
+	 * Get export download URL.
+	 *
+	 * @return string
+	 */
+	public static function get_download_url(): string {
+		return wp_nonce_url(
+			admin_url( 'admin-post.php?action=nycfc_download_export' ),
+			'nycfc_download_export'
+		);
 	}
 }
