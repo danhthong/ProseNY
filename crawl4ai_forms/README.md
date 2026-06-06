@@ -39,6 +39,22 @@ For every `Form URL` in the input CSV the script:
 
 Failures are written to `errors.csv`.
 
+## Environment note
+
+Crawl4AI and its dependencies (`lxml`, Playwright) do **not** yet ship
+prebuilt wheels for Python 3.14, and building `lxml` from source on Windows
+fails without a local `libxml2`. Use **Python 3.11 or 3.12** instead.
+
+If you have [`uv`](https://docs.astral.sh/uv/) installed, the quickest path is:
+
+```bash
+cd crawl4ai_forms
+uv venv --python 3.11 .venv
+uv pip install -r requirements.txt
+.venv\Scripts\python.exe -m playwright install chromium
+.venv\Scripts\python.exe enrich_forms.py
+```
+
 ## Setup
 
 ```bash
