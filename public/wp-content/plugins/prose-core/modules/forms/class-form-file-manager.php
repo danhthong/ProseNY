@@ -213,9 +213,16 @@ class Form_File_Manager {
 
 		WP_Filesystem();
 
-		$written = $wp_filesystem
-			? $wp_filesystem->put_contents( $dest, $body, FS_CHMOD_FILE )
-			: false;
+		$written = false;
+
+		if ( $wp_filesystem ) {
+			$written = $wp_filesystem->put_contents( $dest, $body, FS_CHMOD_FILE );
+		}
+
+		if ( ! $written ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+			$written = false !== file_put_contents( $dest, $body );
+		}
 
 		if ( ! $written || ! file_exists( $dest ) ) {
 			return new \WP_Error(
@@ -250,16 +257,21 @@ class Form_File_Manager {
 			return false;
 		}
 
-		if ( ! function_exists( 'proc_open' ) ) {
-			$error = __( 'proc_open is disabled; cannot run curl.', 'prose-core' );
-			return false;
-		}
-
+		// Every function used to build and run the curl command must be
+		// available. Managed hosts (e.g. Plesk) often disable a subset such as
+		// escapeshellarg or proc_close, which would otherwise fatal mid-import.
+		$required = array( 'proc_open', 'proc_close', 'escapeshellarg' );
 		$disabled = array_map( 'trim', explode( ',', (string) ini_get( 'disable_functions' ) ) );
 
-		if ( in_array( 'proc_open', $disabled, true ) ) {
-			$error = __( 'proc_open is disabled; cannot run curl.', 'prose-core' );
-			return false;
+		foreach ( $required as $function ) {
+			if ( ! function_exists( $function ) || in_array( $function, $disabled, true ) ) {
+				$error = sprintf(
+					/* translators: %s: PHP function name */
+					__( '%s is disabled on this host; cannot run curl.', 'prose-core' ),
+					$function
+				);
+				return false;
+			}
 		}
 
 		$binary = $this->locate_curl_binary();
@@ -371,14 +383,63 @@ class Form_File_Manager {
 			);
 		}
 
+		$allowed_paths = $this->open_basedir_paths();
+
 		foreach ( $candidates as $candidate ) {
-			if ( file_exists( $candidate ) ) {
+			// Skip probing paths outside an active open_basedir jail; file_exists()
+			// would otherwise emit a warning for every blocked candidate.
+			if ( ! empty( $allowed_paths ) && ! $this->path_within_open_basedir( $candidate, $allowed_paths ) ) {
+				continue;
+			}
+
+			if ( @file_exists( $candidate ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 				return $candidate;
 			}
 		}
 
 		// Fall back to the bare command and let the shell resolve it via PATH.
 		return $is_windows ? 'curl.exe' : 'curl';
+	}
+
+	/**
+	 * Get the configured open_basedir paths, if any.
+	 *
+	 * @return string[] List of allowed base paths (empty if unrestricted).
+	 */
+	private function open_basedir_paths(): array {
+		$setting = (string) ini_get( 'open_basedir' );
+
+		if ( '' === trim( $setting ) ) {
+			return array();
+		}
+
+		return array_values(
+			array_filter(
+				array_map( 'trim', explode( PATH_SEPARATOR, $setting ) ),
+				static fn( $path ) => '' !== $path
+			)
+		);
+	}
+
+	/**
+	 * Determine whether a candidate path falls within the open_basedir jail.
+	 *
+	 * @param string   $candidate Path to test.
+	 * @param string[] $allowed   Allowed base paths.
+	 * @return bool
+	 */
+	private function path_within_open_basedir( string $candidate, array $allowed ): bool {
+		$normalized = str_replace( '\\', '/', $candidate );
+
+		foreach ( $allowed as $base ) {
+			$base = str_replace( '\\', '/', $base );
+
+			if ( '' !== $base && str_starts_with( $normalized, $base ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**

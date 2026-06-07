@@ -18,6 +18,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+if ( version_compare( PHP_VERSION, '8.0', '<' ) ) {
+	add_action(
+		'admin_notices',
+		static function (): void {
+			printf(
+				'<div class="notice notice-error"><p>%s</p></div>',
+				esc_html(
+					sprintf(
+						/* translators: %s: required PHP version */
+						__( 'ProSe Core requires PHP %s or newer. The import tools will not work until PHP is upgraded.', 'prose-core' ),
+						'8.0'
+					)
+				)
+			);
+		}
+	);
+	return;
+}
+
 define( 'PROSE_CORE_VERSION', '1.0.0' );
 define( 'PROSE_CORE_FILE', __FILE__ );
 define( 'PROSE_CORE_PATH', plugin_dir_path( __FILE__ ) );

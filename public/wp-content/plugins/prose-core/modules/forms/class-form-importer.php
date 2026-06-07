@@ -35,8 +35,10 @@ class Form_Importer {
 
 	/**
 	 * Number of CSV rows processed per AJAX batch.
+	 *
+	 * Keep this low on shared hosting — each row may download a PDF.
 	 */
-	private const BATCH_SIZE = 5;
+	private const BATCH_SIZE = 1;
 
 	/**
 	 * Transient prefix for import jobs.
@@ -129,6 +131,7 @@ class Form_Importer {
 					'progress'  => __( 'Processing %1$d of %2$d forms...', 'prose-core' ),
 					'completed' => __( 'Import complete: %1$d created, %2$d updated, %3$d failed.', 'prose-core' ),
 					'error'     => __( 'An error occurred during import.', 'prose-core' ),
+					'httpError' => __( 'Server error (HTTP %s). Check PHP error logs or enable WP_DEBUG.', 'prose-core' ),
 				),
 			)
 		);
@@ -307,43 +310,72 @@ class Form_Importer {
 	 * @return void
 	 */
 	public function ajax_process_batch(): void {
-		check_ajax_referer( self::AJAX_ACTION, 'nonce' );
+		try {
+			check_ajax_referer( self::AJAX_ACTION, 'nonce' );
 
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( array( 'message' => __( 'Permission denied.', 'prose-core' ) ), 403 );
-		}
-
-		$token = isset( $_POST['token'] ) ? sanitize_text_field( wp_unslash( $_POST['token'] ) ) : '';
-		$job   = '' !== $token ? get_transient( self::JOB_PREFIX . $token ) : false;
-
-		if ( ! is_array( $job ) ) {
-			wp_send_json_error( array( 'message' => __( 'Import job not found or expired.', 'prose-core' ) ), 404 );
-		}
-
-		$batch = $this->process_batch( $job );
-
-		set_transient( self::JOB_PREFIX . $token, $batch['job'], HOUR_IN_SECONDS );
-
-		$done = $batch['job']['offset'] >= $batch['job']['total'];
-
-		if ( $done ) {
-			if ( ! empty( $batch['job']['file'] ) && file_exists( $batch['job']['file'] ) ) {
-				wp_delete_file( $batch['job']['file'] );
+			if ( ! current_user_can( 'manage_options' ) ) {
+				wp_send_json_error( array( 'message' => __( 'Permission denied.', 'prose-core' ) ), 403 );
 			}
-			delete_transient( self::JOB_PREFIX . $token );
-		}
 
-		wp_send_json_success(
-			array(
-				'processed' => (int) $batch['job']['offset'],
-				'total'     => (int) $batch['job']['total'],
-				'created'   => (int) $batch['job']['created'],
-				'updated'   => (int) $batch['job']['updated'],
-				'failed'    => (int) $batch['job']['failed'],
-				'done'      => $done,
-				'results'   => $batch['results'],
-			)
-		);
+			if ( function_exists( 'set_time_limit' ) ) {
+				set_time_limit( 300 );
+			}
+
+			$token = isset( $_POST['token'] ) ? sanitize_text_field( wp_unslash( $_POST['token'] ) ) : '';
+			$job   = '' !== $token ? get_transient( self::JOB_PREFIX . $token ) : false;
+
+			if ( ! is_array( $job ) ) {
+				wp_send_json_error( array( 'message' => __( 'Import job not found or expired.', 'prose-core' ) ), 404 );
+			}
+
+			if ( empty( $job['file'] ) || ! file_exists( (string) $job['file'] ) ) {
+				wp_send_json_error(
+					array(
+						'message' => __( 'Import file is missing. Please upload the CSV again.', 'prose-core' ),
+					),
+					404
+				);
+			}
+
+			$batch = $this->process_batch( $job );
+
+			set_transient( self::JOB_PREFIX . $token, $batch['job'], HOUR_IN_SECONDS );
+
+			$done = $batch['job']['offset'] >= $batch['job']['total'];
+
+			if ( $done ) {
+				if ( ! empty( $batch['job']['file'] ) && file_exists( $batch['job']['file'] ) ) {
+					wp_delete_file( $batch['job']['file'] );
+				}
+				delete_transient( self::JOB_PREFIX . $token );
+			}
+
+			wp_send_json_success(
+				array(
+					'processed' => (int) $batch['job']['offset'],
+					'total'     => (int) $batch['job']['total'],
+					'created'   => (int) $batch['job']['created'],
+					'updated'   => (int) $batch['job']['updated'],
+					'failed'    => (int) $batch['job']['failed'],
+					'done'      => $done,
+					'results'   => $batch['results'],
+				)
+			);
+		} catch ( \Throwable $exception ) {
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( 'ProSe import batch failed: ' . $exception->getMessage() );
+			}
+
+			wp_send_json_error(
+				array(
+					'message' => ( defined( 'WP_DEBUG' ) && WP_DEBUG )
+						? $exception->getMessage()
+						: __( 'An error occurred during import.', 'prose-core' ),
+				),
+				500
+			);
+		}
 	}
 
 	/**
@@ -473,7 +505,13 @@ class Form_Importer {
 			++$job['offset'];
 			++$processed;
 
-			if ( $processed >= self::BATCH_SIZE ) {
+			$batch_size = (int) apply_filters( 'prose_core_import_batch_size', self::BATCH_SIZE );
+
+			if ( $batch_size < 1 ) {
+				$batch_size = 1;
+			}
+
+			if ( $processed >= $batch_size ) {
 				break;
 			}
 		}

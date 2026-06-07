@@ -383,16 +383,27 @@ class Http {
 	/**
 	 * Determine whether the curl binary can be invoked.
 	 *
+	 * Every process function used by run_process() must be available. Hosts
+	 * (e.g. Plesk) frequently disable a subset such as proc_close while leaving
+	 * proc_open callable, which previously caused a fatal error mid-request.
+	 *
 	 * @return bool
 	 */
 	private static function curl_available(): bool {
-		if ( ! function_exists( 'proc_open' ) ) {
-			return false;
+		$required = array( 'proc_open', 'proc_close' );
+
+		$disabled = array_map(
+			'trim',
+			explode( ',', (string) ini_get( 'disable_functions' ) )
+		);
+
+		foreach ( $required as $function ) {
+			if ( ! function_exists( $function ) || in_array( $function, $disabled, true ) ) {
+				return false;
+			}
 		}
 
-		$disabled = array_map( 'trim', explode( ',', (string) ini_get( 'disable_functions' ) ) );
-
-		return ! in_array( 'proc_open', $disabled, true );
+		return true;
 	}
 
 	/**
@@ -540,12 +551,59 @@ class Http {
 			);
 		}
 
+		$allowed_paths = self::open_basedir_paths();
+
 		foreach ( $candidates as $candidate ) {
-			if ( file_exists( $candidate ) ) {
+			// Skip probing paths outside an active open_basedir jail; file_exists()
+			// would otherwise emit a warning for every blocked candidate.
+			if ( ! empty( $allowed_paths ) && ! self::path_within_open_basedir( $candidate, $allowed_paths ) ) {
+				continue;
+			}
+
+			if ( @file_exists( $candidate ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 				return $candidate;
 			}
 		}
 
 		return $is_windows ? 'curl.exe' : 'curl';
+	}
+
+	/**
+	 * Get the configured open_basedir paths, if any.
+	 *
+	 * @return string[] List of allowed base paths (empty if unrestricted).
+	 */
+	private static function open_basedir_paths(): array {
+		$setting = (string) ini_get( 'open_basedir' );
+
+		if ( '' === trim( $setting ) ) {
+			return array();
+		}
+
+		return array_filter(
+			array_map( 'trim', explode( PATH_SEPARATOR, $setting ) ),
+			static fn( $path ) => '' !== $path
+		);
+	}
+
+	/**
+	 * Determine whether a candidate path falls within the open_basedir jail.
+	 *
+	 * @param string   $candidate Path to test.
+	 * @param string[] $allowed   Allowed base paths.
+	 * @return bool
+	 */
+	private static function path_within_open_basedir( string $candidate, array $allowed ): bool {
+		$normalized = str_replace( '\\', '/', $candidate );
+
+		foreach ( $allowed as $base ) {
+			$base = str_replace( '\\', '/', $base );
+
+			if ( '' !== $base && str_starts_with( $normalized, $base ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }

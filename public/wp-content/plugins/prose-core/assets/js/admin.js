@@ -84,6 +84,26 @@
 			}
 		}
 
+		function parseJsonResponse( response ) {
+			return response.text().then( function ( text ) {
+				if ( ! text ) {
+					if ( ! response.ok ) {
+						throw new Error( cfg.i18n.httpError.replace( '%s', String( response.status ) ) );
+					}
+					return null;
+				}
+
+				try {
+					return JSON.parse( text );
+				} catch ( parseError ) {
+					if ( ! response.ok ) {
+						throw new Error( cfg.i18n.httpError.replace( '%s', String( response.status ) ) );
+					}
+					throw parseError;
+				}
+			} );
+		}
+
 		function processBatch() {
 			var body = new URLSearchParams();
 			body.append( 'action', cfg.action );
@@ -96,7 +116,7 @@
 				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
 				body: body.toString()
 			} ).then( function ( response ) {
-				return response.json();
+				return parseJsonResponse( response );
 			} ).then( function ( json ) {
 				if ( ! json || ! json.success ) {
 					status.textContent = ( json && json.data && json.data.message ) || cfg.i18n.error;
@@ -114,8 +134,8 @@
 
 				status.textContent = format( cfg.i18n.progress, [ data.processed, data.total ] );
 				processBatch();
-			} ).catch( function () {
-				status.textContent = cfg.i18n.error;
+			} ).catch( function ( error ) {
+				status.textContent = ( error && error.message ) ? error.message : cfg.i18n.error;
 			} );
 		}
 
