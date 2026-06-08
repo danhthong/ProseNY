@@ -59,6 +59,13 @@ jobs:
                       "text": "*Author:*\n${{ github.actor }}"
                     }
                   ]
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Commit Message:*\n>${{ github.event.head_commit.message }}"
+                  }
                 }
               ]
             }' \
