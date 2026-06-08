@@ -1,13 +1,14 @@
 <?php
 /**
- * PDF analysis service (stub — not yet implemented).
- *
- * Extension point for the future PDF Analysis Engine.
+ * PDF analysis service — text extraction, fillable detection, field normalization.
  *
  * @package ProSeCore
  */
 
 namespace ProSe\Core\Forms;
+
+use ProSe\Core\Forms\Classification\Field_Normalizer;
+use ProSe\Core\Forms\Pdf\Pdf_Engine_Factory;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -26,12 +27,21 @@ class Pdf_Analyzer {
 	private Form_Repository $repository;
 
 	/**
+	 * Field normalizer.
+	 *
+	 * @var Field_Normalizer
+	 */
+	private Field_Normalizer $normalizer;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Form_Repository $repository Form repository.
+	 * @param Form_Repository  $repository Form repository.
+	 * @param Field_Normalizer $normalizer Field normalizer.
 	 */
-	public function __construct( Form_Repository $repository ) {
+	public function __construct( Form_Repository $repository, Field_Normalizer $normalizer ) {
 		$this->repository = $repository;
+		$this->normalizer = $normalizer;
 	}
 
 	/**
@@ -39,13 +49,61 @@ class Pdf_Analyzer {
 	 *
 	 * @param int $post_id Form post ID.
 	 * @return array<string, mixed>
-	 *
-	 * @throws Not_Implemented_Exception When called before implementation.
 	 */
 	public function analyze( int $post_id ): array {
-		throw new Not_Implemented_Exception(
-			__( 'PDF analysis is not yet implemented.', 'prose-core' )
+		$file_path = $this->resolve_pdf_path( $post_id );
+
+		if ( '' === $file_path ) {
+			return array(
+				'success' => false,
+				'message' => __( 'No PDF file found for this form.', 'prose-core' ),
+			);
+		}
+
+		$text   = $this->extract_text( $file_path );
+		$fields = $this->extract_fields( $file_path );
+		$normalized = $this->normalize_fields( $fields );
+
+		$data = array(
+			'text'            => $text,
+			'fillable'        => $this->detect_fillable( $fields ),
+			'field_count'     => count( $fields ),
+			'fields_json'     => array(
+				'field_count' => count( $fields ),
+				'fields'      => array_column( $fields, 'name' ),
+			),
+			'fillable_fields' => $normalized,
+			'analyzed_at'     => gmdate( 'c' ),
+			'engine'          => Pdf_Engine_Factory::get_engine()->get_id(),
 		);
+
+		$this->save_metadata( $post_id, $data );
+
+		return array_merge( array( 'success' => true ), $data );
+	}
+
+	/**
+	 * Extract text from a PDF file (first 3 pages).
+	 *
+	 * @param string $file_path Local PDF path.
+	 * @return string
+	 */
+	public function extract_text( string $file_path ): string {
+		return Pdf_Engine_Factory::get_engine()->extract_text( $file_path, 3 );
+	}
+
+	/**
+	 * Whether the PDF has fillable AcroForm fields.
+	 *
+	 * @param array<int, array<string, mixed>>|string $fields_or_path Fields array or file path.
+	 * @return bool
+	 */
+	public function detect_fillable( $fields_or_path ): bool {
+		if ( is_string( $fields_or_path ) ) {
+			$fields_or_path = $this->extract_fields( $fields_or_path );
+		}
+
+		return is_array( $fields_or_path ) && count( $fields_or_path ) > 0;
 	}
 
 	/**
@@ -53,13 +111,9 @@ class Pdf_Analyzer {
 	 *
 	 * @param string $file_path Local PDF path.
 	 * @return array<int, array<string, mixed>>
-	 *
-	 * @throws Not_Implemented_Exception When called before implementation.
 	 */
 	public function extract_fields( string $file_path ): array {
-		throw new Not_Implemented_Exception(
-			__( 'PDF field extraction is not yet implemented.', 'prose-core' )
-		);
+		return Pdf_Engine_Factory::get_engine()->extract_fields( $file_path );
 	}
 
 	/**
@@ -67,13 +121,9 @@ class Pdf_Analyzer {
 	 *
 	 * @param array<int, array<string, mixed>> $fields Raw fields.
 	 * @return array<int, array<string, mixed>>
-	 *
-	 * @throws Not_Implemented_Exception When called before implementation.
 	 */
 	public function normalize_fields( array $fields ): array {
-		throw new Not_Implemented_Exception(
-			__( 'PDF field normalization is not yet implemented.', 'prose-core' )
-		);
+		return $this->normalizer->normalize( $fields );
 	}
 
 	/**
@@ -82,12 +132,42 @@ class Pdf_Analyzer {
 	 * @param int                  $post_id Form post ID.
 	 * @param array<string, mixed> $data    Analysis data.
 	 * @return bool
-	 *
-	 * @throws Not_Implemented_Exception When called before implementation.
 	 */
 	public function save_metadata( int $post_id, array $data ): bool {
-		throw new Not_Implemented_Exception(
-			__( 'PDF metadata saving via analyzer is not yet implemented.', 'prose-core' )
+		return $this->repository->update_pdf_metadata(
+			$post_id,
+			array(
+				'fillable'        => (bool) ( $data['fillable'] ?? false ),
+				'field_count'     => (int) ( $data['field_count'] ?? 0 ),
+				'fields_json'     => $data['fields_json'] ?? array(),
+				'analyzed_at'     => (string) ( $data['analyzed_at'] ?? gmdate( 'c' ) ),
+				'fillable_fields' => $data['fillable_fields'] ?? array(),
+			)
 		);
+	}
+
+	/**
+	 * Resolve local PDF path for a form post.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return string
+	 */
+	public function resolve_pdf_path( int $post_id ): string {
+		$file_name = (string) get_post_meta( $post_id, Form_Meta::META_FILE_NAME, true );
+
+		if ( '' === $file_name ) {
+			return '';
+		}
+
+		$file_manager = new Form_File_Manager();
+		$upload_dir   = $file_manager->get_upload_dir();
+
+		if ( is_wp_error( $upload_dir ) ) {
+			return '';
+		}
+
+		$path = $upload_dir['path'] . sanitize_file_name( $file_name );
+
+		return is_readable( $path ) ? $path : '';
 	}
 }

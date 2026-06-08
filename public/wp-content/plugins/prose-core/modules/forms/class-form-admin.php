@@ -31,12 +31,21 @@ class Form_Admin {
 	private Form_Repository $repository;
 
 	/**
+	 * Classification admin (optional tab renderer).
+	 *
+	 * @var Form_Classification_Admin|null
+	 */
+	private ?Form_Classification_Admin $classification_admin;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Form_Repository $repository Form repository.
+	 * @param Form_Repository              $repository           Form repository.
+	 * @param Form_Classification_Admin|null $classification_admin Classification admin.
 	 */
-	public function __construct( Form_Repository $repository ) {
-		$this->repository = $repository;
+	public function __construct( Form_Repository $repository, ?Form_Classification_Admin $classification_admin = null ) {
+		$this->repository           = $repository;
+		$this->classification_admin = $classification_admin;
 	}
 
 	/**
@@ -153,6 +162,7 @@ class Form_Admin {
 				<button type="button" class="prose-form-tabs__tab is-active" role="tab" aria-selected="true" data-tab="general"><?php esc_html_e( 'General', 'prose-core' ); ?></button>
 				<button type="button" class="prose-form-tabs__tab" role="tab" aria-selected="false" data-tab="pdf"><?php esc_html_e( 'PDF', 'prose-core' ); ?></button>
 				<button type="button" class="prose-form-tabs__tab" role="tab" aria-selected="false" data-tab="analysis"><?php esc_html_e( 'PDF Analysis', 'prose-core' ); ?></button>
+				<button type="button" class="prose-form-tabs__tab" role="tab" aria-selected="false" data-tab="classification"><?php esc_html_e( 'Classification', 'prose-core' ); ?></button>
 				<button type="button" class="prose-form-tabs__tab" role="tab" aria-selected="false" data-tab="automation"><?php esc_html_e( 'Automation', 'prose-core' ); ?></button>
 				<button type="button" class="prose-form-tabs__tab" role="tab" aria-selected="false" data-tab="ai"><?php esc_html_e( 'AI', 'prose-core' ); ?></button>
 			</nav>
@@ -253,8 +263,14 @@ class Form_Admin {
 						<td><span class="prose-readonly"><?php echo esc_html( $values['pdf_analyzed_at'] ?: '—' ); ?></span></td>
 					</tr>
 				</table>
-				<p class="description"><?php esc_html_e( 'PDF analysis fields are read-only until the PDF Analysis Engine is implemented.', 'prose-core' ); ?></p>
+				<p class="description"><?php esc_html_e( 'PDF analysis fields are populated automatically by the Form Intelligence Engine.', 'prose-core' ); ?></p>
 			</div>
+
+			<?php if ( $this->classification_admin ) : ?>
+			<div class="prose-form-tabs__panel" data-panel="classification" role="tabpanel" hidden>
+				<?php $this->classification_admin->render_tab( $post ); ?>
+			</div>
+			<?php endif; ?>
 
 			<div class="prose-form-tabs__panel" data-panel="automation" role="tabpanel" hidden>
 				<table class="form-table" role="presentation">

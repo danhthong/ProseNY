@@ -60,14 +60,27 @@ class Form_Importer {
 	private Form_File_Manager $file_manager;
 
 	/**
+	 * Classification engine.
+	 *
+	 * @var Classification\Classification_Engine|null
+	 */
+	private ?Classification\Classification_Engine $classification_engine;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Form_Repository   $repository   Form repository.
-	 * @param Form_File_Manager $file_manager File manager.
+	 * @param Form_Repository                    $repository            Form repository.
+	 * @param Form_File_Manager                  $file_manager          File manager.
+	 * @param Classification\Classification_Engine|null $classification_engine Classification engine.
 	 */
-	public function __construct( Form_Repository $repository, Form_File_Manager $file_manager ) {
-		$this->repository   = $repository;
-		$this->file_manager = $file_manager;
+	public function __construct(
+		Form_Repository $repository,
+		Form_File_Manager $file_manager,
+		?Classification\Classification_Engine $classification_engine = null
+	) {
+		$this->repository            = $repository;
+		$this->file_manager          = $file_manager;
+		$this->classification_engine = $classification_engine;
 	}
 
 	/**
@@ -599,6 +612,28 @@ class Form_Importer {
 
 		$status  = ! empty( $result['created'] ) ? 'created' : 'updated';
 		$message = ! empty( $messages ) ? implode( ' ', $messages ) : __( 'Imported successfully.', 'prose-core' );
+
+		$post_id = (int) $result['post_id'];
+
+		if ( $this->classification_engine && apply_filters( 'prose_core_auto_classify_on_import', true ) ) {
+			$csv_hints = array(
+				'court'          => ! empty( $courts[0] ) ? $courts[0] : '',
+				'case_type'      => ! empty( $case_types[0] ) ? $case_types[0] : '',
+				'workflow_stage' => '',
+			);
+
+			$classify = $this->classification_engine->classify( $post_id, $csv_hints );
+
+			if ( ! empty( $classify['success'] ) ) {
+				$message .= ' ' . __( 'Form classified from PDF.', 'prose-core' );
+
+				if ( ! empty( $classify['needs_review'] ) ) {
+					$message .= ' ' . __( 'Flagged for manual review.', 'prose-core' );
+				}
+			} elseif ( ! empty( $classify['message'] ) ) {
+				$message .= ' ' . $classify['message'];
+			}
+		}
 
 		return array(
 			'form_id' => $form_id,

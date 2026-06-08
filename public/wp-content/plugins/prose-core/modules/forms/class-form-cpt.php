@@ -186,6 +186,9 @@ class Form_CPT {
 				$new_columns['prose_required']       = __( 'Required', 'prose-core' );
 				$new_columns['prose_pdf']            = __( 'PDF', 'prose-core' );
 				$new_columns['prose_pdf_fields']     = __( 'PDF Fields', 'prose-core' );
+				$new_columns['prose_needs_review']   = __( 'Needs Review', 'prose-core' );
+				$new_columns['prose_confidence']     = __( 'Confidence', 'prose-core' );
+				$new_columns['prose_scan']           = __( 'Metadata', 'prose-core' );
 				continue;
 			}
 
@@ -266,6 +269,38 @@ class Form_CPT {
 				} else {
 					echo '<span aria-hidden="true">&#8212;</span>';
 				}
+				break;
+
+			case 'prose_needs_review':
+				$needs = (bool) get_post_meta( $post_id, Form_Meta::META_NEEDS_REVIEW, true );
+				echo $needs
+					? '<span class="prose-badge prose-badge--warning">' . esc_html__( 'Yes', 'prose-core' ) . '</span>'
+					: '<span aria-hidden="true">&#8212;</span>';
+				break;
+
+			case 'prose_confidence':
+				$confidence = get_post_meta( $post_id, Form_Meta::META_CLASSIFICATION_CONFIDENCE, true );
+
+				if ( '' !== (string) $confidence ) {
+					echo esc_html( (string) $confidence . '%' );
+				} else {
+					echo '<span aria-hidden="true">&#8212;</span>';
+				}
+				break;
+
+			case 'prose_scan':
+				$has_pdf = '' !== (string) get_post_meta( $post_id, Form_Meta::META_FILE_NAME, true );
+
+				if ( ! $has_pdf || ! current_user_can( 'edit_post', $post_id ) ) {
+					echo '<span aria-hidden="true">&#8212;</span>';
+					break;
+				}
+
+				printf(
+					'<button type="button" class="button button-small prose-scan-btn" data-post-id="%1$d">%2$s</button> <span class="prose-scan-status" aria-live="polite"></span>',
+					(int) $post_id,
+					esc_html__( 'Scan &amp; Fill', 'prose-core' )
+				);
 				break;
 		}
 	}

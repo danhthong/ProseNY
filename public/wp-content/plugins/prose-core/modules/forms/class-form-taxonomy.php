@@ -191,8 +191,41 @@ class Form_Taxonomy {
 			$this->ensure_term( $court, self::TAXONOMY_COURT );
 		}
 
-		$workflow_stages = array(
+		$case_types = array(
 			'Divorce' => array(
+				__( 'Uncontested Divorce', 'prose-core' ),
+				__( 'Contested Divorce', 'prose-core' ),
+				__( 'Divorce With Children', 'prose-core' ),
+				__( 'Divorce Without Children', 'prose-core' ),
+				__( 'Post Divorce', 'prose-core' ),
+				__( 'Orders of Protection', 'prose-core' ),
+			),
+			'Family Court' => array(
+				__( 'Child Support', 'prose-core' ),
+				__( 'Child Support Modification', 'prose-core' ),
+				__( 'Child Support Enforcement', 'prose-core' ),
+				__( 'Child Custody', 'prose-core' ),
+				__( 'Visitation', 'prose-core' ),
+				__( 'Paternity', 'prose-core' ),
+				__( 'Family Offense', 'prose-core' ),
+				__( 'Orders of Protection', 'prose-core' ),
+			),
+		);
+
+		foreach ( $case_types as $parent => $children ) {
+			$parent_id = $this->ensure_term( $parent, self::TAXONOMY_CASE_TYPE );
+
+			if ( ! $parent_id ) {
+				continue;
+			}
+
+			foreach ( $children as $child ) {
+				$this->ensure_term( $child, self::TAXONOMY_CASE_TYPE, $parent_id );
+			}
+		}
+
+		$workflow_stages = array(
+			'Supreme Court' => array(
 				__( 'Commencement', 'prose-core' ),
 				__( 'Service', 'prose-core' ),
 				__( 'Response', 'prose-core' ),
@@ -202,6 +235,7 @@ class Form_Taxonomy {
 			),
 			'Family Court' => array(
 				__( 'Petition', 'prose-core' ),
+				__( 'Service', 'prose-core' ),
 				__( 'Hearing', 'prose-core' ),
 				__( 'Order', 'prose-core' ),
 				__( 'Enforcement', 'prose-core' ),
@@ -220,6 +254,63 @@ class Form_Taxonomy {
 				$this->ensure_term( $child, self::TAXONOMY_WORKFLOW_STAGE, $parent_id );
 			}
 		}
+	}
+
+	/**
+	 * Ensure a child term under a named parent (court-aware resolution).
+	 *
+	 * @param string $child_name  Child term name.
+	 * @param string $parent_name Parent term name.
+	 * @param string $taxonomy    Taxonomy slug.
+	 * @return int|null
+	 */
+	public function ensure_child_term( string $child_name, string $parent_name, string $taxonomy ): ?int {
+		$parent_id = $this->ensure_term( $parent_name, $taxonomy );
+
+		if ( ! $parent_id ) {
+			return null;
+		}
+
+		return $this->ensure_term( $child_name, $taxonomy, $parent_id );
+	}
+
+	/**
+	 * Resolve workflow stage parent from detected court.
+	 *
+	 * @param string $court Detected court name.
+	 * @return string
+	 */
+	public function workflow_parent_for_court( string $court ): string {
+		if ( str_contains( strtoupper( $court ), 'FAMILY' ) ) {
+			return __( 'Family Court', 'prose-core' );
+		}
+
+		return __( 'Supreme Court', 'prose-core' );
+	}
+
+	/**
+	 * Resolve case type parent from detected court and case type.
+	 *
+	 * @param string $court     Detected court.
+	 * @param string $case_type Detected case type.
+	 * @return string
+	 */
+	public function case_type_parent_for_court( string $court, string $case_type ): string {
+		$family_types = array(
+			'Child Support',
+			'Child Support Modification',
+			'Child Support Enforcement',
+			'Child Custody',
+			'Visitation',
+			'Paternity',
+			'Family Offense',
+		);
+
+		if ( in_array( $case_type, $family_types, true ) || str_contains( strtoupper( $court ), 'FAMILY' ) ) {
+			return __( 'Family Court', 'prose-core' );
+		}
+
+		return __( 'Divorce', 'prose-core' );
 	}
 
 	/**
@@ -251,7 +342,7 @@ class Form_Taxonomy {
 	 * @param int|null $parent   Parent term ID.
 	 * @return int|null
 	 */
-	private function ensure_term( string $name, string $taxonomy, ?int $parent = null ): ?int {
+	public function ensure_term( string $name, string $taxonomy, ?int $parent = null ): ?int {
 		$name = trim( $name );
 
 		if ( '' === $name ) {

@@ -40,6 +40,21 @@ class Form_Meta {
 	public const META_PDF_FIELDS_JSON  = 'prose_pdf_fields_json';
 	public const META_PDF_ANALYZED_AT  = 'prose_pdf_analyzed_at';
 
+	// Classification (Form Intelligence Engine).
+	public const META_SUPPORTED_COURT            = 'prose_supported_court';
+	public const META_DETECTED_COURT             = 'prose_detected_court';
+	public const META_DETECTED_COUNTY            = 'prose_detected_county';
+	public const META_DETECTED_CASE_TYPE         = 'prose_detected_case_type';
+	public const META_DETECTED_WORKFLOW_STAGE    = 'prose_detected_workflow_stage';
+	public const META_CLASSIFICATION_CONFIDENCE  = 'prose_classification_confidence';
+	public const META_CLASSIFICATION_SOURCE      = 'prose_classification_source';
+	public const META_CLASSIFICATION_WARNING     = 'prose_classification_warning';
+	public const META_NEEDS_REVIEW               = 'prose_needs_review';
+	public const META_MANUAL_OVERRIDE            = 'prose_manual_override';
+	public const META_QUESTIONNAIRE_KEYS         = 'prose_questionnaire_keys';
+	public const META_WORKFLOW_PACKAGE           = 'prose_workflow_package';
+	public const META_CLASSIFICATION_LOG         = 'prose_classification_log';
+
 	// Automation.
 	public const META_FILLABLE_FIELDS      = 'prose_fillable_fields';
 	public const META_FIELD_MAPPING_JSON   = 'prose_field_mapping_json';
@@ -80,6 +95,11 @@ class Form_Meta {
 			self::META_FILE_URL,
 			self::META_SOURCE_PDF_URL,
 			self::META_PDF_ANALYZED_AT,
+			self::META_DETECTED_COURT,
+			self::META_DETECTED_COUNTY,
+			self::META_DETECTED_CASE_TYPE,
+			self::META_DETECTED_WORKFLOW_STAGE,
+			self::META_CLASSIFICATION_SOURCE,
 		);
 	}
 
@@ -92,6 +112,7 @@ class Form_Meta {
 		return array(
 			self::META_AI_SUMMARY,
 			self::META_PLAIN_LANGUAGE_DESCRIPTION,
+			self::META_CLASSIFICATION_WARNING,
 		);
 	}
 
@@ -108,6 +129,9 @@ class Form_Meta {
 			self::META_FILLABLE_FIELDS,
 			self::META_FIELD_MAPPING_JSON,
 			self::META_COMMON_MISTAKES,
+			self::META_QUESTIONNAIRE_KEYS,
+			self::META_WORKFLOW_PACKAGE,
+			self::META_CLASSIFICATION_LOG,
 		);
 	}
 
@@ -120,6 +144,9 @@ class Form_Meta {
 		return array(
 			self::META_REQUIRED,
 			self::META_PDF_FILLABLE,
+			self::META_SUPPORTED_COURT,
+			self::META_NEEDS_REVIEW,
+			self::META_MANUAL_OVERRIDE,
 		);
 	}
 
@@ -132,6 +159,7 @@ class Form_Meta {
 		return array(
 			self::META_WORKFLOW_ORDER,
 			self::META_PDF_FIELD_COUNT,
+			self::META_CLASSIFICATION_CONFIDENCE,
 		);
 	}
 

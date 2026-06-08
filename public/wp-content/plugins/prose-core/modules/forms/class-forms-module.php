@@ -51,6 +51,20 @@ final class Forms_Module implements Module_Interface {
 	private Form_Admin $admin;
 
 	/**
+	 * Classification admin handler.
+	 *
+	 * @var Form_Classification_Admin|null
+	 */
+	private ?Form_Classification_Admin $classification_admin = null;
+
+	/**
+	 * Classification engine.
+	 *
+	 * @var Classification\Classification_Engine|null
+	 */
+	private ?Classification\Classification_Engine $classification_engine = null;
+
+	/**
 	 * Form file manager.
 	 *
 	 * @var Form_File_Manager
@@ -80,8 +94,35 @@ final class Forms_Module implements Module_Interface {
 		$this->cpt          = new Form_CPT();
 		$this->taxonomy     = new Form_Taxonomy();
 		$this->meta         = new Form_Meta();
-		$this->admin        = new Form_Admin( $this->repository );
-		$this->importer     = new Form_Importer( $this->repository, $this->file_manager );
+
+		$field_normalizer = new Classification\Field_Normalizer();
+		$pdf_analyzer     = new Pdf_Analyzer( $this->repository, $field_normalizer );
+
+		$court_classifier     = new Classification\Court_Classifier();
+		$county_classifier    = new Classification\County_Classifier();
+		$case_type_classifier = new Classification\Case_Type_Classifier();
+		$workflow_classifier  = new Classification\Workflow_Classifier();
+		$questionnaire_mapper = new Classification\Questionnaire_Mapper();
+		$dependency_resolver  = new Classification\Dependency_Resolver();
+		$package_builder      = new Classification\Workflow_Package_Builder();
+		$ai_summarizer        = new Classification\Ai_Summarizer();
+
+		$this->classification_engine = new Classification\Classification_Engine(
+			$pdf_analyzer,
+			$this->repository,
+			$court_classifier,
+			$county_classifier,
+			$case_type_classifier,
+			$workflow_classifier,
+			$questionnaire_mapper,
+			$dependency_resolver,
+			$package_builder,
+			$ai_summarizer
+		);
+
+		$this->classification_admin = new Form_Classification_Admin( $this->classification_engine );
+		$this->admin                = new Form_Admin( $this->repository, $this->classification_admin );
+		$this->importer             = new Form_Importer( $this->repository, $this->file_manager, $this->classification_engine );
 	}
 
 	/**
@@ -96,6 +137,10 @@ final class Forms_Module implements Module_Interface {
 		$this->meta->register( $loader );
 		$this->admin->register( $loader );
 		$this->importer->register( $loader );
+
+		if ( $this->classification_admin ) {
+			$this->classification_admin->register( $loader );
+		}
 	}
 
 	/**
@@ -114,5 +159,14 @@ final class Forms_Module implements Module_Interface {
 	 */
 	public function get_file_manager(): Form_File_Manager {
 		return $this->file_manager;
+	}
+
+	/**
+	 * Get the classification engine.
+	 *
+	 * @return Classification\Classification_Engine|null
+	 */
+	public function get_classification_engine(): ?Classification\Classification_Engine {
+		return $this->classification_engine;
 	}
 }

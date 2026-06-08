@@ -459,11 +459,202 @@ class Form_Repository {
 			update_post_meta( $post_id, Form_Meta::META_PDF_FIELDS_JSON, Form_Meta::sanitize_json( $data['fields_json'] ) );
 		}
 
+		if ( isset( $data['fillable_fields'] ) ) {
+			update_post_meta( $post_id, Form_Meta::META_FILLABLE_FIELDS, Form_Meta::sanitize_json( $data['fillable_fields'] ) );
+		}
+
 		if ( isset( $data['analyzed_at'] ) ) {
 			update_post_meta( $post_id, Form_Meta::META_PDF_ANALYZED_AT, sanitize_text_field( (string) $data['analyzed_at'] ) );
 		}
 
 		return true;
+	}
+
+	/**
+	 * Save classification results to a form post.
+	 *
+	 * @param int                  $post_id Form post ID.
+	 * @param array<string, mixed> $result  Classification result.
+	 * @param bool                 $force   Force overwrite manual override.
+	 * @return bool
+	 */
+	public function save_classification( int $post_id, array $result, bool $force = false ): bool {
+		if ( Form_CPT::POST_TYPE !== get_post_type( $post_id ) ) {
+			return false;
+		}
+
+		$manual = (bool) get_post_meta( $post_id, Form_Meta::META_MANUAL_OVERRIDE, true );
+
+		if ( $manual && ! $force ) {
+			$this->append_classification_log( $post_id, $result, 'skipped_manual_override' );
+			return false;
+		}
+
+		$string_map = array(
+			'detected_court'            => Form_Meta::META_DETECTED_COURT,
+			'detected_county'           => Form_Meta::META_DETECTED_COUNTY,
+			'detected_case_type'        => Form_Meta::META_DETECTED_CASE_TYPE,
+			'detected_workflow_stage'   => Form_Meta::META_DETECTED_WORKFLOW_STAGE,
+			'classification_source'     => Form_Meta::META_CLASSIFICATION_SOURCE,
+			'pdf_analyzed_at'           => Form_Meta::META_PDF_ANALYZED_AT,
+		);
+
+		foreach ( $string_map as $key => $meta_key ) {
+			if ( array_key_exists( $key, $result ) ) {
+				update_post_meta( $post_id, $meta_key, sanitize_text_field( (string) $result[ $key ] ) );
+			}
+		}
+
+		if ( array_key_exists( 'classification_confidence', $result ) ) {
+			update_post_meta( $post_id, Form_Meta::META_CLASSIFICATION_CONFIDENCE, absint( $result['classification_confidence'] ) );
+		}
+
+		if ( array_key_exists( 'classification_warning', $result ) ) {
+			update_post_meta( $post_id, Form_Meta::META_CLASSIFICATION_WARNING, sanitize_textarea_field( (string) $result['classification_warning'] ) );
+		}
+
+		if ( array_key_exists( 'supported_court', $result ) ) {
+			update_post_meta( $post_id, Form_Meta::META_SUPPORTED_COURT, (bool) $result['supported_court'] );
+		}
+
+		if ( array_key_exists( 'needs_review', $result ) ) {
+			update_post_meta( $post_id, Form_Meta::META_NEEDS_REVIEW, (bool) $result['needs_review'] );
+		}
+
+		if ( array_key_exists( 'ai_summary', $result ) && '' !== (string) $result['ai_summary'] ) {
+			update_post_meta( $post_id, Form_Meta::META_AI_SUMMARY, sanitize_textarea_field( (string) $result['ai_summary'] ) );
+		}
+
+		$json_map = array(
+			'questionnaire_keys' => Form_Meta::META_QUESTIONNAIRE_KEYS,
+			'workflow_package'   => Form_Meta::META_WORKFLOW_PACKAGE,
+			'dependencies'       => Form_Meta::META_DEPENDENCIES,
+			'pdf_fields_json'    => Form_Meta::META_PDF_FIELDS_JSON,
+			'fillable_fields'    => Form_Meta::META_FILLABLE_FIELDS,
+		);
+
+		foreach ( $json_map as $key => $meta_key ) {
+			if ( array_key_exists( $key, $result ) ) {
+				update_post_meta( $post_id, $meta_key, Form_Meta::sanitize_json( $result[ $key ] ) );
+			}
+		}
+
+		if ( array_key_exists( 'pdf_fillable', $result ) ) {
+			update_post_meta( $post_id, Form_Meta::META_PDF_FILLABLE, (bool) $result['pdf_fillable'] );
+		}
+
+		if ( array_key_exists( 'pdf_field_count', $result ) ) {
+			update_post_meta( $post_id, Form_Meta::META_PDF_FIELD_COUNT, absint( $result['pdf_field_count'] ) );
+		}
+
+		if ( array_key_exists( 'detected_county', $result ) && '' !== (string) $result['detected_county'] ) {
+			update_post_meta( $post_id, Form_Meta::META_COUNTY, sanitize_text_field( (string) $result['detected_county'] ) );
+		}
+
+		$confidence = (int) ( $result['classification_confidence'] ?? 0 );
+		$can_assign = $confidence >= 70 && ( $result['supported_court'] ?? true );
+
+		if ( $can_assign ) {
+			$taxonomy = new Form_Taxonomy();
+			$court    = (string) ( $result['detected_court'] ?? '' );
+
+			if ( '' !== $court && ( $result['supported_court'] ?? true ) ) {
+				$court_ids = $taxonomy->ensure_terms( array( $court ), Form_Taxonomy::TAXONOMY_COURT );
+
+				if ( ! empty( $court_ids ) ) {
+					wp_set_object_terms( $post_id, $court_ids, Form_Taxonomy::TAXONOMY_COURT );
+				}
+			}
+
+			$case_type = (string) ( $result['detected_case_type'] ?? '' );
+
+			if ( '' !== $case_type ) {
+				$parent = $taxonomy->case_type_parent_for_court( $court, $case_type );
+				$term_id = $taxonomy->ensure_child_term( $case_type, $parent, Form_Taxonomy::TAXONOMY_CASE_TYPE );
+
+				if ( $term_id ) {
+					wp_set_object_terms( $post_id, array( $term_id ), Form_Taxonomy::TAXONOMY_CASE_TYPE );
+				}
+			}
+
+			$stage = (string) ( $result['detected_workflow_stage'] ?? '' );
+
+			if ( '' !== $stage ) {
+				$parent  = $taxonomy->workflow_parent_for_court( $court );
+				$term_id = $taxonomy->ensure_child_term( $stage, $parent, Form_Taxonomy::TAXONOMY_WORKFLOW_STAGE );
+
+				if ( $term_id ) {
+					wp_set_object_terms( $post_id, array( $term_id ), Form_Taxonomy::TAXONOMY_WORKFLOW_STAGE );
+				}
+			}
+		}
+
+		$this->append_classification_log( $post_id, $result, 'classified' );
+
+		return true;
+	}
+
+	/**
+	 * Append an entry to the classification audit log.
+	 *
+	 * @param int                  $post_id Form post ID.
+	 * @param array<string, mixed> $result  Classification result.
+	 * @param string               $action  Log action.
+	 * @return void
+	 */
+	private function append_classification_log( int $post_id, array $result, string $action ): void {
+		$existing = get_post_meta( $post_id, Form_Meta::META_CLASSIFICATION_LOG, true );
+		$log      = array();
+
+		if ( is_string( $existing ) && '' !== $existing ) {
+			$decoded = json_decode( $existing, true );
+			$log     = is_array( $decoded ) ? $decoded : array();
+		}
+
+		$entry = array(
+			'timestamp'  => gmdate( 'c' ),
+			'action'     => $action,
+			'user_id'    => get_current_user_id(),
+			'confidence' => (int) ( $result['classification_confidence'] ?? 0 ),
+			'court'      => (string) ( $result['detected_court'] ?? '' ),
+			'case_type'  => (string) ( $result['detected_case_type'] ?? '' ),
+			'stage'      => (string) ( $result['detected_workflow_stage'] ?? '' ),
+			'source'     => (string) ( $result['classification_source'] ?? '' ),
+		);
+
+		$log[] = $entry;
+
+		// Keep last 50 entries.
+		if ( count( $log ) > 50 ) {
+			$log = array_slice( $log, -50 );
+		}
+
+		update_post_meta( $post_id, Form_Meta::META_CLASSIFICATION_LOG, Form_Meta::sanitize_json( $log ) );
+	}
+
+	/**
+	 * Get forms flagged for manual review.
+	 *
+	 * @return \WP_Post[]
+	 */
+	public function get_forms_needing_review(): array {
+		$query = new \WP_Query(
+			array(
+				'post_type'      => Form_CPT::POST_TYPE,
+				'post_status'    => 'publish',
+				'posts_per_page' => -1,
+				'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+					array(
+						'key'   => Form_Meta::META_NEEDS_REVIEW,
+						'value' => '1',
+					),
+				),
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+
+		return $query->posts;
 	}
 
 	/**
