@@ -66,7 +66,8 @@ final class Plugin {
 		$taxonomy = new Form_Taxonomy();
 
 		$cpt->register_post_type();
-		$taxonomy->register_taxonomy();
+		$taxonomy->register_taxonomies();
+		$taxonomy->seed_terms();
 
 		$file_manager = new Form_File_Manager();
 		$file_manager->ensure_upload_dir();

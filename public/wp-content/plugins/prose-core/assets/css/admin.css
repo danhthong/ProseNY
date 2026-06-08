@@ -54,3 +54,131 @@
 	color: #007017;
 	font-weight: 600;
 }
+
+/* Form edit screen */
+.prose-pdf-viewer {
+	margin: 1em 0 2em;
+	padding: 1em;
+	background: #fff;
+	border: 1px solid #c3c4c7;
+	border-radius: 4px;
+}
+
+.prose-pdf-viewer h2 {
+	margin-top: 0;
+	font-size: 1.1em;
+}
+
+.prose-pdf-viewer__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5em;
+	margin-bottom: 1em;
+}
+
+.prose-pdf-viewer__frame {
+	display: block;
+	border: 1px solid #c3c4c7;
+	border-radius: 2px;
+	background: #f6f7f7;
+}
+
+.prose-pdf-viewer__empty {
+	margin: 0;
+	color: #646970;
+	font-style: italic;
+}
+
+.prose-form-tabs__nav {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0;
+	border-bottom: 1px solid #c3c4c7;
+	margin: 0 0 1em;
+}
+
+.prose-form-tabs__tab {
+	background: #f6f7f7;
+	border: 1px solid #c3c4c7;
+	border-bottom: none;
+	margin: 0 4px -1px 0;
+	padding: 8px 14px;
+	cursor: pointer;
+	font-size: 13px;
+	line-height: 1.4;
+}
+
+.prose-form-tabs__tab.is-active {
+	background: #fff;
+	border-bottom-color: #fff;
+	font-weight: 600;
+}
+
+.prose-form-tabs__panel {
+	display: none;
+}
+
+.prose-form-tabs__panel.is-active {
+	display: block;
+}
+
+.prose-readonly {
+	display: inline-block;
+	padding: 4px 0;
+	color: #1d2327;
+}
+
+.prose-readonly-field {
+	background: #f6f7f7;
+	color: #50575e;
+}
+
+.prose-json-error {
+	border-color: #d63638 !important;
+	box-shadow: 0 0 0 1px #d63638;
+}
+
+.prose-json-error-msg {
+	color: #d63638;
+	font-size: 12px;
+	margin-top: 4px;
+}
+
+/* Workflow preview */
+.prose-workflow-preview {
+	font-family: monospace;
+	font-size: 13px;
+	line-height: 1.6;
+}
+
+.prose-workflow-preview__root {
+	font-weight: 700;
+	margin-bottom: 0.5em;
+}
+
+.prose-workflow-preview__stage {
+	margin-bottom: 0.75em;
+}
+
+.prose-workflow-preview__branch {
+	padding-left: 0.25em;
+	font-weight: 600;
+}
+
+.prose-workflow-preview__forms {
+	list-style: none;
+	margin: 0.25em 0 0 1.5em;
+	padding: 0;
+}
+
+.prose-workflow-preview__forms li {
+	margin: 0;
+}
+
+.prose-workflow-preview__forms li.is-current {
+	color: #2271b1;
+}
+
+.prose-workflow-preview__prefix {
+	color: #646970;
+}

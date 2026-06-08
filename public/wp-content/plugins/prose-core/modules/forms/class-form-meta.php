@@ -18,25 +18,36 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Form_Meta {
 
-	/**
-	 * Meta key: external form number (e.g. UD-1).
-	 */
-	public const META_FORM_ID = 'prose_form_id';
+	// Core.
+	public const META_FORM_CODE        = 'prose_form_code';
+	public const META_FORM_ID          = 'prose_form_id';
+	public const META_COUNTY           = 'prose_county';
+	public const META_WORKFLOW_KEY     = 'prose_workflow_key';
+	public const META_WORKFLOW_ORDER   = 'prose_workflow_order';
+	public const META_PACKET_GROUP     = 'prose_packet_group';
+	public const META_REQUIRED         = 'prose_required';
+	public const META_DEPENDENCIES     = 'prose_dependencies';
+	public const META_CONDITIONS       = 'prose_conditions';
 
-	/**
-	 * Meta key: local PDF filename.
-	 */
-	public const META_FILE_NAME = 'prose_file_name';
+	// PDF storage.
+	public const META_FILE_NAME        = 'prose_file_name';
+	public const META_FILE_URL         = 'prose_file_url';
+	public const META_SOURCE_PDF_URL   = 'prose_source_pdf_url';
 
-	/**
-	 * Meta key: local PDF URL.
-	 */
-	public const META_FILE_URL = 'prose_file_url';
+	// PDF analysis.
+	public const META_PDF_FILLABLE     = 'prose_pdf_fillable';
+	public const META_PDF_FIELD_COUNT  = 'prose_pdf_field_count';
+	public const META_PDF_FIELDS_JSON  = 'prose_pdf_fields_json';
+	public const META_PDF_ANALYZED_AT  = 'prose_pdf_analyzed_at';
 
-	/**
-	 * Meta key: source PDF URL from court website.
-	 */
-	public const META_SOURCE_PDF_URL = 'prose_source_pdf_url';
+	// Automation.
+	public const META_FILLABLE_FIELDS      = 'prose_fillable_fields';
+	public const META_FIELD_MAPPING_JSON   = 'prose_field_mapping_json';
+
+	// AI.
+	public const META_AI_SUMMARY                   = 'prose_ai_summary';
+	public const META_PLAIN_LANGUAGE_DESCRIPTION   = 'prose_plain_language_description';
+	public const META_COMMON_MISTAKES              = 'prose_common_mistakes';
 
 	/**
 	 * All registered meta keys.
@@ -44,11 +55,83 @@ class Form_Meta {
 	 * @return string[]
 	 */
 	public static function keys(): array {
+		return array_merge(
+			self::string_keys(),
+			self::textarea_keys(),
+			self::json_keys(),
+			self::bool_keys(),
+			self::int_keys()
+		);
+	}
+
+	/**
+	 * String meta keys.
+	 *
+	 * @return string[]
+	 */
+	public static function string_keys(): array {
 		return array(
+			self::META_FORM_CODE,
 			self::META_FORM_ID,
+			self::META_COUNTY,
+			self::META_WORKFLOW_KEY,
+			self::META_PACKET_GROUP,
 			self::META_FILE_NAME,
 			self::META_FILE_URL,
 			self::META_SOURCE_PDF_URL,
+			self::META_PDF_ANALYZED_AT,
+		);
+	}
+
+	/**
+	 * Textarea meta keys.
+	 *
+	 * @return string[]
+	 */
+	public static function textarea_keys(): array {
+		return array(
+			self::META_AI_SUMMARY,
+			self::META_PLAIN_LANGUAGE_DESCRIPTION,
+		);
+	}
+
+	/**
+	 * JSON meta keys (stored as validated JSON strings).
+	 *
+	 * @return string[]
+	 */
+	public static function json_keys(): array {
+		return array(
+			self::META_DEPENDENCIES,
+			self::META_CONDITIONS,
+			self::META_PDF_FIELDS_JSON,
+			self::META_FILLABLE_FIELDS,
+			self::META_FIELD_MAPPING_JSON,
+			self::META_COMMON_MISTAKES,
+		);
+	}
+
+	/**
+	 * Boolean meta keys.
+	 *
+	 * @return string[]
+	 */
+	public static function bool_keys(): array {
+		return array(
+			self::META_REQUIRED,
+			self::META_PDF_FILLABLE,
+		);
+	}
+
+	/**
+	 * Integer meta keys.
+	 *
+	 * @return string[]
+	 */
+	public static function int_keys(): array {
+		return array(
+			self::META_WORKFLOW_ORDER,
+			self::META_PDF_FIELD_COUNT,
 		);
 	}
 
@@ -68,7 +151,11 @@ class Form_Meta {
 	 * @return void
 	 */
 	public function register_meta(): void {
-		foreach ( self::keys() as $meta_key ) {
+		$auth_callback = static function (): bool {
+			return current_user_can( 'edit_posts' );
+		};
+
+		foreach ( self::string_keys() as $meta_key ) {
 			register_post_meta(
 				Form_CPT::POST_TYPE,
 				$meta_key,
@@ -77,11 +164,101 @@ class Form_Meta {
 					'single'            => true,
 					'show_in_rest'      => true,
 					'sanitize_callback' => 'sanitize_text_field',
-					'auth_callback'     => static function (): bool {
-						return current_user_can( 'edit_posts' );
-					},
+					'auth_callback'     => $auth_callback,
 				)
 			);
 		}
+
+		foreach ( self::textarea_keys() as $meta_key ) {
+			register_post_meta(
+				Form_CPT::POST_TYPE,
+				$meta_key,
+				array(
+					'type'              => 'string',
+					'single'            => true,
+					'show_in_rest'      => true,
+					'sanitize_callback' => 'sanitize_textarea_field',
+					'auth_callback'     => $auth_callback,
+				)
+			);
+		}
+
+		foreach ( self::json_keys() as $meta_key ) {
+			register_post_meta(
+				Form_CPT::POST_TYPE,
+				$meta_key,
+				array(
+					'type'              => 'string',
+					'single'            => true,
+					'show_in_rest'      => true,
+					'sanitize_callback' => array( self::class, 'sanitize_json' ),
+					'auth_callback'     => $auth_callback,
+				)
+			);
+		}
+
+		foreach ( self::bool_keys() as $meta_key ) {
+			register_post_meta(
+				Form_CPT::POST_TYPE,
+				$meta_key,
+				array(
+					'type'              => 'boolean',
+					'single'            => true,
+					'show_in_rest'      => true,
+					'sanitize_callback' => array( self::class, 'sanitize_bool' ),
+					'auth_callback'     => $auth_callback,
+				)
+			);
+		}
+
+		foreach ( self::int_keys() as $meta_key ) {
+			register_post_meta(
+				Form_CPT::POST_TYPE,
+				$meta_key,
+				array(
+					'type'              => 'integer',
+					'single'            => true,
+					'show_in_rest'      => true,
+					'sanitize_callback' => 'absint',
+					'auth_callback'     => $auth_callback,
+				)
+			);
+		}
+	}
+
+	/**
+	 * Sanitize and validate JSON meta values.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return string
+	 */
+	public static function sanitize_json( $value ): string {
+		if ( is_array( $value ) || is_object( $value ) ) {
+			return wp_json_encode( $value ) ?: '';
+		}
+
+		$value = is_string( $value ) ? trim( $value ) : '';
+
+		if ( '' === $value ) {
+			return '';
+		}
+
+		$decoded = json_decode( $value, true );
+
+		if ( JSON_ERROR_NONE !== json_last_error() ) {
+			return $value;
+		}
+
+		return wp_json_encode( $decoded ) ?: '';
+	}
+
+	/**
+	 * Sanitize boolean meta values.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return bool
+	 */
+	public static function sanitize_bool( $value ): bool {
+		return filter_var( $value, FILTER_VALIDATE_BOOLEAN );
 	}
 }

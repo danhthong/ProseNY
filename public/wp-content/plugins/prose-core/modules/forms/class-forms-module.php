@@ -44,6 +44,13 @@ final class Forms_Module implements Module_Interface {
 	private Form_Meta $meta;
 
 	/**
+	 * Form admin handler.
+	 *
+	 * @var Form_Admin
+	 */
+	private Form_Admin $admin;
+
+	/**
 	 * Form file manager.
 	 *
 	 * @var Form_File_Manager
@@ -73,6 +80,7 @@ final class Forms_Module implements Module_Interface {
 		$this->cpt          = new Form_CPT();
 		$this->taxonomy     = new Form_Taxonomy();
 		$this->meta         = new Form_Meta();
+		$this->admin        = new Form_Admin( $this->repository );
 		$this->importer     = new Form_Importer( $this->repository, $this->file_manager );
 	}
 
@@ -86,6 +94,7 @@ final class Forms_Module implements Module_Interface {
 		$this->cpt->register( $loader );
 		$this->taxonomy->register( $loader );
 		$this->meta->register( $loader );
+		$this->admin->register( $loader );
 		$this->importer->register( $loader );
 	}
 

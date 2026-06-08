@@ -229,7 +229,7 @@ class Form_Importer {
 	 */
 	private function render_upload_form(): void {
 		?>
-		<p><?php esc_html_e( 'Upload a CSV file to import court forms. Expected columns include Form Number, Form Title, Case Type, PDF Filenames, and Resolved PDF URLs.', 'prose-core' ); ?></p>
+		<p><?php esc_html_e( 'Upload a CSV file to import court forms. Expected columns include Form Number, Form Title, Case Type, Court (optional), PDF Filenames, and Resolved PDF URLs.', 'prose-core' ); ?></p>
 		<form method="post" enctype="multipart/form-data" class="prose-import-form">
 			<?php wp_nonce_field( self::NONCE_ACTION, 'prose_import_nonce' ); ?>
 			<table class="form-table" role="presentation">
@@ -240,7 +240,7 @@ class Form_Importer {
 					<td>
 						<input type="file" name="prose_csv_file" id="prose_csv_file" accept=".csv,text/csv" required />
 						<p class="description">
-							<?php esc_html_e( 'Supported headers: Form Number (or Extracted Form Number), Form Title (or Original Form Title), Case Type, PDF Filenames, Resolved PDF URLs.', 'prose-core' ); ?>
+							<?php esc_html_e( 'Supported headers: Form Number (or Extracted Form Number), Form Title (or Original Form Title), Case Type, Court (optional), PDF Filenames, Resolved PDF URLs.', 'prose-core' ); ?>
 						</p>
 					</td>
 				</tr>
@@ -540,6 +540,7 @@ class Form_Importer {
 		$form_id   = $this->normalize_form_number( $this->get_column_value( $row, $column_map, 'form_number' ) );
 		$title     = $this->get_column_value( $row, $column_map, 'form_title' );
 		$case_type = $this->get_column_value( $row, $column_map, 'case_type' );
+		$court     = $this->get_column_value( $row, $column_map, 'court' );
 		$filenames = $this->get_column_value( $row, $column_map, 'pdf_filenames' );
 		$pdf_urls  = $this->get_column_value( $row, $column_map, 'resolved_pdf_urls' );
 
@@ -553,14 +554,17 @@ class Form_Importer {
 		}
 
 		$case_types = $this->parse_list( $case_type, ',' );
+		$courts     = $this->parse_list( $court, ',' );
 		$url_list   = $this->parse_list( $pdf_urls, '|' );
 		$name_list  = $this->parse_list( $filenames, '|' );
 		$pdf_pair   = $this->select_pdf( $url_list, $name_list );
 
 		$data = array(
+			'form_code'  => $form_id,
 			'form_id'    => $form_id,
 			'title'      => '' !== $title ? $title : $form_id,
 			'case_types' => $case_types,
+			'court'      => $courts,
 		);
 
 		$messages = array();
@@ -615,6 +619,7 @@ class Form_Importer {
 			'form_number'       => array( 'form number', 'extracted form number', 'original form number' ),
 			'form_title'        => array( 'form title', 'original form title' ),
 			'case_type'         => array( 'case type' ),
+			'court'             => array( 'court' ),
 			'pdf_filenames'     => array( 'pdf filenames' ),
 			'resolved_pdf_urls' => array( 'resolved pdf urls' ),
 		);

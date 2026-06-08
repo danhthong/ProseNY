@@ -16,13 +16,15 @@ ProSe Core is **not** a chatbot. It is a procedural, database-driven platform. W
 - Modular, pluggable architecture (`ProSe\Core` namespace, custom autoloader)
 - **Forms module**:
   - `prose_form` custom post type (private, REST-enabled)
-  - `prose_case_type` hierarchical taxonomy
-  - Form metadata (`prose_form_id`, `prose_file_name`, `prose_file_url`, `prose_source_pdf_url`)
+  - Taxonomies: `prose_case_type`, `prose_court`, `prose_workflow_stage` (all REST-enabled, filterable)
+  - Expanded form metadata for workflow, packet generation, PDF analysis, automation, and AI
+  - Tabbed Form Details admin UI with embedded PDF viewer and Workflow Preview
   - CSV importer with a live, batched progress bar
   - Cross-platform PDF downloader (Windows / Linux / macOS)
   - Repository pattern for data access (no scattered `WP_Query`)
+  - `Pdf_Analyzer` service stub (extension point for future PDF scanning)
 - Top-level **ProSe** admin menu with **Forms** and **Import Forms**
-- Forms list table shows Form Number, a link to the local PDF, and the source URL
+- Forms list table shows Form Code, Court, Case Type, Workflow Stage, Workflow Key, Packet Group, Required, PDF, and PDF Fields
 
 ## Directory structure
 
@@ -40,11 +42,13 @@ prose-core/
     forms/
       class-forms-module.php    # Wires the Forms pieces together
       class-form-cpt.php        # prose_form CPT + admin columns
-      class-form-taxonomy.php   # prose_case_type taxonomy
+      class-form-taxonomy.php   # case type, court, workflow stage taxonomies
       class-form-meta.php       # register_post_meta fields
+      class-form-admin.php      # tabbed edit screen, PDF viewer, workflow preview
       class-form-importer.php   # Import Forms page + batched AJAX import
       class-form-file-manager.php  # PDF storage + cross-platform downloader
       class-form-repository.php # Data access layer
+      class-pdf-analyzer.php    # PDF analysis stub (not yet implemented)
   assets/
     css/admin.css
     js/admin.js
@@ -56,7 +60,31 @@ prose-core/
 
 1. Place the `prose-core` folder in `wp-content/plugins/`.
 2. Activate **ProSe Core** in **Plugins**.
-3. On activation the plugin registers the CPT and taxonomy, flushes rewrite rules, and creates `wp-content/uploads/prose/forms/`.
+3. On activation the plugin registers the CPT and taxonomies, seeds default Court and Workflow Stage terms, flushes rewrite rules, and creates `wp-content/uploads/prose/forms/`.
+
+## Form schema
+
+`prose_form` is the central source of truth for court forms, workflow engine, questionnaire mapping, PDF analysis, auto-fill, packet generation, and AI assistance.
+
+### Taxonomies
+
+| Taxonomy | Terms (seeded on activation) |
+|---|---|
+| `prose_case_type` | User-defined (hierarchical) |
+| `prose_court` | Supreme Court, Family Court |
+| `prose_workflow_stage` | Divorce → Commencement, Service, Response, Settlement, Judgment, Post-Judgment; Family Court → Petition, Hearing, Order, Enforcement, Modification |
+
+### Meta fields
+
+| Group | Keys |
+|---|---|
+| **Core** | `prose_form_code`, `prose_county`, `prose_workflow_key`, `prose_workflow_order`, `prose_packet_group`, `prose_required`, `prose_dependencies`, `prose_conditions` |
+| **PDF storage** | `prose_file_name`, `prose_file_url`, `prose_source_pdf_url` |
+| **PDF analysis** | `prose_pdf_fillable`, `prose_pdf_field_count`, `prose_pdf_fields_json`, `prose_pdf_analyzed_at` |
+| **Automation** | `prose_fillable_fields`, `prose_field_mapping_json` |
+| **AI** | `prose_ai_summary`, `prose_plain_language_description`, `prose_common_mistakes` |
+
+`prose_form_code` is canonical; it is mirrored to legacy `prose_form_id` for backward compatibility.
 
 ## Importing forms
 
@@ -65,17 +93,18 @@ prose-core/
    - **Form Number** or **Extracted Form Number**
    - **Form Title** or **Original Form Title**
    - **Case Type** (comma-separated for multiple terms)
+   - **Court** (optional, comma-separated)
    - **PDF Filenames** (pipe `|` separated)
    - **Resolved PDF URLs** (pipe `|` separated)
 3. The importer processes rows in batches over AJAX and shows a progress bar plus a per-row result table (created / updated / failed).
 
 For each row the importer:
 
-1. Creates or updates a form by Form Number.
+1. Creates or updates a form by Form Code.
 2. Sets the title.
-3. Creates any missing `prose_case_type` terms and assigns them.
+3. Creates any missing `prose_case_type` and `prose_court` terms and assigns them.
 4. Downloads the first PDF (preferring `.pdf` entries) into `uploads/prose/forms/`.
-5. Saves the metadata. A failed download still imports the row and records the source URL.
+5. Saves Form Code, Court, Case Type, Source PDF URL, File Name, and File URL. PDF analysis fields are left empty.
 
 ## How it works (all OSes)
 
@@ -267,14 +296,40 @@ Use the repository instead of direct `WP_Query` calls:
 ```php
 $repo = ( new ProSe\Core\Forms\Forms_Module() )->get_repository();
 
-$form  = $repo->get_by_form_id( 'UD-1' );
+$form  = $repo->get_by_form_code( 'UD-1' );
 $forms = $repo->get_by_case_type( 'Divorce' );
+$forms = $repo->get_forms_by_workflow( 'uncontested_divorce' );
+$forms = $repo->get_forms_by_stage( 'Commencement' );
+$forms = $repo->get_packet_forms( 'uncontested_divorce', 'Initial Filing' );
+$forms = $repo->get_forms_missing_analysis();
 $repo->create_or_update( array(
-    'form_id'    => 'UD-1',
-    'title'      => 'Summons With Notice',
-    'case_types' => array( 'Divorce' ),
+    'form_code'      => 'UD-1',
+    'title'          => 'Summons With Notice',
+    'case_types'     => array( 'Divorce' ),
+    'court'          => array( 'Supreme Court' ),
+    'workflow_key'   => 'uncontested_divorce',
+    'workflow_order' => 10,
+    'packet_group'   => 'Initial Filing',
+    'required'       => true,
+) );
+$repo->update_pdf_metadata( $post_id, array(
+    'fillable'     => true,
+    'field_count'  => 42,
+    'fields_json'  => array(),
+    'analyzed_at'  => gmdate( 'c' ),
 ) );
 ```
+
+## PDF Analyzer (extension point)
+
+`ProSe\Core\Forms\Pdf_Analyzer` is a service stub for the future PDF Analysis Engine. All methods throw `Not_Implemented_Exception`:
+
+- `analyze( int $post_id )` — analyze a form's PDF and persist metadata
+- `extract_fields( string $file_path )` — extract raw fields from a PDF
+- `normalize_fields( array $fields )` — normalize into ProSe schema
+- `save_metadata( int $post_id, array $data )` — save analysis results
+
+Do not call these in production until the engine is implemented.
 
 ## Uninstall
 

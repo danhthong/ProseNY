@@ -143,8 +143,101 @@
 		processBatch();
 	}
 
+	function initFormTabs() {
+		var container = document.querySelector( '[data-prose-form-tabs]' );
+
+		if ( ! container ) {
+			return;
+		}
+
+		var tabs   = container.querySelectorAll( '.prose-form-tabs__tab' );
+		var panels = container.querySelectorAll( '.prose-form-tabs__panel' );
+
+		tabs.forEach( function ( tab ) {
+			tab.addEventListener( 'click', function () {
+				var target = tab.getAttribute( 'data-tab' );
+
+				tabs.forEach( function ( item ) {
+					item.classList.remove( 'is-active' );
+					item.setAttribute( 'aria-selected', 'false' );
+				} );
+
+				panels.forEach( function ( panel ) {
+					var isActive = panel.getAttribute( 'data-panel' ) === target;
+					panel.classList.toggle( 'is-active', isActive );
+					panel.hidden = ! isActive;
+				} );
+
+				tab.classList.add( 'is-active' );
+				tab.setAttribute( 'aria-selected', 'true' );
+			} );
+		} );
+	}
+
+	function initJsonValidation() {
+		var fields = document.querySelectorAll( '[data-prose-json]' );
+
+		if ( ! fields.length ) {
+			return;
+		}
+
+		function validateField( field ) {
+			var value = field.value.trim();
+			var existing = field.parentNode.querySelector( '.prose-json-error-msg' );
+
+			if ( existing ) {
+				existing.remove();
+			}
+
+			field.classList.remove( 'prose-json-error' );
+
+			if ( '' === value ) {
+				return true;
+			}
+
+			try {
+				JSON.parse( value );
+				return true;
+			} catch ( error ) {
+				field.classList.add( 'prose-json-error' );
+				var msg = document.createElement( 'p' );
+				msg.className = 'prose-json-error-msg';
+				msg.textContent = 'Invalid JSON: ' + error.message;
+				field.parentNode.appendChild( msg );
+				return false;
+			}
+		}
+
+		fields.forEach( function ( field ) {
+			field.addEventListener( 'blur', function () {
+				validateField( field );
+			} );
+		} );
+
+		var form = fields[ 0 ].closest( 'form' );
+
+		if ( form ) {
+			form.addEventListener( 'submit', function ( event ) {
+				var valid = true;
+
+				fields.forEach( function ( field ) {
+					if ( ! validateField( field ) ) {
+						valid = false;
+					}
+				} );
+
+				if ( ! valid ) {
+					event.preventDefault();
+					window.alert( 'Please fix invalid JSON fields before saving.' );
+				}
+			} );
+		}
+	}
+
 	document.addEventListener( 'DOMContentLoaded', function () {
 		validateUpload();
 		runImport();
+		initFormTabs();
+		initJsonValidation();
 	} );
 }() );
