@@ -82,11 +82,24 @@ For each row the importer:
 PDF downloading is cross-platform and lives entirely in
 [`modules/forms/class-form-file-manager.php`](modules/forms/class-form-file-manager.php).
 
-Many court servers sit behind Cloudflare, which blocks bot User-Agents such as
-`curl/8.0.1` with a **403 Forbidden** while allowing browser-like User-Agents.
-PHP's bundled HTTP client can also be rejected, so the downloader tries the
-system `curl` binary first (with a browser User-Agent), then falls back to the
-WordPress HTTP API.
+Many court servers (e.g. `webfiles.nycourts.gov`, `www.nycourts.gov/media`) sit
+behind **Cloudflare Bot Management**, which blocks clients by their **TLS
+fingerprint (JA3/JA4)** — *not* by User-Agent. A browser User-Agent alone still
+returns **403 Forbidden** when the underlying TLS handshake comes from OpenSSL
+(PHP's HTTP client and stock Linux `curl`).
+
+The downloader tries the system `curl` binary first, then falls back to the
+WordPress HTTP API. This is enough on **Windows** (the bundled `System32\curl.exe`
+uses the *Schannel* TLS stack, whose fingerprint Cloudflare accepts) but **not on
+a Linux server**, where curl uses OpenSSL and Cloudflare returns 403.
+
+> **Linux servers behind Cloudflare:** install
+> [`curl-impersonate`](https://github.com/lwthiker/curl-impersonate) so the
+> downloader can present a real browser TLS fingerprint. See
+> [Cloudflare-protected servers](#cloudflare-protected-servers-linux) below.
+> The plugin auto-detects `curl_chrome*` / `curl_ff*` wrapper scripts in
+> `/usr/local/bin`, `/usr/bin`, and `/opt/curl-impersonate`, and uses them
+> automatically (no User-Agent override is applied to them).
 
 ```mermaid
 flowchart TD
@@ -137,20 +150,63 @@ exit code are captured so failures report the real reason.
 ### 4. PHP fallback — `fetch_body()` + `request()`
 
 If `curl` is unavailable (for example, `proc_open` is disabled on shared
-hosting), the plugin uses `wp_remote_get()` with browser headers. Because the
-block is User-Agent-based rather than TLS-based, this fallback usually succeeds
-on Linux and macOS too. It also retries once with SSL verification disabled if
-the host has a broken CA bundle (common in local development).
+hosting), the plugin uses `wp_remote_get()` with browser headers. It also retries
+once with SSL verification disabled if the host has a broken CA bundle (common in
+local development). Note: against a **Cloudflare TLS-fingerprint** block, this PHP
+fallback also returns 403 — only `curl-impersonate` reliably succeeds on Linux.
+
+## Cloudflare-protected servers (Linux)
+
+On a Linux server (OpenLiteSpeed / Nginx / Apache on DigitalOcean, etc.) stock
+`curl` and PHP both use OpenSSL, whose TLS fingerprint Cloudflare blocks with a
+403. Install [`curl-impersonate`](https://github.com/lwthiker/curl-impersonate)
+once and the importer will use it automatically.
+
+**1. Install the static Chrome build (Ubuntu / Debian, x86_64):**
+
+```bash
+cd /tmp
+VER=0.6.1
+curl -L -O "https://github.com/lwthiker/curl-impersonate/releases/download/v${VER}/curl-impersonate-v${VER}.x86_64-linux-gnu.tar.gz"
+sudo mkdir -p /opt/curl-impersonate
+sudo tar -xzf "curl-impersonate-v${VER}.x86_64-linux-gnu.tar.gz" -C /opt/curl-impersonate
+# Make the wrapper scripts available on PATH (they self-resolve the binary dir).
+sudo ln -sf /opt/curl-impersonate/curl_chrome116 /usr/local/bin/curl_chrome116
+```
+
+**2. Verify it bypasses Cloudflare (should print `200`):**
+
+```bash
+/usr/local/bin/curl_chrome116 -sS -L -o /dev/null -w '%{http_code}\n' \
+  "https://webfiles.nycourts.gov/public/2025-12/doh-2168.pdf"
+```
+
+**3. (Optional) Pin the exact binary** with a small mu-plugin
+(`wp-content/mu-plugins/prose-curl-impersonate.php`) if auto-detection misses it:
+
+```php
+<?php
+add_filter( 'prose_core_curl_binary', static fn() => '/usr/local/bin/curl_chrome116' );
+```
+
+### OpenLiteSpeed notes
+
+- The PDF download runs through `proc_open()`. Make sure `proc_open`,
+  `proc_close`, and `escapeshellarg` are **not** listed in `disable_functions`
+  in the active LSPHP `php.ini` (the importer reports which function is disabled
+  if so). Restart LiteSpeed after editing: `sudo systemctl restart lsws`.
+- If `open_basedir` is set for the vhost, add `/opt/curl-impersonate` (or
+  wherever the wrapper lives) to it so PHP can execute the binary.
 
 ### Platform support summary
 
 | Scenario | Expected result |
 |---|---|
-| Local Windows (Laragon / XAMPP / WAMP) | Works via `System32\curl.exe` |
-| Local macOS (MAMP / Valet / Docker) | Works via `/usr/bin/curl` |
-| Apple Silicon + Homebrew curl | Works via `/opt/homebrew/bin/curl` |
-| Production Linux server | Works via `/usr/bin/curl` (most common) |
-| `proc_open` disabled | Falls back to `wp_remote_get` (usually works) |
+| Local Windows (Laragon / XAMPP / WAMP) | Works via `System32\curl.exe` (Schannel fingerprint accepted) |
+| Local macOS (MAMP / Valet / Docker) | **403 from Cloudflare** unless `curl-impersonate` is installed |
+| Production Linux server (Cloudflare-protected source) | Requires `curl-impersonate` — stock `curl`/PHP get 403 |
+| Production Linux server (non-Cloudflare source) | Works via `/usr/bin/curl` |
+| `proc_open` disabled | Falls back to `wp_remote_get` (still 403 against Cloudflare TLS block) |
 | Both methods blocked | Form still imports with its source URL preserved |
 
 ## Filters

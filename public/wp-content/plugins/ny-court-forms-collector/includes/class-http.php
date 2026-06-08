@@ -162,8 +162,9 @@ class Http {
 
 		// Dump the (redirect-following) response headers to a file and read
 		// them back; capturing curl stdout via pipes is unreliable on Windows.
-		$exit_code = self::run_process(
-			array(
+		$args = self::is_impersonate_binary( $binary )
+			? array( $binary, '-sS', '-L', '-o', $null_device, '--max-time', '30', '-D', $headers_file, $url )
+			: array(
 				$binary,
 				'-sS',
 				'-L',
@@ -176,8 +177,9 @@ class Http {
 				'-D',
 				$headers_file,
 				$url,
-			)
-		);
+			);
+
+		$exit_code = self::run_process( $args );
 
 		$headers = '';
 
@@ -347,8 +349,12 @@ class Http {
 			return null;
 		}
 
-		$exit_code = self::run_process(
-			array(
+		// curl-impersonate wrappers set their own browser User-Agent and headers
+		// to match the impersonated TLS/HTTP-2 fingerprint; overriding them
+		// would break the impersonation, so pass only transfer flags.
+		$args = self::is_impersonate_binary( $binary )
+			? array( $binary, '-sS', '-L', '--max-time', '60', '-o', $body_file, $url )
+			: array(
 				$binary,
 				'-sS',
 				'-L',
@@ -363,8 +369,9 @@ class Http {
 				'-o',
 				$body_file,
 				$url,
-			)
-		);
+			);
+
+		$exit_code = self::run_process( $args );
 
 		$body = '';
 
@@ -543,11 +550,17 @@ class Http {
 				$system_root . '\\System32\\curl.exe',
 			);
 		} else {
-			$candidates = array(
-				'/usr/bin/curl',
-				'/usr/local/bin/curl',
-				'/bin/curl',
-				'/opt/homebrew/bin/curl',
+			// Prefer curl-impersonate wrappers: Cloudflare blocks the OpenSSL
+			// TLS fingerprint of stock curl/PHP on Linux with a 403, while a
+			// browser-impersonating build is accepted.
+			$candidates = array_merge(
+				self::locate_impersonate_binaries(),
+				array(
+					'/usr/bin/curl',
+					'/usr/local/bin/curl',
+					'/bin/curl',
+					'/opt/homebrew/bin/curl',
+				)
 			);
 		}
 
@@ -566,6 +579,56 @@ class Http {
 		}
 
 		return $is_windows ? 'curl.exe' : 'curl';
+	}
+
+	/**
+	 * Locate installed curl-impersonate wrapper scripts.
+	 *
+	 * @return string[] Absolute wrapper paths (empty if none installed).
+	 */
+	private static function locate_impersonate_binaries(): array {
+		if ( ! function_exists( 'glob' ) ) {
+			return array();
+		}
+
+		$dirs    = array( '/usr/local/bin', '/usr/bin', '/opt/curl-impersonate', '/opt/curl-impersonate/bin' );
+		$allowed = self::open_basedir_paths();
+		$found   = array();
+
+		foreach ( $dirs as $dir ) {
+			if ( ! empty( $allowed ) && ! self::path_within_open_basedir( $dir, $allowed ) ) {
+				continue;
+			}
+
+			foreach ( array( 'curl_chrome*', 'curl_edge*', 'curl_safari*', 'curl_ff*' ) as $pattern ) {
+				$matches = @glob( $dir . '/' . $pattern ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+
+				if ( ! is_array( $matches ) || empty( $matches ) ) {
+					continue;
+				}
+
+				natsort( $matches );
+				$found = array_merge( $found, array_reverse( $matches ) );
+			}
+		}
+
+		return $found;
+	}
+
+	/**
+	 * Determine whether a binary path is a curl-impersonate variant.
+	 *
+	 * @param string $binary Resolved binary path or command.
+	 * @return bool
+	 */
+	public static function is_impersonate_binary( string $binary ): bool {
+		$name = strtolower( basename( $binary ) );
+
+		return str_contains( $name, 'impersonate' )
+			|| str_starts_with( $name, 'curl_chrome' )
+			|| str_starts_with( $name, 'curl_edge' )
+			|| str_starts_with( $name, 'curl_safari' )
+			|| str_starts_with( $name, 'curl_ff' );
 	}
 
 	/**

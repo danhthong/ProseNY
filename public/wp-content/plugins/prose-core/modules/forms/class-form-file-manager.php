@@ -175,14 +175,17 @@ class Form_File_Manager {
 		$code = (int) wp_remote_retrieve_response_code( $response );
 
 		if ( $code < 200 || $code >= 300 ) {
-			return new \WP_Error(
-				'prose_download_http',
-				sprintf(
-					/* translators: %d: HTTP status code */
-					__( 'Download failed with HTTP status %d.', 'prose-core' ),
-					$code
-				)
+			$message = sprintf(
+				/* translators: %d: HTTP status code */
+				__( 'Download failed with HTTP status %d.', 'prose-core' ),
+				$code
 			);
+
+			if ( 403 === $code ) {
+				$message .= ' ' . __( 'The server (Cloudflare) blocked PHP\'s TLS fingerprint. Install curl-impersonate on the server to download these PDFs.', 'prose-core' );
+			}
+
+			return new \WP_Error( 'prose_download_http', $message );
 		}
 
 		$body = wp_remote_retrieve_body( $response );
@@ -281,19 +284,32 @@ class Form_File_Manager {
 			return false;
 		}
 
-		$user_agent = apply_filters(
-			'prose_core_download_user_agent',
-			'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
-			$url
-		);
+		if ( $this->is_impersonate_binary( $binary ) ) {
+			// curl-impersonate wrapper scripts (curl_chrome*, curl_ff*, …) set
+			// the browser User-Agent plus the TLS/HTTP-2 fingerprint themselves.
+			// Passing -A or extra headers would override that and break the
+			// impersonation, so only transfer-related flags are added here.
+			$command = sprintf(
+				'%s -sS -L -f --max-time 120 -o %s %s',
+				escapeshellarg( $binary ),
+				escapeshellarg( $dest ),
+				escapeshellarg( $url )
+			);
+		} else {
+			$user_agent = apply_filters(
+				'prose_core_download_user_agent',
+				'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+				$url
+			);
 
-		$command = sprintf(
-			'%s -sS -L -f -A %s --max-time 120 -o %s %s',
-			escapeshellarg( $binary ),
-			escapeshellarg( $user_agent ),
-			escapeshellarg( $dest ),
-			escapeshellarg( $url )
-		);
+			$command = sprintf(
+				'%s -sS -L -f -A %s --max-time 120 -o %s %s',
+				escapeshellarg( $binary ),
+				escapeshellarg( $user_agent ),
+				escapeshellarg( $dest ),
+				escapeshellarg( $url )
+			);
+		}
 
 		$descriptors = array(
 			0 => array( 'pipe', 'r' ),
@@ -343,6 +359,13 @@ class Form_File_Manager {
 				$exit_code
 			);
 
+		// A 403 from a stock (OpenSSL/Schannel) curl on a court URL is almost
+		// always Cloudflare blocking the TLS fingerprint. Point the admin at
+		// the real fix instead of leaving a cryptic "error: 403".
+		if ( ! $this->is_impersonate_binary( $binary ) && false !== stripos( $stderr . ' ' . (string) $exit_code, '403' ) ) {
+			$error .= ' ' . __( 'The server (Cloudflare) blocked this request by its TLS fingerprint. Install curl-impersonate on the server and point the prose_core_curl_binary filter at it.', 'prose-core' );
+		}
+
 		return false;
 	}
 
@@ -375,11 +398,17 @@ class Form_File_Manager {
 				$system_root . '\\system32\\curl.exe',
 			);
 		} else {
-			$candidates = array(
-				'/usr/bin/curl',
-				'/usr/local/bin/curl',
-				'/bin/curl',
-				'/opt/homebrew/bin/curl',
+			// Prefer curl-impersonate wrappers: Cloudflare blocks the OpenSSL
+			// TLS fingerprint of stock curl/PHP on Linux with a 403, while a
+			// browser-impersonating build is accepted.
+			$candidates = array_merge(
+				$this->locate_impersonate_binaries(),
+				array(
+					'/usr/bin/curl',
+					'/usr/local/bin/curl',
+					'/bin/curl',
+					'/opt/homebrew/bin/curl',
+				)
 			);
 		}
 
@@ -399,6 +428,61 @@ class Form_File_Manager {
 
 		// Fall back to the bare command and let the shell resolve it via PATH.
 		return $is_windows ? 'curl.exe' : 'curl';
+	}
+
+	/**
+	 * Locate installed curl-impersonate wrapper scripts.
+	 *
+	 * curl-impersonate ships per-browser wrapper scripts (curl_chrome116,
+	 * curl_ff117, …) that produce a browser TLS/HTTP-2 fingerprint Cloudflare
+	 * accepts. Common install locations are scanned and the newest Chrome
+	 * wrapper is preferred.
+	 *
+	 * @return string[] Absolute wrapper paths (empty if none installed).
+	 */
+	private function locate_impersonate_binaries(): array {
+		if ( ! function_exists( 'glob' ) ) {
+			return array();
+		}
+
+		$dirs    = array( '/usr/local/bin', '/usr/bin', '/opt/curl-impersonate', '/opt/curl-impersonate/bin' );
+		$allowed = $this->open_basedir_paths();
+		$found   = array();
+
+		foreach ( $dirs as $dir ) {
+			if ( ! empty( $allowed ) && ! $this->path_within_open_basedir( $dir, $allowed ) ) {
+				continue;
+			}
+
+			foreach ( array( 'curl_chrome*', 'curl_edge*', 'curl_safari*', 'curl_ff*' ) as $pattern ) {
+				$matches = @glob( $dir . '/' . $pattern ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+
+				if ( ! is_array( $matches ) || empty( $matches ) ) {
+					continue;
+				}
+
+				natsort( $matches );
+				$found = array_merge( $found, array_reverse( $matches ) );
+			}
+		}
+
+		return $found;
+	}
+
+	/**
+	 * Determine whether a binary path is a curl-impersonate variant.
+	 *
+	 * @param string $binary Resolved binary path or command.
+	 * @return bool
+	 */
+	private function is_impersonate_binary( string $binary ): bool {
+		$name = strtolower( basename( $binary ) );
+
+		return str_contains( $name, 'impersonate' )
+			|| str_starts_with( $name, 'curl_chrome' )
+			|| str_starts_with( $name, 'curl_edge' )
+			|| str_starts_with( $name, 'curl_safari' )
+			|| str_starts_with( $name, 'curl_ff' );
 	}
 
 	/**
