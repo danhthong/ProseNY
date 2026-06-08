@@ -14,6 +14,7 @@ define( 'PROSE_APP_VERSION', '0.3.0' );
 require_once get_template_directory() . '/inc/blocks.php';
 require_once get_template_directory() . '/inc/enqueue.php';
 require_once get_template_directory() . '/inc/interactivity.php';
+require_once get_template_directory() . '/inc/forms.php';
 require_once get_template_directory() . '/inc/courtflow/bootstrap.php';
 
 /**

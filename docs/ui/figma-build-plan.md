@@ -8,7 +8,7 @@
 > File: **Proseny — App UI** — `xVPgq7caO1qyHwi7EbkPRw`
 > File URL: https://www.figma.com/design/xVPgq7caO1qyHwi7EbkPRw
 
-## Build status (2026-06-02, resumed on Pro)
+## Build status (2026-06-08, Forms module + PDF viewer)
 
 | Phase | Status | Notes |
 |---|---|---|
@@ -24,6 +24,7 @@
 | 5 — Validation screenshot | ✅ Done | Dashboard frame `19:2` |
 | 6 — **Homepage components** | ✅ Done | Logo, NavLink (Default/Active), IconButton, SendButton, ChatInput, SuggestedPromptCard, Header / Desktop, Header / Mobile |
 | 7 — **Homepage screens (responsive)** | ✅ Done | Desktop 1440×1024 (`30:2`), Tablet 834×1112 (`31:52`), Mobile 390×844 (`32:102`), Mobile menu open (`34:138`) |
+| 8 — **Forms module** | ✅ Done | Forms Library + Form Details (PDF viewer **left**) + 7 components; MCP scripts in `app/docs/ui/figma-scripts/forms-module/` |
 
 ### Starter plan limitations encountered
 
@@ -184,6 +185,8 @@ Dashboard
 Intake Flow
 Chat UI
 Case Summary
+Forms Library
+Form Details
 ```
 
 ## Phase 3 — Components (atoms → molecules → organisms)
@@ -289,8 +292,98 @@ Reference: `assets/67d1ef07-…-9a9e75507215.png` provided by the user.
 - Brand: `brand/solid`, `brand/soft`
 - Effects: `Shadow/md` on ChatInput card
 
+## Forms module spec
+
+> Primary public-facing library for Divorce and Family Court forms.
+> Extends the Proseny Design System (Dashboard, Intake Flow, Chat UI, Case Summary).
+> **No new token system** — reuse existing Color, Typography, Spacing, Radius, Effects.
+
+### New pages (under SCREENS)
+
+| Page | Frames |
+|---|---|
+| **Forms Library** | Desktop 1440px, Tablet, Mobile |
+| **Form Details** | Desktop 1440px, Mobile |
+
+### New components (under COMPONENTS)
+
+| Component | Purpose |
+|---|---|
+| **FormCard** | Form ID, title, case type, file name; actions: View Form (+ future Start Guided Interview); variants: Default, Hover, Featured |
+| **FormDownloadCard** | File name + primary Download PDF CTA + secondary Start Guided Interview (disabled placeholder) |
+| **FilterPill** | Case-type filter chips |
+| **SearchBar** | Search by Form ID or Form Title |
+| **Breadcrumb** | Forms Library → Case Type → Form |
+| **EmptyState** | No results / empty library |
+| **PdfViewer** | Left-rail PDF preview (toolbar, page canvas, footer controls) — **UI placeholder**; real PDF rendering deferred to WordPress |
+
+### Forms Library screen
+
+**Desktop (1440px)**
+
+1. **Header** — title *Court Forms Library*, description *Browse Divorce and Family Court forms.*
+2. **SearchBar** — filter by Form ID or Form Title
+3. **Case Type filters** (FilterPill row): All Forms, Divorce, Child Support, Custody, Visitation, Paternity, Family Offense, Orders of Protection
+4. **Forms grid** — 3-col desktop / 2-col tablet / 1-col mobile; FormCard instances
+5. **Pagination** — bottom of page
+
+### Form Details screen (updated layout — PDF viewer on LEFT)
+
+**Desktop — ~65 / 35 split**
+
+```
+Breadcrumb (full width)
+├── LEFT ~65% — PdfViewer
+│   ├── Toolbar: file name · page indicator (1 / N) · zoom −/+ · download
+│   ├── Canvas: white page on bg/muted, Shadow/md
+│   └── Footer: Prev · Page X of N · Next
+└── RIGHT ~35% — Sidebar
+    ├── Form Title, Form ID, Case Type
+    ├── Description placeholder
+    ├── FormDownloadCard (Download PDF primary)
+    ├── Start Guided Interview (disabled placeholder)
+    └── AI explanation placeholder card
+Related Forms (full width below) — 4–6 FormCard instances, same case type
+```
+
+**Mobile — single column (top → bottom)**
+
+1. Breadcrumb
+2. PdfViewer (full width, shorter height)
+3. Form metadata (title, ID, case type, description)
+4. FormDownloadCard
+5. Start Guided Interview + AI placeholders
+6. Related Forms (stacked FormCards)
+
+### Future integration (placeholders only — do not implement in Figma v1)
+
+- AI Assistant
+- Guided Interview
+- Generate Documents
+- Case Workflow
+
+### Design style
+
+- Modern SaaS legal-tech: clean, trustworthy
+- Tokens: `bg/canvas`, `bg/surface`, `bg/muted`, `text/primary`, `text/secondary`, `border/default`, `brand/solid`, `radius/lg`, `Shadow/md`
+- Typography: `Heading/L` page title, `Heading/M` sections, `Body/M` body, `Label` meta, `Caption` PDF chrome
+
+### WordPress theme implementation
+
+The Forms module is implemented in the `prose-app` theme (PDF viewer rendered as a real embedded PDF, not a placeholder):
+
+| File | Role |
+|---|---|
+| `themes/prose-app/inc/forms.php` | Opts the private `prose_form` CPT into public front-end viewing (rewrite slug `forms`, archive), registers the case-type filter query var + `pre_get_posts`, helpers, rewrite flush |
+| `themes/prose-app/archive-prose_form.php` | **Forms Library** — search, case-type filter pills, responsive grid (3/2/1), pagination, empty state |
+| `themes/prose-app/single-prose_form.php` | **Form Details** — PDF viewer left (`<iframe>` of `prose_file_url`) + sidebar right (metadata, Download PDF, disabled Start Guided Interview, AI placeholder) |
+| `themes/prose-app/template-parts/prose-site-header.php` | Shared Proseny header + mobile drawer |
+
+Form data comes from `prose_form` meta (`prose_form_id`, `prose_file_name`, `prose_file_url`) and the `prose_case_type` taxonomy. Tailwind is recompiled via `npm run build` in the theme.
+
 ## Out-of-scope (v1)
 
 - Code Connect mappings (deferred — repo is WordPress, not React).
 - Auto-generated REST file listing (would need a Figma personal access token).
 - The original `/site/ProSeNY` Sites file (not supported by MCP).
+- Live PDF rendering inside Figma (placeholder UI only).
