@@ -29,3 +29,46 @@ jobs:
           rsync -avz --delete \
             public/wp-content/plugins/ \
             ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/var/www/html/wp-content/plugins/
+
+      - name: Notify Slack
+        if: success()
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "🚀 ProSeNY Deployment Successful"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Repository:*\n${{ github.repository }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Branch:*\n${{ github.ref_name }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Author:*\n${{ github.actor }}"
+                    }
+                  ]
+                }
+              ]
+            }' \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack Failure
+        if: failure()
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{
+              "text":"❌ Deployment failed\nRepository: '${{ github.repository }}'\nBranch: '${{ github.ref_name }}'"
+            }' \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
