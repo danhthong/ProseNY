@@ -33,6 +33,96 @@ class Form_CPT {
 		$loader->add_action( 'init', $this, 'register_post_type' );
 		$loader->add_filter( 'manage_' . self::POST_TYPE . '_posts_columns', $this, 'register_columns' );
 		$loader->add_action( 'manage_' . self::POST_TYPE . '_posts_custom_column', $this, 'render_column', 10, 2 );
+		$loader->add_action( 'admin_menu', $this, 'register_taxonomy_submenus', 30 );
+		$loader->add_action( 'restrict_manage_posts', $this, 'render_taxonomy_filters' );
+		$loader->add_filter( 'parent_file', $this, 'fix_taxonomy_parent_menu' );
+	}
+
+	/**
+	 * Register taxonomy management pages as submenus under the ProSe menu.
+	 *
+	 * @return void
+	 */
+	public function register_taxonomy_submenus(): void {
+		$taxonomies = array(
+			Form_Taxonomy::TAXONOMY_CASE_TYPE,
+			Form_Taxonomy::TAXONOMY_COURT,
+			Form_Taxonomy::TAXONOMY_WORKFLOW_STAGE,
+		);
+
+		foreach ( $taxonomies as $taxonomy ) {
+			$tax_object = get_taxonomy( $taxonomy );
+
+			if ( ! $tax_object ) {
+				continue;
+			}
+
+			add_submenu_page(
+				'prose',
+				$tax_object->labels->name,
+				$tax_object->labels->menu_name,
+				$tax_object->cap->manage_terms,
+				'edit-tags.php?taxonomy=' . $taxonomy . '&post_type=' . self::POST_TYPE
+			);
+		}
+	}
+
+	/**
+	 * Keep the ProSe menu highlighted on taxonomy term screens.
+	 *
+	 * @param string $parent_file Current parent file.
+	 * @return string
+	 */
+	public function fix_taxonomy_parent_menu( string $parent_file ): string {
+		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+
+		if ( $screen && 'edit-tags' === $screen->base && self::POST_TYPE === $screen->post_type ) {
+			return 'prose';
+		}
+
+		return $parent_file;
+	}
+
+	/**
+	 * Render taxonomy filter dropdowns on the forms list table.
+	 *
+	 * @param string $post_type Current post type.
+	 * @return void
+	 */
+	public function render_taxonomy_filters( string $post_type ): void {
+		if ( self::POST_TYPE !== $post_type ) {
+			return;
+		}
+
+		$taxonomies = array(
+			Form_Taxonomy::TAXONOMY_CASE_TYPE,
+			Form_Taxonomy::TAXONOMY_COURT,
+			Form_Taxonomy::TAXONOMY_WORKFLOW_STAGE,
+		);
+
+		foreach ( $taxonomies as $taxonomy ) {
+			$tax_object = get_taxonomy( $taxonomy );
+
+			if ( ! $tax_object ) {
+				continue;
+			}
+
+			$selected = isset( $_GET[ $taxonomy ] ) ? sanitize_text_field( wp_unslash( $_GET[ $taxonomy ] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+			wp_dropdown_categories(
+				array(
+					'show_option_all' => $tax_object->labels->all_items,
+					'taxonomy'        => $taxonomy,
+					'name'            => $taxonomy,
+					'value_field'     => 'slug',
+					'selected'        => $selected,
+					'hierarchical'    => true,
+					'hide_empty'      => false,
+					'show_count'      => false,
+					'orderby'         => 'name',
+				)
+			);
+		}
 	}
 
 	/**
