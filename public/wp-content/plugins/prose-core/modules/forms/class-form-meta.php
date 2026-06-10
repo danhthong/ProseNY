@@ -64,6 +64,34 @@ class Form_Meta {
 	public const META_AI_SUMMARY                   = 'prose_ai_summary';
 	public const META_PLAIN_LANGUAGE_DESCRIPTION   = 'prose_plain_language_description';
 	public const META_COMMON_MISTAKES              = 'prose_common_mistakes';
+	public const META_AI_SUMMARY_STRUCTURED        = 'prose_ai_summary_structured';
+	public const META_USER_SUMMARY                 = 'prose_user_summary';
+	public const META_CONFIDENCE_SCORE             = 'prose_confidence_score';
+
+	// CourtFlow enrichment.
+	public const META_WORKFLOW_IDS       = 'prose_workflow_ids';
+	public const META_PACKAGE_IDS        = 'prose_package_ids';
+	public const META_WORKFLOW_STAGES    = 'prose_workflow_stages';
+	public const META_ISSUE_TYPES        = 'prose_issue_types';
+	public const META_COURT_ROUTING      = 'prose_court_routing';
+	public const META_WORKFLOW_NODES     = 'prose_workflow_nodes';
+	public const META_TRIGGER_EVENTS     = 'prose_trigger_events';
+	public const META_COMPLETION_EVENTS  = 'prose_completion_events';
+	public const META_NEXT_STEPS         = 'prose_next_steps';
+	public const META_REQUIRED_BEFORE    = 'prose_required_before';
+	public const META_REQUIRED_AFTER     = 'prose_required_after';
+	public const META_PREREQUISITE_FORMS = 'prose_prerequisite_forms';
+	public const META_DEPENDENT_FORMS    = 'prose_dependent_forms';
+	public const META_RELATED_FORMS      = 'prose_related_forms';
+	public const META_FILING_PARTY       = 'prose_filing_party';
+	public const META_SERVED_PARTY       = 'prose_served_party';
+	public const META_DOCUMENT_TYPE      = 'prose_document_type';
+	public const META_ALIASES            = 'prose_aliases';
+	public const META_PACKAGE_DEPS       = 'prose_package_dependencies';
+	public const META_WORKFLOW_DEPS      = 'prose_workflow_dependencies';
+	public const META_DESCRIPTION        = 'prose_description';
+	public const META_OFFICIAL_URL       = 'prose_official_url';
+	public const META_OFFICIAL_PDF_URL   = 'prose_official_pdf_url';
 
 	/**
 	 * All registered meta keys.
@@ -101,6 +129,11 @@ class Form_Meta {
 			self::META_DETECTED_CASE_TYPE,
 			self::META_DETECTED_WORKFLOW_STAGE,
 			self::META_CLASSIFICATION_SOURCE,
+			self::META_DOCUMENT_TYPE,
+			self::META_DESCRIPTION,
+			self::META_OFFICIAL_URL,
+			self::META_OFFICIAL_PDF_URL,
+			self::META_USER_SUMMARY,
 		);
 	}
 
@@ -134,6 +167,26 @@ class Form_Meta {
 			self::META_WORKFLOW_PACKAGE,
 			self::META_CLASSIFICATION_LOG,
 			self::META_CLASSIFICATION_SIGNALS,
+			self::META_AI_SUMMARY_STRUCTURED,
+			self::META_WORKFLOW_IDS,
+			self::META_PACKAGE_IDS,
+			self::META_WORKFLOW_STAGES,
+			self::META_ISSUE_TYPES,
+			self::META_COURT_ROUTING,
+			self::META_WORKFLOW_NODES,
+			self::META_TRIGGER_EVENTS,
+			self::META_COMPLETION_EVENTS,
+			self::META_NEXT_STEPS,
+			self::META_REQUIRED_BEFORE,
+			self::META_REQUIRED_AFTER,
+			self::META_PREREQUISITE_FORMS,
+			self::META_DEPENDENT_FORMS,
+			self::META_RELATED_FORMS,
+			self::META_FILING_PARTY,
+			self::META_SERVED_PARTY,
+			self::META_ALIASES,
+			self::META_PACKAGE_DEPS,
+			self::META_WORKFLOW_DEPS,
 		);
 	}
 
@@ -162,6 +215,7 @@ class Form_Meta {
 			self::META_WORKFLOW_ORDER,
 			self::META_PDF_FIELD_COUNT,
 			self::META_CLASSIFICATION_CONFIDENCE,
+			self::META_CONFIDENCE_SCORE,
 		);
 	}
 

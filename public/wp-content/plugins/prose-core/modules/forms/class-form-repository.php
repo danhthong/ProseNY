@@ -497,6 +497,8 @@ class Form_Repository {
 			'detected_workflow_stage'   => Form_Meta::META_DETECTED_WORKFLOW_STAGE,
 			'classification_source'     => Form_Meta::META_CLASSIFICATION_SOURCE,
 			'pdf_analyzed_at'           => Form_Meta::META_PDF_ANALYZED_AT,
+			'document_type'             => Form_Meta::META_DOCUMENT_TYPE,
+			'user_summary'              => Form_Meta::META_USER_SUMMARY,
 		);
 
 		foreach ( $string_map as $key => $meta_key ) {
@@ -507,6 +509,12 @@ class Form_Repository {
 
 		if ( array_key_exists( 'classification_confidence', $result ) ) {
 			update_post_meta( $post_id, Form_Meta::META_CLASSIFICATION_CONFIDENCE, absint( $result['classification_confidence'] ) );
+		}
+
+		if ( array_key_exists( 'confidence_score', $result ) ) {
+			update_post_meta( $post_id, Form_Meta::META_CONFIDENCE_SCORE, absint( $result['confidence_score'] ) );
+		} elseif ( array_key_exists( 'classification_confidence', $result ) ) {
+			update_post_meta( $post_id, Form_Meta::META_CONFIDENCE_SCORE, absint( $result['classification_confidence'] ) );
 		}
 
 		if ( array_key_exists( 'classification_warning', $result ) ) {
@@ -526,12 +534,32 @@ class Form_Repository {
 		}
 
 		$json_map = array(
-			'questionnaire_keys'     => Form_Meta::META_QUESTIONNAIRE_KEYS,
-			'workflow_package'       => Form_Meta::META_WORKFLOW_PACKAGE,
-			'dependencies'           => Form_Meta::META_DEPENDENCIES,
-			'pdf_fields_json'        => Form_Meta::META_PDF_FIELDS_JSON,
-			'fillable_fields'        => Form_Meta::META_FILLABLE_FIELDS,
-			'classification_signals' => Form_Meta::META_CLASSIFICATION_SIGNALS,
+			'questionnaire_keys'      => Form_Meta::META_QUESTIONNAIRE_KEYS,
+			'workflow_package'        => Form_Meta::META_WORKFLOW_PACKAGE,
+			'dependencies'            => Form_Meta::META_DEPENDENCIES,
+			'pdf_fields_json'         => Form_Meta::META_PDF_FIELDS_JSON,
+			'fillable_fields'         => Form_Meta::META_FILLABLE_FIELDS,
+			'classification_signals'  => Form_Meta::META_CLASSIFICATION_SIGNALS,
+			'ai_summary_structured'   => Form_Meta::META_AI_SUMMARY_STRUCTURED,
+			'workflow_ids'            => Form_Meta::META_WORKFLOW_IDS,
+			'package_ids'             => Form_Meta::META_PACKAGE_IDS,
+			'workflow_stages'         => Form_Meta::META_WORKFLOW_STAGES,
+			'issue_types'             => Form_Meta::META_ISSUE_TYPES,
+			'court_routing'           => Form_Meta::META_COURT_ROUTING,
+			'workflow_nodes'          => Form_Meta::META_WORKFLOW_NODES,
+			'trigger_events'          => Form_Meta::META_TRIGGER_EVENTS,
+			'completion_events'       => Form_Meta::META_COMPLETION_EVENTS,
+			'next_steps'              => Form_Meta::META_NEXT_STEPS,
+			'required_before'         => Form_Meta::META_REQUIRED_BEFORE,
+			'required_after'          => Form_Meta::META_REQUIRED_AFTER,
+			'prerequisite_forms'      => Form_Meta::META_PREREQUISITE_FORMS,
+			'dependent_forms'         => Form_Meta::META_DEPENDENT_FORMS,
+			'related_forms'           => Form_Meta::META_RELATED_FORMS,
+			'filing_party'            => Form_Meta::META_FILING_PARTY,
+			'served_party'            => Form_Meta::META_SERVED_PARTY,
+			'aliases'                 => Form_Meta::META_ALIASES,
+			'package_dependencies'    => Form_Meta::META_PACKAGE_DEPS,
+			'workflow_dependencies'   => Form_Meta::META_WORKFLOW_DEPS,
 		);
 
 		foreach ( $json_map as $key => $meta_key ) {

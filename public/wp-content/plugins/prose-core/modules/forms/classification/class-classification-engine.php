@@ -10,6 +10,7 @@ namespace ProSe\Core\Forms\Classification;
 use ProSe\Core\Forms\Form_Meta;
 use ProSe\Core\Forms\Form_Repository;
 use ProSe\Core\Forms\Pdf_Analyzer;
+use ProSe\Core\Forms\Classification\Vocabulary;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -91,6 +92,34 @@ final class Classification_Engine {
 	private Ai_Summarizer $ai_summarizer;
 
 	/**
+	 * Workflow mapper.
+	 *
+	 * @var Workflow_Mapper
+	 */
+	private Workflow_Mapper $workflow_mapper;
+
+	/**
+	 * Court router.
+	 *
+	 * @var Court_Router
+	 */
+	private Court_Router $court_router;
+
+	/**
+	 * Workflow node mapper.
+	 *
+	 * @var Workflow_Node_Mapper
+	 */
+	private Workflow_Node_Mapper $node_mapper;
+
+	/**
+	 * Package detector.
+	 *
+	 * @var Package_Detector
+	 */
+	private Package_Detector $package_detector;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Pdf_Analyzer             $pdf_analyzer         PDF analyzer.
@@ -103,6 +132,10 @@ final class Classification_Engine {
 	 * @param Dependency_Resolver      $dependency_resolver  Dependency resolver.
 	 * @param Workflow_Package_Builder $package_builder      Package builder.
 	 * @param Ai_Summarizer            $ai_summarizer        AI summarizer.
+	 * @param Workflow_Mapper          $workflow_mapper      Workflow mapper.
+	 * @param Court_Router             $court_router         Court router.
+	 * @param Workflow_Node_Mapper     $node_mapper          Node mapper.
+	 * @param Package_Detector         $package_detector     Package detector.
 	 */
 	public function __construct(
 		Pdf_Analyzer $pdf_analyzer,
@@ -114,7 +147,11 @@ final class Classification_Engine {
 		Questionnaire_Mapper $questionnaire_mapper,
 		Dependency_Resolver $dependency_resolver,
 		Workflow_Package_Builder $package_builder,
-		Ai_Summarizer $ai_summarizer
+		Ai_Summarizer $ai_summarizer,
+		Workflow_Mapper $workflow_mapper,
+		Court_Router $court_router,
+		Workflow_Node_Mapper $node_mapper,
+		Package_Detector $package_detector
 	) {
 		$this->pdf_analyzer         = $pdf_analyzer;
 		$this->repository           = $repository;
@@ -126,6 +163,10 @@ final class Classification_Engine {
 		$this->dependency_resolver  = $dependency_resolver;
 		$this->package_builder      = $package_builder;
 		$this->ai_summarizer        = $ai_summarizer;
+		$this->workflow_mapper      = $workflow_mapper;
+		$this->court_router         = $court_router;
+		$this->node_mapper          = $node_mapper;
+		$this->package_detector     = $package_detector;
 	}
 
 	/**
@@ -263,17 +304,52 @@ final class Classification_Engine {
 		);
 
 		// Step 11: Dependencies.
-		$dependencies = $this->dependency_resolver->resolve( $form_code );
+		$deps_full    = $this->dependency_resolver->resolve_full( $form_code );
+		$dependencies = $deps_full['dependencies'];
 
-		// Step 12: AI summary.
+		// Step 12: CourtFlow enrichment (workflows, routing, nodes, packages).
+		$enrich_ctx = array_merge(
+			$base_ctx,
+			array(
+				'case_type'      => (string) ( $case_type['value'] ?? '' ),
+				'court'          => (string) ( $court['value'] ?? '' ),
+				'workflow_stage' => (string) ( $workflow['value'] ?? '' ),
+			)
+		);
+
+		$workflow_map = $this->workflow_mapper->map( $enrich_ctx );
+		$court_routing = $this->court_router->route(
+			array_merge(
+				$enrich_ctx,
+				array( 'workflow_ids' => $workflow_map['workflow_ids'] )
+			)
+		);
+		$package_ids = $this->package_detector->detect( $enrich_ctx );
+		$node_map    = $this->node_mapper->map( $enrich_ctx );
+
+		$workflow_stages = array();
+		$stage_enum      = Vocabulary::stage_to_enum( (string) ( $workflow['value'] ?? '' ) );
+
+		if ( '' !== $stage_enum ) {
+			$workflow_stages[] = $stage_enum;
+		}
+
+		$document_type = Vocabulary::document_type_for_form_code( $form_code );
+		$filing_party  = Vocabulary::filing_party_for_form_code( $form_code );
+		$served_party  = Vocabulary::served_party_for_form_code( $form_code );
+
+		// Step 13: AI summary.
 		$summary_ctx = array(
 			'court'          => $court['value'] ?? '',
 			'case_type'      => $case_type['value'] ?? '',
 			'workflow_stage' => $workflow['value'] ?? '',
 			'form_code'      => $form_code,
 			'title'          => $post->post_title,
+			'court_routing'  => $court_routing,
+			'next_steps'     => $node_map['next_steps'],
 		);
-		$ai_summary = $this->ai_summarizer->summarize( $summary_ctx );
+		$ai_summary           = $this->ai_summarizer->summarize( $summary_ctx );
+		$ai_summary_structured = $this->ai_summarizer->summarize_structured( $summary_ctx );
 
 		// Court classification is the anchor: its confidence drives the headline
 		// score, taxonomy auto-assignment, and the manual-review decision.
@@ -333,10 +409,33 @@ final class Classification_Engine {
 			'fillable_fields'      => $normalized,
 			'pdf_analyzed_at'      => $pdf_data['analyzed_at'],
 			'questionnaire_keys'   => $questionnaire_keys,
-			'dependencies'         => $dependencies,
-			'workflow_package'     => $workflow_package,
-			'ai_summary'           => $ai_summary,
-			'classifiers'          => array(
+			'dependencies'            => $dependencies,
+			'workflow_package'        => $workflow_package,
+			'ai_summary'              => $ai_summary,
+			'ai_summary_structured'   => $ai_summary_structured,
+			'user_summary'            => (string) ( $ai_summary_structured['user_summary'] ?? '' ),
+			'confidence_score'        => $confidence,
+			'workflow_ids'            => $workflow_map['workflow_ids'],
+			'package_ids'             => $package_ids,
+			'workflow_stages'         => $workflow_stages,
+			'issue_types'             => $workflow_map['issue_types'],
+			'court_routing'           => $court_routing,
+			'workflow_nodes'          => $node_map['workflow_nodes'],
+			'trigger_events'          => $node_map['trigger_events'],
+			'completion_events'       => $node_map['completion_events'],
+			'next_steps'              => $node_map['next_steps'],
+			'required_before'         => $deps_full['required_before'],
+			'required_after'          => $deps_full['required_after'],
+			'prerequisite_forms'      => $deps_full['prerequisite_forms'],
+			'dependent_forms'         => $deps_full['dependent_forms'],
+			'related_forms'           => $deps_full['related_forms'],
+			'package_dependencies'    => $deps_full['package_dependencies'],
+			'workflow_dependencies'   => $deps_full['workflow_dependencies'],
+			'document_type'           => $document_type,
+			'filing_party'            => $filing_party,
+			'served_party'            => $served_party,
+			'aliases'                 => array(),
+			'classifiers'             => array(
 				'court'    => $court,
 				'county'   => $county,
 				'case_type' => $case_type,

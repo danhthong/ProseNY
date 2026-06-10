@@ -9,10 +9,14 @@
 
 namespace ProSe\Core;
 
+use ProSe\Core\Forms\County_Rule_CPT;
+use ProSe\Core\Forms\County_Rule_Repository;
 use ProSe\Core\Forms\Form_CPT;
 use ProSe\Core\Forms\Form_File_Manager;
 use ProSe\Core\Forms\Form_Taxonomy;
 use ProSe\Core\Forms\Forms_Module;
+use ProSe\Core\Forms\Package_CPT;
+use ProSe\Core\Forms\Package_Repository;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -62,12 +66,20 @@ final class Plugin {
 	 * @return void
 	 */
 	public static function activate(): void {
-		$cpt      = new Form_CPT();
-		$taxonomy = new Form_Taxonomy();
+		$cpt              = new Form_CPT();
+		$package_cpt      = new Package_CPT();
+		$county_rule_cpt  = new County_Rule_CPT();
+		$taxonomy         = new Form_Taxonomy();
+		$package_repo     = new Package_Repository();
+		$county_rule_repo = new County_Rule_Repository();
 
 		$cpt->register_post_type();
+		$package_cpt->register_post_type();
+		$county_rule_cpt->register_post_type();
 		$taxonomy->register_taxonomies();
 		$taxonomy->seed_terms();
+		$package_repo->seed_packages();
+		$county_rule_repo->seed_county_rules();
 
 		$file_manager = new Form_File_Manager();
 		$file_manager->ensure_upload_dir();
