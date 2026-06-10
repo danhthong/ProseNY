@@ -140,6 +140,20 @@ final class Form_Classification_Admin {
 				<td><span class="prose-readonly"><?php echo esc_html( $values['source'] ?: '—' ); ?></span></td>
 			</tr>
 			<tr>
+				<th scope="row"><?php esc_html_e( 'Classification Signals', 'prose-core' ); ?></th>
+				<td>
+					<?php if ( ! empty( $values['signals'] ) ) : ?>
+						<ul class="prose-signals-list">
+							<?php foreach ( $values['signals'] as $signal ) : ?>
+								<li><?php echo esc_html( $signal ); ?></li>
+							<?php endforeach; ?>
+						</ul>
+					<?php else : ?>
+						<span class="prose-readonly">&#8212;</span>
+					<?php endif; ?>
+				</td>
+			</tr>
+			<tr>
 				<th scope="row"><?php esc_html_e( 'Classification Warning', 'prose-core' ); ?></th>
 				<td><span class="prose-readonly"><?php echo esc_html( $values['warning'] ?: '—' ); ?></span></td>
 			</tr>
@@ -439,6 +453,7 @@ final class Form_Classification_Admin {
 			'needs_review'           => (bool) get_post_meta( $post_id, Form_Meta::META_NEEDS_REVIEW, true ),
 			'confidence'             => (string) get_post_meta( $post_id, Form_Meta::META_CLASSIFICATION_CONFIDENCE, true ),
 			'source'                 => (string) get_post_meta( $post_id, Form_Meta::META_CLASSIFICATION_SOURCE, true ),
+			'signals'                => $this->decode_signals( (string) get_post_meta( $post_id, Form_Meta::META_CLASSIFICATION_SIGNALS, true ) ),
 			'warning'                => (string) get_post_meta( $post_id, Form_Meta::META_CLASSIFICATION_WARNING, true ),
 			'supported_court'        => (bool) get_post_meta( $post_id, Form_Meta::META_SUPPORTED_COURT, true ),
 			'pdf_fillable'           => (bool) get_post_meta( $post_id, Form_Meta::META_PDF_FILLABLE, true ),
@@ -457,6 +472,26 @@ final class Form_Classification_Admin {
 			'override_case_type'     => ( ! empty( $case_terms ) && ! is_wp_error( $case_terms ) ) ? $case_terms[0]->name : '',
 			'override_workflow_stage' => ( ! empty( $stage_terms ) && ! is_wp_error( $stage_terms ) ) ? $stage_terms[0]->name : '',
 		);
+	}
+
+	/**
+	 * Decode classification signals JSON into a list of labels.
+	 *
+	 * @param string $json Raw JSON array.
+	 * @return string[]
+	 */
+	private function decode_signals( string $json ): array {
+		if ( '' === trim( $json ) ) {
+			return array();
+		}
+
+		$decoded = json_decode( $json, true );
+
+		if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $decoded ) ) {
+			return array();
+		}
+
+		return array_values( array_filter( array_map( 'strval', $decoded ) ) );
 	}
 
 	/**

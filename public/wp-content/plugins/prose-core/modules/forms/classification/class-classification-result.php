@@ -20,6 +20,7 @@ final class Classification_Result {
 	public const SOURCE_PDF_FILENAME = 'pdf_filename';
 	public const SOURCE_CSV_IMPORT   = 'csv_import';
 	public const SOURCE_AI_INFERENCE = 'ai_inference';
+	public const SOURCE_COMBINED     = 'combined_signals';
 
 	public const CONFIDENCE_THRESHOLD = 70;
 
@@ -78,7 +79,8 @@ final class Classification_Result {
 		}
 
 		$priority = array(
-			self::SOURCE_PDF_CONTENT  => 4,
+			self::SOURCE_PDF_CONTENT  => 5,
+			self::SOURCE_COMBINED     => 4,
 			self::SOURCE_PDF_FILENAME => 3,
 			self::SOURCE_CSV_IMPORT   => 2,
 			self::SOURCE_AI_INFERENCE => 1,

@@ -41,6 +41,7 @@ final class County_Classifier {
 	public function classify( array $ctx ): array {
 		$text     = strtoupper( (string) ( $ctx['text'] ?? '' ) );
 		$filename = strtoupper( (string) ( $ctx['filename'] ?? '' ) );
+		$compact  = (string) preg_replace( '/[^A-Z0-9]/', '', $text );
 
 		foreach ( self::COUNTIES as $pattern => $name ) {
 			if ( preg_match( '/COUNTY OF ' . preg_quote( $pattern, '/' ) . '\b/', $text ) ) {
@@ -49,7 +50,12 @@ final class County_Classifier {
 		}
 
 		foreach ( self::COUNTIES as $pattern => $name ) {
-			if ( str_contains( $text, $pattern . ' COUNTY' ) || str_contains( $text, 'COUNTY OF ' . $pattern ) ) {
+			$compact_name = (string) preg_replace( '/[^A-Z0-9]/', '', $pattern );
+
+			// Only the "COUNTY OF <name>" construct is reliable. Matching
+			// "<name> COUNTY" would misfire on "STATE OF NEW YORK / COUNTY OF".
+			if ( str_contains( $text, 'COUNTY OF ' . $pattern )
+				|| str_contains( $compact, 'COUNTYOF' . $compact_name ) ) {
 				return Classification_Result::make( $name, 90, Classification_Result::SOURCE_PDF_CONTENT );
 			}
 		}

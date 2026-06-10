@@ -48,6 +48,7 @@ class Form_Meta {
 	public const META_DETECTED_WORKFLOW_STAGE    = 'prose_detected_workflow_stage';
 	public const META_CLASSIFICATION_CONFIDENCE  = 'prose_classification_confidence';
 	public const META_CLASSIFICATION_SOURCE      = 'prose_classification_source';
+	public const META_CLASSIFICATION_SIGNALS     = 'prose_classification_signals';
 	public const META_CLASSIFICATION_WARNING     = 'prose_classification_warning';
 	public const META_NEEDS_REVIEW               = 'prose_needs_review';
 	public const META_MANUAL_OVERRIDE            = 'prose_manual_override';
@@ -132,6 +133,7 @@ class Form_Meta {
 			self::META_QUESTIONNAIRE_KEYS,
 			self::META_WORKFLOW_PACKAGE,
 			self::META_CLASSIFICATION_LOG,
+			self::META_CLASSIFICATION_SIGNALS,
 		);
 	}
 

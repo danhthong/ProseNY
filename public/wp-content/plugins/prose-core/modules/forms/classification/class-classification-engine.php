@@ -226,37 +226,44 @@ final class Classification_Engine {
 			'csv_workflow_stage' => (string) ( $csv_hints['workflow_stage'] ?? '' ),
 		);
 
-		// Step 3: Court.
-		$court = $this->court_classifier->classify( $base_ctx );
-
-		// Step 4: County.
-		$county = $this->county_classifier->classify( $base_ctx );
-
-		// Step 5: Case type.
+		// Step 3: Case type (independent of court, feeds court fallback).
 		$case_type = $this->case_type_classifier->classify( $base_ctx );
 
-		// Step 6: Workflow stage (court-aware).
+		// Step 4: Workflow package (from case type) — a court fallback signal.
+		$workflow_package = $this->package_builder->build(
+			(string) ( $case_type['value'] ?? '' ),
+			$form_code
+		);
+
+		// Step 5: Court (multi-signal with intelligent fallback).
+		$court_ctx = array_merge(
+			$base_ctx,
+			array(
+				'case_type'        => (string) ( $case_type['value'] ?? '' ),
+				'workflow_package' => $workflow_package,
+			)
+		);
+		$court = $this->court_classifier->classify( $court_ctx );
+
+		// Step 6: County.
+		$county = $this->county_classifier->classify( $base_ctx );
+
+		// Step 7: Workflow stage (court-aware).
 		$workflow_ctx = array_merge( $base_ctx, array( 'court' => $court['value'] ?? '' ) );
 		$workflow     = $this->workflow_classifier->classify( $workflow_ctx );
 
-		// Step 7-8: Fillable fields.
+		// Step 8-9: Fillable fields.
 		$fillable   = $this->pdf_analyzer->detect_fillable( $fields );
 		$normalized = $this->pdf_analyzer->normalize_fields( $fields );
 
-		// Step 9: Questionnaire keys.
+		// Step 10: Questionnaire keys.
 		$questionnaire_keys = $this->questionnaire_mapper->map(
 			$normalized,
 			(string) ( $case_type['value'] ?? '' )
 		);
 
-		// Step 10: Dependencies.
+		// Step 11: Dependencies.
 		$dependencies = $this->dependency_resolver->resolve( $form_code );
-
-		// Step 11: Workflow package.
-		$workflow_package = $this->package_builder->build(
-			(string) ( $case_type['value'] ?? '' ),
-			$form_code
-		);
 
 		// Step 12: AI summary.
 		$summary_ctx = array(
@@ -268,31 +275,31 @@ final class Classification_Engine {
 		);
 		$ai_summary = $this->ai_summarizer->summarize( $summary_ctx );
 
-		// Confidence: minimum of classifiers that returned a value.
-		$confidence_pairs = array(
-			$court,
-			$county,
-			$case_type,
-			$workflow,
-		);
-		$confidences = array();
+		// Court classification is the anchor: its confidence drives the headline
+		// score, taxonomy auto-assignment, and the manual-review decision.
+		$court_value      = (string) ( $court['value'] ?? '' );
+		$court_confidence = (int) ( $court['confidence'] ?? 0 );
+		$confidence       = $court_confidence;
 
-		foreach ( $confidence_pairs as $item ) {
-			if ( ! empty( $item['value'] ) ) {
-				$confidences[] = (int) ( $item['confidence'] ?? 0 );
-			}
-		}
+		// Source reflects how the court was determined (pdf_content, combined_signals, etc.).
+		$source = (string) ( $court['source'] ?? Classification_Result::SOURCE_AI_INFERENCE );
 
-		$confidence = ! empty( $confidences ) ? min( $confidences ) : 0;
-
-		// Primary source: highest priority among classifiers.
-		$source = $this->resolve_primary_source( array( $court, $county, $case_type, $workflow ) );
+		// Contributing court signals (for the admin UI).
+		$court_signals = array_values( (array) ( $court['signals'] ?? array() ) );
 
 		// Warnings: CSV conflicts + unsupported court.
 		$warnings = $this->build_warnings( $csv_hints, $court, $county, $case_type, $workflow );
 
 		$supported_court = (bool) ( $court['supported'] ?? true );
-		$needs_review    = $confidence < Classification_Result::CONFIDENCE_THRESHOLD || ! $supported_court;
+		$needs_review    = '' === $court_value
+			|| $court_confidence < Classification_Result::CONFIDENCE_THRESHOLD
+			|| ! $supported_court;
+
+		if ( $needs_review && $supported_court ) {
+			$warnings[] = __( 'Insufficient Classification Confidence', 'prose-core' );
+		}
+
+		$warnings = array_values( array_unique( $warnings ) );
 
 		$pdf_data = array(
 			'fillable'        => $fillable,
@@ -317,6 +324,7 @@ final class Classification_Engine {
 			'detected_workflow_stage' => (string) ( $workflow['value'] ?? '' ),
 			'classification_confidence' => $confidence,
 			'classification_source'  => $source,
+			'classification_signals' => $court_signals,
 			'classification_warning' => implode( ' ', $warnings ),
 			'needs_review'         => $needs_review,
 			'pdf_fillable'         => $fillable,
@@ -391,35 +399,5 @@ final class Classification_Engine {
 		}
 
 		return array_values( array_unique( $warnings ) );
-	}
-
-	/**
-	 * Resolve primary classification source from classifier results.
-	 *
-	 * @param array<int, array<string, mixed>> $results Classifier results.
-	 * @return string
-	 */
-	private function resolve_primary_source( array $results ): string {
-		$priority = array(
-			Classification_Result::SOURCE_PDF_CONTENT  => 4,
-			Classification_Result::SOURCE_PDF_FILENAME => 3,
-			Classification_Result::SOURCE_CSV_IMPORT   => 2,
-			Classification_Result::SOURCE_AI_INFERENCE => 1,
-		);
-
-		$best_source = Classification_Result::SOURCE_AI_INFERENCE;
-		$best_score  = 0;
-
-		foreach ( $results as $result ) {
-			$source = (string) ( $result['source'] ?? '' );
-			$score  = $priority[ $source ] ?? 0;
-
-			if ( $score > $best_score ) {
-				$best_score  = $score;
-				$best_source = $source;
-			}
-		}
-
-		return $best_source;
 	}
 }

@@ -526,11 +526,12 @@ class Form_Repository {
 		}
 
 		$json_map = array(
-			'questionnaire_keys' => Form_Meta::META_QUESTIONNAIRE_KEYS,
-			'workflow_package'   => Form_Meta::META_WORKFLOW_PACKAGE,
-			'dependencies'       => Form_Meta::META_DEPENDENCIES,
-			'pdf_fields_json'    => Form_Meta::META_PDF_FIELDS_JSON,
-			'fillable_fields'    => Form_Meta::META_FILLABLE_FIELDS,
+			'questionnaire_keys'     => Form_Meta::META_QUESTIONNAIRE_KEYS,
+			'workflow_package'       => Form_Meta::META_WORKFLOW_PACKAGE,
+			'dependencies'           => Form_Meta::META_DEPENDENCIES,
+			'pdf_fields_json'        => Form_Meta::META_PDF_FIELDS_JSON,
+			'fillable_fields'        => Form_Meta::META_FILLABLE_FIELDS,
+			'classification_signals' => Form_Meta::META_CLASSIFICATION_SIGNALS,
 		);
 
 		foreach ( $json_map as $key => $meta_key ) {

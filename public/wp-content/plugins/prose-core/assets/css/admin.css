@@ -221,3 +221,15 @@
 	font-size: 12px;
 	color: #2271b1;
 }
+
+.prose-signals-list {
+	margin: 0;
+	padding-left: 18px;
+	list-style: disc;
+}
+
+.prose-signals-list li {
+	margin: 0 0 2px;
+	font-size: 13px;
+	color: #1d2327;
+}

@@ -87,7 +87,7 @@ prose-core/
 | **Core** | `prose_form_code`, `prose_county`, `prose_workflow_key`, `prose_workflow_order`, `prose_packet_group`, `prose_required`, `prose_dependencies`, `prose_conditions` |
 | **PDF storage** | `prose_file_name`, `prose_file_url`, `prose_source_pdf_url` |
 | **PDF analysis** | `prose_pdf_fillable`, `prose_pdf_field_count`, `prose_pdf_fields_json`, `prose_pdf_analyzed_at` |
-| **Classification** | `prose_supported_court`, `prose_detected_court`, `prose_detected_county`, `prose_detected_case_type`, `prose_detected_workflow_stage`, `prose_classification_confidence`, `prose_classification_source`, `prose_classification_warning`, `prose_needs_review`, `prose_manual_override`, `prose_questionnaire_keys`, `prose_workflow_package`, `prose_classification_log` |
+| **Classification** | `prose_supported_court`, `prose_detected_court`, `prose_detected_county`, `prose_detected_case_type`, `prose_detected_workflow_stage`, `prose_classification_confidence`, `prose_classification_source`, `prose_classification_signals`, `prose_classification_warning`, `prose_needs_review`, `prose_manual_override`, `prose_questionnaire_keys`, `prose_workflow_package`, `prose_classification_log` |
 | **Automation** | `prose_fillable_fields`, `prose_field_mapping_json` |
 | **AI** | `prose_ai_summary`, `prose_plain_language_description`, `prose_common_mistakes` |
 
@@ -126,6 +126,21 @@ When a PDF is imported or reclassified, the engine:
 6. Persists metadata and assigns taxonomies when confidence ≥ 70
 
 **Data authority:** PDF content > PDF filename > CSV import > AI inference. CSV conflicts with PDF are overridden and stored in `prose_classification_warning`.
+
+### Fallback court classification
+
+Many NY court forms (generic forms, cover sheets, instructions, supporting documents) do not explicitly name the court. When the PDF content does not state the court, `Court_Classifier` falls back to a weighted multi-signal scoring model and combines whatever evidence is available:
+
+| Signal | Weight | Example |
+|---|---|---|
+| PDF content (court named) | 100 | `SUPREME COURT OF THE STATE OF NEW YORK` → Supreme |
+| PDF title / strong keyword | 90 | `Judgment of Divorce`, `Matrimonial` → Supreme |
+| Case type | 80 | `Child Support` → Family, `Uncontested Divorce` → Supreme |
+| Workflow packet membership | 75 | `UD-4` in the UD packet → Supreme (95 conf) |
+| Form code convention | 60 | `UD-*`/`DRL-*` → Supreme; `UCCJEA-*`/`4-*`/`5-*`/`GF-*` → Family |
+| Workflow stage | 50 | `Commencement`/`Judgment` → Supreme; `Petition`/`Enforcement`/`Modification` → Family |
+
+The highest-weight signal selects the court; every agreeing signal contributes to the displayed **Classification Signals** (`prose_classification_signals`) and the confidence is the strongest agreeing value. Two or more agreeing signals set the source to `combined_signals`. If the resulting court confidence is below 70 (or the court is unsupported), the form is flagged `prose_needs_review` with the reason *Insufficient Classification Confidence*.
 
 ### Hybrid PDF engine
 
