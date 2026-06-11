@@ -23,6 +23,18 @@ if ( ! function_exists( 'wp_json_encode' ) ) {
 	}
 }
 
+if ( ! function_exists( '__' ) ) {
+	/**
+	 * @param string $text   Text to translate.
+	 * @param string $domain Text domain.
+	 * @return string
+	 */
+	function __( $text, $domain = 'default' ) {
+		unset( $domain );
+		return (string) $text;
+	}
+}
+
 if ( ! function_exists( 'sanitize_text_field' ) ) {
 	/**
 	 * @param string $str String.
