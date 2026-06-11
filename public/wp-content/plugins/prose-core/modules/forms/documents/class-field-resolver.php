@@ -36,15 +36,16 @@ final class Field_Resolver {
 	/**
 	 * Resolve a set of canonical field keys for a case.
 	 *
-	 * @param string[]             $keys    Canonical field keys.
-	 * @param Case_State           $state   Case state.
-	 * @param array<string, mixed> $context Extra context:
+	 * @param string[]              $keys    Canonical field keys.
+	 * @param Case_State            $state   Case state.
+	 * @param array<string, mixed>  $context Extra context:
 	 *                                       generated => array<string,mixed>,
 	 *                                       court     => array<string,mixed>,
 	 *                                       county    => array<string,mixed>.
+	 * @param array<string, string> $classes Field classification map (key => class).
 	 * @return Field_Resolution_Result
 	 */
-	public function resolve( array $keys, Case_State $state, array $context = array() ): Field_Resolution_Result {
+	public function resolve( array $keys, Case_State $state, array $context = array(), array $classes = array() ): Field_Resolution_Result {
 		$answers   = $this->apply_aliases( $state->answers() );
 		$workflow  = $this->workflow_data( $state );
 		$generated = $this->apply_aliases( (array) ( $context['generated'] ?? array() ) );
@@ -83,7 +84,7 @@ final class Field_Resolver {
 				continue;
 			}
 
-			$fields[ $key ] = $this->resolve_one( $key, $chain );
+			$fields[ $key ] = $this->resolve_one( $key, $chain, (string) ( $classes[ $key ] ?? '' ) );
 		}
 
 		return new Field_Resolution_Result( $fields );
@@ -92,11 +93,12 @@ final class Field_Resolver {
 	/**
 	 * Resolve a single canonical field against the source chain.
 	 *
-	 * @param string                                            $key   Canonical key.
-	 * @param array<int, array{source: string, map: array<string, mixed>}> $chain Sources.
+	 * @param string                                            $key         Canonical key.
+	 * @param array<int, array{source: string, map: array<string, mixed>}> $chain   Sources.
+	 * @param string                                            $field_class Field classification.
 	 * @return Generated_Field
 	 */
-	private function resolve_one( string $key, array $chain ): Generated_Field {
+	private function resolve_one( string $key, array $chain, string $field_class = '' ): Generated_Field {
 		$label         = Field_Catalog::label( $key );
 		$native_source = Field_Catalog::source( $key );
 
@@ -120,16 +122,16 @@ final class Field_Resolver {
 				$source = Field_Catalog::SOURCE_PROFILE;
 			}
 
-			return new Generated_Field( $key, $label, $value, $source, false, true, false );
+			return new Generated_Field( $key, $label, $value, $source, false, true, false, $field_class );
 		}
 
 		$default = Field_Catalog::default_for( $key );
 
 		if ( $this->has_value( $default ) ) {
-			return new Generated_Field( $key, $label, $default, Field_Catalog::SOURCE_DEFAULT, false, true, true );
+			return new Generated_Field( $key, $label, $default, Field_Catalog::SOURCE_DEFAULT, false, true, true, $field_class );
 		}
 
-		return new Generated_Field( $key, $label, null, '', false, false, false );
+		return new Generated_Field( $key, $label, null, '', false, false, false, $field_class );
 	}
 
 	/**

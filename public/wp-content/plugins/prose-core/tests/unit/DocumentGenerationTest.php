@@ -207,9 +207,10 @@ class DocumentGenerationTest extends TestCase {
 		$state = $this->family_case(
 			Vocabulary::WF_CUSTODY,
 			array(
-				'petitioner_name' => 'Maria Cruz',
-				'respondent_name' => 'Luis Cruz',
-				'children_count'  => 2,
+				'petitioner_name'  => 'Maria Cruz',
+				'respondent_name'  => 'Luis Cruz',
+				'children_count'   => 2,
+				'relief_requested' => 'Sole legal and physical custody',
 			)
 		);
 
@@ -225,6 +226,66 @@ class DocumentGenerationTest extends TestCase {
 		$fc3 = $bundle->document( 'FC-3' );
 		$this->assertSame( 2, $fc3->field( 'children_count' )->value() );
 		$this->assertSame( Vocabulary::ROUTE_FAMILY_COURT, $bundle->document( 'FC-1' )->field( 'court' )->value() );
+	}
+
+	/**
+	 * Acceptance: PKG_CUSTODY_PETITION — relief_requested is REQUIRED, so a
+	 * missing value drops completion below 100 and blocks generation.
+	 */
+	public function test_custody_relief_requested_required(): void {
+		$gen   = $this->generation();
+		$state = $this->family_case(
+			Vocabulary::WF_CUSTODY,
+			array(
+				'petitioner_name' => 'Maria Cruz',
+				'respondent_name' => 'Luis Cruz',
+				'children_count'  => 2,
+			)
+		);
+
+		$bundle = $gen->assemble_package( $state, Vocabulary::PKG_CUSTODY_PETITION );
+
+		$fc3 = $bundle->document( 'FC-3' );
+		$this->assertSame(
+			Field_Catalog::CLASS_REQUIRED,
+			$fc3->field( 'relief_requested' )->field_class()
+		);
+		$this->assertTrue( $fc3->field( 'relief_requested' )->is_required() );
+		$this->assertFalse( $fc3->field( 'relief_requested' )->is_resolved() );
+
+		$this->assertContains( 'relief_requested', $bundle->completeness()->missing_fields() );
+		$this->assertContains( 'FC-3', $bundle->missing_forms() );
+		$this->assertLessThan( 100, $bundle->completeness()->completion_percentage() );
+		$this->assertFalse( $bundle->completeness()->is_ready_to_generate() );
+	}
+
+	/**
+	 * Acceptance: UD-6 index_number is COURT_ASSIGNED — it stays unresolved
+	 * without affecting completion or readiness.
+	 */
+	public function test_court_assigned_field_excluded_from_completeness(): void {
+		$service = $this->case_service();
+		$gen     = $this->generation();
+		$state   = $this->divorce_case(
+			Vocabulary::WF_UNCONTESTED_DIVORCE,
+			$this->divorce_answers( array( 'children' => false ) )
+		);
+
+		$service->record_event( $state, Case_Catalog::EVENT_SERVICE_COMPLETED, array( 'date' => '2026-02-01 00:00:00' ) );
+		$bundle = $gen->generate_package( $state, Vocabulary::PKG_UNCONTESTED_NO_CHILDREN );
+
+		$ud6   = $bundle->document( 'UD-6' );
+		$index = $ud6->field( 'index_number' );
+
+		$this->assertSame( Field_Catalog::CLASS_COURT_ASSIGNED, $index->field_class() );
+		$this->assertFalse( $index->is_required() );
+		$this->assertFalse( $index->is_resolved() );
+
+		// Completion and readiness are unaffected by the unresolved index number.
+		$this->assertSame( 100, $bundle->completeness()->completion_percentage() );
+		$this->assertTrue( $bundle->completeness()->is_ready_to_generate() );
+		$this->assertNotContains( 'index_number', $bundle->completeness()->missing_fields() );
+		$this->assertNotContains( 'index_number', $ud6->validation()->missing_required() );
 	}
 
 	/**
@@ -275,9 +336,10 @@ class DocumentGenerationTest extends TestCase {
 		$state = $this->family_case(
 			Vocabulary::WF_ORDER_OF_PROTECTION,
 			array(
-				'petitioner_name' => 'Sam Park',
-				'respondent_name' => 'Kim Park',
-				'incident_date'   => '2026-01-10',
+				'petitioner_name'  => 'Sam Park',
+				'respondent_name'  => 'Kim Park',
+				'incident_date'    => '2026-01-10',
+				'relief_requested' => 'Stay-away order of protection',
 			)
 		);
 
@@ -290,6 +352,37 @@ class DocumentGenerationTest extends TestCase {
 		$fc7 = $bundle->document( 'FC-7' );
 		$this->assertSame( '2026-01-10', $fc7->field( 'incident_date' )->value() );
 		$this->assertTrue( $fc7->field( 'incident_date' )->is_required() );
+	}
+
+	/**
+	 * Acceptance: PKG_ORDER_OF_PROTECTION — relief_requested is REQUIRED, so a
+	 * missing value drops completion below 100 and blocks generation.
+	 */
+	public function test_order_of_protection_relief_requested_required(): void {
+		$gen   = $this->generation();
+		$state = $this->family_case(
+			Vocabulary::WF_ORDER_OF_PROTECTION,
+			array(
+				'petitioner_name' => 'Sam Park',
+				'respondent_name' => 'Kim Park',
+				'incident_date'   => '2026-01-10',
+			)
+		);
+
+		$bundle = $gen->assemble_package( $state, Vocabulary::PKG_ORDER_OF_PROTECTION );
+
+		$fc7 = $bundle->document( 'FC-7' );
+		$this->assertSame(
+			Field_Catalog::CLASS_REQUIRED,
+			$fc7->field( 'relief_requested' )->field_class()
+		);
+		$this->assertTrue( $fc7->field( 'relief_requested' )->is_required() );
+		$this->assertFalse( $fc7->field( 'relief_requested' )->is_resolved() );
+
+		$this->assertContains( 'relief_requested', $bundle->completeness()->missing_fields() );
+		$this->assertContains( 'FC-7', $bundle->missing_forms() );
+		$this->assertLessThan( 100, $bundle->completeness()->completion_percentage() );
+		$this->assertFalse( $bundle->completeness()->is_ready_to_generate() );
 	}
 
 	/**

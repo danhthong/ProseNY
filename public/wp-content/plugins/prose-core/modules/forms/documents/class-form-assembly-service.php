@@ -72,17 +72,27 @@ final class Form_Assembly_Service {
 		int $form_id = 0
 	): Generated_Document {
 		$keys       = Field_Catalog::all_fields_for( $form_code );
-		$resolution = $this->resolver->resolve( $keys, $state, $context );
+		$classes    = Field_Catalog::classes_for( $form_code );
+		$resolution = $this->resolver->resolve( $keys, $state, $context, $classes );
 
 		$required_keys    = Field_Catalog::required_fields( $form_code );
 		$active_condition = $this->validation->active_conditional_fields( $form_code, $state );
 		$required_lookup  = array_fill_keys( array_merge( $required_keys, $active_condition ), true );
+		$active_lookup    = array_fill_keys( $active_condition, true );
 
 		$fields            = array();
 		$resolved_required = 0;
 
 		foreach ( $resolution->fields() as $key => $field ) {
-			$is_required = isset( $required_lookup[ $key ] );
+			$is_required  = isset( $required_lookup[ $key ] );
+			$base_class   = (string) ( $classes[ $key ] ?? Field_Catalog::CLASS_OPTIONAL );
+			$is_condition = Field_Catalog::CLASS_CONDITIONAL === $base_class;
+			$is_active    = isset( $active_lookup[ $key ] );
+
+			// A CONDITIONAL field becomes REQUIRED when its condition holds;
+			// otherwise it stays CONDITIONAL and is hidden.
+			$field_class = $is_condition && $is_active ? Field_Catalog::CLASS_REQUIRED : $base_class;
+			$is_visible  = $is_condition ? $is_active : true;
 
 			$fields[ $key ] = new Generated_Field(
 				$field->key(),
@@ -91,7 +101,9 @@ final class Form_Assembly_Service {
 				$field->source(),
 				$is_required,
 				$field->is_resolved(),
-				$field->is_default()
+				$field->is_default(),
+				$field_class,
+				$is_visible
 			);
 
 			if ( $is_required && $field->is_resolved() ) {

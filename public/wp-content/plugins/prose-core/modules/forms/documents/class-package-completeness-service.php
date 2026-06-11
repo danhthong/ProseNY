@@ -50,6 +50,13 @@ final class Package_Completeness_Service {
 			}
 
 			foreach ( $document->fields() as $field ) {
+				// OPTIONAL, COURT_ASSIGNED and SYSTEM_GENERATED fields never
+				// count toward completeness. CONDITIONAL fields count only when
+				// their condition holds (reflected by the required flag).
+				if ( Field_Catalog::is_excluded_class( $field->field_class() ) ) {
+					continue;
+				}
+
 				if ( ! $field->is_required() ) {
 					continue;
 				}

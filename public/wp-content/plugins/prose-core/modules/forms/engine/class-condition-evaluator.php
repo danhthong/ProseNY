@@ -113,8 +113,33 @@ final class Condition_Evaluator {
 				return is_array( $expected ) && in_array( $actual, $expected, true );
 			case 'exists':
 				return null !== $actual && '' !== $actual;
+			case 'gt':
+				return $this->to_number( $actual ) > $this->to_number( $expected );
+			case 'gte':
+				return $this->to_number( $actual ) >= $this->to_number( $expected );
+			case 'lt':
+				return $this->to_number( $actual ) < $this->to_number( $expected );
+			case 'lte':
+				return $this->to_number( $actual ) <= $this->to_number( $expected );
 			default:
 				return false;
 		}
+	}
+
+	/**
+	 * Coerce a value to a number for numeric comparisons.
+	 *
+	 * Non-numeric and null values collapse to 0 so that, for example,
+	 * an absent "children_count" answer never satisfies "> 0".
+	 *
+	 * @param mixed $value Value.
+	 * @return float
+	 */
+	private function to_number( $value ): float {
+		if ( is_bool( $value ) ) {
+			return $value ? 1.0 : 0.0;
+		}
+
+		return is_numeric( $value ) ? (float) $value : 0.0;
 	}
 }

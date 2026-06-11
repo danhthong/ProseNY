@@ -39,12 +39,26 @@ final class Document_Validation_Service {
 	private Condition_Evaluator $evaluator;
 
 	/**
+	 * Conditional field/validation engine.
+	 *
+	 * @var Conditional_Validation_Service
+	 */
+	private Conditional_Validation_Service $conditional;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Condition_Evaluator|null $evaluator Condition evaluator.
+	 * @param Condition_Evaluator|null            $evaluator   Condition evaluator.
+	 * @param Conditional_Validation_Service|null $conditional Conditional engine.
 	 */
-	public function __construct( ?Condition_Evaluator $evaluator = null ) {
-		$this->evaluator = $evaluator ?? new Condition_Evaluator();
+	public function __construct(
+		?Condition_Evaluator $evaluator = null,
+		?Conditional_Validation_Service $conditional = null
+	) {
+		$this->evaluator   = $evaluator ?? new Condition_Evaluator();
+		$this->conditional = $conditional ?? new Conditional_Validation_Service(
+			new Conditional_Field_Resolver( $this->evaluator )
+		);
 	}
 
 	/**
@@ -86,23 +100,26 @@ final class Document_Validation_Service {
 	 * @return string[]
 	 */
 	public function active_conditional_fields( string $form_code, Case_State $state ): array {
-		$ctx    = $this->context( $state );
-		$active = array();
+		return $this->conditional->active_fields( $form_code, $state );
+	}
 
-		foreach ( Field_Catalog::conditional_fields( $form_code ) as $conditional ) {
-			$key       = (string) ( $conditional['field'] ?? '' );
-			$condition = (array) ( $conditional['condition'] ?? array() );
-
-			if ( '' !== $key && $this->evaluator->evaluate( $condition, $ctx ) ) {
-				$active[] = $key;
-			}
-		}
-
-		return array_values( array_unique( $active ) );
+	/**
+	 * Conditional field keys whose condition is false (hidden / excluded).
+	 *
+	 * @param string     $form_code Form code.
+	 * @param Case_State $state     Case state.
+	 * @return string[]
+	 */
+	public function hidden_conditional_fields( string $form_code, Case_State $state ): array {
+		return $this->conditional->hidden_fields( $form_code, $state );
 	}
 
 	/**
 	 * Required field check.
+	 *
+	 * Only fields classified as REQUIRED gate validation. OPTIONAL,
+	 * COURT_ASSIGNED and SYSTEM_GENERATED fields are excluded; CONDITIONAL
+	 * fields are handled separately by check_conditional().
 	 *
 	 * @param string                  $form_code  Form code.
 	 * @param Field_Resolution_Result $resolution Resolved fields.
@@ -111,7 +128,11 @@ final class Document_Validation_Service {
 	private function check_required( string $form_code, Field_Resolution_Result $resolution ): array {
 		$missing = array();
 
-		foreach ( Field_Catalog::required_fields( $form_code ) as $key ) {
+		foreach ( Field_Catalog::classes_for( $form_code ) as $key => $field_class ) {
+			if ( Field_Catalog::CLASS_REQUIRED !== $field_class ) {
+				continue;
+			}
+
 			if ( ! $resolution->is_resolved( $key ) ) {
 				$missing[] = $key;
 			}
@@ -129,23 +150,7 @@ final class Document_Validation_Service {
 	 * @return string[]
 	 */
 	private function check_conditional( string $form_code, Field_Resolution_Result $resolution, Case_State $state ): array {
-		$missing = array();
-		$ctx     = $this->context( $state );
-
-		foreach ( Field_Catalog::conditional_fields( $form_code ) as $conditional ) {
-			$key       = (string) ( $conditional['field'] ?? '' );
-			$condition = (array) ( $conditional['condition'] ?? array() );
-
-			if ( '' === $key ) {
-				continue;
-			}
-
-			if ( $this->evaluator->evaluate( $condition, $ctx ) && ! $resolution->is_resolved( $key ) ) {
-				$missing[] = $key;
-			}
-		}
-
-		return $missing;
+		return $this->conditional->missing_required( $form_code, $resolution, $state );
 	}
 
 	/**
@@ -235,27 +240,4 @@ final class Document_Validation_Service {
 		return $types;
 	}
 
-	/**
-	 * Build the condition-evaluator context for a case.
-	 *
-	 * @param Case_State $state Case state.
-	 * @return array<string, mixed>
-	 */
-	private function context( Case_State $state ): array {
-		$package_states = array();
-
-		foreach ( $state->completed_packages() as $package_key ) {
-			$package_states[ $package_key ] = 'COMPLETE';
-		}
-
-		foreach ( $state->available_packages() as $package_key ) {
-			$package_states[ $package_key ] = 'AVAILABLE';
-		}
-
-		return array(
-			'answers'        => $state->answers(),
-			'events'         => $this->recorded_events( $state ),
-			'package_states' => $package_states,
-		);
-	}
 }

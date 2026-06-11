@@ -180,6 +180,41 @@ final class Generated_Document {
 	}
 
 	/**
+	 * Visible fields (conditional fields whose condition holds, plus all
+	 * non-conditional fields).
+	 *
+	 * @return array<string, Generated_Field>
+	 */
+	public function visible_fields(): array {
+		$visible = array();
+
+		foreach ( $this->fields as $key => $field ) {
+			if ( $field->is_visible() ) {
+				$visible[ $key ] = $field;
+			}
+		}
+
+		return $visible;
+	}
+
+	/**
+	 * Hidden fields (conditional fields whose condition is false).
+	 *
+	 * @return array<string, Generated_Field>
+	 */
+	public function hidden_fields(): array {
+		$hidden = array();
+
+		foreach ( $this->fields as $key => $field ) {
+			if ( ! $field->is_visible() ) {
+				$hidden[ $key ] = $field;
+			}
+		}
+
+		return $hidden;
+	}
+
+	/**
 	 * Map of key => value for resolved fields.
 	 *
 	 * @return array<string, mixed>

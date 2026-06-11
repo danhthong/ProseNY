@@ -33,6 +33,43 @@ final class Field_Catalog {
 	public const SOURCE_COUNTY    = 'county_metadata';
 	public const SOURCE_DEFAULT   = 'catalog_default';
 
+	// Field classification. Drives validation and completeness:
+	//   REQUIRED         — must be populated.
+	//   OPTIONAL         — ignored for completeness.
+	//   CONDITIONAL      — required only when its condition evaluates true.
+	//   COURT_ASSIGNED   — populated by the court (e.g. index number); excluded
+	//                      from completeness.
+	//   SYSTEM_GENERATED — produced by the system / downstream renderer;
+	//                      excluded from completeness.
+	public const CLASS_REQUIRED         = 'REQUIRED';
+	public const CLASS_OPTIONAL         = 'OPTIONAL';
+	public const CLASS_CONDITIONAL      = 'CONDITIONAL';
+	public const CLASS_COURT_ASSIGNED   = 'COURT_ASSIGNED';
+	public const CLASS_SYSTEM_GENERATED = 'SYSTEM_GENERATED';
+
+	/**
+	 * Field classes that are excluded from completeness scoring.
+	 *
+	 * @return string[]
+	 */
+	public static function excluded_classes(): array {
+		return array(
+			self::CLASS_OPTIONAL,
+			self::CLASS_COURT_ASSIGNED,
+			self::CLASS_SYSTEM_GENERATED,
+		);
+	}
+
+	/**
+	 * Whether a field class is excluded from completeness scoring.
+	 *
+	 * @param string $field_class Field class.
+	 * @return bool
+	 */
+	public static function is_excluded_class( string $field_class ): bool {
+		return in_array( $field_class, self::excluded_classes(), true );
+	}
+
 	/**
 	 * Canonical field definitions.
 	 *
@@ -44,97 +81,112 @@ final class Field_Catalog {
 	 */
 	public static function fields(): array {
 		return array(
-			'petitioner_name'    => array(
+			'petitioner_name'      => array(
 				'label'   => 'Petitioner Name',
 				'source'  => self::SOURCE_PROFILE,
 				'default' => null,
 			),
-			'respondent_name'    => array(
+			'respondent_name'      => array(
 				'label'   => 'Respondent Name',
 				'source'  => self::SOURCE_PROFILE,
 				'default' => null,
 			),
-			'petitioner_address' => array(
+			'petitioner_address'   => array(
 				'label'   => 'Petitioner Address',
 				'source'  => self::SOURCE_PROFILE,
 				'default' => null,
 			),
-			'respondent_address' => array(
+			'respondent_address'   => array(
 				'label'   => 'Respondent Address',
 				'source'  => self::SOURCE_PROFILE,
 				'default' => null,
 			),
-			'marriage_date'      => array(
+			'marriage_date'        => array(
 				'label'   => 'Date of Marriage',
 				'source'  => self::SOURCE_ANSWERS,
 				'default' => null,
 			),
-			'marriage_place'     => array(
+			'marriage_place'       => array(
 				'label'   => 'Place of Marriage',
 				'source'  => self::SOURCE_ANSWERS,
 				'default' => null,
 			),
-			'separation_date'    => array(
+			'separation_date'      => array(
 				'label'   => 'Date of Separation',
 				'source'  => self::SOURCE_ANSWERS,
 				'default' => null,
 			),
-			'grounds'            => array(
+			'grounds'              => array(
 				'label'   => 'Grounds for Divorce',
 				'source'  => self::SOURCE_ANSWERS,
 				'default' => 'DRL 170(7)',
 			),
-			'children_count'     => array(
+			'children_count'       => array(
 				'label'   => 'Number of Children',
 				'source'  => self::SOURCE_ANSWERS,
 				'default' => null,
 			),
-			'date_of_birth'      => array(
+			'date_of_birth'        => array(
 				'label'   => 'Date of Birth',
 				'source'  => self::SOURCE_ANSWERS,
 				'default' => null,
 			),
-			'support_amount'     => array(
+			'support_amount'       => array(
 				'label'   => 'Support Amount',
 				'source'  => self::SOURCE_ANSWERS,
 				'default' => null,
 			),
-			'incident_date'      => array(
+			'incident_date'        => array(
 				'label'   => 'Incident Date',
 				'source'  => self::SOURCE_ANSWERS,
 				'default' => null,
 			),
-			'relief_requested'   => array(
+			'relief_requested'     => array(
 				'label'   => 'Relief Requested',
 				'source'  => self::SOURCE_ANSWERS,
 				'default' => null,
 			),
-			'service_date'       => array(
+			'child_support_fields' => array(
+				'label'   => 'Child Support Details',
+				'source'  => self::SOURCE_ANSWERS,
+				'default' => null,
+			),
+			'fault_allegations'    => array(
+				'label'   => 'Fault Allegations',
+				'source'  => self::SOURCE_ANSWERS,
+				'default' => null,
+			),
+			'protection_fields'    => array(
+				'label'   => 'Protection / Safety Details',
+				'source'  => self::SOURCE_ANSWERS,
+				'default' => null,
+			),
+			'service_date'         => array(
 				'label'   => 'Date of Service',
 				'source'  => self::SOURCE_WORKFLOW,
 				'default' => null,
 			),
-			'answer_date'        => array(
+			'answer_date'          => array(
 				'label'   => 'Date Answer Filed',
 				'source'  => self::SOURCE_WORKFLOW,
 				'default' => null,
 			),
-			'hearing_date'       => array(
+			'hearing_date'         => array(
 				'label'   => 'Hearing Date',
 				'source'  => self::SOURCE_WORKFLOW,
 				'default' => null,
 			),
-			'index_number'       => array(
+			'index_number'         => array(
 				'label'   => 'Index Number',
 				'source'  => self::SOURCE_COURT,
 				'default' => null,
 			),
-			'court'              => array(
+			'court'                => array(
 				'label'   => 'Court',
 				'source'  => self::SOURCE_COURT,
 				'default' => null,
 			),
-			'county'             => array(
+			'county'               => array(
 				'label'   => 'County',
 				'source'  => self::SOURCE_COUNTY,
 				'default' => null,
@@ -273,7 +325,23 @@ final class Field_Catalog {
 			'UD-2' => self::form(
 				'Verified Complaint',
 				array( 'petitioner_name', 'respondent_name', 'marriage_date', 'grounds' ),
-				array( 'marriage_place', 'separation_date' )
+				array( 'marriage_place', 'separation_date' ),
+				array(
+					// Fault grounds (DRL 170(1)) require fault allegations.
+					array(
+						'field'     => 'fault_allegations',
+						'condition' => array(
+							'all' => array(
+								array(
+									'type'  => 'answer',
+									'key'   => 'grounds',
+									'op'    => 'eq',
+									'value' => 'DRL_170_1',
+								),
+							),
+						),
+					),
+				)
 			),
 			'UD-3' => self::form(
 				'Affidavit of Plaintiff',
@@ -294,6 +362,9 @@ final class Field_Catalog {
 			'UD-6' => self::form(
 				'Affidavit of Regularity',
 				array( 'petitioner_name', 'respondent_name' ),
+				array(),
+				array(),
+				array(),
 				array( 'index_number' )
 			),
 			'UD-7' => self::form(
@@ -318,6 +389,20 @@ final class Field_Catalog {
 							),
 						),
 					),
+					// More than zero children requires the child-support detail set.
+					array(
+						'field'     => 'child_support_fields',
+						'condition' => array(
+							'all' => array(
+								array(
+									'type'  => 'answer',
+									'key'   => 'children_count',
+									'op'    => 'gt',
+									'value' => 0,
+								),
+							),
+						),
+					),
 				)
 			),
 			'FC-1' => self::form(
@@ -330,13 +415,28 @@ final class Field_Catalog {
 			),
 			'FC-3' => self::form(
 				'Custody / Visitation Petition',
-				array( 'petitioner_name', 'respondent_name', 'children_count' ),
-				array( 'relief_requested' )
+				array( 'petitioner_name', 'respondent_name', 'children_count', 'relief_requested' )
 			),
 			'FC-7' => self::form(
 				'Family Offense Petition',
-				array( 'petitioner_name', 'respondent_name', 'incident_date' ),
-				array( 'relief_requested' )
+				array( 'petitioner_name', 'respondent_name', 'incident_date', 'relief_requested' ),
+				array(),
+				array(
+					// A domestic-violence allegation requires protection details.
+					array(
+						'field'     => 'protection_fields',
+						'condition' => array(
+							'all' => array(
+								array(
+									'type'  => 'answer',
+									'key'   => 'domestic_violence',
+									'op'    => 'eq',
+									'value' => 'YES',
+								),
+							),
+						),
+					),
+				)
 			),
 		);
 	}
@@ -384,6 +484,77 @@ final class Field_Catalog {
 	}
 
 	/**
+	 * Court-assigned field keys for a form code (excluded from completeness).
+	 *
+	 * @param string $form_code Form code.
+	 * @return string[]
+	 */
+	public static function court_assigned_fields( string $form_code ): array {
+		return (array) ( self::requirements_for( $form_code )['court_assigned'] ?? array() );
+	}
+
+	/**
+	 * System-generated field keys for a form code (excluded from completeness).
+	 *
+	 * @param string $form_code Form code.
+	 * @return string[]
+	 */
+	public static function system_generated_fields( string $form_code ): array {
+		return (array) ( self::requirements_for( $form_code )['system_generated'] ?? array() );
+	}
+
+	/**
+	 * Classification map: field key => field class for every field a form
+	 * references.
+	 *
+	 * @param string $form_code Form code.
+	 * @return array<string, string>
+	 */
+	public static function classes_for( string $form_code ): array {
+		$classes = array();
+
+		foreach ( self::optional_fields( $form_code ) as $key ) {
+			$classes[ $key ] = self::CLASS_OPTIONAL;
+		}
+
+		foreach ( self::court_assigned_fields( $form_code ) as $key ) {
+			$classes[ $key ] = self::CLASS_COURT_ASSIGNED;
+		}
+
+		foreach ( self::system_generated_fields( $form_code ) as $key ) {
+			$classes[ $key ] = self::CLASS_SYSTEM_GENERATED;
+		}
+
+		foreach ( self::conditional_fields( $form_code ) as $conditional ) {
+			$key = (string) ( $conditional['field'] ?? '' );
+
+			if ( '' !== $key ) {
+				$classes[ $key ] = self::CLASS_CONDITIONAL;
+			}
+		}
+
+		// REQUIRED takes precedence over any other classification.
+		foreach ( self::required_fields( $form_code ) as $key ) {
+			$classes[ $key ] = self::CLASS_REQUIRED;
+		}
+
+		return $classes;
+	}
+
+	/**
+	 * Classification of a single field on a form.
+	 *
+	 * @param string $form_code Form code.
+	 * @param string $key       Field key.
+	 * @return string
+	 */
+	public static function field_class( string $form_code, string $key ): string {
+		$classes = self::classes_for( $form_code );
+
+		return $classes[ $key ] ?? self::CLASS_OPTIONAL;
+	}
+
+	/**
 	 * Lifecycle events a form requires before it can be completed.
 	 *
 	 * @param string $form_code Form code.
@@ -412,7 +583,9 @@ final class Field_Catalog {
 	public static function all_fields_for( string $form_code ): array {
 		$keys = array_merge(
 			self::required_fields( $form_code ),
-			self::optional_fields( $form_code )
+			self::optional_fields( $form_code ),
+			self::court_assigned_fields( $form_code ),
+			self::system_generated_fields( $form_code )
 		);
 
 		foreach ( self::conditional_fields( $form_code ) as $conditional ) {
@@ -430,6 +603,8 @@ final class Field_Catalog {
 	 * @param string[]                                                      $optional          Optional field keys.
 	 * @param array<int, array{field: string, condition: array<string,mixed>}> $conditional   Conditional fields.
 	 * @param string[]                                                      $workflow_requires Required lifecycle events.
+	 * @param string[]                                                      $court_assigned    Court-assigned field keys.
+	 * @param string[]                                                      $system_generated  System-generated field keys.
 	 * @return array<string, mixed>
 	 */
 	private static function form(
@@ -437,7 +612,9 @@ final class Field_Catalog {
 		array $required,
 		array $optional = array(),
 		array $conditional = array(),
-		array $workflow_requires = array()
+		array $workflow_requires = array(),
+		array $court_assigned = array(),
+		array $system_generated = array()
 	): array {
 		return array(
 			'title'             => $title,
@@ -445,6 +622,8 @@ final class Field_Catalog {
 			'optional'          => array_values( array_map( 'strval', $optional ) ),
 			'conditional'       => $conditional,
 			'workflow_requires' => array_values( array_map( 'strval', $workflow_requires ) ),
+			'court_assigned'    => array_values( array_map( 'strval', $court_assigned ) ),
+			'system_generated'  => array_values( array_map( 'strval', $system_generated ) ),
 		);
 	}
 }

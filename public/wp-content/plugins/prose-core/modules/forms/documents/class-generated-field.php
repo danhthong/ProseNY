@@ -72,15 +72,33 @@ final class Generated_Field {
 	private bool $is_default;
 
 	/**
+	 * Field classification (REQUIRED, OPTIONAL, CONDITIONAL, COURT_ASSIGNED,
+	 * SYSTEM_GENERATED).
+	 *
+	 * @var string
+	 */
+	private string $field_class;
+
+	/**
+	 * Whether the field is visible. A CONDITIONAL field whose condition is
+	 * false is hidden (and excluded from completeness and validation).
+	 *
+	 * @var bool
+	 */
+	private bool $visible;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param string $key        Canonical field key.
-	 * @param string $label      Human label.
-	 * @param mixed  $value      Resolved value.
-	 * @param string $source     Resolution source.
-	 * @param bool   $required   Whether required.
-	 * @param bool   $resolved   Whether resolved.
-	 * @param bool   $is_default Whether value is a catalog default.
+	 * @param string $key         Canonical field key.
+	 * @param string $label       Human label.
+	 * @param mixed  $value       Resolved value.
+	 * @param string $source      Resolution source.
+	 * @param bool   $required    Whether required.
+	 * @param bool   $resolved    Whether resolved.
+	 * @param bool   $is_default  Whether value is a catalog default.
+	 * @param string $field_class Field classification.
+	 * @param bool   $visible     Whether the field is visible.
 	 */
 	public function __construct(
 		string $key,
@@ -89,15 +107,19 @@ final class Generated_Field {
 		string $source = '',
 		bool $required = false,
 		bool $resolved = false,
-		bool $is_default = false
+		bool $is_default = false,
+		string $field_class = '',
+		bool $visible = true
 	) {
-		$this->key        = $key;
-		$this->label      = '' !== $label ? $label : $key;
-		$this->value      = $value;
-		$this->source     = $source;
-		$this->required   = $required;
-		$this->resolved   = $resolved;
-		$this->is_default = $is_default;
+		$this->key         = $key;
+		$this->label       = '' !== $label ? $label : $key;
+		$this->value       = $value;
+		$this->source      = $source;
+		$this->required    = $required;
+		$this->resolved    = $resolved;
+		$this->is_default  = $is_default;
+		$this->field_class = $field_class;
+		$this->visible     = $visible;
 	}
 
 	/**
@@ -150,19 +172,39 @@ final class Generated_Field {
 	}
 
 	/**
+	 * Field classification.
+	 *
+	 * @return string
+	 */
+	public function field_class(): string {
+		return $this->field_class;
+	}
+
+	/**
+	 * Whether the field is visible.
+	 *
+	 * @return bool
+	 */
+	public function is_visible(): bool {
+		return $this->visible;
+	}
+
+	/**
 	 * Serialize to array.
 	 *
 	 * @return array<string, mixed>
 	 */
 	public function to_array(): array {
 		return array(
-			'key'        => $this->key,
-			'label'      => $this->label,
-			'value'      => $this->value,
-			'source'     => $this->source,
-			'required'   => $this->required,
-			'resolved'   => $this->resolved,
-			'is_default' => $this->is_default,
+			'key'         => $this->key,
+			'label'       => $this->label,
+			'value'       => $this->value,
+			'source'      => $this->source,
+			'required'    => $this->required,
+			'resolved'    => $this->resolved,
+			'is_default'  => $this->is_default,
+			'field_class' => $this->field_class,
+			'visible'     => $this->visible,
 		);
 	}
 }
