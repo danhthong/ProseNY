@@ -19,7 +19,7 @@ final class Database_Installer {
 	/**
 	 * Schema version stored in prose_core_db_version.
 	 */
-	public const DB_VERSION = '1.0.0';
+	public const DB_VERSION = '1.1.0';
 
 	/**
 	 * Option key for schema version.
@@ -42,6 +42,10 @@ final class Database_Installer {
 			'prose_node_packages',
 			'prose_package_forms',
 			'prose_package_relations',
+			'prose_cases',
+			'prose_case_packages',
+			'prose_case_forms',
+			'prose_case_events',
 		);
 	}
 
@@ -79,6 +83,10 @@ final class Database_Installer {
 		$node_pkg  = self::table( 'prose_node_packages' );
 		$pkg_forms = self::table( 'prose_package_forms' );
 		$pkg_rel   = self::table( 'prose_package_relations' );
+		$cases     = self::table( 'prose_cases' );
+		$case_pkg  = self::table( 'prose_case_packages' );
+		$case_form = self::table( 'prose_case_forms' );
+		$case_evt  = self::table( 'prose_case_events' );
 
 		dbDelta(
 			"CREATE TABLE {$workflows} (
@@ -283,6 +291,86 @@ final class Database_Installer {
 				UNIQUE KEY uq_rel (from_package_key, to_package_key, relation_type, condition_key),
 				KEY idx_from (from_package_key, relation_type, sequence),
 				KEY idx_to (to_package_key, relation_type)
+			) {$charset};"
+		);
+
+		dbDelta(
+			"CREATE TABLE {$cases} (
+				case_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				workflow_key varchar(64) NOT NULL DEFAULT '',
+				court_routing varchar(32) NOT NULL DEFAULT '',
+				county varchar(32) NOT NULL DEFAULT '',
+				current_node varchar(64) NOT NULL DEFAULT '',
+				current_package varchar(64) NOT NULL DEFAULT '',
+				progress_percentage int(11) NOT NULL DEFAULT 0,
+				status varchar(20) NOT NULL DEFAULT 'active',
+				title varchar(191) NOT NULL DEFAULT '',
+				user_id bigint(20) unsigned NOT NULL DEFAULT 0,
+				answers longtext NULL,
+				opened_at datetime NULL,
+				closed_at datetime NULL,
+				created_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+				updated_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+				PRIMARY KEY  (case_id),
+				KEY idx_workflow (workflow_key),
+				KEY idx_status (status),
+				KEY idx_user (user_id),
+				KEY idx_node (current_node)
+			) {$charset};"
+		);
+
+		dbDelta(
+			"CREATE TABLE {$case_pkg} (
+				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				case_id bigint(20) unsigned NOT NULL,
+				package_key varchar(64) NOT NULL DEFAULT '',
+				package_id bigint(20) unsigned NULL,
+				state varchar(20) NOT NULL DEFAULT 'LOCKED',
+				sequence int(11) NOT NULL DEFAULT 0,
+				completed_at datetime NULL,
+				created_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+				updated_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+				PRIMARY KEY  (id),
+				UNIQUE KEY uq_case_pkg (case_id, package_key),
+				KEY idx_case (case_id, sequence),
+				KEY idx_state (state),
+				KEY idx_pkg_key (package_key)
+			) {$charset};"
+		);
+
+		dbDelta(
+			"CREATE TABLE {$case_form} (
+				id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				case_id bigint(20) unsigned NOT NULL,
+				package_key varchar(64) NOT NULL DEFAULT '',
+				form_code varchar(64) NOT NULL DEFAULT '',
+				form_id bigint(20) unsigned NULL,
+				requirement varchar(16) NOT NULL DEFAULT 'required',
+				status varchar(20) NOT NULL DEFAULT 'pending',
+				completed_at datetime NULL,
+				created_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+				updated_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+				PRIMARY KEY  (id),
+				UNIQUE KEY uq_case_form (case_id, package_key, form_code),
+				KEY idx_case (case_id),
+				KEY idx_form (form_id),
+				KEY idx_status (status)
+			) {$charset};"
+		);
+
+		dbDelta(
+			"CREATE TABLE {$case_evt} (
+				event_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				case_id bigint(20) unsigned NOT NULL,
+				event_type varchar(64) NOT NULL DEFAULT '',
+				from_node varchar(64) NOT NULL DEFAULT '',
+				to_node varchar(64) NOT NULL DEFAULT '',
+				payload longtext NULL,
+				occurred_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+				created_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+				PRIMARY KEY  (event_id),
+				KEY idx_case_time (case_id, occurred_at),
+				KEY idx_type (event_type)
 			) {$charset};"
 		);
 
