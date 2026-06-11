@@ -1,0 +1,745 @@
+form_code,form_title,group,court_routing,package_key,relationship_type,county,confidence_score,mapping_source,status,notes
+1-A,Petition For Adoption (Agency),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+1-B,Verified Schedule (Agency),Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+1-C,Petition for Adoption (Private Placement),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+1-Ca,Affirmation (Change of circumstance since certification as qualified adoptive parents) (Private Placement),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+1-D,Child's Medical History,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+1-E,Affirmation Regarding Venue,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+1-F,Determination of Family Court Judge Regarding Venue,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+1-G,Order Regarding Venue,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+10-1,Order Directing Temporary Removal of Child--Before Petition Filed,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+10-10,Order of Fact-finding and Disposition (and Permanency Hearing),Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+10-11a,Notice of Motion to Terminate Placement,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+10-11b,Affirmation in Support of Motion to Terminate Placement,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+10-12,Order on Petition to Terminate Placement,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+10-13,Notice of Motion (Violation of Order of Disposition),Enforcement,FAMILY_COURT,PKG_ENFORCEMENT,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_ON_VIOLATION
+10-13,Notice of Motion (Violation of Order of Disposition),Supreme Court Matrimonial,SUPREME_COURT,PKG_MOTION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: NOTICE_OF_MOTION
+10-13a,Affirmation in Support of Motion for an Order of Violation of Order of Disposition,Enforcement,FAMILY_COURT,PKG_ENFORCEMENT,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_ON_VIOLATION
+10-13a,Affirmation in Support of Motion for an Order of Violation of Order of Disposition,Supreme Court Matrimonial,FAMILY_COURT,PKG_MOTION,REQUIRED,,0.80,ALIAS_RESOLUTION,MAPPED,Catalog required_forms: AFFIDAVIT_IN_SUPPORT
+10-14,Order - Violation of Order of Disposition,Enforcement,FAMILY_COURT,PKG_ENFORCEMENT,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_ON_VIOLATION
+10-15,Petition For Release of Responsibility Under Order of Placement,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+10-19,Order of Transfer to Criminal Court of Referral to District Attorney,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+10-1a,Notice (Temporary Removal of Child and Right to Hearing),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+10-1b,Order of Investigation,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+10-1c,Application For Temporary Removal of Child (before Petition Filed),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+10-2,Order Directing Temporary Removal of Child--After Petition Filed,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+10-27,Petition for Extension of Supervision,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+10-28,Order on Petition to Extend Supervision of Respondent and/or Release of Child,Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+10-29,Order on Application to Access Children,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+10-29 off hours,Child Protective-Order on Application for Access to Child(ren) and/or Home before Petition Filed (plus off-hours protocol),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+10-29a,Child Protective - Application for Order for Access to Child(ren) and/or Home-Before Petition Filed,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+10-29b,Child Protective - Report After Court Order - Order for Pre-petition Access to Child(ren) and/or Home,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+10-2a,Order for Services,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+10-2b,Order Terminating Remand,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+10-3,Order Directing Medical Examination,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+10-4,Application for Return of Child Temporarily Removed from Home,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+10-5,Order on Application for Return of Child Temporarily Removed from Home,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+10-6,Petition (Child Neglect),Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+10-7,Petition (Child Abuse),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+10-7a,Summons - Child Abuse,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+10-7b,Warrant (w/ aliases) - Child Abuse/Child Neglect,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+10-7c,Summons - Child Neglect,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+10-7d,Order (Notice to Non-Respondent Parents),Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+10-7e,Notice to Relatives and Suitable Persons of Pending Child Protective Proceeding,UNGROUPED,UNSUPPORTED,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+10-8,Order Of Adjournment In Contemplation Of Dismissal,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+10-8a,Application to Restore Case Adjourned in Contemplation of Dismissal to Calendar,Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+10-9,Determination Upon Fact-finding Hearing,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+10-A,Supplemental Affidavit (Agency),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+10-B,Supplemental Affidavit (Private Placement),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+10-C,Affirmation Of No Appeal,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+10-C-1,Destitute Child Petition,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+10-C-3,Destitute Child - Order for Services,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+10-C-4,Destitute Child - Order of Fact-finding and Disposition,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+10-c-2,Destitute Child - Preliminary Order,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+11,Order to Show Cause (Removal of child from Adoptive Home),Supreme Court Matrimonial,FAMILY_COURT,PKG_MOTION,REQUIRED,,0.80,ALIAS_RESOLUTION,MAPPED,Catalog required_forms: ORDER_TO_SHOW_CAUSE
+12,Order Removing Child from Adoptive Home,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+13-A,Order Of Adoption (Agency),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+13-B,Order Of Adoption (Private placement),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+14,Certificate Of Adoption,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+14-A,Order Of Incorporation of Post-adoption Contact Agreement,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+15-A,Application for Certified Copy of Adoption Order (before sealing of records),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+15-B,Order for Certified Copy of Adoption Order (Before Sealing of Records),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+16-A,Application for Certified Copy of Adoption Order (after sealing of records),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+16-B,Order For Certified Copy of Adoption Order (after sealing of records),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+17,Petition For Enforcement of Post-adoption Contact Agreement (after Adoption Finalization),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+18,Order Determining Petition for Enforcement of Post-adoption Contact Agreement (after Adoption Finalization),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+2-A,Agreement of Adoption and Consent (Agency),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+2-B,Agreement of Adoption (Private Placement),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+2-C,Consent of Child Over 14 (Agency),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+2-D,Consent of Child Over 14 (Private Placement),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+2-E,Affirmation and Consent of Person Having Lawful Custody (Other than Birth or Legal Parent - Private Placement),Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+2-F,Judicial Consent (Birth or Legal Parent Private Placement),Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+2-Fa,Judicial Consent of Birth or Legal Parent to Adoption by Stepparent,UNGROUPED,UNSUPPORTED,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+2-G,Extra-Judicial Consent (Birth or Legal Parent - Private Placement),UNGROUPED,UNSUPPORTED,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+2-Ga,Extra-Judicial Consent (Birth or Legal Parent - Private Placement Stepparent),UNGROUPED,UNSUPPORTED,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+21-A,Petition for Temporary Guardianship,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+21-B,Order (Temporary Guardianship of the Person),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+21-C,Notice (Temporary Guardianship of the Person),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+21-D,Notice (Denial or Withdrawal of Application) (Removal of Child),Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+21-E,Affirmation (Change of circumstances since certification as qualified adoptive parent),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+22,Petition (Certification as a Qualified Adoptive Parent),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+23,Affirmation and Report (Disinterested Person Certification Proceeding) (Private Placement),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+24,Order (Certification as a Qualified Adoptive Parent),Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+25,Order (Conditional Certification as a Qualified Adoptive Parent),Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+26,Petition for Extension of Expired Certification,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+26-A,Affirmation and Report (Disinterested Person - Extension of Expired Certification),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+27-A,Adoption-Petition for Access to Sealed Adoption Records,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+27-B,Adoption–Notice of Petition for Access to Sealed Adoption Records,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+27-C,Adoption–Affirmation of Service of Petition for Access to Sealed Adoption Records,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+27-E,Adoption–Order on Petition for Access to Sealed Adoption Records,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+28,Petition for Registration of Foreign Adoption Order,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+28-A,Order of Foreign Adoption and Name Change,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+29a,Petition for Adult Adoption,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+29b,Consent to Adult Adoption by Adoptee,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3,Order Directing Service of Notice,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+3-1,Order on Motion For Change of Venue,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-11,Order Directing Detention,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-11a,Order Directing Release of Respondent with Conditions,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-12,Order of Referral to the Probation Service (Post-Petition),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-13,Order of Dismissal After Adjustment,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-14,Order Directing Examination to Determine Capacity,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-15,Notice of Hearing,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-16,Order Extending Time for Examination to Determine Capacity,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-17,Examination Report to Determine Capacity,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-18,Order In Proceeding to Determine Capacity and Notice of Hearing,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-19,Order Regarding Incapacitated Person (After Probable Cause Hearing),Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-2,Order for Change of Venue,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-21,Order (Extension of Period of Commitment for Lack of Capacity),Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-22,Petition for Dismissal for Continuing Lack of Capacity,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-23,Order Dismissing Petition for Lack of Capacity,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-24,Petition for Modification of Order of Commitment,Modification,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-25,Order (Modifying Order of Commitment for Lack of Capacity),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-26,Petition to Determine Capacity After Prior Commitment,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-27,Order Determining Capacity Prior to Commitment,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-28,Order Upon Fact-Finding Hearing,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-29,Order of Disposition - Juvenile Delinquency,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-30,Order of Disposition (After Order of Removal with Finding),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-31,Order of Disposition (Designated Felony; No Restrictive Placement),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-32,Order of Disposition (Designated Felony - After Order of Removal with Finding - No Restrictive Placement),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-33,Order of Disposition (Designated Felony; Restrictive Placement),Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-34,Order of Disposition (Designated Felony-After Order of Removal with Finding – Restrictive Placement),Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-37,Notice of Disposition or Termination of Proceeding,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-38,Petition (Extension of Placement and Permanency Hearing),Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-39,Order - Extension of Placement and Permanency Hearing Order,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-4,Application - Pre-Petition Detention,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-40,Petition for Violation of Order of Probation or Conditional Discharge,Enforcement,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-41,Order - Violation of Order of Probation or Conditional Discharge,Enforcement,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-44,Order on Motion,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-45,"Order of Dismissal - D, E",UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-46,Order for HIV Related Testing,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-47,Notice of Placement,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-48,Close to Home - Order on Petition to Modify Placement,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-49,Close to Home - Order on Petition to Transfer Placement to NYS OCFS,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-5,Order Directing Release of Respondent from Detention,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-6,Order Directing Detention (Pre-Petition),Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-7,Juvenile Delinquency Petition,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+3-9,Order of Adjournment in Contemplation of Dismissal (JD),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+30,Petition For Access to Sealed Birth Certificate,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+358-a-1,Petition for Approval of an Instrument,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+358-a-2,Order Directing or Dispensing with Service of Notice,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+358-a-4,Temporary Order Approving Placement Instrument,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+358-a-5,Order of Disposition - Petition for Approval of an Instrument,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+358-a-6,Petition for Pre-placement Approval of Standby Placement Instrument,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+358-a-7,Order of Disposition - Petition for Pre-placement approval of Standby Placement Instrument,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+4,Notice of Proposed Adoption,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+4-1,Petition for An Order Upon Support Agreement,Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+4-10,Order - Qualified Medical Child Support Order (Non-IV-D Cases),Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+4-11,Petition for Modification of an Order of Support,Family Court Child Support,SUPREME_AND_FAMILY_OVERLAP,PKG_CHILD_SUPPORT_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_OF_SUPPORT
+4-11,Petition for Modification of an Order of Support,Modification,SUPREME_AND_FAMILY_OVERLAP,PKG_MODIFICATION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: 4-11
+4-11 DSS,Support Modification against DSS,Modification,FAMILY_COURT,PKG_MODIFICATION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+4-11a,Order Modifying Order Made By Another Court / Family Court (Support),Modification,SUPREME_AND_FAMILY_OVERLAP,PKG_MODIFICATION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+4-12,Petition (Violation of Support Order),Enforcement,FAMILY_COURT,PKG_ENFORCEMENT,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: 4-12
+4-12,Petition (Violation of Support Order),Enforcement,FAMILY_COURT,PKG_ENFORCEMENT,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_ON_VIOLATION
+4-12/13,Support Enforcement/Violation Petition,Enforcement,FAMILY_COURT,PKG_ENFORCEMENT,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+4-12a-1,Summons - Violation of Support Order,Enforcement,FAMILY_COURT,PKG_ENFORCEMENT,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_ON_VIOLATION
+4-12a-2,Summons (Violation of Support Order) (Non-Resident),Enforcement,FAMILY_COURT,PKG_ENFORCEMENT,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_ON_VIOLATION
+4-12b,Order of Disposition (Violation of Support Order),Enforcement,FAMILY_COURT,PKG_ENFORCEMENT,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_ON_VIOLATION
+4-12c,Order (Support Magistrate Determination FCA Section 156),Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+4-13,Petition for Enforcement of Order Made By Another Court (Support),Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+4-13a,Order Enforcing Order Made By Another Court (Support),Family Court Child Support,SUPREME_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+4-14,Order (Entry Money Judgment),Enforcement,FAMILY_COURT,PKG_ENFORCEMENT,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: MONEY_JUDGMENT
+4-15,Petition for Relief from Support Payments and Commitment,Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+4-15a,Order (Relief from Support Payments and Commitment),Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+4-16,"Notice of Motion to Quash, Fix or Modify Conditions of a Child Support Subpoena",Supreme Court Matrimonial,FAMILY_COURT,PKG_MOTION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: NOTICE_OF_MOTION
+4-17,Financial Disclosure Affirmation,Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: FINANCIAL_DISCLOSURE_AFFIDAVIT
+4-17,Financial Disclosure Affirmation,Modification,FAMILY_COURT,PKG_MODIFICATION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: FINANCIAL_DISCLOSURE_AFFIDAVIT
+4-17a,Financial Disclosure Affirmation (Short Form),Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: FINANCIAL_DISCLOSURE_AFFIDAVIT
+4-17a,Financial Disclosure Affirmation (Short Form),Modification,FAMILY_COURT,PKG_MODIFICATION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: FINANCIAL_DISCLOSURE_AFFIDAVIT
+4-18,Petition for Support After Acknowledgment of Paternity (Individual),Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+4-18a,Petition for Support After Acknowledgment of Paternity (Commissioner),Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+4-19,Objection to Proposed Adjusted Order,Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+4-19a,Order Determining Objection to Proposed Adjustment,Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+4-19b,Order Determining Objection to Adjusted Order (Cost of Living Adjustment),Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+4-1a,Summons - Support,Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+4-1b,Summons (Non-Resident),Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+4-2,Order Upon Support Agreement,Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+4-20,Notice of Motion to Vacate Adjusted Order of Support,Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_OF_SUPPORT
+4-20,Notice of Motion to Vacate Adjusted Order of Support,Supreme Court Matrimonial,FAMILY_COURT,PKG_MOTION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: NOTICE_OF_MOTION
+4-20a,Affirmation in Support of Motion to Vacate Adjusted Order of Support,Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_OF_SUPPORT
+4-20a,Affirmation in Support of Motion to Vacate Adjusted Order of Support,Supreme Court Matrimonial,FAMILY_COURT,PKG_MOTION,REQUIRED,,0.80,ALIAS_RESOLUTION,MAPPED,Catalog required_forms: AFFIDAVIT_IN_SUPPORT
+4-21,Enforcement of Arrears - Order to Licensing Entity,Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+4-21a,Order to Licensing Entity to Terminate Suspension,Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+4-22,Objection to Support Collection Unit Denial of Challenge to Driver's License Suspension,Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+4-22a,Order - Determination of Objections to Support Collection Unit Review of Driver's License Suspension Order,Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+4-23,Qualified Domestic Relations Order,Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+"4-24, 5-16, UIFSA-10","Electronic Testimony Application, Waiver of Personal Appearance and Order",Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+"4-24a, 5-16a, UIFSA-10","Support, Paternity, UIFSA - Order on Electronic Testimony Application",Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+4-25a,Child Support - Motion to Vacate for Lack of Service,Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+4-25b,Child Support- Affirmation in Support of Motion to Vacate for Lack of Service,Supreme Court Matrimonial,FAMILY_COURT,PKG_MOTION,REQUIRED,,0.80,ALIAS_RESOLUTION,MAPPED,Catalog required_forms: AFFIDAVIT_IN_SUPPORT
+4-26,Child Support - Order on Motion to Vacate for Lack of Service,Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+4-3,Spousal (Only) Support Petition (spousal only),Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,REQUIRED,,1.00,CATALOG_REQUIRED,MAPPED,Catalog required_forms: 4-3
+4-3,Spousal (Only) Support Petition (spousal only),Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+4-3,Spousal (Only) Support Petition (spousal only),Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+4-3,Spousal (Only) Support Petition (spousal only),Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+4-3,Spousal (Only) Support Petition (spousal only),Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+4-3,Spousal (Only) Support Petition (spousal only),Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+4-3a,Petition (Commissioner),Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+4-3b,Addendum to Support Petition - Request for Child Support (IV-D) Services,Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+4-3c,Petition for Support of Adult Dependent,Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+4-4,Remand Commitment (Undertaking),Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+4-5+5-1d,Personal Information Form for Child Support and Paternity Proceedings,Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+4-5a,Undertaking for Support - Cash Deposit,Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+4-6,Order - Temporary Order of Support (and Referral to Support Magistrate),Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_OF_SUPPORT
+4-7,Order of Support - Zero or Below SSR/Poverty Line,Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_OF_SUPPORT
+4-7a,Order After Filing of Objections,Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+4-7b,Objection to Support Order,Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+4-7c,Rebuttal to Objection to Support Order,Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+4-7d,Order on Petition for Support of Adult Dependent,Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+4-8,Application for Income Execution for Support Enforcement (Clerk of Court),Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: INCOME_EXECUTION
+4-8b,Petition (To Correct Income Execution for Support Execution for Support Enforcement),Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: INCOME_EXECUTION
+4-8c,Petition (Order to Correct Income Execution for Support Enforcement),Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: INCOME_EXECUTION
+4-9,Order - Income Deduction Order,Family Court Child Support,SUPREME_AND_FAMILY_OVERLAP,PKG_CHILD_SUPPORT_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: INCOME_EXECUTION
+4-9a,LDDS-5038: Income Withholding Order (Spousal Support only,Family Court Child Support,SUPREME_AND_FAMILY_OVERLAP,PKG_CHILD_SUPPORT_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+4-9b,LDSS-5039: Income Withholding for Support: General Information and Instructions,Family Court Child Support,SUPREME_AND_FAMILY_OVERLAP,PKG_CHILD_SUPPORT_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+4-SM-1,Stipulation for Child Support,Supreme Court Matrimonial,FAMILY_COURT,PKG_SETTLEMENT,REQUIRED,,0.80,ALIAS_RESOLUTION,MAPPED,Catalog required_forms: SETTLEMENT_AGREEMENT
+4-SM-2,Information Concerning Filing of Objections and Rebuttal in a Proceeding Before a Support Magistrate,Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+4-SM-3,Findings of Fact - Paternity,Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+5,Order of Publication,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+5-1,Paternity Petition (Parent),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+5-1-a,Summons - Paternity,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+5-1-c,Summons - Paternity (Non-Resident),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+5-15,Petition to Vacate Acknowledgment of Paternity,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+5-17a,Paternity - Motion to Vacate for Lack of Service,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+5-17b,Paternity - Affidavit in Support of Motion to Vacate Judgment for Lack of Service,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+5-18,Paternity - Order on Motion to Vacate for Lack of Service,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+5-1b,Summons - Paternity (Non-Party Spouse or Former Spouse),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+5-2,Paternity Petition (Person other than parent; Representative of Society),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+5-3,Petition - Paternity (Social Services Official),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+5-4,Notice of Motion to Challenge Genetic Marker or DNA testing Directive,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+5-4a,Order on Motion to Challenge Genetic Marker or DNA testing Directive,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+5-5,Order on Petition to Vacate Acknowledgement of Paternity,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+5-6,Order for Genetic Marker Test,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+5-6a,Order - Temporary Order of Support After DNA Ordered,Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+5-7,Order of Filiation,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+5-7a,Order of Filiation (Non-Article 5/5-B),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+5-9,Remand Commitment (Undertaking) - Paternity,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+5-C-2,Order (Surrogacy Agreement),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+5-C-3,Petition (Assisted Reproduction),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+5-C-4,Order (Assisted Reproduction),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+5-C-5,Summons (Surrogacy Agreement or Assisted Reproduction),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+5-C-6,Report of Birth of Child,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+6,Order of Investigation,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+6-1,Petition for Appointment As Guardian of a Person Or Permanent Guardian,Family Court Custody,UNSUPPORTED,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+6-1-a,Petition by Person Over 14 for Appointment of Guardian of a Person or Permanent Guardian,Family Court Custody,UNSUPPORTED,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+6-1-b,Petition by Person on Behalf of Person Under 21 for Appointment of Guardian of a Person or Permanent Guardian,Family Court Custody,UNSUPPORTED,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+6-1-c,Petition for Appointment of Kinship Guardian [Subsidized Kinship Guardian Program] and/or Permanent Guardian,UNGROUPED,UNSUPPORTED,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+6-10,Determination of Incapacity,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+6-11,Consent of Petitioner,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+6-2,Oath and Designation for Service of Process,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+6-3,Preference of Minor Over 14 Years of Age,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+6-4,"Waiver of Process, Renunciation or Consent to Letters of Guardianship/Standby Guardianship",UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+6-5,Order Appointing Guardian of the Person,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+6-5-a,Order Appointing Kinship Guardian [Subsidized Kinship Guardian Program] and/or Permanent Guardian,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+6-6,Letters of Guardianship of the Person of a Minor,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+6-7,Certificate of Guardian of Person of a Minor,UNGROUPED,UNSUPPORTED,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+6-8,Petition (Appointment of Standby Guardian of the Person),Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+6-9,Order Appointing A Standby Guardian of the Person,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+7,Report of Investigation (Private Placement),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+7-1,Recognizance to Produce Child,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+7-10,Order on Petition to Terminate Placement (PINS),Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+7-11,Petition for Discontinuance of Treatment,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+7-12,Order (Discontinuation of Treatment),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+7-15,Petition - Violation of Order of Disposition,Enforcement,FAMILY_COURT,PKG_ENFORCEMENT,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_ON_VIOLATION
+7-16,Order - Violation of Order of Disposition - Probation/Suspended Judgment,Enforcement,FAMILY_COURT,PKG_ENFORCEMENT,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_ON_VIOLATION
+7-17,Order - Violation of Order of Placement,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+7-18,Petition (Extension of Placement and Permanency Hearing),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+7-19,Order - Extension of Placement and Permanency Hearing Order (PINS),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+7-1a,Warrant of Arrest (w/ aliases) (PINS),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+7-2,Order - Directing Release of Child from Detention,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+7-20,Notice of Right of Respondent to Appeal,UNGROUPED,SUPREME_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+7-21,Order of Adjournment of Contemplation of Dismissal,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+7-3,Order Directing Detention (Post-Petition),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+7-4,Petition - PINS,Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+7-5,Determination Upon Fact-Finding Hearing,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+7-6,Order of Adjournment in Contemplation of Dismissal (PINS),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+7-7,Application to Restore to Calendar,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+7-8,Order of Fact-Finding and Disposition,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+7-9,Petition for Termination of Placement,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+8-1,Information for Victims of Domestic Violence,Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+8-2,Petition (Family Offense),Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,REQUIRED,,1.00,CATALOG_REQUIRED,MAPPED,Catalog required_forms: 8-2
+8-2,Petition (Family Offense),Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+8-2,Petition (Family Offense),Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+8-2,Petition (Family Offense),Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+8-2,Petition (Family Offense),Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+8-2,Petition (Family Offense),Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+8-3,Notice to the District Attorney,Family Court Family Offense,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+8-4,Order of Transfer for Criminal Prosecution,Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+8-5,Order of Disposition - Family Offense,Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+8-6,Order - Firearms Licenses and Surrenders,Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+8-6A,Firearms Search and Seizure Order,Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+8-7,Family Offense - Order of Dismissal,Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+8-A,Affirmation Identifying Party (Agency),Family Court Family Offense,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+8-B,Affirmation Identifying Party (Private Placement),Family Court Family Offense,UNSUPPORTED,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+9-A,Affirmation of Financial Disclosure – Parents (Agency),Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: FINANCIAL_DISCLOSURE_AFFIDAVIT
+9-A,Affirmation of Financial Disclosure – Parents (Agency),Modification,FAMILY_COURT,PKG_MODIFICATION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: FINANCIAL_DISCLOSURE_AFFIDAVIT
+9-B,Affirmation of Financial Disclosure – Parents (Private-Placement),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+CRIM-1,Order of Protection/Family Offense (Criminal Courts),Family Court Family Offense,SUPREME_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+CRIM-2,Order of Protection/Non-Family Offense (Criminal Courts),Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+DOH-1928,Report of Adoption (to be completed and certified by the court),UNGROUPED,UNSUPPORTED,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+DOH-2168,Certificate of Dissolution,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: DOH-2168
+DOH-2168,Certificate of Dissolution,Supreme Court Matrimonial,UNSUPPORTED,PKG_JUDGMENT,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Certificate of dissolution
+DOH-4455,Adoption Information Registry Birth Parent Registration Form,UNGROUPED,UNSUPPORTED,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+DRL 255,Addendum,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,DRL 255 addendum
+DRL 255,Addendum,Supreme Court Matrimonial,SUPREME_COURT,PKG_SETTLEMENT,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: DRL_255_ADDENDUM
+DRL 255,Addendum,Supreme Court Matrimonial,SUPREME_COURT,PKG_SETTLEMENT,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,DRL 255 addendum
+GF-1,Order to Show Cause,Supreme Court Matrimonial,FAMILY_COURT,PKG_MOTION,REQUIRED,,0.80,ALIAS_RESOLUTION,MAPPED,Catalog required_forms: ORDER_TO_SHOW_CAUSE
+GF-10,Notice of Motion -Extension or Modification of Order of Protection,Modification,FAMILY_COURT,PKG_MODIFICATION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: MODIFIED_ORDER
+GF-10,Notice of Motion -Extension or Modification of Order of Protection,Supreme Court Matrimonial,FAMILY_COURT,PKG_MOTION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: NOTICE_OF_MOTION
+GF-10a,Affirmation in Support of Motion - Extension or Modification of Order of Protection,Modification,FAMILY_COURT,PKG_MODIFICATION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: MODIFIED_ORDER
+GF-10a,Affirmation in Support of Motion - Extension or Modification of Order of Protection,Supreme Court Matrimonial,FAMILY_COURT,PKG_MOTION,REQUIRED,,0.80,ALIAS_RESOLUTION,MAPPED,Catalog required_forms: AFFIDAVIT_IN_SUPPORT
+GF-11,Order of Commitment,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+GF-12,Order Directing Forensic Evaluation,Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+GF-12-a,Affirmation Of Party Under CPLR §3103(A),Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+GF-12-b,Protective Order - Self-represented party Prior to Receipt of Forensic Report,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+GF-12-c,Protective Order - After Forensic Report Received,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+GF-12-d,Affirmation of Counsel Under CPLR 3103(a),Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+GF-12-e,Protective Order Permitting Limited Release of Forensic Evaluation,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+GF-12-f,Affirmation of Non-disclosure of Forensic Report and/or Materials and Data,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+GF-13,Order Directing Medical Examination (Outpatient),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-13a,Order Directing Medical Examination (Inpatient),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-13b,Order Directing Emergency Evaluation,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-14,Notice of Motion,Supreme Court Matrimonial,FAMILY_COURT,PKG_MOTION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: NOTICE_OF_MOTION
+GF-15,Order on Motion,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-16,Order - Dismissal,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-17,Petition for Custody/Visitation,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,REQUIRED,,1.00,CATALOG_REQUIRED,MAPPED,Catalog required_forms: GF-17
+GF-17,Petition for Custody/Visitation,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+GF-17,Petition for Custody/Visitation,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+GF-17,Petition for Custody/Visitation,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+GF-17,Petition for Custody/Visitation,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+GF-17,Petition for Custody/Visitation,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+GF-17a,Notice of Motion-Sibling Placement or Contact,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-17b,Affirmation of Child in Support of Motion for an Order for Sibling Placement or Contact,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-17c,Affirmation of Attorney for Child in Support of Motion for an Order for Sibling Placement or Contact),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-18,Order of Custody/Visitation,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_OF_CUSTODY_VISITATION
+GF-18a,Order on Motion for Sibling Placement or Contact,Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+GF-2,Summons - General,Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+GF-20,Order of Transfer of Proceeding Concerning an Indian Child,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+GF-21,Address Confidentiality Affirmation,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: GF-21
+GF-21,Address Confidentiality Affirmation,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Address confidentiality affirmation (FCA 154-b)
+GF-21,Address Confidentiality Affirmation,Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: GF-21
+GF-21,Address Confidentiality Affirmation,Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Address confidentiality affirmation (FCA 154-b)
+GF-21a,Address Confidentiality Order - Order,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Address confidentiality affirmation (FCA 154-b)
+GF-21a,Address Confidentiality Order - Order,Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Address confidentiality affirmation (FCA 154-b)
+GF-22,Petition for Writ of Habeas Corpus,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+GF-23,Writ of Habeas Corpus,Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+GF-24,Order to Sheriff to Return Respondent,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-25,Order Suspending Commitment,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+GF-27,Order (Transfer of Proceedings),Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+GF-28,Order - Transfer of Proceedings or Probation Supervision,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-29,Notice of Appearance,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-2a,Affirmation,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-3,Warrant of Arrest,Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+GF-3 (On web Warrant of Arrest),Warrant of Arrest (w/ aliases),Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+GF-30,Summons (Publication),Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+GF-31,Affirmation Relation To Indian Child Welfare Act,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+GF-32,Addendum to Order – Findings of Fact and Conclusions of Law -- Indian Child Welfare Act),Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+GF-33,Order Authorizing Services Other Than Counsel,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-36a,Motion for an Order That Reasonable Efforts Are Not Required,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-36b,Affirmation in Support of Motion for An Order That Reasonable Efforts Are Not Required,Supreme Court Matrimonial,FAMILY_COURT,PKG_MOTION,REQUIRED,,0.80,ALIAS_RESOLUTION,MAPPED,Catalog required_forms: AFFIDAVIT_IN_SUPPORT
+GF-37,Order on Motion For An Order That Reasonable Efforts Are Not Required,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-4,Subpoena Duces Tecum,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-40,Petition For Modification Of Order Of Custody Visitation,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_OF_CUSTODY_VISITATION
+GF-40,Petition For Modification Of Order Of Custody Visitation,Modification,FAMILY_COURT,PKG_MODIFICATION,REQUIRED,,1.00,CATALOG_REQUIRED,MAPPED,Catalog required_forms: GF-40
+GF-40,Petition For Modification Of Order Of Custody Visitation,Modification,FAMILY_COURT,PKG_MODIFICATION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: MODIFIED_ORDER
+GF-40a,Order On Petition For Modification Of Order Of Custody visitation,Family Court Custody,SUPREME_AND_FAMILY_OVERLAP,PKG_CUSTODY_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_OF_CUSTODY_VISITATION
+GF-40a,Order On Petition For Modification Of Order Of Custody visitation,Modification,SUPREME_AND_FAMILY_OVERLAP,PKG_MODIFICATION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: MODIFIED_ORDER
+GF-41,Petition for Enforcement of Order of Custody or Visitation made by Supreme Court or Family Court,Family Court Custody,SUPREME_AND_FAMILY_OVERLAP,PKG_CUSTODY_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_OF_CUSTODY_VISITATION
+GF-41,Petition for Enforcement of Order of Custody or Visitation made by Supreme Court or Family Court,Enforcement,SUPREME_AND_FAMILY_OVERLAP,PKG_ENFORCEMENT,REQUIRED,,1.00,CATALOG_REQUIRED,MAPPED,Catalog required_forms: GF-41
+GF-41a,Order on Petition to Enforce Cust/Vis Order Made by Supreme or Family Court,Family Court Family Offense,SUPREME_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+GF-42,Special Immigrant Juvenile Status Order,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+GF-43,Petition for Voter Registration Confidentiality,UNGROUPED,SUPREME_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-44,Order on Petition for Voter Registration Confidentiality,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-45,Family First Prevention Services Act - Notice of Motion for Approval of Placement in a Qualified Residential Treatment Program (QRTP),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-45a,Family First Prevention Services Act - Affidavit in Support of Placement in a Qualified Residential Treatment Program (QRTP),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-46,Family First Prevention Services Act - Order on Motion for Approval of Placement in a Qualified Residential Treatment Program (QRTP),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-47,Order of Name-change on Consent,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-48,Family Court Personal Information Form,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+GF-49,Extra Page for Family Court Form,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-5,Temporary Order of Protection (Family Court),Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: TEMPORARY_ORDER_OF_PROTECTION
+GF-50,Application for Assignment of Counsel,Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-51,Application for Reconsideration of Denial of Assignment of Counsel,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+GF-5a,Order of Protection (Family Court),Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+GF-5b,Affirmation in Support of Issuance of Family Court Temporary Order of Protection (Individual Complainant/Petitioner),Supreme Court Matrimonial,UNSUPPORTED,PKG_MOTION,REQUIRED,,0.80,ALIAS_RESOLUTION,DUPLICATE,Catalog required_forms: AFFIDAVIT_IN_SUPPORT
+GF-5b,Affirmation in Support of Issuance of Family Court Temporary Order of Protection (Individual Complainant/Petitioner),Family Court Family Offense,UNSUPPORTED,PKG_ORDER_OF_PROTECTION,OPTIONAL,,0.95,CATALOG_OPTIONAL,DUPLICATE,Catalog optional_forms: TEMPORARY_ORDER_OF_PROTECTION
+GF-5b,Affirmation in Support of Issuance of Family Court Temporary Order of Protection (Individual Complainant/Petitioner),Family Court Family Offense,UNSUPPORTED,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+GF-5c (CRIM-4),"Affirmation in Support of Issuance of Family Court Temporary Order of Protection (Peace or Police Officer, Agency, or Designated Person)",Supreme Court Matrimonial,UNSUPPORTED,PKG_MOTION,REQUIRED,,0.80,ALIAS_RESOLUTION,DUPLICATE,Catalog required_forms: AFFIDAVIT_IN_SUPPORT
+GF-5c (CRIM-4),"Affirmation in Support of Issuance of Family Court Temporary Order of Protection (Peace or Police Officer, Agency, or Designated Person)",Family Court Family Offense,UNSUPPORTED,PKG_ORDER_OF_PROTECTION,OPTIONAL,,0.95,CATALOG_OPTIONAL,DUPLICATE,Catalog optional_forms: TEMPORARY_ORDER_OF_PROTECTION
+GF-5c (CRIM-4),"Affirmation in Support of Issuance of Family Court Temporary Order of Protection (Peace or Police Officer, Agency, or Designated Person)",Family Court Family Offense,UNSUPPORTED,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+GF-5d (CRIM-5; SC-3),Affirmation in Support of Modification of Family Court Temporary Order of Protection or Order of Protection,Supreme Court Matrimonial,UNSUPPORTED,PKG_MOTION,REQUIRED,,0.80,ALIAS_RESOLUTION,MAPPED,Catalog required_forms: AFFIDAVIT_IN_SUPPORT
+GF-5d (CRIM-5; SC-3),Affirmation in Support of Modification of Family Court Temporary Order of Protection or Order of Protection,Supreme Court Matrimonial,UNSUPPORTED,PKG_MOTION,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Firearms seizure order
+GF-5d (CRIM-5; SC-3),Affirmation in Support of Modification of Family Court Temporary Order of Protection or Order of Protection,Family Court Family Offense,UNSUPPORTED,PKG_ORDER_OF_PROTECTION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: TEMPORARY_ORDER_OF_PROTECTION
+GF-5d (CRIM-5; SC-3),Affirmation in Support of Modification of Family Court Temporary Order of Protection or Order of Protection,Family Court Family Offense,UNSUPPORTED,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Firearms seizure order
+GF-5e,Affirmation in Support of Entry of Out-of-State Order of Protection or Temporary Order of Protection onto Statewide Registry of Orders of Protection,Supreme Court Matrimonial,SUPREME_COURT,PKG_MOTION,REQUIRED,,0.80,ALIAS_RESOLUTION,MAPPED,Catalog required_forms: AFFIDAVIT_IN_SUPPORT
+GF-5e,Affirmation in Support of Entry of Out-of-State Order of Protection or Temporary Order of Protection onto Statewide Registry of Orders of Protection,Family Court Family Offense,SUPREME_COURT,PKG_ORDER_OF_PROTECTION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: TEMPORARY_ORDER_OF_PROTECTION
+GF-6,Temporary Order of Protection (Person in Need of Supervision or Juvenile Delinquency),Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: TEMPORARY_ORDER_OF_PROTECTION
+GF-6a,Order of Protection (Person in Need of Supervision or Juvenile Delinquency),Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+GF-7,Summons - Violation of Order of Protection,Enforcement,FAMILY_COURT,PKG_ENFORCEMENT,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_ON_VIOLATION
+GF-7a,Summons - Violation of Court Order,Enforcement,FAMILY_COURT,PKG_ENFORCEMENT,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_ON_VIOLATION
+GF-8,Petition - Violation of Order of Protection,Enforcement,FAMILY_COURT,PKG_ENFORCEMENT,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_ON_VIOLATION
+GF-8a (on web Petition (Violation of Court Order),Petition - Violation of an Order,Enforcement,FAMILY_COURT,PKG_ENFORCEMENT,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_ON_VIOLATION
+GF-9,Order - Violation of Court Order (With Commitment),Enforcement,FAMILY_COURT,PKG_ENFORCEMENT,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_ON_VIOLATION
+GF19,Petition for Transfer of Proceeding Concerning an Indian Child,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+ICPC-100A,Interstate Compact on the Placement of Children Request,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+LDSS 5258,Child Support Enrollment Form,Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Child support enrollment
+LDSS 5258,Child Support Enrollment Form,Supreme Court Matrimonial,FAMILY_COURT,PKG_JUDGMENT,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Child support enrollment
+LDSS-2725,NYS OCFS Request/Response for Name and/or address of Father of Child Born Out of Wedlock,UNGROUPED,UNSUPPORTED,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+LDSS-5037,IWO Child Support or Combined Child and Spousal Support,Family Court Child Support,FAMILY_COURT,PKG_CHILD_SUPPORT_PETITION,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,IWO child support
+LDSS-5037,IWO Child Support or Combined Child and Spousal Support,Supreme Court Matrimonial,FAMILY_COURT,PKG_JUDGMENT,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,IWO child support
+LDSS-5038,IWO Spousal Support Only Income Withholding Order,Family Court Child Support,SUPREME_AND_FAMILY_OVERLAP,PKG_CHILD_SUPPORT_PETITION,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,IWO spousal support
+LDSS-5038,IWO Spousal Support Only Income Withholding Order,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_JUDGMENT,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,IWO spousal support
+LDSS-5039,IWO Numbered Instructions,Family Court Child Support,SUPREME_AND_FAMILY_OVERLAP,PKG_CHILD_SUPPORT_PETITION,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,IWO instructions
+LDSS-5039,IWO Numbered Instructions,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_JUDGMENT,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,IWO instructions
+OCFS-3937,Request for Information - Private Adoption,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+OCFS-4156,Adoption: Family Court/Surrogate Court Request Form,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+PH-2,Permanency Report (Multiple Children),Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+PH-3,Permanency Report (Child Freed for Adoption),Supreme Court Matrimonial,SUPREME_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+PH-4,Notice of Permanency Hearing,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+PH-4-b,Statement to Court of Permanency Hearing Reports and/or Notices Sent,UNGROUPED,UNSUPPORTED,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+PH-4a,Statement to Court of Permanency Hearing Reports and/or Notices Sent,UNGROUPED,UNSUPPORTED,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+PH-4c,Statement to Court of Permanency Hearing Reports and/or Notices Sent,UNGROUPED,UNSUPPORTED,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+PH-5,Order - Permanency Hearing Order,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+PH-6,Order - Freed for Adoption Permanency Hearing Order,Supreme Court Matrimonial,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+PH-7,Order to Show Cause (Reentry into Foster Care),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+PH-7a,Notice of Motion (Reentry into Foster Care),Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+PH-7b,Affirmation by Youth in Support of Motion to Re-enter Foster Care,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+PH-7c,Affirmation by Agency in Support of Order to Show Cause (Reentry into Foster Care),UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+PH-8,Order on Motion to Reenter Foster Care,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+SC-1,Temporary Order of Protection (Supreme Court),Supreme Court Matrimonial,SUPREME_COURT,PKG_MOTION,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Supreme Court temporary OP
+SC-1,Temporary Order of Protection (Supreme Court),Family Court Family Offense,SUPREME_COURT,PKG_ORDER_OF_PROTECTION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: TEMPORARY_ORDER_OF_PROTECTION
+SC-1,Temporary Order of Protection (Supreme Court),Family Court Family Offense,SUPREME_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Supreme Court temporary OP
+SC-2,Order of Protection (Supreme Court),Supreme Court Matrimonial,SUPREME_COURT,PKG_MOTION,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Supreme Court OP
+SC-2,Order of Protection (Supreme Court),Family Court Family Offense,SUPREME_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Supreme Court OP
+SC-3,Firearms Seizure Order (Supreme Court),Supreme Court Matrimonial,SUPREME_COURT,PKG_MOTION,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Firearms seizure order
+SC-3,Firearms Seizure Order (Supreme Court),Family Court Family Offense,SUPREME_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Firearms seizure order
+SURR-1,Notice of Proceeding for Approval of Judicial or Extra-Judicial Surrender Instrument,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+SURR-1a,Affirmation of Caseworker Regarding Persons Entitled to Notice of Surrender of Child in Foster Care,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+SURR-2,Order Directing Service in Proceeding for Approval of Judicial or Extra-Judicial Surrender Instrument,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+SURR-3,Petition for Approval of Extra-judicial Surrender Instrument,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+SURR-4,Affirmation of Authorized Agency Employee Witness to Execution of Extra-Judicial Surrender Instrument of Child in Foster Care,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+SURR-4-a,Affidavit of Independent Witness to Execution of Extra-Judicial Surrender Instrument of Child in Foster Care,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+SURR-5,Affirmation of Authorized Agency Employee Responsible for Arranging Supportive Counseling- Extra-Judicial Surrender of Child in Foster Care,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+SURR-5-a,Affidavit of Provider of Supportive Counseling- Extra-Judicial Surrender of Child in Foster Care,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+SURR-6,Order Approving or Disapproving Extra-judicial Surrender Instrument,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+SURR-7,Petition for Review of Failure of Material Condition in Conditional Surrender and violation of Post-adoption Contact Agreement (Prior to Adoption Finalization),Enforcement,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+SURR-8,Order Determining Petition for Review of Failure of Material Condition in Conditional Surrender and violation of Post-adoption Contact Agreement (Prior to Adoption Finalization),Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+TPR-1,Petition (Permanent Neglect),Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+TPR-10,Petition (Severely or Repeatedly Abused Child),Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+TPR-11,Order of Disposition (Severely or Repeatedly Abused Child),Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+TPR-12,Affirmation Regarding Venue - Termination of Parental Rights,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+TPR-13,Termination of Parental Rights - Determination of Family Court Judge Regarding Venue,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+TPR-14,Termination of Parental Right Order Regarding Venue,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+TPR-15,Petition to Restore Parental Rights,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+TPR-16,Order on Petition to Restore Parental Rights,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+TPR-1a,Summons - Termination of Parental Rights,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+TPR-1b,Affirmation of Caseworker Regarding Persons Entitled to Notice of Proceeding to Terminate Parental Rights of Child in Foster Care,Family Court Custody,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+TPR-2,Order of Disposition (Permanent Neglect),Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+TPR-3,Order Dismissing Petition,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+TPR-4,Petition (Parents Deceased),Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+TPR-5,Order of Disposition (Parents Deceased),Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+TPR-6,Petition (Abandonment),Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+TPR-7,Order of Disposition (Abandonment),Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+TPR-8,Petition (Mental Illness or Intellectual Disability of Parents),Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+TPR-9,Order of Disposition (Mental Illness or Intellectual Disability) of Parents,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+TRP-2a,"Findings of Fact, Conclusions of Law, and Order of Disposition-Suspended Judgement - Permanent Neglect",Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+UCCJEA-1,Petition for Custody/Visitation - UCCJEA,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UCCJEA_AFFIDAVIT
+UCCJEA-10,Order on Petition to Modify Order of Custody/Visitation - UCCJEA,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UCCJEA_AFFIDAVIT
+UCCJEA-10,Order on Petition to Modify Order of Custody/Visitation - UCCJEA,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_OF_CUSTODY_VISITATION
+UCCJEA-11,Petition to Enforce Custody/Visitation Order - UCCJEA,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UCCJEA_AFFIDAVIT
+UCCJEA-11,Petition to Enforce Custody/Visitation Order - UCCJEA,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_OF_CUSTODY_VISITATION
+UCCJEA-12,Order to Appear on Petition to Enforce Custody/Visitation Order - UCCJEA,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UCCJEA_AFFIDAVIT
+UCCJEA-12,Order to Appear on Petition to Enforce Custody/Visitation Order - UCCJEA,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_OF_CUSTODY_VISITATION
+UCCJEA-13,Order on Petition to Enforce Order of Custody/Visitation - UCCJEA,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UCCJEA_AFFIDAVIT
+UCCJEA-13,Order on Petition to Enforce Order of Custody/Visitation - UCCJEA,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_OF_CUSTODY_VISITATION
+UCCJEA-14,Affirmation Application for Registration of an Out-of-State Custody/Visitation Order - UCCJEA,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UCCJEA_AFFIDAVIT
+UCCJEA-14,Affirmation Application for Registration of an Out-of-State Custody/Visitation Order - UCCJEA,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_OF_CUSTODY_VISITATION
+UCCJEA-15,Notice of Request for Registration of an Out-of-State Child Custody or Visitation,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UCCJEA_AFFIDAVIT
+UCCJEA-16,Objection to the Registration of Out-of-State Child Custody/Visitation Order - UCCJEA,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UCCJEA_AFFIDAVIT
+UCCJEA-16,Objection to the Registration of Out-of-State Child Custody/Visitation Order - UCCJEA,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_OF_CUSTODY_VISITATION
+UCCJEA-17,Notice of Hearing Upon Objection to Registration of Order of Custody or Visitation,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UCCJEA_AFFIDAVIT
+UCCJEA-17,Notice of Hearing Upon Objection to Registration of Order of Custody or Visitation,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_OF_CUSTODY_VISITATION
+UCCJEA-18,Order Determining Request for Registration of an Out-of-State Custody or Visitation Order: Determination of Objection and Notice of Registration - UCCJEA,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UCCJEA_AFFIDAVIT
+UCCJEA-19,Certification of Registration of Out-of-State Order of Custody/Visitation,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UCCJEA_AFFIDAVIT
+UCCJEA-19,Certification of Registration of Out-of-State Order of Custody/Visitation,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_OF_CUSTODY_VISITATION
+UCCJEA-2,Order on Petition for Custody/Visitation - UCCJEA,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UCCJEA_AFFIDAVIT
+UCCJEA-3,Affirmation - UCCJEA,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UCCJEA_AFFIDAVIT
+UCCJEA-4,Notice of Hearing - UCCJEA,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UCCJEA_AFFIDAVIT
+UCCJEA-4a,Order to Show Cause - UCCJEA-Notice,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UCCJEA_AFFIDAVIT
+UCCJEA-4a,Order to Show Cause - UCCJEA-Notice,Supreme Court Matrimonial,FAMILY_COURT,PKG_MOTION,REQUIRED,,0.80,ALIAS_RESOLUTION,MAPPED,Catalog required_forms: ORDER_TO_SHOW_CAUSE
+UCCJEA-5,Order for Service of Notice of Proceeding - UCCJEA,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UCCJEA_AFFIDAVIT
+UCCJEA-6,Warrant to Arrest Party and Take Physical Custody of Child - UCCJEA,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UCCJEA_AFFIDAVIT
+UCCJEA-7,"Electronic Testimony Application, Waiver of Personal Appearance and Order",Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.95,CATALOG_OPTIONAL,DUPLICATE,Catalog optional_forms: UCCJEA_AFFIDAVIT
+UCCJEA-7a,Order on Electronic Testimony Application,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UCCJEA_AFFIDAVIT
+UCCJEA-8,Request for Assistance or Records,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UCCJEA_AFFIDAVIT
+UCCJEA-9,Petition to Modify Custody/Visitation Order - UCCJEA,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UCCJEA_AFFIDAVIT
+UCCJEA-9,Petition to Modify Custody/Visitation Order - UCCJEA,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: ORDER_OF_CUSTODY_VISITATION
+UCS-111,Child Support Summary Form,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_UNCONTESTED_WITH_CHILDREN,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: UCS-111
+UCS-836,Uniform Adoption - Attorney's Affidavit (Agency and Private Placement),Supreme Court Matrimonial,UNSUPPORTED,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+UCS-840M,Addendum for the RJI,Supreme Court Matrimonial,SUPREME_COURT,PKG_DISCOVERY,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: UCS-840M
+UCS-FW3,"Affirmation of Service of Proposed Order to Waive Court Costs, Fees and Expenses",Family Court Child Support,SUPREME_AND_FAMILY_OVERLAP,PKG_CHILD_SUPPORT_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: AFFIDAVIT_OF_SERVICE
+UCS-FW3,"Affirmation of Service of Proposed Order to Waive Court Costs, Fees and Expenses",Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_CONTESTED_COMMENCEMENT,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Fee waiver service affirmation
+UCS-FW3,"Affirmation of Service of Proposed Order to Waive Court Costs, Fees and Expenses",Family Court Custody,SUPREME_AND_FAMILY_OVERLAP,PKG_CUSTODY_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: AFFIDAVIT_OF_SERVICE
+UCS-FW3,"Affirmation of Service of Proposed Order to Waive Court Costs, Fees and Expenses",Enforcement,SUPREME_AND_FAMILY_OVERLAP,PKG_ENFORCEMENT,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: AFFIDAVIT_OF_SERVICE
+UCS-FW3,"Affirmation of Service of Proposed Order to Waive Court Costs, Fees and Expenses",Modification,SUPREME_AND_FAMILY_OVERLAP,PKG_MODIFICATION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: AFFIDAVIT_OF_SERVICE
+UCS-FW3,"Affirmation of Service of Proposed Order to Waive Court Costs, Fees and Expenses",Family Court Family Offense,SUPREME_AND_FAMILY_OVERLAP,PKG_ORDER_OF_PROTECTION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: AFFIDAVIT_OF_SERVICE
+UCS-FW3,"Affirmation of Service of Proposed Order to Waive Court Costs, Fees and Expenses",Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_SERVICE,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: AFFIDAVIT_OF_SERVICE
+UCS-FW3,"Affirmation of Service of Proposed Order to Waive Court Costs, Fees and Expenses",Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_UNCONTESTED_NO_CHILDREN,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Fee waiver service affirmation
+UCS-FW3,"Affirmation of Service of Proposed Order to Waive Court Costs, Fees and Expenses",Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_UNCONTESTED_WITH_CHILDREN,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Fee waiver service affirmation
+UCS-FWO1,"Order to Waive Court Costs, Fees and Expenses",Supreme Court Matrimonial,SUPREME_COURT,PKG_CONTESTED_COMMENCEMENT,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Fee waiver order
+UCS-FWO1,"Order to Waive Court Costs, Fees and Expenses",Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_NO_CHILDREN,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Fee waiver order
+UCS-FWO1,"Order to Waive Court Costs, Fees and Expenses",Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Fee waiver order
+UD-1,Summons with Notice,Supreme Court Matrimonial,SUPREME_COURT,PKG_CONTESTED_COMMENCEMENT,REQUIRED,,1.00,CATALOG_REQUIRED,MAPPED,Catalog required_forms: UD-1
+UD-1,Summons with Notice,Supreme Court Matrimonial,SUPREME_COURT,PKG_CONTESTED_COMMENCEMENT,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-1,Summons with Notice,Supreme Court Matrimonial,SUPREME_COURT,PKG_CONTESTED_COMMENCEMENT,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-1,Summons with Notice,Supreme Court Matrimonial,SUPREME_COURT,PKG_CONTESTED_COMMENCEMENT,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-1,Summons with Notice,Supreme Court Matrimonial,SUPREME_COURT,PKG_CONTESTED_COMMENCEMENT,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-1,Summons with Notice,Supreme Court Matrimonial,SUPREME_COURT,PKG_CONTESTED_COMMENCEMENT,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-1,Summons with Notice,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_NO_CHILDREN,REQUIRED,,1.00,CATALOG_REQUIRED,MAPPED,Catalog required_forms: UD-1
+UD-1,Summons with Notice,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_NO_CHILDREN,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-1,Summons with Notice,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_NO_CHILDREN,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-1,Summons with Notice,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_NO_CHILDREN,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-1,Summons with Notice,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_NO_CHILDREN,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-1,Summons with Notice,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_NO_CHILDREN,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-1,Summons with Notice,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,REQUIRED,,1.00,CATALOG_REQUIRED,MAPPED,Catalog required_forms: UD-1
+UD-1,Summons with Notice,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: matrimonial
+UD-1,Summons with Notice,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: matrimonial
+UD-1,Summons with Notice,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: matrimonial
+UD-1,Summons with Notice,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: matrimonial
+UD-1,Summons with Notice,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: matrimonial
+UD-10,Findings of Fact/Conclusions of Law,Supreme Court Matrimonial,SUPREME_COURT,PKG_DEFAULT_DIVORCE,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: FINDINGS_OF_FACT
+UD-10,Findings of Fact/Conclusions of Law,Supreme Court Matrimonial,SUPREME_COURT,PKG_DEFAULT_DIVORCE,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Findings of fact/conclusions of law
+UD-10,Findings of Fact/Conclusions of Law,Supreme Court Matrimonial,SUPREME_COURT,PKG_DEFAULT_DIVORCE,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-10,Findings of Fact/Conclusions of Law,Supreme Court Matrimonial,SUPREME_COURT,PKG_DEFAULT_DIVORCE,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-10,Findings of Fact/Conclusions of Law,Supreme Court Matrimonial,SUPREME_COURT,PKG_DEFAULT_DIVORCE,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-10,Findings of Fact/Conclusions of Law,Supreme Court Matrimonial,SUPREME_COURT,PKG_DEFAULT_DIVORCE,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-10,Findings of Fact/Conclusions of Law,Supreme Court Matrimonial,SUPREME_COURT,PKG_DEFAULT_DIVORCE,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-10,Findings of Fact/Conclusions of Law,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,REQUIRED,,0.80,ALIAS_RESOLUTION,MAPPED,Catalog required_forms: FINDINGS_OF_FACT
+UD-10,Findings of Fact/Conclusions of Law,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Findings of fact/conclusions of law
+UD-10,Findings of Fact/Conclusions of Law,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-10,Findings of Fact/Conclusions of Law,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-10,Findings of Fact/Conclusions of Law,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-10,Findings of Fact/Conclusions of Law,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-10,Findings of Fact/Conclusions of Law,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-11,Judgment of Divorce,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Judgment of divorce
+UD-11,Judgment of Divorce,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-11,Judgment of Divorce,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-11,Judgment of Divorce,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-11,Judgment of Divorce,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-11,Judgment of Divorce,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-12,Part 130 Certification,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: PART130_CERT
+UD-12,Part 130 Certification,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Part 130 certification
+UD-12,Part 130 Certification,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-12,Part 130 Certification,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-12,Part 130 Certification,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-12,Part 130 Certification,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-12,Part 130 Certification,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-13,Request for Judicial Intervention,Supreme Court Matrimonial,FAMILY_COURT,PKG_DISCOVERY,REQUIRED,,0.80,ALIAS_RESOLUTION,MAPPED,Catalog required_forms: RJI
+UD-13,Request for Judicial Intervention,Supreme Court Matrimonial,FAMILY_COURT,PKG_DISCOVERY,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: conference
+UD-13,Request for Judicial Intervention,Supreme Court Matrimonial,FAMILY_COURT,PKG_DISCOVERY,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: conference
+UD-13,Request for Judicial Intervention,Supreme Court Matrimonial,FAMILY_COURT,PKG_DISCOVERY,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: conference
+UD-13,Request for Judicial Intervention,Supreme Court Matrimonial,FAMILY_COURT,PKG_DISCOVERY,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: conference
+UD-13,Request for Judicial Intervention,Supreme Court Matrimonial,FAMILY_COURT,PKG_DISCOVERY,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: conference
+UD-14,Notice of Entry,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Notice of entry
+UD-14,Notice of Entry,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-14,Notice of Entry,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-14,Notice of Entry,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-14,Notice of Entry,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-14,Notice of Entry,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Family Court Child Support,SUPREME_AND_FAMILY_OVERLAP,PKG_CHILD_SUPPORT_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: AFFIDAVIT_OF_SERVICE
+UD-15,Affirmation of Service by Mail of JOD,Family Court Child Support,SUPREME_AND_FAMILY_OVERLAP,PKG_CHILD_SUPPORT_PETITION,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Family Court Child Support,SUPREME_AND_FAMILY_OVERLAP,PKG_CHILD_SUPPORT_PETITION,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Family Court Child Support,SUPREME_AND_FAMILY_OVERLAP,PKG_CHILD_SUPPORT_PETITION,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Family Court Child Support,SUPREME_AND_FAMILY_OVERLAP,PKG_CHILD_SUPPORT_PETITION,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Family Court Child Support,SUPREME_AND_FAMILY_OVERLAP,PKG_CHILD_SUPPORT_PETITION,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Family Court Custody,SUPREME_AND_FAMILY_OVERLAP,PKG_CUSTODY_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: AFFIDAVIT_OF_SERVICE
+UD-15,Affirmation of Service by Mail of JOD,Family Court Custody,SUPREME_AND_FAMILY_OVERLAP,PKG_CUSTODY_PETITION,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Family Court Custody,SUPREME_AND_FAMILY_OVERLAP,PKG_CUSTODY_PETITION,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Family Court Custody,SUPREME_AND_FAMILY_OVERLAP,PKG_CUSTODY_PETITION,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Family Court Custody,SUPREME_AND_FAMILY_OVERLAP,PKG_CUSTODY_PETITION,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Family Court Custody,SUPREME_AND_FAMILY_OVERLAP,PKG_CUSTODY_PETITION,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Enforcement,SUPREME_AND_FAMILY_OVERLAP,PKG_ENFORCEMENT,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: AFFIDAVIT_OF_SERVICE
+UD-15,Affirmation of Service by Mail of JOD,Enforcement,SUPREME_AND_FAMILY_OVERLAP,PKG_ENFORCEMENT,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Enforcement,SUPREME_AND_FAMILY_OVERLAP,PKG_ENFORCEMENT,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Enforcement,SUPREME_AND_FAMILY_OVERLAP,PKG_ENFORCEMENT,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Enforcement,SUPREME_AND_FAMILY_OVERLAP,PKG_ENFORCEMENT,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Enforcement,SUPREME_AND_FAMILY_OVERLAP,PKG_ENFORCEMENT,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_JUDGMENT,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Affirmation of service by mail of JOD
+UD-15,Affirmation of Service by Mail of JOD,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_JUDGMENT,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_JUDGMENT,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_JUDGMENT,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_JUDGMENT,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_JUDGMENT,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Modification,SUPREME_AND_FAMILY_OVERLAP,PKG_MODIFICATION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: AFFIDAVIT_OF_SERVICE
+UD-15,Affirmation of Service by Mail of JOD,Modification,SUPREME_AND_FAMILY_OVERLAP,PKG_MODIFICATION,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Modification,SUPREME_AND_FAMILY_OVERLAP,PKG_MODIFICATION,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Modification,SUPREME_AND_FAMILY_OVERLAP,PKG_MODIFICATION,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Modification,SUPREME_AND_FAMILY_OVERLAP,PKG_MODIFICATION,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Modification,SUPREME_AND_FAMILY_OVERLAP,PKG_MODIFICATION,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Family Court Family Offense,SUPREME_AND_FAMILY_OVERLAP,PKG_ORDER_OF_PROTECTION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: AFFIDAVIT_OF_SERVICE
+UD-15,Affirmation of Service by Mail of JOD,Family Court Family Offense,SUPREME_AND_FAMILY_OVERLAP,PKG_ORDER_OF_PROTECTION,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Family Court Family Offense,SUPREME_AND_FAMILY_OVERLAP,PKG_ORDER_OF_PROTECTION,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Family Court Family Offense,SUPREME_AND_FAMILY_OVERLAP,PKG_ORDER_OF_PROTECTION,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Family Court Family Offense,SUPREME_AND_FAMILY_OVERLAP,PKG_ORDER_OF_PROTECTION,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Family Court Family Offense,SUPREME_AND_FAMILY_OVERLAP,PKG_ORDER_OF_PROTECTION,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_SERVICE,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: AFFIDAVIT_OF_SERVICE
+UD-15,Affirmation of Service by Mail of JOD,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_SERVICE,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Affirmation of service by mail of JOD
+UD-15,Affirmation of Service by Mail of JOD,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_SERVICE,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_SERVICE,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_SERVICE,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_SERVICE,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-15,Affirmation of Service by Mail of JOD,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_SERVICE,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: procedure
+UD-1a,Summons,Supreme Court Matrimonial,SUPREME_COURT,PKG_CONTESTED_COMMENCEMENT,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Alternate summons form
+UD-1a,Summons,Supreme Court Matrimonial,SUPREME_COURT,PKG_CONTESTED_COMMENCEMENT,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-1a,Summons,Supreme Court Matrimonial,SUPREME_COURT,PKG_CONTESTED_COMMENCEMENT,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-1a,Summons,Supreme Court Matrimonial,SUPREME_COURT,PKG_CONTESTED_COMMENCEMENT,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-1a,Summons,Supreme Court Matrimonial,SUPREME_COURT,PKG_CONTESTED_COMMENCEMENT,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-1a,Summons,Supreme Court Matrimonial,SUPREME_COURT,PKG_CONTESTED_COMMENCEMENT,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-1a,Summons,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_NO_CHILDREN,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Alternate summons form
+UD-1a,Summons,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_NO_CHILDREN,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-1a,Summons,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_NO_CHILDREN,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-1a,Summons,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_NO_CHILDREN,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-1a,Summons,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_NO_CHILDREN,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-1a,Summons,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_NO_CHILDREN,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-1a,Summons,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Alternate summons form
+UD-1a,Summons,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: matrimonial
+UD-1a,Summons,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: matrimonial
+UD-1a,Summons,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: matrimonial
+UD-1a,Summons,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: matrimonial
+UD-1a,Summons,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: matrimonial
+UD-2,Verified Complaint,Supreme Court Matrimonial,SUPREME_COURT,PKG_CONTESTED_COMMENCEMENT,REQUIRED,,1.00,CATALOG_REQUIRED,MAPPED,Catalog required_forms: UD-2
+UD-2,Verified Complaint,Supreme Court Matrimonial,SUPREME_COURT,PKG_CONTESTED_COMMENCEMENT,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-2,Verified Complaint,Supreme Court Matrimonial,SUPREME_COURT,PKG_CONTESTED_COMMENCEMENT,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-2,Verified Complaint,Supreme Court Matrimonial,SUPREME_COURT,PKG_CONTESTED_COMMENCEMENT,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-2,Verified Complaint,Supreme Court Matrimonial,SUPREME_COURT,PKG_CONTESTED_COMMENCEMENT,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-2,Verified Complaint,Supreme Court Matrimonial,SUPREME_COURT,PKG_CONTESTED_COMMENCEMENT,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-2,Verified Complaint,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_NO_CHILDREN,REQUIRED,,1.00,CATALOG_REQUIRED,MAPPED,Catalog required_forms: UD-2
+UD-2,Verified Complaint,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_NO_CHILDREN,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-2,Verified Complaint,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_NO_CHILDREN,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-2,Verified Complaint,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_NO_CHILDREN,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-2,Verified Complaint,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_NO_CHILDREN,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-2,Verified Complaint,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_NO_CHILDREN,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: efiling
+UD-2,Verified Complaint,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,REQUIRED,,1.00,CATALOG_REQUIRED,MAPPED,Catalog required_forms: UD-2
+UD-2,Verified Complaint,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,COUNTY_SPECIFIC,BRONX_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: matrimonial
+UD-2,Verified Complaint,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,COUNTY_SPECIFIC,KINGS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: matrimonial
+UD-2,Verified Complaint,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,COUNTY_SPECIFIC,NEW_YORK_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: matrimonial
+UD-2,Verified Complaint,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,COUNTY_SPECIFIC,QUEENS_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: matrimonial
+UD-2,Verified Complaint,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,COUNTY_SPECIFIC,RICHMOND_COUNTY,0.50,COUNTY_RULE,MAPPED,County variation: matrimonial
+UD-3,Affirmation of Service,Family Court Child Support,SUPREME_AND_FAMILY_OVERLAP,PKG_CHILD_SUPPORT_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: AFFIDAVIT_OF_SERVICE
+UD-3,Affirmation of Service,Family Court Custody,SUPREME_AND_FAMILY_OVERLAP,PKG_CUSTODY_PETITION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: AFFIDAVIT_OF_SERVICE
+UD-3,Affirmation of Service,Enforcement,SUPREME_AND_FAMILY_OVERLAP,PKG_ENFORCEMENT,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: AFFIDAVIT_OF_SERVICE
+UD-3,Affirmation of Service,Modification,SUPREME_AND_FAMILY_OVERLAP,PKG_MODIFICATION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: AFFIDAVIT_OF_SERVICE
+UD-3,Affirmation of Service,Family Court Family Offense,SUPREME_AND_FAMILY_OVERLAP,PKG_ORDER_OF_PROTECTION,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: AFFIDAVIT_OF_SERVICE
+UD-3,Affirmation of Service,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_SERVICE,REQUIRED,,1.00,CATALOG_REQUIRED,MAPPED,Catalog required_forms: UD-3
+UD-3,Affirmation of Service,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_SERVICE,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: AFFIDAVIT_OF_SERVICE
+UD-4 and UD-4a,Sworn Statement of Removal of Barriers to Remarriage,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_SERVICE,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-4
+UD-5,Affirmation (Affidavit) of Regularity,Supreme Court Matrimonial,SUPREME_COURT,PKG_DEFAULT_DIVORCE,REQUIRED,,1.00,CATALOG_REQUIRED,MAPPED,Catalog required_forms: UD-5
+UD-5,Affirmation (Affidavit) of Regularity,Supreme Court Matrimonial,SUPREME_COURT,PKG_DEFAULT_DIVORCE,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: AFFIDAVIT_OF_REGULARITY
+UD-5,Affirmation (Affidavit) of Regularity,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: AFFIDAVIT_OF_REGULARITY
+UD-5,Affirmation (Affidavit) of Regularity,Supreme Court Matrimonial,SUPREME_COURT,PKG_RESPONSE,REQUIRED,,1.00,CATALOG_REQUIRED,MAPPED,Catalog required_forms: UD-5
+UD-6,Sworn Affirmation of Plaintiff,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_DEFAULT_DIVORCE,REQUIRED,,1.00,CATALOG_REQUIRED,MAPPED,Catalog required_forms: UD-6
+UD-6,Sworn Affirmation of Plaintiff,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_JUDGMENT,REQUIRED,,1.00,CATALOG_REQUIRED,MAPPED,Catalog required_forms: UD-6
+UD-7,Affirmation of Defendant,Supreme Court Matrimonial,SUPREME_COURT,PKG_DEFAULT_DIVORCE,REQUIRED,,1.00,CATALOG_REQUIRED,MAPPED,Catalog required_forms: UD-7
+UD-7,Affirmation of Defendant,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,REQUIRED,,1.00,CATALOG_REQUIRED,MAPPED,Catalog required_forms: UD-7
+UD-8(1),Annual Income Worksheet,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_CONTESTED_COMMENCEMENT,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8
+UD-8(1),Annual Income Worksheet,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_DEFAULT_DIVORCE,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8
+UD-8(1),Annual Income Worksheet,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_DEFAULT_DIVORCE,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Annual income worksheet
+UD-8(1),Annual Income Worksheet,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_JUDGMENT,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8
+UD-8(1),Annual Income Worksheet,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_JUDGMENT,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Annual income worksheet
+UD-8(1),Annual Income Worksheet,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_SETTLEMENT,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8
+UD-8(1),Annual Income Worksheet,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_SETTLEMENT,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Annual income worksheet
+UD-8(1),Annual Income Worksheet,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_UNCONTESTED_WITH_CHILDREN,REQUIRED,,0.80,ALIAS_RESOLUTION,MAPPED,Catalog required_forms: UD-8
+UD-8(1),Annual Income Worksheet,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_UNCONTESTED_WITH_CHILDREN,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8b
+UD-8(1),Annual Income Worksheet,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_UNCONTESTED_WITH_CHILDREN,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Annual income worksheet
+UD-8(2),Maintenance Guidelines Worksheet,Supreme Court Matrimonial,SUPREME_COURT,PKG_CONTESTED_COMMENCEMENT,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8
+UD-8(2),Maintenance Guidelines Worksheet,Supreme Court Matrimonial,SUPREME_COURT,PKG_DEFAULT_DIVORCE,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8
+UD-8(2),Maintenance Guidelines Worksheet,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8
+UD-8(2),Maintenance Guidelines Worksheet,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Maintenance guidelines worksheet
+UD-8(2),Maintenance Guidelines Worksheet,Supreme Court Matrimonial,SUPREME_COURT,PKG_SETTLEMENT,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8
+UD-8(2),Maintenance Guidelines Worksheet,Supreme Court Matrimonial,SUPREME_COURT,PKG_SETTLEMENT,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Maintenance guidelines worksheet
+UD-8(2),Maintenance Guidelines Worksheet,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,REQUIRED,,0.80,ALIAS_RESOLUTION,MAPPED,Catalog required_forms: UD-8
+UD-8(2),Maintenance Guidelines Worksheet,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8b
+UD-8(2),Maintenance Guidelines Worksheet,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Maintenance guidelines worksheet
+UD-8(3),Child Support Worksheet,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_CONTESTED_COMMENCEMENT,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8
+UD-8(3),Child Support Worksheet,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_DEFAULT_DIVORCE,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8
+UD-8(3),Child Support Worksheet,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_DEFAULT_DIVORCE,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Child support worksheet
+UD-8(3),Child Support Worksheet,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_JUDGMENT,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8
+UD-8(3),Child Support Worksheet,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_JUDGMENT,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Child support worksheet
+UD-8(3),Child Support Worksheet,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_SETTLEMENT,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8
+UD-8(3),Child Support Worksheet,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_SETTLEMENT,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Child support worksheet
+UD-8(3),Child Support Worksheet,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_UNCONTESTED_WITH_CHILDREN,REQUIRED,,0.80,ALIAS_RESOLUTION,MAPPED,Catalog required_forms: UD-8
+UD-8(3),Child Support Worksheet,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_UNCONTESTED_WITH_CHILDREN,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8b
+UD-8(3),Child Support Worksheet,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_UNCONTESTED_WITH_CHILDREN,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,Child support worksheet
+UD-8a,Support Collection Unit Information Sheet,Supreme Court Matrimonial,SUPREME_COURT,PKG_CONTESTED_COMMENCEMENT,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8
+UD-8a,Support Collection Unit Information Sheet,Supreme Court Matrimonial,SUPREME_COURT,PKG_DEFAULT_DIVORCE,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8
+UD-8a,Support Collection Unit Information Sheet,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8
+UD-8a,Support Collection Unit Information Sheet,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,SCU information sheet
+UD-8a,Support Collection Unit Information Sheet,Supreme Court Matrimonial,SUPREME_COURT,PKG_SETTLEMENT,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8
+UD-8a,Support Collection Unit Information Sheet,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,REQUIRED,,0.80,ALIAS_RESOLUTION,MAPPED,Catalog required_forms: UD-8
+UD-8a,Support Collection Unit Information Sheet,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8b
+UD-8a,Support Collection Unit Information Sheet,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,CONDITIONAL,,0.60,CONDITIONAL_RULE,MAPPED,SCU information sheet
+UD-8b,Qualified Medical Child Support Order,Supreme Court Matrimonial,FAMILY_COURT,PKG_CONTESTED_COMMENCEMENT,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8
+UD-8b,Qualified Medical Child Support Order,Supreme Court Matrimonial,FAMILY_COURT,PKG_DEFAULT_DIVORCE,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8
+UD-8b,Qualified Medical Child Support Order,Supreme Court Matrimonial,FAMILY_COURT,PKG_JUDGMENT,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8
+UD-8b,Qualified Medical Child Support Order,Supreme Court Matrimonial,FAMILY_COURT,PKG_SETTLEMENT,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8
+UD-8b,Qualified Medical Child Support Order,Supreme Court Matrimonial,FAMILY_COURT,PKG_UNCONTESTED_WITH_CHILDREN,REQUIRED,,0.80,ALIAS_RESOLUTION,MAPPED,Catalog required_forms: UD-8
+UD-8b,Qualified Medical Child Support Order,Supreme Court Matrimonial,FAMILY_COURT,PKG_UNCONTESTED_WITH_CHILDREN,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: UD-8b
+UD-9,Note of Issue,Supreme Court Matrimonial,SUPREME_COURT,PKG_JUDGMENT,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: NOI
+UD-9,Note of Issue,Supreme Court Matrimonial,SUPREME_COURT,PKG_TRIAL,REQUIRED,,0.80,ALIAS_RESOLUTION,MAPPED,Catalog required_forms: NOI
+UIFSA-1,Child Support Enforcement Transmittal #1 Initial Request,Enforcement,FAMILY_COURT,PKG_ENFORCEMENT,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+UIFSA-11,Notice of Registration of Out-of-State Support Order,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+UIFSA-12,Petition to Vacate Registration of Out-of-State Support Order,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+UIFSA-13,Order on Petition to Vacate Registration of Out-of-State Support Order,Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+UIFSA-14,Child Support Agency Confidential Information Form,Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+UIFSA-15,Personal Information Form for UIFSA § 311,Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+UIFSA-2,Child Support Enforcement Transmittal #2 Subsequent Actions,Enforcement,FAMILY_COURT,PKG_ENFORCEMENT,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+UIFSA-3,Child Support Enforcement Transmittal #3 Request for Assistance/Discovery,Supreme Court Matrimonial,FAMILY_COURT,PKG_DISCOVERY,REQUIRED,,0.80,ALIAS_RESOLUTION,MAPPED,Catalog required_forms: NOTICE_FOR_DISCOVERY_INSPECTION
+UIFSA-4,Uniform Support Petition,Enforcement,FAMILY_COURT,PKG_ENFORCEMENT,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+UIFSA-5,General Testimony,Supreme Court Matrimonial,SUPREME_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+UIFSA-5a,Instructions for General Testimony,Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+UIFSA-6,Affidavit in Support of Establishment of Paternity,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+UIFSA-7,Locate Data Sheet,Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+UIFSA-8,Notice of Determination of Controlling Order,Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+UIFSA-9,Registration Statement,Family Court Child Support,FAMILY_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+UNCODED-103,Composite Uncontested Divorce Forms,Supreme Court Matrimonial,SUPREME_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+UNCODED-109,Court Records Request by Mail or Email Form,Family Court Custody,FAMILY_COURT,PKG_CUSTODY_PETITION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+UNCODED-110,Court Reporter Transcript Request Form,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+UNCODED-120,Electronic Recording Transcript Request Form,UNGROUPED,FAMILY_COURT,,,,,,ORPHAN_OUT_OF_SCOPE,Ungrouped court form outside MVP scope
+UNCODED-157,Net Worth Statement,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_DISCOVERY,REQUIRED,,0.80,ALIAS_RESOLUTION,MAPPED,Catalog required_forms: STATEMENT_OF_NET_WORTH
+UNCODED-162,Notice Concerning Continuation of Health Care Coverage,Supreme Court Matrimonial,SUPREME_COURT,PKG_CONTESTED_COMMENCEMENT,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: NOTICE_HEALTH_CARE
+UNCODED-162,Notice Concerning Continuation of Health Care Coverage,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_NO_CHILDREN,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: NOTICE_HEALTH_CARE
+UNCODED-162,Notice Concerning Continuation of Health Care Coverage,Supreme Court Matrimonial,SUPREME_AND_FAMILY_OVERLAP,PKG_UNCONTESTED_WITH_CHILDREN,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: NOTICE_HEALTH_CARE
+UNCODED-163,Notice Of Automatic Orders,Supreme Court Matrimonial,SUPREME_COURT,PKG_CONTESTED_COMMENCEMENT,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: NOTICE_AUTOMATIC_ORDERS
+UNCODED-163,Notice Of Automatic Orders,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_NO_CHILDREN,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: NOTICE_AUTOMATIC_ORDERS
+UNCODED-163,Notice Of Automatic Orders,Supreme Court Matrimonial,SUPREME_COURT,PKG_UNCONTESTED_WITH_CHILDREN,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: NOTICE_AUTOMATIC_ORDERS
+UNCODED-167,Notice of Guideline Maintenance,Supreme Court Matrimonial,SUPREME_COURT,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+UNCODED-17,Adoption–Waiver of Notice of Petition for Access to Sealed Adoption Records,UNGROUPED,UNSUPPORTED,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
+UNCODED-187,Notice of Settlement,Supreme Court Matrimonial,SUPREME_COURT,PKG_SETTLEMENT,OPTIONAL,,0.95,CATALOG_OPTIONAL,MAPPED,Catalog optional_forms: NOTICE_OF_SETTLEMENT
+UNCODED-192,NYS Case Registry Filing Form for use with Non-IV-D orders,Family Court Family Offense,SUPREME_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+UNCODED-350,Order to Terminate or Sever Lease (Criminal),Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+UNCODED-38,"Affirmation in Support of Application to Waive Court Costs, Fees and Expenses",Supreme Court Matrimonial,SUPREME_COURT,PKG_MOTION,REQUIRED,,0.80,ALIAS_RESOLUTION,MAPPED,Catalog required_forms: AFFIDAVIT_IN_SUPPORT
+UNCODED-429,Postcard Sample,Supreme Court Matrimonial,SUPREME_COURT,PKG_SERVICE,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: POSTCARD_SAMPLE
+UNCODED-430,Preliminary Conference Order,Supreme Court Matrimonial,SUPREME_COURT,PKG_DISCOVERY,OPTIONAL,,0.90,SUPPORTING_DOCUMENT,MAPPED,Catalog supporting_documents: PRELIMINARY_CONFERENCE_ORDER
+UNCODED-447,Short Form Application for Child Support Services,Family Court Child Support,SUPREME_AND_FAMILY_OVERLAP,,,,,,ORPHAN_IN_SCOPE,Relevant to production packages but no valid mapping
+UNCODED-48,Affirmation in Support of Request for a Court Appointed Attorney,Supreme Court Matrimonial,FAMILY_COURT,PKG_MOTION,REQUIRED,,0.80,ALIAS_RESOLUTION,MAPPED,Catalog required_forms: AFFIDAVIT_IN_SUPPORT
+UNCODED-494,Withdrawal Request,Family Court Family Offense,FAMILY_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+UNCODED-72,Application for an Order to Terminate or Sever Lease (Criminal),Family Court Family Offense,SUPREME_COURT,PKG_ORDER_OF_PROTECTION,CONDITIONAL,,0.60,AI_INFERENCE,MAPPED,Classifier/heuristic inference
+VR 47,Notification of Order of Adoption,UNGROUPED,UNSUPPORTED,,,,,,ORPHAN_OUT_OF_SCOPE,"Non-MVP workflow (adoption, paternity, guardianship, JD/PINS, etc.)"
