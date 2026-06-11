@@ -11,6 +11,9 @@ namespace ProSe\Core;
 
 use ProSe\Core\Forms\County_Rule_CPT;
 use ProSe\Core\Forms\County_Rule_Repository;
+use ProSe\Core\Forms\Database\Database_Installer;
+use ProSe\Core\Forms\Database\Graph_Backfill;
+use ProSe\Core\Forms\Database\Seeders\Courtflow_Seeder;
 use ProSe\Core\Forms\Form_CPT;
 use ProSe\Core\Forms\Form_File_Manager;
 use ProSe\Core\Forms\Form_Taxonomy;
@@ -84,6 +87,14 @@ final class Plugin {
 		$file_manager = new Form_File_Manager();
 		$file_manager->ensure_upload_dir();
 
+		Database_Installer::install();
+		Courtflow_Seeder::install_and_seed();
+
+		$backfill = new Graph_Backfill();
+		$backfill->backfill_package_versions();
+		$backfill->backfill_forms();
+		$backfill->backfill_package_forms();
+
 		flush_rewrite_rules();
 	}
 
@@ -109,6 +120,7 @@ final class Plugin {
 	 * @return void
 	 */
 	private function init(): void {
+		\ProSe\Core\Forms\Database\Database_Installer::maybe_upgrade();
 		$this->load_modules();
 		$this->loader->run();
 	}

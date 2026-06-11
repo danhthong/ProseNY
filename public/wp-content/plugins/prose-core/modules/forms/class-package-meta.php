@@ -41,6 +41,15 @@ class Package_Meta {
 	public const META_WORKFLOW_NODES        = 'prose_package_workflow_nodes';
 	public const META_SUMMARY               = 'prose_package_summary';
 
+	// Versioning.
+	public const META_PACKAGE_VERSION           = 'prose_package_version';
+	public const META_PACKAGE_EFFECTIVE_FROM    = 'prose_package_effective_from';
+	public const META_PACKAGE_EFFECTIVE_TO      = 'prose_package_effective_to';
+	public const META_PACKAGE_IS_ACTIVE         = 'prose_package_is_active';
+	public const META_PACKAGE_SUPERSEDES_ID     = 'prose_package_supersedes_id';
+	public const META_PACKAGE_REPLACEMENT_ID      = 'prose_package_replacement_id';
+	public const META_PACKAGE_ORDER             = 'prose_package_order';
+
 	/**
 	 * All registered meta keys.
 	 *
@@ -50,7 +59,8 @@ class Package_Meta {
 		return array_merge(
 			self::string_keys(),
 			self::json_keys(),
-			self::bool_keys()
+			self::bool_keys(),
+			self::int_keys()
 		);
 	}
 
@@ -68,6 +78,8 @@ class Package_Meta {
 			self::META_WORKFLOW_STAGE,
 			self::META_NEXT_STAGE,
 			self::META_SUMMARY,
+			self::META_PACKAGE_EFFECTIVE_FROM,
+			self::META_PACKAGE_EFFECTIVE_TO,
 		);
 	}
 
@@ -103,6 +115,21 @@ class Package_Meta {
 			self::META_COUNTY_SPECIFIC,
 			self::META_SERVICE_REQUIRED,
 			self::META_FILING_REQUIRED,
+			self::META_PACKAGE_IS_ACTIVE,
+		);
+	}
+
+	/**
+	 * Integer meta keys.
+	 *
+	 * @return string[]
+	 */
+	public static function int_keys(): array {
+		return array(
+			self::META_PACKAGE_VERSION,
+			self::META_PACKAGE_SUPERSEDES_ID,
+			self::META_PACKAGE_REPLACEMENT_ID,
+			self::META_PACKAGE_ORDER,
 		);
 	}
 
@@ -163,6 +190,20 @@ class Package_Meta {
 					'single'            => true,
 					'show_in_rest'      => true,
 					'sanitize_callback' => array( Form_Meta::class, 'sanitize_bool' ),
+					'auth_callback'     => $auth_callback,
+				)
+			);
+		}
+
+		foreach ( self::int_keys() as $meta_key ) {
+			register_post_meta(
+				Package_CPT::POST_TYPE,
+				$meta_key,
+				array(
+					'type'              => 'integer',
+					'single'            => true,
+					'show_in_rest'      => true,
+					'sanitize_callback' => 'absint',
 					'auth_callback'     => $auth_callback,
 				)
 			);

@@ -75,6 +75,7 @@ class Form_Meta {
 	public const META_ISSUE_TYPES        = 'prose_issue_types';
 	public const META_COURT_ROUTING      = 'prose_court_routing';
 	public const META_WORKFLOW_NODES     = 'prose_workflow_nodes';
+	public const META_WORKFLOW_NODE_IDS  = 'prose_workflow_node_ids';
 	public const META_TRIGGER_EVENTS     = 'prose_trigger_events';
 	public const META_COMPLETION_EVENTS  = 'prose_completion_events';
 	public const META_NEXT_STEPS         = 'prose_next_steps';
@@ -174,6 +175,7 @@ class Form_Meta {
 			self::META_ISSUE_TYPES,
 			self::META_COURT_ROUTING,
 			self::META_WORKFLOW_NODES,
+			self::META_WORKFLOW_NODE_IDS,
 			self::META_TRIGGER_EVENTS,
 			self::META_COMPLETION_EVENTS,
 			self::META_NEXT_STEPS,

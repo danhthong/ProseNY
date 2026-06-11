@@ -7,6 +7,11 @@
 
 namespace ProSe\Core\Forms;
 
+use ProSe\Core\Forms\Database\Database_Installer;
+use ProSe\Core\Forms\Database\Repositories\Deadline_Rule_Repository;
+use ProSe\Core\Forms\Database\Repositories\Workflow_Repository;
+use ProSe\Core\Forms\Engine\Routing_Engine;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -97,14 +102,17 @@ final class Courtflow_Serializer {
 		}
 
 		$workflow_nodes = is_array( $form['workflow_nodes'] ?? null ) ? $form['workflow_nodes'] : array();
+		$deadline_rules = $this->resolve_deadline_rules( $form, $workflow_ids );
+		$workflows      = $this->resolve_workflows( $workflow_ids );
 
 		$workflow_dependencies = array(
-			'required_before'       => $form['required_before'] ?? array(),
-			'required_after'        => $form['required_after'] ?? array(),
-			'prerequisite_forms'  => $form['prerequisite_forms'] ?? array(),
-			'dependent_forms'     => $form['dependent_forms'] ?? array(),
-			'package_dependencies' => $this->json_meta( $form_post_id, Form_Meta::META_PACKAGE_DEPS ),
-			'workflow_dependencies' => $this->json_meta( $form_post_id, Form_Meta::META_WORKFLOW_DEPS ),
+			'required_before'        => $form['required_before'] ?? array(),
+			'required_after'         => $form['required_after'] ?? array(),
+			'prerequisite_forms'     => $form['prerequisite_forms'] ?? array(),
+			'dependent_forms'        => $form['dependent_forms'] ?? array(),
+			'package_dependencies'   => $this->json_meta( $form_post_id, Form_Meta::META_PACKAGE_DEPS ),
+			'workflow_dependencies'  => $this->json_meta( $form_post_id, Form_Meta::META_WORKFLOW_DEPS ),
+			'routing_rules'          => is_array( $form['routing_rules'] ?? null ) ? $form['routing_rules'] : array(),
 		);
 
 		$ai_summary = $this->json_meta( $form_post_id, Form_Meta::META_AI_SUMMARY_STRUCTURED );
@@ -125,7 +133,9 @@ final class Courtflow_Serializer {
 			'form'                  => $form,
 			'package'               => $package,
 			'county_rules'          => $county_rules,
+			'workflows'             => $workflows,
 			'workflow_nodes'        => $workflow_nodes,
+			'deadline_rules'        => $deadline_rules,
 			'workflow_dependencies' => $workflow_dependencies,
 			'ai_summary'            => $ai_summary,
 		);
@@ -141,6 +151,100 @@ final class Courtflow_Serializer {
 		return array(
 			'package' => $this->package_builder->build( $package_post_id ),
 		);
+	}
+
+	/**
+	 * Resolve deadline rule templates for a form context.
+	 *
+	 * @param array<string, mixed> $form         Form object.
+	 * @param array<int, mixed>    $workflow_ids Workflow keys.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function resolve_deadline_rules( array $form, array $workflow_ids ): array {
+		if ( ! Database_Installer::is_ready() ) {
+			return array();
+		}
+
+		$repo    = new Deadline_Rule_Repository();
+		$rules   = array();
+		$seen    = array();
+		$events  = is_array( $form['trigger_events'] ?? null ) ? $form['trigger_events'] : array();
+		$node_ids = is_array( $form['workflow_node_ids'] ?? null ) ? $form['workflow_node_ids'] : array();
+
+		foreach ( $events as $event ) {
+			foreach ( $workflow_ids as $workflow_key ) {
+				foreach ( $repo->get_by_trigger( (string) $event, (string) $workflow_key ) as $row ) {
+					$key = (int) $row->deadline_id;
+
+					if ( isset( $seen[ $key ] ) ) {
+						continue;
+					}
+
+					$seen[ $key ] = true;
+					$rules[]      = $repo->to_array( $row );
+				}
+			}
+
+			foreach ( $repo->get_by_trigger( (string) $event ) as $row ) {
+				$key = (int) $row->deadline_id;
+
+				if ( isset( $seen[ $key ] ) ) {
+					continue;
+				}
+
+				$seen[ $key ] = true;
+				$rules[]      = $repo->to_array( $row );
+			}
+		}
+
+		foreach ( $node_ids as $node_id ) {
+			foreach ( $repo->get_by_node( (int) $node_id ) as $row ) {
+				$key = (int) $row->deadline_id;
+
+				if ( isset( $seen[ $key ] ) ) {
+					continue;
+				}
+
+				$seen[ $key ] = true;
+				$rules[]      = $repo->to_array( $row );
+			}
+		}
+
+		return $rules;
+	}
+
+	/**
+	 * Resolve workflow catalog entries.
+	 *
+	 * @param array<int, mixed> $workflow_ids Workflow keys.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function resolve_workflows( array $workflow_ids ): array {
+		if ( ! Database_Installer::is_ready() || empty( $workflow_ids ) ) {
+			return array();
+		}
+
+		$repo     = new Workflow_Repository();
+		$routing  = new Routing_Engine();
+		$result   = array();
+
+		foreach ( $workflow_ids as $workflow_key ) {
+			$row = $repo->get_by_key( (string) $workflow_key );
+
+			if ( ! $row ) {
+				continue;
+			}
+
+			$result[] = array(
+				'workflow_key'  => (string) $row->workflow_key,
+				'workflow_name' => (string) $row->workflow_name,
+				'court_routing' => (string) $row->court_routing,
+				'description'   => (string) $row->description,
+				'routes'        => $routing->route_for_workflow( (string) $row->workflow_key ),
+			);
+		}
+
+		return $result;
 	}
 
 	/**
