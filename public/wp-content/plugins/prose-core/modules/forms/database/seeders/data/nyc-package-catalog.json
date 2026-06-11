@@ -1,0 +1,1092 @@
+{
+  "catalog_version": "1.1.0",
+  "jurisdiction": "NYC",
+  "effective_from": "2026-06-11",
+  "validation": {
+    "enums_verified": true,
+    "nodes_verified_against": "Graph_Seeder::node_definitions",
+    "form_codes_verified_against": [
+      "class-package-catalog-data.php",
+      "class-vocabulary.php",
+      "app/collect_forms/Divorce_Forms_Extract.csv",
+      "nycourts.gov Family Court forms (GF / Article 4 / Article 8)"
+    ],
+    "family_court_granularity": "petition_level",
+    "family_court_granularity_note": "Family Court packages use single petition-level entries per Vocabulary PKG constants. Stage-level packages (service, hearing, order) remain in class-package-catalog-data.php for granular routing; this catalog is the production high-level catalog.",
+    "shared_packages_note": "PKG_SERVICE and PKG_JUDGMENT are shared across UNCONTESTED_DIVORCE, CONTESTED_DIVORCE, and DEFAULT_DIVORCE. Their primary workflow_key carries the engine-required single value (UNCONTESTED_DIVORCE) while shared_workflows documents the full participation set. PKG_DEFAULT_DIVORCE is its own terminal judgment package and no longer transitions into PKG_JUDGMENT.",
+    "family_court_form_resolution": {
+      "GF-17": { "title": "Custody/Visitation Petition", "statute": "FCA Art. 6", "legacy_aliases": ["FC-1", "FC-3"] },
+      "GF-40": { "title": "Modification of Custody/Visitation Petition", "statute": "FCA Art. 6", "legacy_aliases": ["UD-11"] },
+      "GF-41": { "title": "Enforcement/Violation of Custody/Visitation Petition", "statute": "FCA Art. 6", "legacy_aliases": ["PETITION_VIOLATION_OF_ORDER"] },
+      "GF-21": { "title": "Address Confidentiality Affirmation", "statute": "FCA 154-b", "legacy_aliases": [] },
+      "4-3": { "title": "Child Support Petition", "statute": "FCA Art. 4", "legacy_aliases": ["FC-1", "FC-2"] },
+      "4-11": { "title": "Child Support Modification Petition", "statute": "FCA Art. 4", "legacy_aliases": ["UD-12"] },
+      "4-12": { "title": "Enforcement/Violation of Child Support Petition", "statute": "FCA Art. 4", "legacy_aliases": ["PETITION_VIOLATION_OF_ORDER"] },
+      "8-2": { "title": "Family Offense Petition", "statute": "FCA Art. 8 (812, 818, 821)", "legacy_aliases": ["FC-1", "FC-7"] }
+    },
+    "unresolved_catalog_aliases": [
+      "ORDER_OF_CUSTODY_VISITATION",
+      "ORDER_OF_SUPPORT",
+      "FINAL_ORDER_OF_PROTECTION",
+      "TEMPORARY_ORDER_OF_PROTECTION",
+      "MODIFIED_ORDER",
+      "ORDER_ON_VIOLATION",
+      "MONEY_JUDGMENT",
+      "INCOME_EXECUTION"
+    ],
+    "unresolved_catalog_aliases_note": "Remaining entries are court-issued orders or outcome documents (not petitioner-filed forms); they are catalog references linked to prose_form records at seed time when available."
+  },
+  "packages": [
+    {
+      "package_key": "PKG_UNCONTESTED_NO_CHILDREN",
+      "package_name": "Uncontested Divorce (No Children)",
+      "workflow_key": "UNCONTESTED_DIVORCE",
+      "workflow_stage": "COMMENCEMENT",
+      "primary_node": "NODE_1001_DIVORCE_FILED",
+      "court_routing": "SUPREME_COURT",
+      "package_order": 10,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "all": [
+          { "type": "answer", "key": "case_type", "op": "eq", "value": "UNCONTESTED_DIVORCE" },
+          { "type": "answer", "key": "has_minor_children", "op": "eq", "value": false }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          { "type": "event", "key": "ACTION_COMMENCED", "op": "exists" }
+        ]
+      },
+      "next_packages": ["PKG_SERVICE"],
+      "prerequisite_packages": [],
+      "required_forms": ["UD-1", "UD-2"],
+      "optional_forms": [],
+      "supporting_documents": [
+        "NOTICE_AUTOMATIC_ORDERS",
+        "NOTICE_HEALTH_CARE"
+      ],
+      "service_required": true,
+      "filing_required": true,
+      "county_variations": {
+        "NEW_YORK_COUNTY": {
+          "rule_type": "efiling",
+          "description": "NYSCEF e-filing required for represented parties; file in New York County Supreme Court Matrimonial Part."
+        },
+        "KINGS_COUNTY": {
+          "rule_type": "efiling",
+          "description": "NYSCEF e-filing; Kings County Matrimonial Part commencement filing instructions apply."
+        },
+        "QUEENS_COUNTY": {
+          "rule_type": "efiling",
+          "description": "NYSCEF e-filing; Queens County Supreme Court matrimonial commencement rules apply."
+        },
+        "BRONX_COUNTY": {
+          "rule_type": "efiling",
+          "description": "NYSCEF e-filing; Bronx County matrimonial commencement procedures apply."
+        },
+        "RICHMOND_COUNTY": {
+          "rule_type": "efiling",
+          "description": "NYSCEF e-filing; Richmond County Supreme Court matrimonial filing requirements apply."
+        }
+      },
+      "deadline_rules": [],
+      "ai_summary": "Commence an uncontested matrimonial action in NYC Supreme Court without minor children. Plaintiff files Summons with Notice (UD-1) and Verified Complaint (UD-2) with mandatory automatic orders and health care notices, then proceeds to service."
+    },
+    {
+      "package_key": "PKG_UNCONTESTED_WITH_CHILDREN",
+      "package_name": "Uncontested Divorce (With Children)",
+      "workflow_key": "UNCONTESTED_DIVORCE",
+      "workflow_stage": "COMMENCEMENT",
+      "primary_node": "NODE_1001_DIVORCE_FILED",
+      "court_routing": "SUPREME_AND_FAMILY_OVERLAP",
+      "package_order": 11,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "all": [
+          { "type": "answer", "key": "case_type", "op": "eq", "value": "UNCONTESTED_DIVORCE" },
+          { "type": "answer", "key": "has_minor_children", "op": "eq", "value": true }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          { "type": "event", "key": "ACTION_COMMENCED", "op": "exists" }
+        ]
+      },
+      "next_packages": ["PKG_SERVICE"],
+      "prerequisite_packages": [],
+      "required_forms": ["UD-1", "UD-2", "UD-8"],
+      "optional_forms": ["UD-8b"],
+      "supporting_documents": [
+        "NOTICE_AUTOMATIC_ORDERS",
+        "NOTICE_HEALTH_CARE",
+        "UCS-111"
+      ],
+      "service_required": true,
+      "filing_required": true,
+      "county_variations": {
+        "NEW_YORK_COUNTY": {
+          "rule_type": "matrimonial",
+          "description": "NYSCEF e-filing; child support worksheets (UD-8) required; Family Court overlap possible for support enforcement."
+        },
+        "KINGS_COUNTY": {
+          "rule_type": "matrimonial",
+          "description": "NYSCEF e-filing; UD-8 child support worksheets required at commencement or judgment."
+        },
+        "QUEENS_COUNTY": {
+          "rule_type": "matrimonial",
+          "description": "NYSCEF e-filing; include child support documentation per Queens matrimonial practice."
+        },
+        "BRONX_COUNTY": {
+          "rule_type": "matrimonial",
+          "description": "NYSCEF e-filing; child support worksheets and SCU information may be required."
+        },
+        "RICHMOND_COUNTY": {
+          "rule_type": "matrimonial",
+          "description": "NYSCEF e-filing; child support worksheets required for cases with minor children."
+        }
+      },
+      "deadline_rules": [],
+      "ai_summary": "Commence an uncontested divorce with minor children in NYC Supreme Court. Includes child support worksheet (UD-8) and may involve parallel Family Court support proceedings. Plaintiff files UD-1, UD-2, and UD-8 with standard notices."
+    },
+    {
+      "package_key": "PKG_CONTESTED_COMMENCEMENT",
+      "package_name": "Contested Divorce — Commencement",
+      "workflow_key": "CONTESTED_DIVORCE",
+      "workflow_stage": "COMMENCEMENT",
+      "primary_node": "NODE_1001_DIVORCE_FILED",
+      "court_routing": "SUPREME_COURT",
+      "package_order": 20,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "all": [
+          { "type": "answer", "key": "case_type", "op": "eq", "value": "CONTESTED_DIVORCE" }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          { "type": "event", "key": "ACTION_COMMENCED", "op": "exists" }
+        ]
+      },
+      "next_packages": ["PKG_SERVICE"],
+      "prerequisite_packages": [],
+      "required_forms": ["UD-1", "UD-2"],
+      "optional_forms": ["UD-8"],
+      "supporting_documents": [
+        "NOTICE_AUTOMATIC_ORDERS",
+        "NOTICE_HEALTH_CARE"
+      ],
+      "service_required": true,
+      "filing_required": true,
+      "county_variations": {
+        "NEW_YORK_COUNTY": {
+          "rule_type": "efiling",
+          "description": "NYSCEF e-filing; contested matrimonial commencement in Manhattan Matrimonial Part."
+        },
+        "KINGS_COUNTY": {
+          "rule_type": "efiling",
+          "description": "NYSCEF e-filing; Kings County contested matrimonial filing rules."
+        },
+        "QUEENS_COUNTY": {
+          "rule_type": "efiling",
+          "description": "NYSCEF e-filing; Queens County Supreme Court contested divorce procedures."
+        },
+        "BRONX_COUNTY": {
+          "rule_type": "efiling",
+          "description": "NYSCEF e-filing; Bronx County matrimonial commencement requirements."
+        },
+        "RICHMOND_COUNTY": {
+          "rule_type": "efiling",
+          "description": "NYSCEF e-filing; Richmond County contested matrimonial filing."
+        }
+      },
+      "deadline_rules": [
+        {
+          "deadline_key": "DL_RJI_AFTER_COMMENCEMENT",
+          "trigger_event": "ACTION_COMMENCED",
+          "offset_days": 45,
+          "day_type": "calendar",
+          "direction": "after",
+          "label": "RJI Due",
+          "statute_ref": "22 NYCRR 202.6"
+        }
+      ],
+      "ai_summary": "Commence a contested matrimonial action in NYC Supreme Court. Plaintiff files UD-1 and UD-2 with automatic orders. After service, defendant may answer or default; RJI is due within 45 days of commencement."
+    },
+    {
+      "package_key": "PKG_SERVICE",
+      "package_name": "Divorce — Service of Process",
+      "workflow_key": "UNCONTESTED_DIVORCE",
+      "shared_workflows": ["UNCONTESTED_DIVORCE", "CONTESTED_DIVORCE", "DEFAULT_DIVORCE"],
+      "workflow_stage": "SERVICE",
+      "primary_node": "NODE_1002_SERVICE_COMPLETE",
+      "court_routing": "SUPREME_COURT",
+      "package_order": 30,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "any": [
+          { "type": "dependency", "key": "PKG_UNCONTESTED_NO_CHILDREN", "op": "eq", "value": "COMPLETE" },
+          { "type": "dependency", "key": "PKG_UNCONTESTED_WITH_CHILDREN", "op": "eq", "value": "COMPLETE" },
+          { "type": "dependency", "key": "PKG_CONTESTED_COMMENCEMENT", "op": "eq", "value": "COMPLETE" }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          { "type": "event", "key": "SERVICE_COMPLETE", "op": "exists" }
+        ]
+      },
+      "next_packages": ["PKG_JUDGMENT", "PKG_RESPONSE", "PKG_DEFAULT_DIVORCE"],
+      "prerequisite_packages": [
+        "PKG_UNCONTESTED_NO_CHILDREN",
+        "PKG_UNCONTESTED_WITH_CHILDREN",
+        "PKG_CONTESTED_COMMENCEMENT"
+      ],
+      "required_forms": ["UD-3"],
+      "optional_forms": ["UD-4"],
+      "supporting_documents": [
+        "AFFIDAVIT_OF_SERVICE",
+        "POSTCARD_SAMPLE"
+      ],
+      "service_required": true,
+      "filing_required": true,
+      "county_variations": {
+        "NEW_YORK_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Personal service or acceptable alternate service per CPLR; file UD-3 Affirmation of Service with county clerk."
+        },
+        "KINGS_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Service per CPLR 308; UD-3 filed after proper service on defendant."
+        },
+        "QUEENS_COUNTY": {
+          "rule_type": "procedure",
+          "description": "CPLR service rules apply; UD-4 barrier-to-remarriage statement if applicable."
+        },
+        "BRONX_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Standard CPLR service; affidavit of service filed with matrimonial part."
+        },
+        "RICHMOND_COUNTY": {
+          "rule_type": "procedure",
+          "description": "CPLR 308 service required; UD-3 filed upon completion."
+        }
+      },
+      "deadline_rules": [
+        {
+          "deadline_key": "DL_ANSWER_AFTER_SERVICE",
+          "trigger_event": "SERVICE_COMPLETE",
+          "offset_days": 20,
+          "day_type": "calendar",
+          "direction": "after",
+          "label": "Answer Due",
+          "statute_ref": "CPLR 3012"
+        },
+        {
+          "deadline_key": "DL_DEFAULT_AFTER_SERVICE",
+          "trigger_event": "SERVICE_COMPLETE",
+          "offset_days": 40,
+          "day_type": "calendar",
+          "direction": "after",
+          "label": "Default Judgment Eligible",
+          "statute_ref": "CPLR 3215"
+        }
+      ],
+      "ai_summary": "Shared service stage for uncontested, contested, and default divorce flows. Complete service of the summons and complaint on the defendant and file UD-3 Affirmation of Service. Defendant has 20 days to answer; plaintiff may seek default judgment after 40 days if no answer is filed."
+    },
+    {
+      "package_key": "PKG_RESPONSE",
+      "package_name": "Contested Divorce — Answer",
+      "workflow_key": "CONTESTED_DIVORCE",
+      "workflow_stage": "RESPONSE",
+      "primary_node": "NODE_1003_ANSWER_FILED",
+      "court_routing": "SUPREME_COURT",
+      "package_order": 40,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "all": [
+          { "type": "event", "key": "SERVICE_COMPLETE", "op": "exists" },
+          { "type": "answer", "key": "defendant_defaults", "op": "eq", "value": false }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          { "type": "event", "key": "ANSWER_FILED", "op": "exists" }
+        ]
+      },
+      "next_packages": ["PKG_DISCOVERY"],
+      "prerequisite_packages": ["PKG_SERVICE"],
+      "required_forms": ["UD-5"],
+      "optional_forms": [],
+      "supporting_documents": [],
+      "service_required": false,
+      "filing_required": true,
+      "county_variations": {
+        "NEW_YORK_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Defendant answer due 20 days after service; file with county clerk or via NYSCEF."
+        },
+        "KINGS_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Answer filing per CPLR 3012; Kings County matrimonial part."
+        },
+        "QUEENS_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Timely answer required within 20 calendar days of service."
+        },
+        "BRONX_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Defendant must file answer or risk default; Bronx matrimonial procedures."
+        },
+        "RICHMOND_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Answer due 20 days post-service per CPLR 3012."
+        }
+      },
+      "deadline_rules": [
+        {
+          "deadline_key": "DL_ANSWER_AFTER_SERVICE",
+          "trigger_event": "SERVICE_COMPLETE",
+          "offset_days": 20,
+          "day_type": "calendar",
+          "direction": "after",
+          "label": "Answer Due",
+          "statute_ref": "CPLR 3012"
+        }
+      ],
+      "ai_summary": "Defendant files an answer to the verified complaint within 20 days of service, converting the action to contested. After answer, parties proceed to RJI and discovery."
+    },
+    {
+      "package_key": "PKG_DEFAULT_DIVORCE",
+      "package_name": "Default Divorce — Judgment",
+      "workflow_key": "DEFAULT_DIVORCE",
+      "workflow_stage": "JUDGMENT",
+      "primary_node": "NODE_1010_JUDGMENT",
+      "court_routing": "SUPREME_COURT",
+      "package_order": 45,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "all": [
+          { "type": "event", "key": "SERVICE_COMPLETE", "op": "exists" },
+          { "type": "answer", "key": "defendant_defaults", "op": "eq", "value": true }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          { "type": "event", "key": "JUDGMENT_ENTERED", "op": "exists" }
+        ]
+      },
+      "next_packages": [],
+      "prerequisite_packages": ["PKG_SERVICE"],
+      "required_forms": ["UD-5", "UD-6", "UD-7"],
+      "optional_forms": ["UD-8"],
+      "supporting_documents": [
+        "FINDINGS_OF_FACT",
+        "AFFIDAVIT_OF_REGULARITY"
+      ],
+      "service_required": false,
+      "filing_required": true,
+      "county_variations": {
+        "NEW_YORK_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Default judgment available 40 days after service if no answer; Manhattan matrimonial default calendar."
+        },
+        "KINGS_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Affidavit of regularity and default judgment papers per Kings County practice."
+        },
+        "QUEENS_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Default package filed after 40-day waiting period."
+        },
+        "BRONX_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Default judgment procedures per Bronx matrimonial part."
+        },
+        "RICHMOND_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Default judgment after CPLR waiting period; Richmond County filing."
+        }
+      },
+      "deadline_rules": [
+        {
+          "deadline_key": "DL_DEFAULT_AFTER_SERVICE",
+          "trigger_event": "SERVICE_COMPLETE",
+          "offset_days": 40,
+          "day_type": "calendar",
+          "direction": "after",
+          "label": "Default Judgment Eligible",
+          "statute_ref": "CPLR 3215"
+        }
+      ],
+      "ai_summary": "When the defendant fails to answer within 40 days of service, plaintiff may seek a default judgment. This is the terminal judgment package for the default flow and includes the affidavit of regularity, plaintiff affirmation, and judgment papers."
+    },
+    {
+      "package_key": "PKG_DISCOVERY",
+      "package_name": "Contested Divorce — Discovery",
+      "workflow_key": "DISCOVERY",
+      "workflow_stage": "DISCOVERY",
+      "primary_node": "NODE_1006_DISCOVERY",
+      "court_routing": "SUPREME_COURT",
+      "package_order": 50,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "all": [
+          { "type": "event", "key": "ANSWER_FILED", "op": "exists" }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          { "type": "event", "key": "DISCOVERY_COMPLETE", "op": "exists" }
+        ]
+      },
+      "next_packages": ["PKG_MOTION", "PKG_SETTLEMENT", "PKG_TRIAL"],
+      "prerequisite_packages": ["PKG_RESPONSE"],
+      "required_forms": ["RJI", "STATEMENT_OF_NET_WORTH", "NOTICE_FOR_DISCOVERY_INSPECTION"],
+      "optional_forms": ["INTERROGATORIES"],
+      "supporting_documents": [
+        "UCS-840M",
+        "PRELIMINARY_CONFERENCE_ORDER"
+      ],
+      "service_required": false,
+      "filing_required": true,
+      "county_variations": {
+        "NEW_YORK_COUNTY": {
+          "rule_type": "conference",
+          "description": "RJI due within 45 days; preliminary conference scheduled; net worth exchange per 22 NYCRR 202.16."
+        },
+        "KINGS_COUNTY": {
+          "rule_type": "conference",
+          "description": "Kings County matrimonial discovery compliance conference required."
+        },
+        "QUEENS_COUNTY": {
+          "rule_type": "conference",
+          "description": "Queens County preliminary conference and discovery deadlines apply."
+        },
+        "BRONX_COUNTY": {
+          "rule_type": "conference",
+          "description": "Bronx matrimonial discovery and compliance conference procedures."
+        },
+        "RICHMOND_COUNTY": {
+          "rule_type": "conference",
+          "description": "Richmond County RJI and discovery conference requirements."
+        }
+      },
+      "deadline_rules": [
+        {
+          "deadline_key": "DL_RJI_AFTER_COMMENCEMENT",
+          "trigger_event": "ACTION_COMMENCED",
+          "offset_days": 45,
+          "day_type": "calendar",
+          "direction": "after",
+          "label": "RJI Due",
+          "statute_ref": "22 NYCRR 202.6"
+        }
+      ],
+      "ai_summary": "Post-answer discovery phase in contested matrimonial actions. File RJI, exchange Statement of Net Worth, conduct discovery, and attend preliminary and compliance conferences before trial or settlement."
+    },
+    {
+      "package_key": "PKG_MOTION",
+      "package_name": "Contested Divorce — Motion Practice",
+      "workflow_key": "MOTION_PRACTICE",
+      "workflow_stage": "TEMPORARY_RELIEF",
+      "primary_node": "NODE_1004_OSC_FILED",
+      "court_routing": "SUPREME_COURT",
+      "package_order": 55,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "any": [
+          { "type": "answer", "key": "needs_interim_relief", "op": "eq", "value": true },
+          { "type": "event", "key": "ANSWER_FILED", "op": "exists" }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          { "type": "event", "key": "ORDER_ENTERED", "op": "exists" }
+        ]
+      },
+      "next_packages": ["PKG_DISCOVERY"],
+      "prerequisite_packages": ["PKG_DISCOVERY"],
+      "required_forms": ["ORDER_TO_SHOW_CAUSE", "AFFIDAVIT_IN_SUPPORT"],
+      "optional_forms": ["NOTICE_OF_MOTION"],
+      "supporting_documents": [],
+      "service_required": true,
+      "filing_required": true,
+      "county_variations": {
+        "NEW_YORK_COUNTY": {
+          "rule_type": "procedure",
+          "description": "OSC or notice of motion for pendente lite relief; comply with matrimonial part motion rules."
+        },
+        "KINGS_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Kings County matrimonial motion filing and return date requirements."
+        },
+        "QUEENS_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Queens County motion practice for temporary maintenance, custody, or occupancy."
+        },
+        "BRONX_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Bronx matrimonial interim motion procedures."
+        },
+        "RICHMOND_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Richmond County OSC and motion filing requirements."
+        }
+      },
+      "deadline_rules": [],
+      "ai_summary": "Interim motion practice for temporary relief including maintenance, child support, custody, exclusive occupancy, or discovery disputes. File Order to Show Cause with supporting affidavit."
+    },
+    {
+      "package_key": "PKG_SETTLEMENT",
+      "package_name": "Divorce — Settlement",
+      "workflow_key": "CONTESTED_DIVORCE",
+      "workflow_stage": "SETTLEMENT",
+      "primary_node": "NODE_1008_SETTLEMENT",
+      "court_routing": "SUPREME_COURT",
+      "package_order": 60,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "any": [
+          { "type": "event", "key": "DISCOVERY_COMPLETE", "op": "exists" },
+          { "type": "answer", "key": "settlement_reached", "op": "eq", "value": true }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          { "type": "event", "key": "SETTLEMENT_REACHED", "op": "exists" }
+        ]
+      },
+      "next_packages": ["PKG_JUDGMENT"],
+      "prerequisite_packages": ["PKG_DISCOVERY"],
+      "required_forms": ["SETTLEMENT_AGREEMENT"],
+      "optional_forms": ["UD-8", "NOTICE_OF_SETTLEMENT"],
+      "supporting_documents": [
+        "DRL_255_ADDENDUM"
+      ],
+      "service_required": false,
+      "filing_required": true,
+      "county_variations": {
+        "NEW_YORK_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Stipulation of settlement filed with matrimonial part; may convert contested to uncontested."
+        },
+        "KINGS_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Settlement agreement and notice of settlement per Kings County practice."
+        },
+        "QUEENS_COUNTY": {
+          "rule_type": "procedure",
+          "description": "File stipulation and proposed judgment with Queens matrimonial part."
+        },
+        "BRONX_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Settlement papers filed for so-ordered stipulation."
+        },
+        "RICHMOND_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Stipulation of settlement and judgment submission."
+        }
+      },
+      "deadline_rules": [],
+      "ai_summary": "Parties reach a comprehensive settlement resolving all matrimonial issues. File stipulation of settlement and proceed to judgment on agreed terms without trial."
+    },
+    {
+      "package_key": "PKG_TRIAL",
+      "package_name": "Contested Divorce — Trial",
+      "workflow_key": "CONTESTED_DIVORCE",
+      "workflow_stage": "TRIAL",
+      "primary_node": "NODE_1009_TRIAL",
+      "court_routing": "SUPREME_COURT",
+      "package_order": 65,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "all": [
+          { "type": "event", "key": "DISCOVERY_COMPLETE", "op": "exists" },
+          { "type": "answer", "key": "settlement_reached", "op": "eq", "value": false }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          { "type": "event", "key": "NOTE_OF_ISSUE_FILED", "op": "exists" }
+        ]
+      },
+      "next_packages": ["PKG_JUDGMENT"],
+      "prerequisite_packages": ["PKG_DISCOVERY"],
+      "required_forms": ["NOI", "CERTIFICATE_OF_READINESS"],
+      "optional_forms": [],
+      "supporting_documents": [
+        "TRIAL_WITNESS_LIST",
+        "EXHIBIT_LIST"
+      ],
+      "service_required": false,
+      "filing_required": true,
+      "county_variations": {
+        "NEW_YORK_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Note of Issue (UD-9) filed when case trial-ready; certificate of readiness required."
+        },
+        "KINGS_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Kings County trial calendar assignment after NOI filing."
+        },
+        "QUEENS_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Queens County NOI and trial readiness certification."
+        },
+        "BRONX_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Bronx matrimonial trial calendar procedures."
+        },
+        "RICHMOND_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Richmond County note of issue and trial assignment."
+        }
+      },
+      "deadline_rules": [
+        {
+          "deadline_key": "DL_NOTE_OF_ISSUE",
+          "trigger_event": "DISCOVERY_COMPLETE",
+          "offset_days": 0,
+          "day_type": "calendar",
+          "direction": "after",
+          "label": "Note of Issue",
+          "statute_ref": "22 NYCRR 202.16"
+        }
+      ],
+      "ai_summary": "Case proceeds to trial when discovery is complete and no settlement is reached. File Note of Issue and certificate of readiness to place the case on the trial calendar."
+    },
+    {
+      "package_key": "PKG_JUDGMENT",
+      "package_name": "Divorce — Judgment",
+      "workflow_key": "UNCONTESTED_DIVORCE",
+      "shared_workflows": ["UNCONTESTED_DIVORCE", "CONTESTED_DIVORCE", "DEFAULT_DIVORCE"],
+      "workflow_stage": "JUDGMENT",
+      "primary_node": "NODE_1010_JUDGMENT",
+      "court_routing": "SUPREME_COURT",
+      "package_order": 70,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "any": [
+          { "type": "dependency", "key": "PKG_SERVICE", "op": "eq", "value": "COMPLETE" },
+          { "type": "dependency", "key": "PKG_SETTLEMENT", "op": "eq", "value": "COMPLETE" },
+          { "type": "dependency", "key": "PKG_TRIAL", "op": "eq", "value": "COMPLETE" }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          { "type": "event", "key": "JUDGMENT_ENTERED", "op": "exists" }
+        ]
+      },
+      "next_packages": [],
+      "prerequisite_packages": [
+        "PKG_SERVICE",
+        "PKG_SETTLEMENT",
+        "PKG_TRIAL"
+      ],
+      "required_forms": ["UD-6", "UD-7", "FINDINGS_OF_FACT"],
+      "optional_forms": ["UD-8", "UD-8b"],
+      "supporting_documents": [
+        "AFFIDAVIT_OF_REGULARITY",
+        "PART130_CERT",
+        "NOI",
+        "DOH-2168"
+      ],
+      "service_required": false,
+      "filing_required": true,
+      "county_variations": {
+        "NEW_YORK_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Judgment of divorce (UD-11), findings of fact (UD-10), Part 130 certification; file DOH-2168 after entry."
+        },
+        "KINGS_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Kings County judgment submission and notice of entry requirements."
+        },
+        "QUEENS_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Queens County proposed judgment and findings filing."
+        },
+        "BRONX_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Bronx matrimonial judgment package and certificate of dissolution."
+        },
+        "RICHMOND_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Richmond County judgment of divorce filing and entry."
+        }
+      },
+      "deadline_rules": [],
+      "ai_summary": "Shared final judgment package for uncontested, settled, or trial divorce flows (the default flow terminates in PKG_DEFAULT_DIVORCE). Includes plaintiff and defendant affirmations, findings of fact, judgment of divorce, Part 130 certification, and certificate of dissolution."
+    },
+    {
+      "package_key": "PKG_CUSTODY_PETITION",
+      "package_name": "Custody Petition",
+      "workflow_key": "CUSTODY",
+      "workflow_stage": "PETITION",
+      "primary_node": "NODE_2001_CUSTODY_PETITION",
+      "court_routing": "FAMILY_COURT",
+      "package_order": 100,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "all": [
+          { "type": "answer", "key": "case_type", "op": "in", "value": ["CHILD_CUSTODY", "CUSTODY"] }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          { "type": "event", "key": "ORDER_ENTERED", "op": "exists" }
+        ]
+      },
+      "next_packages": ["PKG_MODIFICATION", "PKG_ENFORCEMENT"],
+      "prerequisite_packages": [],
+      "required_forms": ["GF-17"],
+      "optional_forms": ["UCCJEA_AFFIDAVIT", "PROPOSED_PARENTING_PLAN"],
+      "supporting_documents": [
+        "AFFIDAVIT_OF_SERVICE",
+        "GF-21",
+        "ORDER_OF_CUSTODY_VISITATION"
+      ],
+      "form_code_aliases": {
+        "GF-17": { "title": "Custody/Visitation Petition", "legacy_aliases": ["FC-1", "FC-3"] },
+        "GF-21": { "title": "Address Confidentiality Affirmation", "legacy_aliases": [] }
+      },
+      "service_required": true,
+      "filing_required": true,
+      "county_variations": {
+        "NEW_YORK_COUNTY": {
+          "rule_type": "procedure",
+          "description": "File Custody/Visitation Petition (GF-17) in Manhattan Family Court; GF-21 if address confidentiality needed."
+        },
+        "KINGS_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Kings County Family Court GF-17 custody petition filing and service."
+        },
+        "QUEENS_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Queens Family Court GF-17 custody/visitation petition procedures."
+        },
+        "BRONX_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Bronx Family Court GF-17 petition and UCCJEA affidavit if interstate custody."
+        },
+        "RICHMOND_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Richmond County Family Court GF-17 custody petition filing."
+        }
+      },
+      "deadline_rules": [],
+      "ai_summary": "Commence a custody and visitation proceeding in NYC Family Court. Petitioner files the Custody/Visitation Petition (GF-17), serves the respondent, attends a fact-finding hearing, and obtains a custody/visitation order."
+    },
+    {
+      "package_key": "PKG_CHILD_SUPPORT_PETITION",
+      "package_name": "Child Support Petition",
+      "workflow_key": "CHILD_SUPPORT",
+      "workflow_stage": "PETITION",
+      "primary_node": "NODE_3001_SUPPORT_PETITION",
+      "court_routing": "FAMILY_COURT",
+      "package_order": 110,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "all": [
+          { "type": "answer", "key": "case_type", "op": "in", "value": ["CHILD_SUPPORT"] }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          { "type": "event", "key": "ORDER_ENTERED", "op": "exists" }
+        ]
+      },
+      "next_packages": ["PKG_MODIFICATION", "PKG_ENFORCEMENT"],
+      "prerequisite_packages": [],
+      "required_forms": ["4-3"],
+      "optional_forms": ["FINANCIAL_DISCLOSURE_AFFIDAVIT"],
+      "supporting_documents": [
+        "AFFIDAVIT_OF_SERVICE",
+        "ORDER_OF_SUPPORT",
+        "INCOME_EXECUTION"
+      ],
+      "form_code_aliases": {
+        "4-3": { "title": "Child Support Petition", "legacy_aliases": ["FC-1", "FC-2"] }
+      },
+      "service_required": true,
+      "filing_required": true,
+      "county_variations": {
+        "NEW_YORK_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Manhattan Family Court Child Support Petition (Form 4-3); CSSA worksheet calculation at support magistrate hearing."
+        },
+        "KINGS_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Kings County Family Court Form 4-3 support petition and financial disclosure."
+        },
+        "QUEENS_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Queens Family Court Form 4-3 filing and support magistrate hearing."
+        },
+        "BRONX_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Bronx Family Court Form 4-3 support petition procedures."
+        },
+        "RICHMOND_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Richmond County Family Court Form 4-3 child support petition."
+        }
+      },
+      "deadline_rules": [],
+      "ai_summary": "Commence a child support proceeding in NYC Family Court. Petitioner files the Child Support Petition (Form 4-3), completes financial disclosure, and obtains a support order based on CSSA guidelines."
+    },
+    {
+      "package_key": "PKG_ORDER_OF_PROTECTION",
+      "package_name": "Order of Protection",
+      "workflow_key": "ORDER_OF_PROTECTION",
+      "workflow_stage": "PETITION",
+      "primary_node": "NODE_4001_FAMILY_OFFENSE",
+      "court_routing": "FAMILY_COURT",
+      "package_order": 120,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "any": [
+          { "type": "answer", "key": "case_type", "op": "in", "value": ["FAMILY_OFFENSE", "ORDER_OF_PROTECTION"] },
+          { "type": "answer", "key": "needs_emergency_relief", "op": "eq", "value": true }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          { "type": "event", "key": "ORDER_ENTERED", "op": "exists" }
+        ]
+      },
+      "next_packages": ["PKG_ENFORCEMENT"],
+      "prerequisite_packages": [],
+      "required_forms": ["8-2"],
+      "optional_forms": ["TEMPORARY_ORDER_OF_PROTECTION"],
+      "supporting_documents": [
+        "AFFIDAVIT_OF_SERVICE",
+        "GF-21",
+        "FINAL_ORDER_OF_PROTECTION"
+      ],
+      "form_code_aliases": {
+        "8-2": { "title": "Family Offense Petition", "legacy_aliases": ["FC-1", "FC-7"] },
+        "GF-21": { "title": "Address Confidentiality Affirmation", "legacy_aliases": [] }
+      },
+      "service_required": true,
+      "filing_required": true,
+      "county_variations": {
+        "NEW_YORK_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Manhattan Family Court Family Offense Petition (Form 8-2); temporary OP may issue same day; GF-21 for address confidentiality."
+        },
+        "KINGS_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Kings County Family Court Form 8-2 family offense and OP hearing procedures."
+        },
+        "QUEENS_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Queens Family Court Form 8-2 emergency and final order of protection."
+        },
+        "BRONX_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Bronx Family Court Form 8-2 family offense petition filing."
+        },
+        "RICHMOND_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Richmond County Family Court Form 8-2 order of protection proceedings."
+        }
+      },
+      "deadline_rules": [
+        {
+          "deadline_key": "DL_OP_HEARING",
+          "trigger_event": "PETITION_FILED",
+          "offset_days": 0,
+          "day_type": "calendar",
+          "direction": "after",
+          "label": "OP Hearing",
+          "statute_ref": "FCR 205.4"
+        }
+      ],
+      "ai_summary": "File a Family Offense Petition (Form 8-2) in NYC Family Court seeking an order of protection. Court may issue a temporary order immediately; a fact-finding hearing follows for a final order."
+    },
+    {
+      "package_key": "PKG_ENFORCEMENT",
+      "package_name": "Enforcement — Violation Petition",
+      "workflow_key": "ENFORCEMENT",
+      "workflow_stage": "ENFORCEMENT",
+      "primary_node": "NODE_5001_ENFORCEMENT_FILED",
+      "court_routing": "FAMILY_COURT",
+      "package_order": 130,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "all": [
+          { "type": "answer", "key": "has_existing_order", "op": "eq", "value": true },
+          { "type": "answer", "key": "order_violated", "op": "eq", "value": true }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          { "type": "event", "key": "ORDER_ENTERED", "op": "exists" }
+        ]
+      },
+      "next_packages": [],
+      "prerequisite_packages": [],
+      "required_forms": ["GF-41"],
+      "optional_forms": ["4-12", "MONEY_JUDGMENT"],
+      "supporting_documents": [
+        "AFFIDAVIT_OF_SERVICE",
+        "ORDER_ON_VIOLATION"
+      ],
+      "form_code_aliases": {
+        "GF-41": { "title": "Enforcement/Violation of Custody/Visitation Petition", "legacy_aliases": ["PETITION_VIOLATION_OF_ORDER"] },
+        "4-12": { "title": "Enforcement/Violation of Child Support Petition", "legacy_aliases": ["PETITION_VIOLATION_OF_ORDER"] }
+      },
+      "service_required": true,
+      "filing_required": true,
+      "county_variations": {
+        "NEW_YORK_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Manhattan Family Court violation petition: GF-41 for custody/visitation, Form 4-12 for support."
+        },
+        "KINGS_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Kings County Family Court enforcement and violation hearing (GF-41 / 4-12)."
+        },
+        "QUEENS_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Queens Family Court violation petition procedures (GF-41 / 4-12)."
+        },
+        "BRONX_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Bronx Family Court enforcement petition filing (GF-41 / 4-12)."
+        },
+        "RICHMOND_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Richmond County Family Court violation proceedings (GF-41 / 4-12)."
+        }
+      },
+      "deadline_rules": [],
+      "ai_summary": "Enforce an existing Family Court order by filing a violation petition when the respondent fails to comply. Use GF-41 for custody/visitation violations and Form 4-12 for child support violations."
+    },
+    {
+      "package_key": "PKG_MODIFICATION",
+      "package_name": "Modification Petition",
+      "workflow_key": "MODIFICATION",
+      "workflow_stage": "MODIFICATION",
+      "primary_node": "NODE_6001_MODIFICATION_FILED",
+      "court_routing": "FAMILY_COURT",
+      "package_order": 140,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "all": [
+          { "type": "answer", "key": "has_existing_order", "op": "eq", "value": true },
+          { "type": "answer", "key": "substantial_change", "op": "eq", "value": true }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          { "type": "event", "key": "ORDER_ENTERED", "op": "exists" }
+        ]
+      },
+      "next_packages": [],
+      "prerequisite_packages": [],
+      "required_forms": ["GF-40"],
+      "optional_forms": ["4-11", "FINANCIAL_DISCLOSURE_AFFIDAVIT"],
+      "supporting_documents": [
+        "AFFIDAVIT_OF_SERVICE",
+        "MODIFIED_ORDER"
+      ],
+      "form_code_aliases": {
+        "GF-40": { "title": "Modification of Custody/Visitation Petition", "legacy_aliases": ["UD-11"] },
+        "4-11": { "title": "Child Support Modification Petition", "legacy_aliases": ["UD-12"] }
+      },
+      "service_required": true,
+      "filing_required": true,
+      "county_variations": {
+        "NEW_YORK_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Manhattan Family Court modification petition: GF-40 for custody/visitation, Form 4-11 for support; show substantial change in circumstances."
+        },
+        "KINGS_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Kings County Family Court modification of custody (GF-40) or support (4-11) order."
+        },
+        "QUEENS_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Queens Family Court modification petition (GF-40 / 4-11) and financial disclosure."
+        },
+        "BRONX_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Bronx Family Court post-judgment modification procedures (GF-40 / 4-11)."
+        },
+        "RICHMOND_COUNTY": {
+          "rule_type": "procedure",
+          "description": "Richmond County Family Court modification petition (GF-40 / 4-11)."
+        }
+      },
+      "deadline_rules": [],
+      "ai_summary": "Modify an existing custody, visitation, or support order based on a substantial change in circumstances. Petitioner files the Modification of Custody/Visitation Petition (GF-40) or the Child Support Modification Petition (Form 4-11) with financial disclosure where support is at issue."
+    }
+  ],
+  "node_map": {
+    "PKG_UNCONTESTED_NO_CHILDREN": "NODE_1001_DIVORCE_FILED",
+    "PKG_UNCONTESTED_WITH_CHILDREN": "NODE_1001_DIVORCE_FILED",
+    "PKG_CONTESTED_COMMENCEMENT": "NODE_1001_DIVORCE_FILED",
+    "PKG_SERVICE": "NODE_1002_SERVICE_COMPLETE",
+    "PKG_RESPONSE": "NODE_1003_ANSWER_FILED",
+    "PKG_MOTION": "NODE_1004_OSC_FILED",
+    "PKG_DISCOVERY": "NODE_1006_DISCOVERY",
+    "PKG_SETTLEMENT": "NODE_1008_SETTLEMENT",
+    "PKG_TRIAL": "NODE_1009_TRIAL",
+    "PKG_JUDGMENT": "NODE_1010_JUDGMENT",
+    "PKG_DEFAULT_DIVORCE": "NODE_1010_JUDGMENT",
+    "PKG_CUSTODY_PETITION": "NODE_2001_CUSTODY_PETITION",
+    "PKG_CHILD_SUPPORT_PETITION": "NODE_3001_SUPPORT_PETITION",
+    "PKG_ORDER_OF_PROTECTION": "NODE_4001_FAMILY_OFFENSE",
+    "PKG_ENFORCEMENT": "NODE_5001_ENFORCEMENT_FILED",
+    "PKG_MODIFICATION": "NODE_6001_MODIFICATION_FILED"
+  }
+}
