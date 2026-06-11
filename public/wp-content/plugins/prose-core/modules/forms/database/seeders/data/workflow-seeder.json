@@ -1,0 +1,102 @@
+{
+  "catalog_version": "1.2.0",
+  "jurisdiction": "NYC",
+  "workflows": [
+    {
+      "workflow_key": "UNCONTESTED_DIVORCE",
+      "workflow_name": "Uncontested Divorce",
+      "court_routing": "SUPREME_COURT",
+      "sort_order": 10,
+      "description": "NYC Uncontested Divorce workflow.",
+      "is_active": true
+    },
+    {
+      "workflow_key": "CONTESTED_DIVORCE",
+      "workflow_name": "Contested Divorce",
+      "court_routing": "SUPREME_COURT",
+      "sort_order": 20,
+      "description": "NYC Contested Divorce workflow.",
+      "is_active": true
+    },
+    {
+      "workflow_key": "DEFAULT_DIVORCE",
+      "workflow_name": "Default Divorce",
+      "court_routing": "SUPREME_COURT",
+      "sort_order": 30,
+      "description": "NYC Default Divorce workflow.",
+      "is_active": true
+    },
+    {
+      "workflow_key": "DISCOVERY",
+      "workflow_name": "Discovery",
+      "court_routing": "SUPREME_COURT",
+      "sort_order": 100,
+      "description": "NYC Discovery workflow.",
+      "is_active": true
+    },
+    {
+      "workflow_key": "MOTION_PRACTICE",
+      "workflow_name": "Motion Practice",
+      "court_routing": "SUPREME_COURT",
+      "sort_order": 110,
+      "description": "NYC Motion Practice workflow.",
+      "is_active": true
+    },
+    {
+      "workflow_key": "EMERGENCY_RELIEF",
+      "workflow_name": "Emergency Relief",
+      "court_routing": "SUPREME_AND_FAMILY_OVERLAP",
+      "sort_order": 120,
+      "description": "NYC Emergency Relief workflow.",
+      "is_active": true
+    },
+    {
+      "workflow_key": "CUSTODY",
+      "workflow_name": "Custody",
+      "court_routing": "FAMILY_COURT",
+      "sort_order": 40,
+      "description": "NYC Custody workflow.",
+      "is_active": true
+    },
+    {
+      "workflow_key": "VISITATION",
+      "workflow_name": "Visitation",
+      "court_routing": "FAMILY_COURT",
+      "sort_order": 50,
+      "description": "NYC Visitation workflow.",
+      "is_active": true
+    },
+    {
+      "workflow_key": "CHILD_SUPPORT",
+      "workflow_name": "Child Support",
+      "court_routing": "FAMILY_COURT",
+      "sort_order": 60,
+      "description": "NYC Child Support workflow.",
+      "is_active": true
+    },
+    {
+      "workflow_key": "ORDER_OF_PROTECTION",
+      "workflow_name": "Order of Protection",
+      "court_routing": "FAMILY_COURT",
+      "sort_order": 70,
+      "description": "NYC Order of Protection workflow.",
+      "is_active": true
+    },
+    {
+      "workflow_key": "ENFORCEMENT",
+      "workflow_name": "Enforcement",
+      "court_routing": "FAMILY_COURT",
+      "sort_order": 80,
+      "description": "NYC Enforcement workflow.",
+      "is_active": true
+    },
+    {
+      "workflow_key": "MODIFICATION",
+      "workflow_name": "Modification",
+      "court_routing": "FAMILY_COURT",
+      "sort_order": 90,
+      "description": "NYC Modification workflow.",
+      "is_active": true
+    }
+  ]
+}

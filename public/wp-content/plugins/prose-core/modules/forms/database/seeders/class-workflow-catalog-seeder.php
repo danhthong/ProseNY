@@ -8,6 +8,7 @@
 namespace ProSe\Core\Forms\Database\Seeders;
 
 use ProSe\Core\Forms\Classification\Vocabulary;
+use ProSe\Core\Forms\Database\Import\Import_Run_Context;
 use ProSe\Core\Forms\Database\Repositories\Workflow_Repository;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -132,5 +133,41 @@ final class Workflow_Catalog_Seeder {
 		}
 
 		return $count;
+	}
+
+	/**
+	 * Seed workflows from workflow-seeder.json artifact.
+	 *
+	 * @param array<string, mixed> $artifact Decoded artifact.
+	 * @param Import_Run_Context   $context  Import context.
+	 * @return array{created: int, updated: int, unchanged: int, archived: int}
+	 */
+	public function seed_from_artifact( array $artifact, Import_Run_Context $context ): array {
+		$stats = array(
+			'created'   => 0,
+			'updated'   => 0,
+			'unchanged' => 0,
+			'archived'  => 0,
+		);
+
+		$keys = array();
+
+		foreach ( (array) ( $artifact['workflows'] ?? array() ) as $row ) {
+			$key = (string) ( $row['workflow_key'] ?? '' );
+			if ( '' === $key ) {
+				continue;
+			}
+
+			$keys[] = $key;
+			$result = $this->workflows->upsert_with_context( $row, $context );
+
+			if ( isset( $stats[ $result['action'] ] ) ) {
+				++$stats[ $result['action'] ];
+			}
+		}
+
+		$stats['archived'] = $this->workflows->archive_missing( $keys, $context );
+
+		return $stats;
 	}
 }

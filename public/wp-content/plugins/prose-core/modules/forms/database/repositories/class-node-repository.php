@@ -7,6 +7,8 @@
 
 namespace ProSe\Core\Forms\Database\Repositories;
 
+use ProSe\Core\Forms\Database\Import\Import_Run_Context;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -113,6 +115,87 @@ final class Node_Repository extends Abstract_Repository {
 	 */
 	public function list_by_workflow( string $workflow_key ): array {
 		return $this->get_all( 'workflow_key = %s AND status = %s ORDER BY sequence ASC', sanitize_text_field( $workflow_key ), 'active' );
+	}
+
+	/**
+	 * Idempotent upsert with import run tracking.
+	 *
+	 * @param array<string, mixed> $data    Node row.
+	 * @param Import_Run_Context   $context Import context.
+	 * @return array{action: string, id: int}
+	 */
+	public function upsert_with_context( array $data, Import_Run_Context $context ): array {
+		$key = sanitize_text_field( (string) ( $data['node_key'] ?? '' ) );
+
+		if ( '' === $key ) {
+			return array( 'action' => 'skipped', 'id' => 0 );
+		}
+
+		$hash_fields = array(
+			'node_key'          => $key,
+			'workflow_key'      => (string) ( $data['workflow_key'] ?? '' ),
+			'stage'             => (string) ( $data['stage'] ?? '' ),
+			'court_routing'     => (string) ( $data['court_routing'] ?? '' ),
+			'node_type'         => (string) ( $data['node_type'] ?? '' ),
+			'label'             => (string) ( $data['label'] ?? '' ),
+			'trigger_events'    => $data['trigger_events'] ?? array(),
+			'completion_events' => $data['completion_events'] ?? array(),
+			'sequence'          => (int) ( $data['sequence'] ?? 0 ),
+			'is_entry'          => (bool) ( $data['is_entry'] ?? false ),
+			'is_terminal'       => (bool) ( $data['is_terminal'] ?? false ),
+		);
+		$hash     = Import_Run_Context::content_hash( $hash_fields );
+		$existing = $this->get_by_key( $key );
+		$action   = $context->resolve_action( 'nodes', $key, $hash, $existing );
+
+		if ( 'unchanged' === $action ) {
+			$context->record( 'nodes', $key, $action, (array) $existing, (array) $existing, $hash );
+			return array( 'action' => $action, 'id' => (int) $existing->node_id );
+		}
+
+		$before = $existing ? (array) $existing : array();
+		$id     = $this->upsert( $data );
+		$after  = $this->get_by_id( $id );
+
+		$context->record( 'nodes', $key, $action, $before, $after ? (array) $after : array(), $hash );
+
+		return array( 'action' => $action, 'id' => $id );
+	}
+
+	/**
+	 * Archive nodes not in import scope.
+	 *
+	 * @param string[]           $active_keys Active node keys.
+	 * @param Import_Run_Context $context     Import context.
+	 * @return int
+	 */
+	public function archive_missing( array $active_keys, Import_Run_Context $context ): int {
+		global $wpdb;
+
+		$scope = array_flip( $active_keys );
+		$count = 0;
+
+		foreach ( $this->get_all( "status = %s", 'active' ) as $row ) {
+			$key = (string) $row->node_key;
+			if ( isset( $scope[ $key ] ) ) {
+				continue;
+			}
+
+			$before = (array) $row;
+			$wpdb->update(
+				$this->table(),
+				array(
+					'status'     => 'archived',
+					'updated_at' => $this->now(),
+				),
+				array( 'node_id' => (int) $row->node_id )
+			);
+			$after = (array) $this->get_by_id( (int) $row->node_id );
+			$context->record( 'nodes', $key, 'archive', $before, $after, Import_Run_Context::content_hash( $after ) );
+			++$count;
+		}
+
+		return $count;
 	}
 
 	/**

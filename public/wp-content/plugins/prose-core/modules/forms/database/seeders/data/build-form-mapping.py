@@ -916,13 +916,30 @@ def write_report(
     path.write_text("\n".join(lines), encoding="utf-8")
 
 
+def emit_seeder_artifacts(catalog: dict) -> None:
+    """Emit JSON seeder artifacts (workflow, node, package, form-package, alias)."""
+    from generate_seeder_artifacts import emit_all  # noqa: PLC0415 — sibling script
+
+    paths = emit_all(catalog)
+    for path in paths.values():
+        print(f"Wrote seeder artifact: {path}")
+
+
 def main() -> int:
-    if not FORMS_TSV.exists():
-        print(f"Missing forms export: {FORMS_TSV}", file=sys.stderr)
-        return 1
+    artifacts_only = "--artifacts-only" in sys.argv
 
     with open(CATALOG_PATH, encoding="utf-8") as f:
         catalog = json.load(f)
+
+    if artifacts_only:
+        emit_seeder_artifacts(catalog)
+        return 0
+
+    if not FORMS_TSV.exists():
+        print(f"Missing forms export: {FORMS_TSV}", file=sys.stderr)
+        print("Running artifact generation only (no TSV).", file=sys.stderr)
+        emit_seeder_artifacts(catalog)
+        return 1
 
     forms = load_forms()
     print(f"Loaded {len(forms)} forms")
@@ -940,6 +957,8 @@ def main() -> int:
     print(f"Validation: {'PASS' if validation_passed else 'FAIL'}")
     for issue in validation_issues:
         print(f"  - {issue}")
+
+    emit_seeder_artifacts(catalog)
 
     return 0 if validation_passed else 2
 

@@ -7,6 +7,8 @@
 
 namespace ProSe\Core\Forms\Database\Repositories;
 
+use ProSe\Core\Forms\Database\Import\Import_Run_Context;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -15,6 +17,13 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Class Edge_Repository
  */
 final class Edge_Repository extends Abstract_Repository {
+
+	/**
+	 * {@inheritDoc}
+	 */
+	protected function primary_key_column(): string {
+		return 'edge_id';
+	}
 
 	/**
 	 * {@inheritDoc}
@@ -135,5 +144,62 @@ final class Edge_Repository extends Abstract_Repository {
 		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $from_node_id, $max_depth ) );
 
 		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
+	 * Idempotent edge upsert with import tracking.
+	 *
+	 * @param array<string, mixed> $data    Edge row.
+	 * @param Import_Run_Context   $context Import context.
+	 * @return array{action: string, id: int}
+	 */
+	public function upsert_with_context( array $data, Import_Run_Context $context ): array {
+		$from = (int) ( $data['from_node_id'] ?? 0 );
+		$to   = (int) ( $data['to_node_id'] ?? 0 );
+
+		if ( $from <= 0 || $to <= 0 ) {
+			return array( 'action' => 'skipped', 'id' => 0 );
+		}
+
+		$edge_type     = sanitize_text_field( (string) ( $data['edge_type'] ?? 'next' ) );
+		$condition_key = sanitize_text_field( (string) ( $data['condition_key'] ?? '' ) );
+		$natural_key   = "{$from}:{$to}:{$edge_type}:{$condition_key}";
+
+		$hash_fields = array(
+			'from_node_id'  => $from,
+			'to_node_id'    => $to,
+			'edge_type'     => $edge_type,
+			'condition_key' => $condition_key,
+			'workflow_key'  => (string) ( $data['workflow_key'] ?? '' ),
+			'sequence'      => (int) ( $data['sequence'] ?? 0 ),
+		);
+		$hash = Import_Run_Context::content_hash( $hash_fields );
+
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$existing = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$this->table()} WHERE from_node_id = %d AND to_node_id = %d AND edge_type = %s AND condition_key = %s LIMIT 1",
+				$from,
+				$to,
+				$edge_type,
+				$condition_key
+			)
+		);
+
+		$action = $context->resolve_action( 'edges', $natural_key, $hash, $existing );
+
+		if ( 'unchanged' === $action && $existing ) {
+			$context->record( 'edges', $natural_key, $action, (array) $existing, (array) $existing, $hash );
+			return array( 'action' => $action, 'id' => (int) $existing->edge_id );
+		}
+
+		$before = $existing ? (array) $existing : array();
+		$id     = $this->upsert( $data );
+		$after  = $this->get_by_id( $id );
+
+		$context->record( 'edges', $natural_key, $action, $before, $after ? (array) $after : array(), $hash );
+
+		return array( 'action' => $action, 'id' => $id );
 	}
 }

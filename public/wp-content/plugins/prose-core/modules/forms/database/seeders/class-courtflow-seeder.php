@@ -8,6 +8,8 @@
 namespace ProSe\Core\Forms\Database\Seeders;
 
 use ProSe\Core\Forms\Database\Database_Installer;
+use ProSe\Core\Forms\Database\Import\Import_Orchestrator;
+use ProSe\Core\Forms\Database\Import\Seeder_Artifact_Loader;
 use ProSe\Core\Forms\Database\Schema_Validator;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -26,6 +28,16 @@ final class Courtflow_Seeder {
 	 */
 	public static function install_and_seed(): array {
 		Database_Installer::install();
+
+		$loader = new Seeder_Artifact_Loader();
+		if ( file_exists( trailingslashit( $loader->get_data_dir() ) . 'workflow-seeder.json' ) ) {
+			$orchestrator = new Import_Orchestrator();
+			$result       = $orchestrator->run( false, false );
+
+			if ( ! empty( $result['success'] ) ) {
+				return $result;
+			}
+		}
 
 		$workflow_seeder = new Workflow_Catalog_Seeder();
 		$graph_seeder    = new Graph_Seeder();

@@ -1,5 +1,5 @@
 {
-  "catalog_version": "1.1.0",
+  "catalog_version": "1.2.0",
   "jurisdiction": "NYC",
   "effective_from": "2026-06-11",
   "validation": {
@@ -15,14 +15,63 @@
     "family_court_granularity_note": "Family Court packages use single petition-level entries per Vocabulary PKG constants. Stage-level packages (service, hearing, order) remain in class-package-catalog-data.php for granular routing; this catalog is the production high-level catalog.",
     "shared_packages_note": "PKG_SERVICE and PKG_JUDGMENT are shared across UNCONTESTED_DIVORCE, CONTESTED_DIVORCE, and DEFAULT_DIVORCE. Their primary workflow_key carries the engine-required single value (UNCONTESTED_DIVORCE) while shared_workflows documents the full participation set. PKG_DEFAULT_DIVORCE is its own terminal judgment package and no longer transitions into PKG_JUDGMENT.",
     "family_court_form_resolution": {
-      "GF-17": { "title": "Custody/Visitation Petition", "statute": "FCA Art. 6", "legacy_aliases": ["FC-1", "FC-3"] },
-      "GF-40": { "title": "Modification of Custody/Visitation Petition", "statute": "FCA Art. 6", "legacy_aliases": ["UD-11"] },
-      "GF-41": { "title": "Enforcement/Violation of Custody/Visitation Petition", "statute": "FCA Art. 6", "legacy_aliases": ["PETITION_VIOLATION_OF_ORDER"] },
-      "GF-21": { "title": "Address Confidentiality Affirmation", "statute": "FCA 154-b", "legacy_aliases": [] },
-      "4-3": { "title": "Child Support Petition", "statute": "FCA Art. 4", "legacy_aliases": ["FC-1", "FC-2"] },
-      "4-11": { "title": "Child Support Modification Petition", "statute": "FCA Art. 4", "legacy_aliases": ["UD-12"] },
-      "4-12": { "title": "Enforcement/Violation of Child Support Petition", "statute": "FCA Art. 4", "legacy_aliases": ["PETITION_VIOLATION_OF_ORDER"] },
-      "8-2": { "title": "Family Offense Petition", "statute": "FCA Art. 8 (812, 818, 821)", "legacy_aliases": ["FC-1", "FC-7"] }
+      "GF-17": {
+        "title": "Custody/Visitation Petition",
+        "statute": "FCA Art. 6",
+        "legacy_aliases": [
+          "FC-1",
+          "FC-3"
+        ]
+      },
+      "GF-40": {
+        "title": "Modification of Custody/Visitation Petition",
+        "statute": "FCA Art. 6",
+        "legacy_aliases": [
+          "UD-11"
+        ]
+      },
+      "GF-41": {
+        "title": "Enforcement/Violation of Custody/Visitation Petition",
+        "statute": "FCA Art. 6",
+        "legacy_aliases": [
+          "PETITION_VIOLATION_OF_ORDER"
+        ]
+      },
+      "GF-21": {
+        "title": "Address Confidentiality Affirmation",
+        "statute": "FCA 154-b",
+        "legacy_aliases": []
+      },
+      "4-3": {
+        "title": "Child Support Petition",
+        "statute": "FCA Art. 4",
+        "legacy_aliases": [
+          "FC-1",
+          "FC-2"
+        ]
+      },
+      "4-11": {
+        "title": "Child Support Modification Petition",
+        "statute": "FCA Art. 4",
+        "legacy_aliases": [
+          "UD-12"
+        ]
+      },
+      "4-12": {
+        "title": "Enforcement/Violation of Child Support Petition",
+        "statute": "FCA Art. 4",
+        "legacy_aliases": [
+          "PETITION_VIOLATION_OF_ORDER"
+        ]
+      },
+      "8-2": {
+        "title": "Family Offense Petition",
+        "statute": "FCA Art. 8 (812, 818, 821)",
+        "legacy_aliases": [
+          "FC-1",
+          "FC-7"
+        ]
+      }
     },
     "unresolved_catalog_aliases": [
       "ORDER_OF_CUSTODY_VISITATION",
@@ -34,7 +83,8 @@
       "MONEY_JUDGMENT",
       "INCOME_EXECUTION"
     ],
-    "unresolved_catalog_aliases_note": "Remaining entries are court-issued orders or outcome documents (not petitioner-filed forms); they are catalog references linked to prose_form records at seed time when available."
+    "unresolved_catalog_aliases_note": "Remaining entries are court-issued orders or outcome documents (not petitioner-filed forms); they are catalog references linked to prose_form records at seed time when available.",
+    "form_class_note": "form_class: generated excludes forms from import-backed coverage math."
   },
   "packages": [
     {
@@ -51,22 +101,42 @@
       "is_active": true,
       "trigger_conditions": {
         "all": [
-          { "type": "answer", "key": "case_type", "op": "eq", "value": "UNCONTESTED_DIVORCE" },
-          { "type": "answer", "key": "has_minor_children", "op": "eq", "value": false }
+          {
+            "type": "answer",
+            "key": "case_type",
+            "op": "eq",
+            "value": "UNCONTESTED_DIVORCE"
+          },
+          {
+            "type": "answer",
+            "key": "has_minor_children",
+            "op": "eq",
+            "value": false
+          }
         ]
       },
       "completion_conditions": {
         "all": [
-          { "type": "event", "key": "ACTION_COMMENCED", "op": "exists" }
+          {
+            "type": "event",
+            "key": "ACTION_COMMENCED",
+            "op": "exists"
+          }
         ]
       },
-      "next_packages": ["PKG_SERVICE"],
+      "next_packages": [
+        "PKG_SERVICE"
+      ],
       "prerequisite_packages": [],
-      "required_forms": ["UD-1", "UD-2"],
+      "required_forms": [
+        "UD-1",
+        "UD-2"
+      ],
       "optional_forms": [],
       "supporting_documents": [
         "NOTICE_AUTOMATIC_ORDERS",
-        "NOTICE_HEALTH_CARE"
+        "NOTICE_HEALTH_CARE",
+        "UD-COMPOSITE"
       ],
       "service_required": true,
       "filing_required": true,
@@ -109,23 +179,46 @@
       "is_active": true,
       "trigger_conditions": {
         "all": [
-          { "type": "answer", "key": "case_type", "op": "eq", "value": "UNCONTESTED_DIVORCE" },
-          { "type": "answer", "key": "has_minor_children", "op": "eq", "value": true }
+          {
+            "type": "answer",
+            "key": "case_type",
+            "op": "eq",
+            "value": "UNCONTESTED_DIVORCE"
+          },
+          {
+            "type": "answer",
+            "key": "has_minor_children",
+            "op": "eq",
+            "value": true
+          }
         ]
       },
       "completion_conditions": {
         "all": [
-          { "type": "event", "key": "ACTION_COMMENCED", "op": "exists" }
+          {
+            "type": "event",
+            "key": "ACTION_COMMENCED",
+            "op": "exists"
+          }
         ]
       },
-      "next_packages": ["PKG_SERVICE"],
+      "next_packages": [
+        "PKG_SERVICE"
+      ],
       "prerequisite_packages": [],
-      "required_forms": ["UD-1", "UD-2", "UD-8"],
-      "optional_forms": ["UD-8b"],
+      "required_forms": [
+        "UD-1",
+        "UD-2",
+        "UD-8"
+      ],
+      "optional_forms": [
+        "UD-8b"
+      ],
       "supporting_documents": [
         "NOTICE_AUTOMATIC_ORDERS",
         "NOTICE_HEALTH_CARE",
-        "UCS-111"
+        "UCS-111",
+        "DRL-NOTICE-MAINT"
       ],
       "service_required": true,
       "filing_required": true,
@@ -168,18 +261,34 @@
       "is_active": true,
       "trigger_conditions": {
         "all": [
-          { "type": "answer", "key": "case_type", "op": "eq", "value": "CONTESTED_DIVORCE" }
+          {
+            "type": "answer",
+            "key": "case_type",
+            "op": "eq",
+            "value": "CONTESTED_DIVORCE"
+          }
         ]
       },
       "completion_conditions": {
         "all": [
-          { "type": "event", "key": "ACTION_COMMENCED", "op": "exists" }
+          {
+            "type": "event",
+            "key": "ACTION_COMMENCED",
+            "op": "exists"
+          }
         ]
       },
-      "next_packages": ["PKG_SERVICE"],
+      "next_packages": [
+        "PKG_SERVICE"
+      ],
       "prerequisite_packages": [],
-      "required_forms": ["UD-1", "UD-2"],
-      "optional_forms": ["UD-8"],
+      "required_forms": [
+        "UD-1",
+        "UD-2"
+      ],
+      "optional_forms": [
+        "UD-8"
+      ],
       "supporting_documents": [
         "NOTICE_AUTOMATIC_ORDERS",
         "NOTICE_HEALTH_CARE"
@@ -225,7 +334,11 @@
       "package_key": "PKG_SERVICE",
       "package_name": "Divorce — Service of Process",
       "workflow_key": "UNCONTESTED_DIVORCE",
-      "shared_workflows": ["UNCONTESTED_DIVORCE", "CONTESTED_DIVORCE", "DEFAULT_DIVORCE"],
+      "shared_workflows": [
+        "UNCONTESTED_DIVORCE",
+        "CONTESTED_DIVORCE",
+        "DEFAULT_DIVORCE"
+      ],
       "workflow_stage": "SERVICE",
       "primary_node": "NODE_1002_SERVICE_COMPLETE",
       "court_routing": "SUPREME_COURT",
@@ -236,24 +349,51 @@
       "is_active": true,
       "trigger_conditions": {
         "any": [
-          { "type": "dependency", "key": "PKG_UNCONTESTED_NO_CHILDREN", "op": "eq", "value": "COMPLETE" },
-          { "type": "dependency", "key": "PKG_UNCONTESTED_WITH_CHILDREN", "op": "eq", "value": "COMPLETE" },
-          { "type": "dependency", "key": "PKG_CONTESTED_COMMENCEMENT", "op": "eq", "value": "COMPLETE" }
+          {
+            "type": "dependency",
+            "key": "PKG_UNCONTESTED_NO_CHILDREN",
+            "op": "eq",
+            "value": "COMPLETE"
+          },
+          {
+            "type": "dependency",
+            "key": "PKG_UNCONTESTED_WITH_CHILDREN",
+            "op": "eq",
+            "value": "COMPLETE"
+          },
+          {
+            "type": "dependency",
+            "key": "PKG_CONTESTED_COMMENCEMENT",
+            "op": "eq",
+            "value": "COMPLETE"
+          }
         ]
       },
       "completion_conditions": {
         "all": [
-          { "type": "event", "key": "SERVICE_COMPLETE", "op": "exists" }
+          {
+            "type": "event",
+            "key": "SERVICE_COMPLETE",
+            "op": "exists"
+          }
         ]
       },
-      "next_packages": ["PKG_JUDGMENT", "PKG_RESPONSE", "PKG_DEFAULT_DIVORCE"],
+      "next_packages": [
+        "PKG_JUDGMENT",
+        "PKG_RESPONSE",
+        "PKG_DEFAULT_DIVORCE"
+      ],
       "prerequisite_packages": [
         "PKG_UNCONTESTED_NO_CHILDREN",
         "PKG_UNCONTESTED_WITH_CHILDREN",
         "PKG_CONTESTED_COMMENCEMENT"
       ],
-      "required_forms": ["UD-3"],
-      "optional_forms": ["UD-4"],
+      "required_forms": [
+        "UD-3"
+      ],
+      "optional_forms": [
+        "UD-4"
+      ],
       "supporting_documents": [
         "AFFIDAVIT_OF_SERVICE",
         "POSTCARD_SAMPLE"
@@ -318,18 +458,37 @@
       "is_active": true,
       "trigger_conditions": {
         "all": [
-          { "type": "event", "key": "SERVICE_COMPLETE", "op": "exists" },
-          { "type": "answer", "key": "defendant_defaults", "op": "eq", "value": false }
+          {
+            "type": "event",
+            "key": "SERVICE_COMPLETE",
+            "op": "exists"
+          },
+          {
+            "type": "answer",
+            "key": "defendant_defaults",
+            "op": "eq",
+            "value": false
+          }
         ]
       },
       "completion_conditions": {
         "all": [
-          { "type": "event", "key": "ANSWER_FILED", "op": "exists" }
+          {
+            "type": "event",
+            "key": "ANSWER_FILED",
+            "op": "exists"
+          }
         ]
       },
-      "next_packages": ["PKG_DISCOVERY"],
-      "prerequisite_packages": ["PKG_SERVICE"],
-      "required_forms": ["UD-5"],
+      "next_packages": [
+        "PKG_DISCOVERY"
+      ],
+      "prerequisite_packages": [
+        "PKG_SERVICE"
+      ],
+      "required_forms": [
+        "UD-5"
+      ],
       "optional_forms": [],
       "supporting_documents": [],
       "service_required": false,
@@ -383,19 +542,40 @@
       "is_active": true,
       "trigger_conditions": {
         "all": [
-          { "type": "event", "key": "SERVICE_COMPLETE", "op": "exists" },
-          { "type": "answer", "key": "defendant_defaults", "op": "eq", "value": true }
+          {
+            "type": "event",
+            "key": "SERVICE_COMPLETE",
+            "op": "exists"
+          },
+          {
+            "type": "answer",
+            "key": "defendant_defaults",
+            "op": "eq",
+            "value": true
+          }
         ]
       },
       "completion_conditions": {
         "all": [
-          { "type": "event", "key": "JUDGMENT_ENTERED", "op": "exists" }
+          {
+            "type": "event",
+            "key": "JUDGMENT_ENTERED",
+            "op": "exists"
+          }
         ]
       },
       "next_packages": [],
-      "prerequisite_packages": ["PKG_SERVICE"],
-      "required_forms": ["UD-5", "UD-6", "UD-7"],
-      "optional_forms": ["UD-8"],
+      "prerequisite_packages": [
+        "PKG_SERVICE"
+      ],
+      "required_forms": [
+        "UD-5",
+        "UD-6",
+        "UD-7"
+      ],
+      "optional_forms": [
+        "UD-8"
+      ],
       "supporting_documents": [
         "FINDINGS_OF_FACT",
         "AFFIDAVIT_OF_REGULARITY"
@@ -451,18 +631,38 @@
       "is_active": true,
       "trigger_conditions": {
         "all": [
-          { "type": "event", "key": "ANSWER_FILED", "op": "exists" }
+          {
+            "type": "event",
+            "key": "ANSWER_FILED",
+            "op": "exists"
+          }
         ]
       },
       "completion_conditions": {
         "all": [
-          { "type": "event", "key": "DISCOVERY_COMPLETE", "op": "exists" }
+          {
+            "type": "event",
+            "key": "DISCOVERY_COMPLETE",
+            "op": "exists"
+          }
         ]
       },
-      "next_packages": ["PKG_MOTION", "PKG_SETTLEMENT", "PKG_TRIAL"],
-      "prerequisite_packages": ["PKG_RESPONSE"],
-      "required_forms": ["RJI", "STATEMENT_OF_NET_WORTH", "NOTICE_FOR_DISCOVERY_INSPECTION"],
-      "optional_forms": ["INTERROGATORIES"],
+      "next_packages": [
+        "PKG_MOTION",
+        "PKG_SETTLEMENT",
+        "PKG_TRIAL"
+      ],
+      "prerequisite_packages": [
+        "PKG_RESPONSE"
+      ],
+      "required_forms": [
+        "RJI",
+        "STATEMENT_OF_NET_WORTH",
+        "NOTICE_FOR_DISCOVERY_INSPECTION"
+      ],
+      "optional_forms": [
+        "INTERROGATORIES"
+      ],
       "supporting_documents": [
         "UCS-840M",
         "PRELIMINARY_CONFERENCE_ORDER"
@@ -518,19 +718,41 @@
       "is_active": true,
       "trigger_conditions": {
         "any": [
-          { "type": "answer", "key": "needs_interim_relief", "op": "eq", "value": true },
-          { "type": "event", "key": "ANSWER_FILED", "op": "exists" }
+          {
+            "type": "answer",
+            "key": "needs_interim_relief",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "type": "event",
+            "key": "ANSWER_FILED",
+            "op": "exists"
+          }
         ]
       },
       "completion_conditions": {
         "all": [
-          { "type": "event", "key": "ORDER_ENTERED", "op": "exists" }
+          {
+            "type": "event",
+            "key": "ORDER_ENTERED",
+            "op": "exists"
+          }
         ]
       },
-      "next_packages": ["PKG_DISCOVERY"],
-      "prerequisite_packages": ["PKG_DISCOVERY"],
-      "required_forms": ["ORDER_TO_SHOW_CAUSE", "AFFIDAVIT_IN_SUPPORT"],
-      "optional_forms": ["NOTICE_OF_MOTION"],
+      "next_packages": [
+        "PKG_DISCOVERY"
+      ],
+      "prerequisite_packages": [
+        "PKG_DISCOVERY"
+      ],
+      "required_forms": [
+        "ORDER_TO_SHOW_CAUSE",
+        "AFFIDAVIT_IN_SUPPORT"
+      ],
+      "optional_forms": [
+        "NOTICE_OF_MOTION"
+      ],
       "supporting_documents": [],
       "service_required": true,
       "filing_required": true,
@@ -573,19 +795,41 @@
       "is_active": true,
       "trigger_conditions": {
         "any": [
-          { "type": "event", "key": "DISCOVERY_COMPLETE", "op": "exists" },
-          { "type": "answer", "key": "settlement_reached", "op": "eq", "value": true }
+          {
+            "type": "event",
+            "key": "DISCOVERY_COMPLETE",
+            "op": "exists"
+          },
+          {
+            "type": "answer",
+            "key": "settlement_reached",
+            "op": "eq",
+            "value": true
+          }
         ]
       },
       "completion_conditions": {
         "all": [
-          { "type": "event", "key": "SETTLEMENT_REACHED", "op": "exists" }
+          {
+            "type": "event",
+            "key": "SETTLEMENT_REACHED",
+            "op": "exists"
+          }
         ]
       },
-      "next_packages": ["PKG_JUDGMENT"],
-      "prerequisite_packages": ["PKG_DISCOVERY"],
-      "required_forms": ["SETTLEMENT_AGREEMENT"],
-      "optional_forms": ["UD-8", "NOTICE_OF_SETTLEMENT"],
+      "next_packages": [
+        "PKG_JUDGMENT"
+      ],
+      "prerequisite_packages": [
+        "PKG_DISCOVERY"
+      ],
+      "required_forms": [
+        "SETTLEMENT_AGREEMENT"
+      ],
+      "optional_forms": [
+        "UD-8",
+        "NOTICE_OF_SETTLEMENT"
+      ],
       "supporting_documents": [
         "DRL_255_ADDENDUM"
       ],
@@ -630,18 +874,38 @@
       "is_active": true,
       "trigger_conditions": {
         "all": [
-          { "type": "event", "key": "DISCOVERY_COMPLETE", "op": "exists" },
-          { "type": "answer", "key": "settlement_reached", "op": "eq", "value": false }
+          {
+            "type": "event",
+            "key": "DISCOVERY_COMPLETE",
+            "op": "exists"
+          },
+          {
+            "type": "answer",
+            "key": "settlement_reached",
+            "op": "eq",
+            "value": false
+          }
         ]
       },
       "completion_conditions": {
         "all": [
-          { "type": "event", "key": "NOTE_OF_ISSUE_FILED", "op": "exists" }
+          {
+            "type": "event",
+            "key": "NOTE_OF_ISSUE_FILED",
+            "op": "exists"
+          }
         ]
       },
-      "next_packages": ["PKG_JUDGMENT"],
-      "prerequisite_packages": ["PKG_DISCOVERY"],
-      "required_forms": ["NOI", "CERTIFICATE_OF_READINESS"],
+      "next_packages": [
+        "PKG_JUDGMENT"
+      ],
+      "prerequisite_packages": [
+        "PKG_DISCOVERY"
+      ],
+      "required_forms": [
+        "NOI",
+        "CERTIFICATE_OF_READINESS"
+      ],
       "optional_forms": [],
       "supporting_documents": [
         "TRIAL_WITNESS_LIST",
@@ -682,13 +946,28 @@
           "statute_ref": "22 NYCRR 202.16"
         }
       ],
-      "ai_summary": "Case proceeds to trial when discovery is complete and no settlement is reached. File Note of Issue and certificate of readiness to place the case on the trial calendar."
+      "ai_summary": "Case proceeds to trial when discovery is complete and no settlement is reached. File Note of Issue and certificate of readiness to place the case on the trial calendar.",
+      "form_metadata": {
+        "TRIAL_WITNESS_LIST": {
+          "form_class": "generated"
+        },
+        "EXHIBIT_LIST": {
+          "form_class": "generated"
+        },
+        "CERTIFICATE_OF_READINESS": {
+          "form_class": "generated"
+        }
+      }
     },
     {
       "package_key": "PKG_JUDGMENT",
       "package_name": "Divorce — Judgment",
       "workflow_key": "UNCONTESTED_DIVORCE",
-      "shared_workflows": ["UNCONTESTED_DIVORCE", "CONTESTED_DIVORCE", "DEFAULT_DIVORCE"],
+      "shared_workflows": [
+        "UNCONTESTED_DIVORCE",
+        "CONTESTED_DIVORCE",
+        "DEFAULT_DIVORCE"
+      ],
       "workflow_stage": "JUDGMENT",
       "primary_node": "NODE_1010_JUDGMENT",
       "court_routing": "SUPREME_COURT",
@@ -699,14 +978,33 @@
       "is_active": true,
       "trigger_conditions": {
         "any": [
-          { "type": "dependency", "key": "PKG_SERVICE", "op": "eq", "value": "COMPLETE" },
-          { "type": "dependency", "key": "PKG_SETTLEMENT", "op": "eq", "value": "COMPLETE" },
-          { "type": "dependency", "key": "PKG_TRIAL", "op": "eq", "value": "COMPLETE" }
+          {
+            "type": "dependency",
+            "key": "PKG_SERVICE",
+            "op": "eq",
+            "value": "COMPLETE"
+          },
+          {
+            "type": "dependency",
+            "key": "PKG_SETTLEMENT",
+            "op": "eq",
+            "value": "COMPLETE"
+          },
+          {
+            "type": "dependency",
+            "key": "PKG_TRIAL",
+            "op": "eq",
+            "value": "COMPLETE"
+          }
         ]
       },
       "completion_conditions": {
         "all": [
-          { "type": "event", "key": "JUDGMENT_ENTERED", "op": "exists" }
+          {
+            "type": "event",
+            "key": "JUDGMENT_ENTERED",
+            "op": "exists"
+          }
         ]
       },
       "next_packages": [],
@@ -715,13 +1013,21 @@
         "PKG_SETTLEMENT",
         "PKG_TRIAL"
       ],
-      "required_forms": ["UD-6", "UD-7", "FINDINGS_OF_FACT"],
-      "optional_forms": ["UD-8", "UD-8b"],
+      "required_forms": [
+        "UD-6",
+        "UD-7",
+        "FINDINGS_OF_FACT"
+      ],
+      "optional_forms": [
+        "UD-8",
+        "UD-8b"
+      ],
       "supporting_documents": [
         "AFFIDAVIT_OF_REGULARITY",
         "PART130_CERT",
         "NOI",
-        "DOH-2168"
+        "DOH-2168",
+        "4-23"
       ],
       "service_required": false,
       "filing_required": true,
@@ -764,26 +1070,56 @@
       "is_active": true,
       "trigger_conditions": {
         "all": [
-          { "type": "answer", "key": "case_type", "op": "in", "value": ["CHILD_CUSTODY", "CUSTODY"] }
+          {
+            "type": "answer",
+            "key": "case_type",
+            "op": "in",
+            "value": [
+              "CHILD_CUSTODY",
+              "CUSTODY"
+            ]
+          }
         ]
       },
       "completion_conditions": {
         "all": [
-          { "type": "event", "key": "ORDER_ENTERED", "op": "exists" }
+          {
+            "type": "event",
+            "key": "ORDER_ENTERED",
+            "op": "exists"
+          }
         ]
       },
-      "next_packages": ["PKG_MODIFICATION", "PKG_ENFORCEMENT"],
+      "next_packages": [
+        "PKG_MODIFICATION",
+        "PKG_ENFORCEMENT"
+      ],
       "prerequisite_packages": [],
-      "required_forms": ["GF-17"],
-      "optional_forms": ["UCCJEA_AFFIDAVIT", "PROPOSED_PARENTING_PLAN"],
+      "required_forms": [
+        "GF-17"
+      ],
+      "optional_forms": [
+        "UCCJEA_AFFIDAVIT",
+        "PROPOSED_PARENTING_PLAN"
+      ],
       "supporting_documents": [
         "AFFIDAVIT_OF_SERVICE",
         "GF-21",
-        "ORDER_OF_CUSTODY_VISITATION"
+        "ORDER_OF_CUSTODY_VISITATION",
+        "ICPC-100A"
       ],
       "form_code_aliases": {
-        "GF-17": { "title": "Custody/Visitation Petition", "legacy_aliases": ["FC-1", "FC-3"] },
-        "GF-21": { "title": "Address Confidentiality Affirmation", "legacy_aliases": [] }
+        "GF-17": {
+          "title": "Custody/Visitation Petition",
+          "legacy_aliases": [
+            "FC-1",
+            "FC-3"
+          ]
+        },
+        "GF-21": {
+          "title": "Address Confidentiality Affirmation",
+          "legacy_aliases": []
+        }
       },
       "service_required": true,
       "filing_required": true,
@@ -810,7 +1146,10 @@
         }
       },
       "deadline_rules": [],
-      "ai_summary": "Commence a custody and visitation proceeding in NYC Family Court. Petitioner files the Custody/Visitation Petition (GF-17), serves the respondent, attends a fact-finding hearing, and obtains a custody/visitation order."
+      "ai_summary": "Commence a custody and visitation proceeding in NYC Family Court. Petitioner files the Custody/Visitation Petition (GF-17), serves the respondent, attends a fact-finding hearing, and obtains a custody/visitation order.",
+      "shared_form_sets": [
+        "COMMON_FAMILY_COURT_FORMS"
+      ]
     },
     {
       "package_key": "PKG_CHILD_SUPPORT_PETITION",
@@ -826,25 +1165,62 @@
       "is_active": true,
       "trigger_conditions": {
         "all": [
-          { "type": "answer", "key": "case_type", "op": "in", "value": ["CHILD_SUPPORT"] }
+          {
+            "type": "answer",
+            "key": "case_type",
+            "op": "in",
+            "value": [
+              "CHILD_SUPPORT"
+            ]
+          }
         ]
       },
       "completion_conditions": {
         "all": [
-          { "type": "event", "key": "ORDER_ENTERED", "op": "exists" }
+          {
+            "type": "event",
+            "key": "ORDER_ENTERED",
+            "op": "exists"
+          }
         ]
       },
-      "next_packages": ["PKG_MODIFICATION", "PKG_ENFORCEMENT"],
+      "next_packages": [
+        "PKG_MODIFICATION",
+        "PKG_ENFORCEMENT"
+      ],
       "prerequisite_packages": [],
-      "required_forms": ["4-3"],
-      "optional_forms": ["FINANCIAL_DISCLOSURE_AFFIDAVIT"],
+      "required_forms": [
+        "4-3"
+      ],
+      "optional_forms": [
+        "FINANCIAL_DISCLOSURE_AFFIDAVIT",
+        "4-3c"
+      ],
       "supporting_documents": [
         "AFFIDAVIT_OF_SERVICE",
         "ORDER_OF_SUPPORT",
-        "INCOME_EXECUTION"
+        "INCOME_EXECUTION",
+        "4-7b",
+        "4-7c",
+        "4-7d",
+        "4-1b",
+        "UIFSA-5",
+        "UIFSA-7",
+        "UIFSA-8",
+        "LDSS-CS-SVC",
+        "4-SM-2",
+        "UIFSA-5a",
+        "UIFSA-14",
+        "UIFSA-15"
       ],
       "form_code_aliases": {
-        "4-3": { "title": "Child Support Petition", "legacy_aliases": ["FC-1", "FC-2"] }
+        "4-3": {
+          "title": "Child Support Petition",
+          "legacy_aliases": [
+            "FC-1",
+            "FC-2"
+          ]
+        }
       },
       "service_required": true,
       "filing_required": true,
@@ -871,7 +1247,10 @@
         }
       },
       "deadline_rules": [],
-      "ai_summary": "Commence a child support proceeding in NYC Family Court. Petitioner files the Child Support Petition (Form 4-3), completes financial disclosure, and obtains a support order based on CSSA guidelines."
+      "ai_summary": "Commence a child support proceeding in NYC Family Court. Petitioner files the Child Support Petition (Form 4-3), completes financial disclosure, and obtains a support order based on CSSA guidelines.",
+      "shared_form_sets": [
+        "COMMON_FAMILY_COURT_FORMS"
+      ]
     },
     {
       "package_key": "PKG_ORDER_OF_PROTECTION",
@@ -887,27 +1266,60 @@
       "is_active": true,
       "trigger_conditions": {
         "any": [
-          { "type": "answer", "key": "case_type", "op": "in", "value": ["FAMILY_OFFENSE", "ORDER_OF_PROTECTION"] },
-          { "type": "answer", "key": "needs_emergency_relief", "op": "eq", "value": true }
+          {
+            "type": "answer",
+            "key": "case_type",
+            "op": "in",
+            "value": [
+              "FAMILY_OFFENSE",
+              "ORDER_OF_PROTECTION"
+            ]
+          },
+          {
+            "type": "answer",
+            "key": "needs_emergency_relief",
+            "op": "eq",
+            "value": true
+          }
         ]
       },
       "completion_conditions": {
         "all": [
-          { "type": "event", "key": "ORDER_ENTERED", "op": "exists" }
+          {
+            "type": "event",
+            "key": "ORDER_ENTERED",
+            "op": "exists"
+          }
         ]
       },
-      "next_packages": ["PKG_ENFORCEMENT"],
+      "next_packages": [
+        "PKG_ENFORCEMENT"
+      ],
       "prerequisite_packages": [],
-      "required_forms": ["8-2"],
-      "optional_forms": ["TEMPORARY_ORDER_OF_PROTECTION"],
+      "required_forms": [
+        "8-2"
+      ],
+      "optional_forms": [
+        "TEMPORARY_ORDER_OF_PROTECTION"
+      ],
       "supporting_documents": [
         "AFFIDAVIT_OF_SERVICE",
         "GF-21",
-        "FINAL_ORDER_OF_PROTECTION"
+        "FINAL_ORDER_OF_PROTECTION",
+        "8-3"
       ],
       "form_code_aliases": {
-        "8-2": { "title": "Family Offense Petition", "legacy_aliases": ["FC-1", "FC-7"] },
-        "GF-21": { "title": "Address Confidentiality Affirmation", "legacy_aliases": [] }
+        "8-2": {
+          "title": "Family Offense Petition",
+          "legacy_aliases": [
+            "FC-1",
+            "FC-7"
+          ]
+        },
+        "GF-21": {
+          "title": "Address Confidentiality Affirmation",
+          "legacy_aliases": []
+        }
       },
       "service_required": true,
       "filing_required": true,
@@ -944,7 +1356,10 @@
           "statute_ref": "FCR 205.4"
         }
       ],
-      "ai_summary": "File a Family Offense Petition (Form 8-2) in NYC Family Court seeking an order of protection. Court may issue a temporary order immediately; a fact-finding hearing follows for a final order."
+      "ai_summary": "File a Family Offense Petition (Form 8-2) in NYC Family Court seeking an order of protection. Court may issue a temporary order immediately; a fact-finding hearing follows for a final order.",
+      "shared_form_sets": [
+        "COMMON_FAMILY_COURT_FORMS"
+      ]
     },
     {
       "package_key": "PKG_ENFORCEMENT",
@@ -960,26 +1375,65 @@
       "is_active": true,
       "trigger_conditions": {
         "all": [
-          { "type": "answer", "key": "has_existing_order", "op": "eq", "value": true },
-          { "type": "answer", "key": "order_violated", "op": "eq", "value": true }
+          {
+            "type": "answer",
+            "key": "has_existing_order",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "type": "answer",
+            "key": "order_violated",
+            "op": "eq",
+            "value": true
+          }
         ]
       },
       "completion_conditions": {
         "all": [
-          { "type": "event", "key": "ORDER_ENTERED", "op": "exists" }
+          {
+            "type": "event",
+            "key": "ORDER_ENTERED",
+            "op": "exists"
+          }
         ]
       },
       "next_packages": [],
       "prerequisite_packages": [],
-      "required_forms": ["GF-41"],
-      "optional_forms": ["4-12", "MONEY_JUDGMENT"],
+      "required_forms": [
+        "GF-41"
+      ],
+      "optional_forms": [
+        "4-12",
+        "MONEY_JUDGMENT",
+        "4-13"
+      ],
       "supporting_documents": [
         "AFFIDAVIT_OF_SERVICE",
-        "ORDER_ON_VIOLATION"
+        "ORDER_ON_VIOLATION",
+        "4-13a",
+        "4-21a",
+        "4-22",
+        "UIFSA-9",
+        "UIFSA-11",
+        "4-15a",
+        "4-5a",
+        "UIFSA-12",
+        "UIFSA-13"
       ],
       "form_code_aliases": {
-        "GF-41": { "title": "Enforcement/Violation of Custody/Visitation Petition", "legacy_aliases": ["PETITION_VIOLATION_OF_ORDER"] },
-        "4-12": { "title": "Enforcement/Violation of Child Support Petition", "legacy_aliases": ["PETITION_VIOLATION_OF_ORDER"] }
+        "GF-41": {
+          "title": "Enforcement/Violation of Custody/Visitation Petition",
+          "legacy_aliases": [
+            "PETITION_VIOLATION_OF_ORDER"
+          ]
+        },
+        "4-12": {
+          "title": "Enforcement/Violation of Child Support Petition",
+          "legacy_aliases": [
+            "PETITION_VIOLATION_OF_ORDER"
+          ]
+        }
       },
       "service_required": true,
       "filing_required": true,
@@ -1006,7 +1460,10 @@
         }
       },
       "deadline_rules": [],
-      "ai_summary": "Enforce an existing Family Court order by filing a violation petition when the respondent fails to comply. Use GF-41 for custody/visitation violations and Form 4-12 for child support violations."
+      "ai_summary": "Enforce an existing Family Court order by filing a violation petition when the respondent fails to comply. Use GF-41 for custody/visitation violations and Form 4-12 for child support violations.",
+      "shared_form_sets": [
+        "COMMON_FAMILY_COURT_FORMS"
+      ]
     },
     {
       "package_key": "PKG_MODIFICATION",
@@ -1022,26 +1479,55 @@
       "is_active": true,
       "trigger_conditions": {
         "all": [
-          { "type": "answer", "key": "has_existing_order", "op": "eq", "value": true },
-          { "type": "answer", "key": "substantial_change", "op": "eq", "value": true }
+          {
+            "type": "answer",
+            "key": "has_existing_order",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "type": "answer",
+            "key": "substantial_change",
+            "op": "eq",
+            "value": true
+          }
         ]
       },
       "completion_conditions": {
         "all": [
-          { "type": "event", "key": "ORDER_ENTERED", "op": "exists" }
+          {
+            "type": "event",
+            "key": "ORDER_ENTERED",
+            "op": "exists"
+          }
         ]
       },
       "next_packages": [],
       "prerequisite_packages": [],
-      "required_forms": ["GF-40"],
-      "optional_forms": ["4-11", "FINANCIAL_DISCLOSURE_AFFIDAVIT"],
+      "required_forms": [
+        "GF-40"
+      ],
+      "optional_forms": [
+        "4-11",
+        "FINANCIAL_DISCLOSURE_AFFIDAVIT"
+      ],
       "supporting_documents": [
         "AFFIDAVIT_OF_SERVICE",
         "MODIFIED_ORDER"
       ],
       "form_code_aliases": {
-        "GF-40": { "title": "Modification of Custody/Visitation Petition", "legacy_aliases": ["UD-11"] },
-        "4-11": { "title": "Child Support Modification Petition", "legacy_aliases": ["UD-12"] }
+        "GF-40": {
+          "title": "Modification of Custody/Visitation Petition",
+          "legacy_aliases": [
+            "UD-11"
+          ]
+        },
+        "4-11": {
+          "title": "Child Support Modification Petition",
+          "legacy_aliases": [
+            "UD-12"
+          ]
+        }
       },
       "service_required": true,
       "filing_required": true,
@@ -1068,7 +1554,10 @@
         }
       },
       "deadline_rules": [],
-      "ai_summary": "Modify an existing custody, visitation, or support order based on a substantial change in circumstances. Petitioner files the Modification of Custody/Visitation Petition (GF-40) or the Child Support Modification Petition (Form 4-11) with financial disclosure where support is at issue."
+      "ai_summary": "Modify an existing custody, visitation, or support order based on a substantial change in circumstances. Petitioner files the Modification of Custody/Visitation Petition (GF-40) or the Child Support Modification Petition (Form 4-11) with financial disclosure where support is at issue.",
+      "shared_form_sets": [
+        "COMMON_FAMILY_COURT_FORMS"
+      ]
     }
   ],
   "node_map": {
@@ -1088,5 +1577,77 @@
     "PKG_ORDER_OF_PROTECTION": "NODE_4001_FAMILY_OFFENSE",
     "PKG_ENFORCEMENT": "NODE_5001_ENFORCEMENT_FILED",
     "PKG_MODIFICATION": "NODE_6001_MODIFICATION_FILED"
+  },
+  "common_form_sets": {
+    "COMMON_FAMILY_COURT_FORMS": [
+      {
+        "form_code": "GF-2a",
+        "title": "Affirmation",
+        "function": "Generic affirmation"
+      },
+      {
+        "form_code": "GF-4",
+        "title": "Subpoena Duces Tecum",
+        "function": "Discovery / evidence"
+      },
+      {
+        "form_code": "GF-15",
+        "title": "Order on Motion",
+        "function": "Motion disposition"
+      },
+      {
+        "form_code": "GF-16",
+        "title": "Order - Dismissal",
+        "function": "Case disposition"
+      },
+      {
+        "form_code": "GF-24",
+        "title": "Order to Sheriff to Return Respondent",
+        "function": "Enforcement / appearance"
+      },
+      {
+        "form_code": "GF-28",
+        "title": "Order - Transfer of Proceedings or Probation Supervision",
+        "function": "Venue/transfer"
+      },
+      {
+        "form_code": "GF-29",
+        "title": "Notice of Appearance",
+        "function": "Appearance"
+      },
+      {
+        "form_code": "GF-33",
+        "title": "Order Authorizing Services Other Than Counsel",
+        "function": "Assigned services"
+      },
+      {
+        "form_code": "GF-50",
+        "title": "Application for Assignment of Counsel",
+        "function": "Counsel assignment"
+      },
+      {
+        "form_code": "GF-51",
+        "title": "Application for Reconsideration of Denial of Assignment of Counsel",
+        "function": "Counsel assignment"
+      },
+      {
+        "form_code": "GF-13",
+        "title": "Order Directing Medical Examination (Outpatient)",
+        "function": "Medical evaluation",
+        "context": "custody_op"
+      },
+      {
+        "form_code": "GF-13a",
+        "title": "Order Directing Medical Examination (Inpatient)",
+        "function": "Medical evaluation",
+        "context": "custody_op"
+      },
+      {
+        "form_code": "GF-13b",
+        "title": "Order Directing Emergency Evaluation",
+        "function": "Medical evaluation",
+        "context": "custody_op"
+      }
+    ]
   }
 }

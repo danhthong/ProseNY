@@ -8,6 +8,7 @@
 namespace ProSe\Core\Forms\Database\Seeders;
 
 use ProSe\Core\Forms\Classification\Vocabulary;
+use ProSe\Core\Forms\Database\Import\Import_Run_Context;
 use ProSe\Core\Forms\Database\Repositories\Edge_Repository;
 use ProSe\Core\Forms\Database\Repositories\Node_Repository;
 
@@ -349,5 +350,82 @@ final class Graph_Seeder {
 		}
 
 		return $count;
+	}
+
+	/**
+	 * Seed nodes and edges from node-seeder.json artifact.
+	 *
+	 * @param array<string, mixed> $artifact Decoded artifact.
+	 * @param Import_Run_Context   $context  Import context.
+	 * @return array{nodes: array<string, int>, edges: array<string, int>}
+	 */
+	public function seed_from_artifact( array $artifact, Import_Run_Context $context ): array {
+		$node_stats = array(
+			'created'   => 0,
+			'updated'   => 0,
+			'unchanged' => 0,
+			'archived'  => 0,
+		);
+		$edge_stats = array(
+			'created'   => 0,
+			'updated'   => 0,
+			'unchanged' => 0,
+		);
+
+		$key_to_id = array();
+		$node_keys = array();
+
+		foreach ( (array) ( $artifact['nodes'] ?? array() ) as $def ) {
+			$key = (string) ( $def['node_key'] ?? '' );
+			if ( '' === $key ) {
+				continue;
+			}
+
+			$node_keys[] = $key;
+			$result      = $this->nodes->upsert_with_context( $def, $context );
+
+			if ( isset( $node_stats[ $result['action'] ] ) ) {
+				++$node_stats[ $result['action'] ];
+			}
+
+			if ( $result['id'] > 0 ) {
+				$key_to_id[ $key ] = $result['id'];
+			}
+		}
+
+		$node_stats['archived'] = $this->nodes->archive_missing( $node_keys, $context );
+
+		foreach ( (array) ( $artifact['edges'] ?? array() ) as $edge_def ) {
+			$from_key = (string) ( $edge_def['from_node'] ?? '' );
+			$to_key   = (string) ( $edge_def['to_node'] ?? '' );
+
+			if ( ! isset( $key_to_id[ $from_key ], $key_to_id[ $to_key ] ) ) {
+				continue;
+			}
+
+			$result = $this->edges->upsert_with_context(
+				array(
+					'from_node_id'   => $key_to_id[ $from_key ],
+					'to_node_id'     => $key_to_id[ $to_key ],
+					'workflow_key'   => (string) ( $edge_def['workflow_key'] ?? '' ),
+					'edge_type'      => (string) ( $edge_def['edge_type'] ?? 'next' ),
+					'condition_key'  => (string) ( $edge_def['condition_key'] ?? '' ),
+					'condition_data' => $edge_def['condition_data'] ?? array(),
+					'label'          => (string) ( $edge_def['label'] ?? '' ),
+					'sequence'       => (int) ( $edge_def['sequence'] ?? 0 ),
+					'weight'         => (int) ( $edge_def['weight'] ?? 0 ),
+				),
+				$context
+			);
+
+			if ( isset( $edge_stats[ $result['action'] ] ) ) {
+				++$edge_stats[ $result['action'] ];
+			}
+		}
+
+		return array(
+			'nodes' => $node_stats,
+			'edges' => $edge_stats,
+		);
 	}
 }

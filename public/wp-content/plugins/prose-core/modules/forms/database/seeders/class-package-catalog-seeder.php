@@ -7,6 +7,7 @@
 
 namespace ProSe\Core\Forms\Database\Seeders;
 
+use ProSe\Core\Forms\Database\Import\Import_Run_Context;
 use ProSe\Core\Forms\Database\Repositories\Node_Package_Repository;
 use ProSe\Core\Forms\Database\Repositories\Node_Repository;
 use ProSe\Core\Forms\Database\Repositories\Package_Form_Repository;
@@ -282,5 +283,185 @@ final class Package_Catalog_Seeder {
 		}
 
 		return $count;
+	}
+
+	/**
+	 * Seed packages from package-seeder.json artifact (CPT + relations + node links).
+	 *
+	 * @param array<string, mixed> $artifact Decoded artifact.
+	 * @param Import_Run_Context   $context  Import context.
+	 * @return array<string, mixed>
+	 */
+	public function seed_from_artifact( array $artifact, Import_Run_Context $context ): array {
+		$stats = array(
+			'packages'   => array( 'created' => 0, 'updated' => 0, 'unchanged' => 0, 'archived' => 0 ),
+			'relations'  => 0,
+			'node_links' => 0,
+		);
+
+		$key_ids    = array();
+		$active_keys = array();
+
+		foreach ( (array) ( $artifact['packages'] ?? array() ) as $def ) {
+			$key = (string) ( $def['package_key'] ?? '' );
+			if ( '' === $key ) {
+				continue;
+			}
+
+			$active_keys[] = $key;
+
+			$hash_fields = array(
+				'package_key'    => $key,
+				'package_name'   => (string) ( $def['package_name'] ?? '' ),
+				'workflow_key'   => (string) ( $def['workflow_key'] ?? '' ),
+				'primary_node'   => (string) ( $def['primary_node'] ?? '' ),
+				'court_routing'  => (string) ( $def['court_routing'] ?? '' ),
+				'package_order'  => (int) ( $def['package_order'] ?? 0 ),
+				'package_version' => (int) ( $def['package_version'] ?? 1 ),
+				'effective_from' => (string) ( $def['effective_from'] ?? '' ),
+				'effective_to'   => (string) ( $def['effective_to'] ?? '' ),
+				'is_active'      => (bool) ( $def['is_active'] ?? true ),
+			);
+			$hash = Import_Run_Context::content_hash( $hash_fields );
+
+			$existing_post = $this->packages->get_by_package_id( $key );
+			$before        = $existing_post ? array( 'post_id' => $existing_post->ID ) : array();
+			$action        = $context->resolve_action(
+				'packages',
+				$key,
+				$hash,
+				$existing_post ? (object) array( 'post_id' => $existing_post->ID ) : null
+			);
+
+			if ( 'unchanged' !== $action ) {
+				$post_id = $this->upsert_package_cpt_from_artifact( $def );
+				if ( $post_id > 0 ) {
+					$key_ids[ $key ] = $post_id;
+					$after           = array( 'post_id' => $post_id );
+					$context->record( 'packages', $key, $action, $before, $after, $hash );
+					if ( isset( $stats['packages'][ $action ] ) ) {
+						++$stats['packages'][ $action ];
+					}
+				}
+			} else {
+				$post_id = $existing_post ? (int) $existing_post->ID : 0;
+				if ( $post_id > 0 ) {
+					$key_ids[ $key ] = $post_id;
+				}
+				$context->record( 'packages', $key, $action, $before, $before, $hash );
+				++$stats['packages']['unchanged'];
+			}
+		}
+
+		foreach ( (array) ( $artifact['relations'] ?? array() ) as $rel ) {
+			$from_key = (string) ( $rel['from_package_key'] ?? '' );
+			$to_key   = (string) ( $rel['to_package_key'] ?? '' );
+			$rel_type = (string) ( $rel['relation_type'] ?? 'next' );
+			$cond     = (string) ( $rel['condition_key'] ?? '' );
+			$natural  = "{$from_key}:{$to_key}:{$rel_type}:{$cond}";
+
+			$id = $this->relations->upsert(
+				array(
+					'from_package_key' => $from_key,
+					'to_package_key'   => $to_key,
+					'from_package_id'  => $key_ids[ $from_key ] ?? null,
+					'to_package_id'    => $key_ids[ $to_key ] ?? null,
+					'relation_type'    => $rel_type,
+					'condition_key'    => $cond,
+					'sequence'         => (int) ( $rel['sequence'] ?? 0 ),
+				)
+			);
+
+			if ( $id > 0 ) {
+				++$stats['relations'];
+				$context->record(
+					'package_relations',
+					$natural,
+					'create',
+					array(),
+					array( 'id' => $id ),
+					Import_Run_Context::content_hash( $rel )
+				);
+			}
+		}
+
+		foreach ( (array) ( $artifact['packages'] ?? array() ) as $def ) {
+			$key        = (string) ( $def['package_key'] ?? '' );
+			$node_key   = (string) ( $def['primary_node'] ?? '' );
+			$package_id = $key_ids[ $key ] ?? 0;
+			$node_id    = $this->nodes->get_id_by_key( $node_key );
+
+			if ( $package_id <= 0 || $node_id <= 0 ) {
+				continue;
+			}
+
+			$natural = "{$node_id}:{$key}:satisfies";
+			$link_id = $this->node_packages->upsert(
+				array(
+					'node_id'     => $node_id,
+					'package_key' => $key,
+					'package_id'  => $package_id,
+					'role'        => 'satisfies',
+				)
+			);
+
+			if ( $link_id > 0 ) {
+				++$stats['node_links'];
+				$context->record(
+					'node_packages',
+					$natural,
+					'create',
+					array(),
+					array( 'id' => $link_id ),
+					Import_Run_Context::content_hash(
+						array(
+							'node_id'     => $node_id,
+							'package_key' => $key,
+							'role'        => 'satisfies',
+						)
+					)
+				);
+			}
+		}
+
+		return $stats;
+	}
+
+	/**
+	 * Upsert package CPT from JSON artifact row.
+	 *
+	 * @param array<string, mixed> $def Package definition.
+	 * @return int Post ID.
+	 */
+	private function upsert_package_cpt_from_artifact( array $def ): int {
+		$key = (string) ( $def['package_key'] ?? '' );
+
+		$result = $this->packages->create_or_update(
+			$key,
+			array(
+				'package_name'          => (string) ( $def['package_name'] ?? $key ),
+				'court'                 => (string) ( $def['court_routing'] ?? '' ),
+				'workflow_id'           => (string) ( $def['workflow_key'] ?? '' ),
+				'workflow_stage'        => (string) ( $def['workflow_stage'] ?? '' ),
+				'required_forms'        => $def['required_forms'] ?? array(),
+				'optional_forms'        => $def['optional_forms'] ?? array(),
+				'trigger_conditions'    => $def['trigger_conditions'] ?? array(),
+				'completion_conditions' => $def['completion_conditions'] ?? array(),
+				'service_required'      => $def['service_required'] ?? true,
+				'filing_required'       => $def['filing_required'] ?? true,
+				'summary'               => (string) ( $def['ai_summary'] ?? $def['package_name'] ?? '' ),
+				'package_version'       => (int) ( $def['package_version'] ?? 1 ),
+				'effective_from'        => (string) ( $def['effective_from'] ?? gmdate( 'Y-m-d' ) ),
+				'effective_to'          => (string) ( $def['effective_to'] ?? '' ),
+				'is_active'             => (bool) ( $def['is_active'] ?? true ),
+				'package_order'         => (int) ( $def['package_order'] ?? 0 ),
+			)
+		);
+
+		if ( is_wp_error( $result ) ) {
+			return 0;
+		}
+
+		return (int) $result['post_id'];
 	}
 }

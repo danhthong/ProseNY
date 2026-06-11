@@ -1,0 +1,1192 @@
+{
+  "catalog_version": "1.2.0",
+  "packages": [
+    {
+      "package_key": "PKG_UNCONTESTED_NO_CHILDREN",
+      "package_name": "Uncontested Divorce (No Children)",
+      "workflow_key": "UNCONTESTED_DIVORCE",
+      "primary_node": "NODE_1001_DIVORCE_FILED",
+      "court_routing": "SUPREME_COURT",
+      "package_order": 10,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "all": [
+          {
+            "type": "answer",
+            "key": "case_type",
+            "op": "eq",
+            "value": "UNCONTESTED_DIVORCE"
+          },
+          {
+            "type": "answer",
+            "key": "has_minor_children",
+            "op": "eq",
+            "value": false
+          }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          {
+            "type": "event",
+            "key": "ACTION_COMMENCED",
+            "op": "exists"
+          }
+        ]
+      },
+      "service_required": true,
+      "filing_required": true,
+      "deadline_rules": [],
+      "shared_form_sets": [],
+      "required_forms": [
+        "UD-1",
+        "UD-2"
+      ],
+      "optional_forms": [],
+      "supporting_documents": [
+        "NOTICE_AUTOMATIC_ORDERS",
+        "NOTICE_HEALTH_CARE",
+        "UD-COMPOSITE"
+      ],
+      "form_metadata": {},
+      "ai_summary": "Commence an uncontested matrimonial action in NYC Supreme Court without minor children. Plaintiff files Summons with Notice (UD-1) and Verified Complaint (UD-2) with mandatory automatic orders and health care notices, then proceeds to service."
+    },
+    {
+      "package_key": "PKG_UNCONTESTED_WITH_CHILDREN",
+      "package_name": "Uncontested Divorce (With Children)",
+      "workflow_key": "UNCONTESTED_DIVORCE",
+      "primary_node": "NODE_1001_DIVORCE_FILED",
+      "court_routing": "SUPREME_AND_FAMILY_OVERLAP",
+      "package_order": 11,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "all": [
+          {
+            "type": "answer",
+            "key": "case_type",
+            "op": "eq",
+            "value": "UNCONTESTED_DIVORCE"
+          },
+          {
+            "type": "answer",
+            "key": "has_minor_children",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          {
+            "type": "event",
+            "key": "ACTION_COMMENCED",
+            "op": "exists"
+          }
+        ]
+      },
+      "service_required": true,
+      "filing_required": true,
+      "deadline_rules": [],
+      "shared_form_sets": [],
+      "required_forms": [
+        "UD-1",
+        "UD-2",
+        "UD-8"
+      ],
+      "optional_forms": [
+        "UD-8b"
+      ],
+      "supporting_documents": [
+        "NOTICE_AUTOMATIC_ORDERS",
+        "NOTICE_HEALTH_CARE",
+        "UCS-111",
+        "DRL-NOTICE-MAINT"
+      ],
+      "form_metadata": {},
+      "ai_summary": "Commence an uncontested divorce with minor children in NYC Supreme Court. Includes child support worksheet (UD-8) and may involve parallel Family Court support proceedings. Plaintiff files UD-1, UD-2, and UD-8 with standard notices."
+    },
+    {
+      "package_key": "PKG_CONTESTED_COMMENCEMENT",
+      "package_name": "Contested Divorce — Commencement",
+      "workflow_key": "CONTESTED_DIVORCE",
+      "primary_node": "NODE_1001_DIVORCE_FILED",
+      "court_routing": "SUPREME_COURT",
+      "package_order": 20,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "all": [
+          {
+            "type": "answer",
+            "key": "case_type",
+            "op": "eq",
+            "value": "CONTESTED_DIVORCE"
+          }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          {
+            "type": "event",
+            "key": "ACTION_COMMENCED",
+            "op": "exists"
+          }
+        ]
+      },
+      "service_required": true,
+      "filing_required": true,
+      "deadline_rules": [
+        {
+          "deadline_key": "DL_RJI_AFTER_COMMENCEMENT",
+          "trigger_event": "ACTION_COMMENCED",
+          "offset_days": 45,
+          "day_type": "calendar",
+          "direction": "after",
+          "label": "RJI Due",
+          "statute_ref": "22 NYCRR 202.6"
+        }
+      ],
+      "shared_form_sets": [],
+      "required_forms": [
+        "UD-1",
+        "UD-2"
+      ],
+      "optional_forms": [
+        "UD-8"
+      ],
+      "supporting_documents": [
+        "NOTICE_AUTOMATIC_ORDERS",
+        "NOTICE_HEALTH_CARE"
+      ],
+      "form_metadata": {},
+      "ai_summary": "Commence a contested matrimonial action in NYC Supreme Court. Plaintiff files UD-1 and UD-2 with automatic orders. After service, defendant may answer or default; RJI is due within 45 days of commencement."
+    },
+    {
+      "package_key": "PKG_SERVICE",
+      "package_name": "Divorce — Service of Process",
+      "workflow_key": "UNCONTESTED_DIVORCE",
+      "primary_node": "NODE_1002_SERVICE_COMPLETE",
+      "court_routing": "SUPREME_COURT",
+      "package_order": 30,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "any": [
+          {
+            "type": "dependency",
+            "key": "PKG_UNCONTESTED_NO_CHILDREN",
+            "op": "eq",
+            "value": "COMPLETE"
+          },
+          {
+            "type": "dependency",
+            "key": "PKG_UNCONTESTED_WITH_CHILDREN",
+            "op": "eq",
+            "value": "COMPLETE"
+          },
+          {
+            "type": "dependency",
+            "key": "PKG_CONTESTED_COMMENCEMENT",
+            "op": "eq",
+            "value": "COMPLETE"
+          }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          {
+            "type": "event",
+            "key": "SERVICE_COMPLETE",
+            "op": "exists"
+          }
+        ]
+      },
+      "service_required": true,
+      "filing_required": true,
+      "deadline_rules": [
+        {
+          "deadline_key": "DL_ANSWER_AFTER_SERVICE",
+          "trigger_event": "SERVICE_COMPLETE",
+          "offset_days": 20,
+          "day_type": "calendar",
+          "direction": "after",
+          "label": "Answer Due",
+          "statute_ref": "CPLR 3012"
+        },
+        {
+          "deadline_key": "DL_DEFAULT_AFTER_SERVICE",
+          "trigger_event": "SERVICE_COMPLETE",
+          "offset_days": 40,
+          "day_type": "calendar",
+          "direction": "after",
+          "label": "Default Judgment Eligible",
+          "statute_ref": "CPLR 3215"
+        }
+      ],
+      "shared_form_sets": [],
+      "required_forms": [
+        "UD-3"
+      ],
+      "optional_forms": [
+        "UD-4"
+      ],
+      "supporting_documents": [
+        "AFFIDAVIT_OF_SERVICE",
+        "POSTCARD_SAMPLE"
+      ],
+      "form_metadata": {},
+      "ai_summary": "Shared service stage for uncontested, contested, and default divorce flows. Complete service of the summons and complaint on the defendant and file UD-3 Affirmation of Service. Defendant has 20 days to answer; plaintiff may seek default judgment after 40 days if no answer is filed."
+    },
+    {
+      "package_key": "PKG_RESPONSE",
+      "package_name": "Contested Divorce — Answer",
+      "workflow_key": "CONTESTED_DIVORCE",
+      "primary_node": "NODE_1003_ANSWER_FILED",
+      "court_routing": "SUPREME_COURT",
+      "package_order": 40,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "all": [
+          {
+            "type": "event",
+            "key": "SERVICE_COMPLETE",
+            "op": "exists"
+          },
+          {
+            "type": "answer",
+            "key": "defendant_defaults",
+            "op": "eq",
+            "value": false
+          }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          {
+            "type": "event",
+            "key": "ANSWER_FILED",
+            "op": "exists"
+          }
+        ]
+      },
+      "service_required": false,
+      "filing_required": true,
+      "deadline_rules": [
+        {
+          "deadline_key": "DL_ANSWER_AFTER_SERVICE",
+          "trigger_event": "SERVICE_COMPLETE",
+          "offset_days": 20,
+          "day_type": "calendar",
+          "direction": "after",
+          "label": "Answer Due",
+          "statute_ref": "CPLR 3012"
+        }
+      ],
+      "shared_form_sets": [],
+      "required_forms": [
+        "UD-5"
+      ],
+      "optional_forms": [],
+      "supporting_documents": [],
+      "form_metadata": {},
+      "ai_summary": "Defendant files an answer to the verified complaint within 20 days of service, converting the action to contested. After answer, parties proceed to RJI and discovery."
+    },
+    {
+      "package_key": "PKG_DEFAULT_DIVORCE",
+      "package_name": "Default Divorce — Judgment",
+      "workflow_key": "DEFAULT_DIVORCE",
+      "primary_node": "NODE_1010_JUDGMENT",
+      "court_routing": "SUPREME_COURT",
+      "package_order": 45,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "all": [
+          {
+            "type": "event",
+            "key": "SERVICE_COMPLETE",
+            "op": "exists"
+          },
+          {
+            "type": "answer",
+            "key": "defendant_defaults",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          {
+            "type": "event",
+            "key": "JUDGMENT_ENTERED",
+            "op": "exists"
+          }
+        ]
+      },
+      "service_required": false,
+      "filing_required": true,
+      "deadline_rules": [
+        {
+          "deadline_key": "DL_DEFAULT_AFTER_SERVICE",
+          "trigger_event": "SERVICE_COMPLETE",
+          "offset_days": 40,
+          "day_type": "calendar",
+          "direction": "after",
+          "label": "Default Judgment Eligible",
+          "statute_ref": "CPLR 3215"
+        }
+      ],
+      "shared_form_sets": [],
+      "required_forms": [
+        "UD-5",
+        "UD-6",
+        "UD-7"
+      ],
+      "optional_forms": [
+        "UD-8"
+      ],
+      "supporting_documents": [
+        "FINDINGS_OF_FACT",
+        "AFFIDAVIT_OF_REGULARITY"
+      ],
+      "form_metadata": {},
+      "ai_summary": "When the defendant fails to answer within 40 days of service, plaintiff may seek a default judgment. This is the terminal judgment package for the default flow and includes the affidavit of regularity, plaintiff affirmation, and judgment papers."
+    },
+    {
+      "package_key": "PKG_DISCOVERY",
+      "package_name": "Contested Divorce — Discovery",
+      "workflow_key": "DISCOVERY",
+      "primary_node": "NODE_1006_DISCOVERY",
+      "court_routing": "SUPREME_COURT",
+      "package_order": 50,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "all": [
+          {
+            "type": "event",
+            "key": "ANSWER_FILED",
+            "op": "exists"
+          }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          {
+            "type": "event",
+            "key": "DISCOVERY_COMPLETE",
+            "op": "exists"
+          }
+        ]
+      },
+      "service_required": false,
+      "filing_required": true,
+      "deadline_rules": [
+        {
+          "deadline_key": "DL_RJI_AFTER_COMMENCEMENT",
+          "trigger_event": "ACTION_COMMENCED",
+          "offset_days": 45,
+          "day_type": "calendar",
+          "direction": "after",
+          "label": "RJI Due",
+          "statute_ref": "22 NYCRR 202.6"
+        }
+      ],
+      "shared_form_sets": [],
+      "required_forms": [
+        "RJI",
+        "STATEMENT_OF_NET_WORTH",
+        "NOTICE_FOR_DISCOVERY_INSPECTION"
+      ],
+      "optional_forms": [
+        "INTERROGATORIES"
+      ],
+      "supporting_documents": [
+        "UCS-840M",
+        "PRELIMINARY_CONFERENCE_ORDER"
+      ],
+      "form_metadata": {},
+      "ai_summary": "Post-answer discovery phase in contested matrimonial actions. File RJI, exchange Statement of Net Worth, conduct discovery, and attend preliminary and compliance conferences before trial or settlement."
+    },
+    {
+      "package_key": "PKG_MOTION",
+      "package_name": "Contested Divorce — Motion Practice",
+      "workflow_key": "MOTION_PRACTICE",
+      "primary_node": "NODE_1004_OSC_FILED",
+      "court_routing": "SUPREME_COURT",
+      "package_order": 55,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "any": [
+          {
+            "type": "answer",
+            "key": "needs_interim_relief",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "type": "event",
+            "key": "ANSWER_FILED",
+            "op": "exists"
+          }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          {
+            "type": "event",
+            "key": "ORDER_ENTERED",
+            "op": "exists"
+          }
+        ]
+      },
+      "service_required": true,
+      "filing_required": true,
+      "deadline_rules": [],
+      "shared_form_sets": [],
+      "required_forms": [
+        "ORDER_TO_SHOW_CAUSE",
+        "AFFIDAVIT_IN_SUPPORT"
+      ],
+      "optional_forms": [
+        "NOTICE_OF_MOTION"
+      ],
+      "supporting_documents": [],
+      "form_metadata": {},
+      "ai_summary": "Interim motion practice for temporary relief including maintenance, child support, custody, exclusive occupancy, or discovery disputes. File Order to Show Cause with supporting affidavit."
+    },
+    {
+      "package_key": "PKG_SETTLEMENT",
+      "package_name": "Divorce — Settlement",
+      "workflow_key": "CONTESTED_DIVORCE",
+      "primary_node": "NODE_1008_SETTLEMENT",
+      "court_routing": "SUPREME_COURT",
+      "package_order": 60,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "any": [
+          {
+            "type": "event",
+            "key": "DISCOVERY_COMPLETE",
+            "op": "exists"
+          },
+          {
+            "type": "answer",
+            "key": "settlement_reached",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          {
+            "type": "event",
+            "key": "SETTLEMENT_REACHED",
+            "op": "exists"
+          }
+        ]
+      },
+      "service_required": false,
+      "filing_required": true,
+      "deadline_rules": [],
+      "shared_form_sets": [],
+      "required_forms": [
+        "SETTLEMENT_AGREEMENT"
+      ],
+      "optional_forms": [
+        "UD-8",
+        "NOTICE_OF_SETTLEMENT"
+      ],
+      "supporting_documents": [
+        "DRL_255_ADDENDUM"
+      ],
+      "form_metadata": {},
+      "ai_summary": "Parties reach a comprehensive settlement resolving all matrimonial issues. File stipulation of settlement and proceed to judgment on agreed terms without trial."
+    },
+    {
+      "package_key": "PKG_TRIAL",
+      "package_name": "Contested Divorce — Trial",
+      "workflow_key": "CONTESTED_DIVORCE",
+      "primary_node": "NODE_1009_TRIAL",
+      "court_routing": "SUPREME_COURT",
+      "package_order": 65,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "all": [
+          {
+            "type": "event",
+            "key": "DISCOVERY_COMPLETE",
+            "op": "exists"
+          },
+          {
+            "type": "answer",
+            "key": "settlement_reached",
+            "op": "eq",
+            "value": false
+          }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          {
+            "type": "event",
+            "key": "NOTE_OF_ISSUE_FILED",
+            "op": "exists"
+          }
+        ]
+      },
+      "service_required": false,
+      "filing_required": true,
+      "deadline_rules": [
+        {
+          "deadline_key": "DL_NOTE_OF_ISSUE",
+          "trigger_event": "DISCOVERY_COMPLETE",
+          "offset_days": 0,
+          "day_type": "calendar",
+          "direction": "after",
+          "label": "Note of Issue",
+          "statute_ref": "22 NYCRR 202.16"
+        }
+      ],
+      "shared_form_sets": [],
+      "required_forms": [
+        "NOI",
+        "CERTIFICATE_OF_READINESS"
+      ],
+      "optional_forms": [],
+      "supporting_documents": [
+        "TRIAL_WITNESS_LIST",
+        "EXHIBIT_LIST"
+      ],
+      "form_metadata": {
+        "TRIAL_WITNESS_LIST": {
+          "form_class": "generated"
+        },
+        "EXHIBIT_LIST": {
+          "form_class": "generated"
+        },
+        "CERTIFICATE_OF_READINESS": {
+          "form_class": "generated"
+        }
+      },
+      "ai_summary": "Case proceeds to trial when discovery is complete and no settlement is reached. File Note of Issue and certificate of readiness to place the case on the trial calendar."
+    },
+    {
+      "package_key": "PKG_JUDGMENT",
+      "package_name": "Divorce — Judgment",
+      "workflow_key": "UNCONTESTED_DIVORCE",
+      "primary_node": "NODE_1010_JUDGMENT",
+      "court_routing": "SUPREME_COURT",
+      "package_order": 70,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "any": [
+          {
+            "type": "dependency",
+            "key": "PKG_SERVICE",
+            "op": "eq",
+            "value": "COMPLETE"
+          },
+          {
+            "type": "dependency",
+            "key": "PKG_SETTLEMENT",
+            "op": "eq",
+            "value": "COMPLETE"
+          },
+          {
+            "type": "dependency",
+            "key": "PKG_TRIAL",
+            "op": "eq",
+            "value": "COMPLETE"
+          }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          {
+            "type": "event",
+            "key": "JUDGMENT_ENTERED",
+            "op": "exists"
+          }
+        ]
+      },
+      "service_required": false,
+      "filing_required": true,
+      "deadline_rules": [],
+      "shared_form_sets": [],
+      "required_forms": [
+        "UD-6",
+        "UD-7",
+        "FINDINGS_OF_FACT"
+      ],
+      "optional_forms": [
+        "UD-8",
+        "UD-8b"
+      ],
+      "supporting_documents": [
+        "AFFIDAVIT_OF_REGULARITY",
+        "PART130_CERT",
+        "NOI",
+        "DOH-2168",
+        "4-23"
+      ],
+      "form_metadata": {},
+      "ai_summary": "Shared final judgment package for uncontested, settled, or trial divorce flows (the default flow terminates in PKG_DEFAULT_DIVORCE). Includes plaintiff and defendant affirmations, findings of fact, judgment of divorce, Part 130 certification, and certificate of dissolution."
+    },
+    {
+      "package_key": "PKG_CUSTODY_PETITION",
+      "package_name": "Custody Petition",
+      "workflow_key": "CUSTODY",
+      "primary_node": "NODE_2001_CUSTODY_PETITION",
+      "court_routing": "FAMILY_COURT",
+      "package_order": 100,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "all": [
+          {
+            "type": "answer",
+            "key": "case_type",
+            "op": "in",
+            "value": [
+              "CHILD_CUSTODY",
+              "CUSTODY"
+            ]
+          }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          {
+            "type": "event",
+            "key": "ORDER_ENTERED",
+            "op": "exists"
+          }
+        ]
+      },
+      "service_required": true,
+      "filing_required": true,
+      "deadline_rules": [],
+      "shared_form_sets": [
+        "COMMON_FAMILY_COURT_FORMS"
+      ],
+      "required_forms": [
+        "GF-17"
+      ],
+      "optional_forms": [
+        "UCCJEA_AFFIDAVIT",
+        "PROPOSED_PARENTING_PLAN"
+      ],
+      "supporting_documents": [
+        "AFFIDAVIT_OF_SERVICE",
+        "GF-21",
+        "ORDER_OF_CUSTODY_VISITATION",
+        "ICPC-100A"
+      ],
+      "form_metadata": {},
+      "ai_summary": "Commence a custody and visitation proceeding in NYC Family Court. Petitioner files the Custody/Visitation Petition (GF-17), serves the respondent, attends a fact-finding hearing, and obtains a custody/visitation order."
+    },
+    {
+      "package_key": "PKG_CHILD_SUPPORT_PETITION",
+      "package_name": "Child Support Petition",
+      "workflow_key": "CHILD_SUPPORT",
+      "primary_node": "NODE_3001_SUPPORT_PETITION",
+      "court_routing": "FAMILY_COURT",
+      "package_order": 110,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "all": [
+          {
+            "type": "answer",
+            "key": "case_type",
+            "op": "in",
+            "value": [
+              "CHILD_SUPPORT"
+            ]
+          }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          {
+            "type": "event",
+            "key": "ORDER_ENTERED",
+            "op": "exists"
+          }
+        ]
+      },
+      "service_required": true,
+      "filing_required": true,
+      "deadline_rules": [],
+      "shared_form_sets": [
+        "COMMON_FAMILY_COURT_FORMS"
+      ],
+      "required_forms": [
+        "4-3"
+      ],
+      "optional_forms": [
+        "FINANCIAL_DISCLOSURE_AFFIDAVIT",
+        "4-3c"
+      ],
+      "supporting_documents": [
+        "AFFIDAVIT_OF_SERVICE",
+        "ORDER_OF_SUPPORT",
+        "INCOME_EXECUTION",
+        "4-7b",
+        "4-7c",
+        "4-7d",
+        "4-1b",
+        "UIFSA-5",
+        "UIFSA-7",
+        "UIFSA-8",
+        "LDSS-CS-SVC",
+        "4-SM-2",
+        "UIFSA-5a",
+        "UIFSA-14",
+        "UIFSA-15"
+      ],
+      "form_metadata": {},
+      "ai_summary": "Commence a child support proceeding in NYC Family Court. Petitioner files the Child Support Petition (Form 4-3), completes financial disclosure, and obtains a support order based on CSSA guidelines."
+    },
+    {
+      "package_key": "PKG_ORDER_OF_PROTECTION",
+      "package_name": "Order of Protection",
+      "workflow_key": "ORDER_OF_PROTECTION",
+      "primary_node": "NODE_4001_FAMILY_OFFENSE",
+      "court_routing": "FAMILY_COURT",
+      "package_order": 120,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "any": [
+          {
+            "type": "answer",
+            "key": "case_type",
+            "op": "in",
+            "value": [
+              "FAMILY_OFFENSE",
+              "ORDER_OF_PROTECTION"
+            ]
+          },
+          {
+            "type": "answer",
+            "key": "needs_emergency_relief",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          {
+            "type": "event",
+            "key": "ORDER_ENTERED",
+            "op": "exists"
+          }
+        ]
+      },
+      "service_required": true,
+      "filing_required": true,
+      "deadline_rules": [
+        {
+          "deadline_key": "DL_OP_HEARING",
+          "trigger_event": "PETITION_FILED",
+          "offset_days": 0,
+          "day_type": "calendar",
+          "direction": "after",
+          "label": "OP Hearing",
+          "statute_ref": "FCR 205.4"
+        }
+      ],
+      "shared_form_sets": [
+        "COMMON_FAMILY_COURT_FORMS"
+      ],
+      "required_forms": [
+        "8-2"
+      ],
+      "optional_forms": [
+        "TEMPORARY_ORDER_OF_PROTECTION"
+      ],
+      "supporting_documents": [
+        "AFFIDAVIT_OF_SERVICE",
+        "GF-21",
+        "FINAL_ORDER_OF_PROTECTION",
+        "8-3"
+      ],
+      "form_metadata": {},
+      "ai_summary": "File a Family Offense Petition (Form 8-2) in NYC Family Court seeking an order of protection. Court may issue a temporary order immediately; a fact-finding hearing follows for a final order."
+    },
+    {
+      "package_key": "PKG_ENFORCEMENT",
+      "package_name": "Enforcement — Violation Petition",
+      "workflow_key": "ENFORCEMENT",
+      "primary_node": "NODE_5001_ENFORCEMENT_FILED",
+      "court_routing": "FAMILY_COURT",
+      "package_order": 130,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "all": [
+          {
+            "type": "answer",
+            "key": "has_existing_order",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "type": "answer",
+            "key": "order_violated",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          {
+            "type": "event",
+            "key": "ORDER_ENTERED",
+            "op": "exists"
+          }
+        ]
+      },
+      "service_required": true,
+      "filing_required": true,
+      "deadline_rules": [],
+      "shared_form_sets": [
+        "COMMON_FAMILY_COURT_FORMS"
+      ],
+      "required_forms": [
+        "GF-41"
+      ],
+      "optional_forms": [
+        "4-12",
+        "MONEY_JUDGMENT",
+        "4-13"
+      ],
+      "supporting_documents": [
+        "AFFIDAVIT_OF_SERVICE",
+        "ORDER_ON_VIOLATION",
+        "4-13a",
+        "4-21a",
+        "4-22",
+        "UIFSA-9",
+        "UIFSA-11",
+        "4-15a",
+        "4-5a",
+        "UIFSA-12",
+        "UIFSA-13"
+      ],
+      "form_metadata": {},
+      "ai_summary": "Enforce an existing Family Court order by filing a violation petition when the respondent fails to comply. Use GF-41 for custody/visitation violations and Form 4-12 for child support violations."
+    },
+    {
+      "package_key": "PKG_MODIFICATION",
+      "package_name": "Modification Petition",
+      "workflow_key": "MODIFICATION",
+      "primary_node": "NODE_6001_MODIFICATION_FILED",
+      "court_routing": "FAMILY_COURT",
+      "package_order": 140,
+      "package_version": 1,
+      "effective_from": "2026-06-11",
+      "effective_to": "",
+      "is_active": true,
+      "trigger_conditions": {
+        "all": [
+          {
+            "type": "answer",
+            "key": "has_existing_order",
+            "op": "eq",
+            "value": true
+          },
+          {
+            "type": "answer",
+            "key": "substantial_change",
+            "op": "eq",
+            "value": true
+          }
+        ]
+      },
+      "completion_conditions": {
+        "all": [
+          {
+            "type": "event",
+            "key": "ORDER_ENTERED",
+            "op": "exists"
+          }
+        ]
+      },
+      "service_required": true,
+      "filing_required": true,
+      "deadline_rules": [],
+      "shared_form_sets": [
+        "COMMON_FAMILY_COURT_FORMS"
+      ],
+      "required_forms": [
+        "GF-40"
+      ],
+      "optional_forms": [
+        "4-11",
+        "FINANCIAL_DISCLOSURE_AFFIDAVIT"
+      ],
+      "supporting_documents": [
+        "AFFIDAVIT_OF_SERVICE",
+        "MODIFIED_ORDER"
+      ],
+      "form_metadata": {},
+      "ai_summary": "Modify an existing custody, visitation, or support order based on a substantial change in circumstances. Petitioner files the Modification of Custody/Visitation Petition (GF-40) or the Child Support Modification Petition (Form 4-11) with financial disclosure where support is at issue."
+    }
+  ],
+  "relations": [
+    {
+      "from_package_key": "PKG_UNCONTESTED_NO_CHILDREN",
+      "to_package_key": "PKG_SERVICE",
+      "relation_type": "next",
+      "condition_key": "",
+      "sequence": 1
+    },
+    {
+      "from_package_key": "PKG_UNCONTESTED_WITH_CHILDREN",
+      "to_package_key": "PKG_SERVICE",
+      "relation_type": "next",
+      "condition_key": "",
+      "sequence": 2
+    },
+    {
+      "from_package_key": "PKG_CONTESTED_COMMENCEMENT",
+      "to_package_key": "PKG_SERVICE",
+      "relation_type": "next",
+      "condition_key": "",
+      "sequence": 3
+    },
+    {
+      "from_package_key": "PKG_SERVICE",
+      "to_package_key": "PKG_JUDGMENT",
+      "relation_type": "next",
+      "condition_key": "",
+      "sequence": 4
+    },
+    {
+      "from_package_key": "PKG_SERVICE",
+      "to_package_key": "PKG_RESPONSE",
+      "relation_type": "next",
+      "condition_key": "",
+      "sequence": 5
+    },
+    {
+      "from_package_key": "PKG_SERVICE",
+      "to_package_key": "PKG_DEFAULT_DIVORCE",
+      "relation_type": "next",
+      "condition_key": "",
+      "sequence": 6
+    },
+    {
+      "from_package_key": "PKG_UNCONTESTED_NO_CHILDREN",
+      "to_package_key": "PKG_SERVICE",
+      "relation_type": "prerequisite",
+      "condition_key": "",
+      "sequence": 7
+    },
+    {
+      "from_package_key": "PKG_UNCONTESTED_WITH_CHILDREN",
+      "to_package_key": "PKG_SERVICE",
+      "relation_type": "prerequisite",
+      "condition_key": "",
+      "sequence": 8
+    },
+    {
+      "from_package_key": "PKG_CONTESTED_COMMENCEMENT",
+      "to_package_key": "PKG_SERVICE",
+      "relation_type": "prerequisite",
+      "condition_key": "",
+      "sequence": 9
+    },
+    {
+      "from_package_key": "PKG_RESPONSE",
+      "to_package_key": "PKG_DISCOVERY",
+      "relation_type": "next",
+      "condition_key": "",
+      "sequence": 10
+    },
+    {
+      "from_package_key": "PKG_SERVICE",
+      "to_package_key": "PKG_RESPONSE",
+      "relation_type": "prerequisite",
+      "condition_key": "",
+      "sequence": 11
+    },
+    {
+      "from_package_key": "PKG_SERVICE",
+      "to_package_key": "PKG_DEFAULT_DIVORCE",
+      "relation_type": "prerequisite",
+      "condition_key": "",
+      "sequence": 12
+    },
+    {
+      "from_package_key": "PKG_DISCOVERY",
+      "to_package_key": "PKG_MOTION",
+      "relation_type": "next",
+      "condition_key": "",
+      "sequence": 13
+    },
+    {
+      "from_package_key": "PKG_DISCOVERY",
+      "to_package_key": "PKG_SETTLEMENT",
+      "relation_type": "next",
+      "condition_key": "",
+      "sequence": 14
+    },
+    {
+      "from_package_key": "PKG_DISCOVERY",
+      "to_package_key": "PKG_TRIAL",
+      "relation_type": "next",
+      "condition_key": "",
+      "sequence": 15
+    },
+    {
+      "from_package_key": "PKG_RESPONSE",
+      "to_package_key": "PKG_DISCOVERY",
+      "relation_type": "prerequisite",
+      "condition_key": "",
+      "sequence": 16
+    },
+    {
+      "from_package_key": "PKG_MOTION",
+      "to_package_key": "PKG_DISCOVERY",
+      "relation_type": "next",
+      "condition_key": "",
+      "sequence": 17
+    },
+    {
+      "from_package_key": "PKG_DISCOVERY",
+      "to_package_key": "PKG_MOTION",
+      "relation_type": "prerequisite",
+      "condition_key": "",
+      "sequence": 18
+    },
+    {
+      "from_package_key": "PKG_SETTLEMENT",
+      "to_package_key": "PKG_JUDGMENT",
+      "relation_type": "next",
+      "condition_key": "",
+      "sequence": 19
+    },
+    {
+      "from_package_key": "PKG_DISCOVERY",
+      "to_package_key": "PKG_SETTLEMENT",
+      "relation_type": "prerequisite",
+      "condition_key": "",
+      "sequence": 20
+    },
+    {
+      "from_package_key": "PKG_TRIAL",
+      "to_package_key": "PKG_JUDGMENT",
+      "relation_type": "next",
+      "condition_key": "",
+      "sequence": 21
+    },
+    {
+      "from_package_key": "PKG_DISCOVERY",
+      "to_package_key": "PKG_TRIAL",
+      "relation_type": "prerequisite",
+      "condition_key": "",
+      "sequence": 22
+    },
+    {
+      "from_package_key": "PKG_SERVICE",
+      "to_package_key": "PKG_JUDGMENT",
+      "relation_type": "prerequisite",
+      "condition_key": "",
+      "sequence": 23
+    },
+    {
+      "from_package_key": "PKG_SETTLEMENT",
+      "to_package_key": "PKG_JUDGMENT",
+      "relation_type": "prerequisite",
+      "condition_key": "",
+      "sequence": 24
+    },
+    {
+      "from_package_key": "PKG_TRIAL",
+      "to_package_key": "PKG_JUDGMENT",
+      "relation_type": "prerequisite",
+      "condition_key": "",
+      "sequence": 25
+    },
+    {
+      "from_package_key": "PKG_CUSTODY_PETITION",
+      "to_package_key": "PKG_MODIFICATION",
+      "relation_type": "next",
+      "condition_key": "",
+      "sequence": 26
+    },
+    {
+      "from_package_key": "PKG_CUSTODY_PETITION",
+      "to_package_key": "PKG_ENFORCEMENT",
+      "relation_type": "next",
+      "condition_key": "",
+      "sequence": 27
+    },
+    {
+      "from_package_key": "PKG_CHILD_SUPPORT_PETITION",
+      "to_package_key": "PKG_MODIFICATION",
+      "relation_type": "next",
+      "condition_key": "",
+      "sequence": 28
+    },
+    {
+      "from_package_key": "PKG_CHILD_SUPPORT_PETITION",
+      "to_package_key": "PKG_ENFORCEMENT",
+      "relation_type": "next",
+      "condition_key": "",
+      "sequence": 29
+    },
+    {
+      "from_package_key": "PKG_ORDER_OF_PROTECTION",
+      "to_package_key": "PKG_ENFORCEMENT",
+      "relation_type": "next",
+      "condition_key": "",
+      "sequence": 30
+    }
+  ]
+}

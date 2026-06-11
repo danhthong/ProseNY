@@ -1,0 +1,502 @@
+{
+  "catalog_version": "1.2.0",
+  "nodes": [
+    {
+      "node_key": "NODE_1001_DIVORCE_FILED",
+      "workflow_key": "UNCONTESTED_DIVORCE",
+      "stage": "COMMENCEMENT",
+      "court_routing": "SUPREME_COURT",
+      "node_type": "filing",
+      "label": "Divorce Commenced",
+      "is_entry": true,
+      "trigger_events": [
+        "ACTION_COMMENCED"
+      ],
+      "sequence": 1,
+      "responsible_party": "",
+      "primary_package_key": "PKG_CONTESTED_COMMENCEMENT"
+    },
+    {
+      "node_key": "NODE_1002_SERVICE_COMPLETE",
+      "workflow_key": "UNCONTESTED_DIVORCE",
+      "stage": "SERVICE",
+      "court_routing": "SUPREME_COURT",
+      "node_type": "service",
+      "label": "Service Complete",
+      "completion_events": [
+        "SERVICE_COMPLETE"
+      ],
+      "sequence": 2,
+      "responsible_party": "",
+      "primary_package_key": "PKG_SERVICE"
+    },
+    {
+      "node_key": "NODE_1003_ANSWER_FILED",
+      "workflow_key": "CONTESTED_DIVORCE",
+      "stage": "RESPONSE",
+      "court_routing": "SUPREME_COURT",
+      "node_type": "response",
+      "label": "Answer Filed",
+      "completion_events": [
+        "ANSWER_FILED"
+      ],
+      "sequence": 3,
+      "responsible_party": "",
+      "primary_package_key": "PKG_RESPONSE"
+    },
+    {
+      "node_key": "NODE_1004_OSC_FILED",
+      "workflow_key": "MOTION_PRACTICE",
+      "stage": "TEMPORARY_RELIEF",
+      "court_routing": "SUPREME_COURT",
+      "node_type": "motion",
+      "label": "Order to Show Cause Filed",
+      "sequence": 4,
+      "responsible_party": "",
+      "primary_package_key": "PKG_MOTION"
+    },
+    {
+      "node_key": "NODE_1005_PRELIMINARY_CONFERENCE",
+      "workflow_key": "CONTESTED_DIVORCE",
+      "stage": "PRELIMINARY_CONFERENCE",
+      "court_routing": "SUPREME_COURT",
+      "node_type": "conference",
+      "label": "Preliminary Conference",
+      "completion_events": [
+        "PRELIM_CONFERENCE_HELD"
+      ],
+      "sequence": 5,
+      "responsible_party": "",
+      "primary_package_key": ""
+    },
+    {
+      "node_key": "NODE_1006_DISCOVERY",
+      "workflow_key": "DISCOVERY",
+      "stage": "DISCOVERY",
+      "court_routing": "SUPREME_COURT",
+      "node_type": "discovery",
+      "label": "Discovery",
+      "completion_events": [
+        "DISCOVERY_COMPLETE"
+      ],
+      "sequence": 6,
+      "responsible_party": "",
+      "primary_package_key": "PKG_DISCOVERY"
+    },
+    {
+      "node_key": "NODE_1007_COMPLIANCE_CONFERENCE",
+      "workflow_key": "DISCOVERY",
+      "stage": "COMPLIANCE_CONFERENCE",
+      "court_routing": "SUPREME_COURT",
+      "node_type": "conference",
+      "label": "Compliance Conference",
+      "sequence": 7,
+      "responsible_party": "",
+      "primary_package_key": ""
+    },
+    {
+      "node_key": "NODE_1008_SETTLEMENT",
+      "workflow_key": "CONTESTED_DIVORCE",
+      "stage": "SETTLEMENT",
+      "court_routing": "SUPREME_COURT",
+      "node_type": "settlement",
+      "label": "Settlement",
+      "completion_events": [
+        "SETTLEMENT_REACHED"
+      ],
+      "sequence": 8,
+      "responsible_party": "",
+      "primary_package_key": "PKG_SETTLEMENT"
+    },
+    {
+      "node_key": "NODE_1009_TRIAL",
+      "workflow_key": "CONTESTED_DIVORCE",
+      "stage": "TRIAL",
+      "court_routing": "SUPREME_COURT",
+      "node_type": "trial",
+      "label": "Trial",
+      "sequence": 9,
+      "responsible_party": "",
+      "primary_package_key": "PKG_TRIAL"
+    },
+    {
+      "node_key": "NODE_1010_JUDGMENT",
+      "workflow_key": "UNCONTESTED_DIVORCE",
+      "stage": "JUDGMENT",
+      "court_routing": "SUPREME_COURT",
+      "node_type": "judgment",
+      "label": "Judgment Entered",
+      "is_terminal": true,
+      "completion_events": [
+        "JUDGMENT_ENTERED"
+      ],
+      "sequence": 10,
+      "responsible_party": "",
+      "primary_package_key": "PKG_DEFAULT_DIVORCE"
+    },
+    {
+      "node_key": "NODE_2001_CUSTODY_PETITION",
+      "workflow_key": "CUSTODY",
+      "stage": "PETITION",
+      "court_routing": "FAMILY_COURT",
+      "node_type": "petition",
+      "label": "Custody Petition Filed",
+      "is_entry": true,
+      "trigger_events": [
+        "PETITION_FILED"
+      ],
+      "sequence": 11,
+      "responsible_party": "",
+      "primary_package_key": "PKG_CUSTODY_PETITION"
+    },
+    {
+      "node_key": "NODE_2002_CUSTODY_HEARING",
+      "workflow_key": "CUSTODY",
+      "stage": "HEARING",
+      "court_routing": "FAMILY_COURT",
+      "node_type": "hearing",
+      "label": "Custody Hearing",
+      "completion_events": [
+        "HEARING_HELD"
+      ],
+      "sequence": 12,
+      "responsible_party": "",
+      "primary_package_key": ""
+    },
+    {
+      "node_key": "NODE_2003_CUSTODY_ORDER",
+      "workflow_key": "CUSTODY",
+      "stage": "ORDER",
+      "court_routing": "FAMILY_COURT",
+      "node_type": "order",
+      "label": "Custody Order",
+      "is_terminal": true,
+      "completion_events": [
+        "ORDER_ENTERED"
+      ],
+      "sequence": 13,
+      "responsible_party": "",
+      "primary_package_key": ""
+    },
+    {
+      "node_key": "NODE_3001_SUPPORT_PETITION",
+      "workflow_key": "CHILD_SUPPORT",
+      "stage": "PETITION",
+      "court_routing": "FAMILY_COURT",
+      "node_type": "petition",
+      "label": "Support Petition Filed",
+      "is_entry": true,
+      "trigger_events": [
+        "PETITION_FILED"
+      ],
+      "sequence": 14,
+      "responsible_party": "",
+      "primary_package_key": "PKG_CHILD_SUPPORT_PETITION"
+    },
+    {
+      "node_key": "NODE_3002_SUPPORT_ORDER",
+      "workflow_key": "CHILD_SUPPORT",
+      "stage": "ORDER",
+      "court_routing": "FAMILY_COURT",
+      "node_type": "order",
+      "label": "Support Order",
+      "is_terminal": true,
+      "completion_events": [
+        "ORDER_ENTERED"
+      ],
+      "sequence": 15,
+      "responsible_party": "",
+      "primary_package_key": ""
+    },
+    {
+      "node_key": "NODE_4001_FAMILY_OFFENSE",
+      "workflow_key": "ORDER_OF_PROTECTION",
+      "stage": "PETITION",
+      "court_routing": "FAMILY_COURT",
+      "node_type": "petition",
+      "label": "Family Offense Petition",
+      "is_entry": true,
+      "sequence": 16,
+      "responsible_party": "",
+      "primary_package_key": "PKG_ORDER_OF_PROTECTION"
+    },
+    {
+      "node_key": "NODE_4002_TEMP_OP",
+      "workflow_key": "ORDER_OF_PROTECTION",
+      "stage": "TEMPORARY_ORDER",
+      "court_routing": "FAMILY_COURT",
+      "node_type": "order",
+      "label": "Temporary Order of Protection",
+      "completion_events": [
+        "TEMP_ORDER_ISSUED"
+      ],
+      "sequence": 17,
+      "responsible_party": "",
+      "primary_package_key": ""
+    },
+    {
+      "node_key": "NODE_4003_FINAL_OP",
+      "workflow_key": "ORDER_OF_PROTECTION",
+      "stage": "FINAL_ORDER",
+      "court_routing": "FAMILY_COURT",
+      "node_type": "order",
+      "label": "Final Order of Protection",
+      "is_terminal": true,
+      "completion_events": [
+        "ORDER_ENTERED"
+      ],
+      "sequence": 18,
+      "responsible_party": "",
+      "primary_package_key": ""
+    },
+    {
+      "node_key": "NODE_5001_ENFORCEMENT_FILED",
+      "workflow_key": "ENFORCEMENT",
+      "stage": "VIOLATION",
+      "court_routing": "FAMILY_COURT",
+      "node_type": "petition",
+      "label": "Violation Petition Filed",
+      "is_entry": true,
+      "trigger_events": [
+        "VIOLATION_FILED"
+      ],
+      "sequence": 19,
+      "responsible_party": "",
+      "primary_package_key": "PKG_ENFORCEMENT"
+    },
+    {
+      "node_key": "NODE_5002_ENFORCEMENT_ORDER",
+      "workflow_key": "ENFORCEMENT",
+      "stage": "ENFORCEMENT",
+      "court_routing": "FAMILY_COURT",
+      "node_type": "order",
+      "label": "Enforcement Order",
+      "is_terminal": true,
+      "completion_events": [
+        "ORDER_ENTERED"
+      ],
+      "sequence": 20,
+      "responsible_party": "",
+      "primary_package_key": ""
+    },
+    {
+      "node_key": "NODE_6001_MODIFICATION_FILED",
+      "workflow_key": "MODIFICATION",
+      "stage": "MODIFICATION",
+      "court_routing": "FAMILY_COURT",
+      "node_type": "petition",
+      "label": "Modification Petition Filed",
+      "is_entry": true,
+      "trigger_events": [
+        "PETITION_FILED"
+      ],
+      "sequence": 21,
+      "responsible_party": "",
+      "primary_package_key": "PKG_MODIFICATION"
+    },
+    {
+      "node_key": "NODE_6002_MODIFICATION_ORDER",
+      "workflow_key": "MODIFICATION",
+      "stage": "ORDER",
+      "court_routing": "FAMILY_COURT",
+      "node_type": "order",
+      "label": "Modified Order",
+      "is_terminal": true,
+      "completion_events": [
+        "ORDER_ENTERED"
+      ],
+      "sequence": 22,
+      "responsible_party": "",
+      "primary_package_key": ""
+    }
+  ],
+  "edges": [
+    {
+      "from_node": "NODE_1001_DIVORCE_FILED",
+      "to_node": "NODE_1002_SERVICE_COMPLETE",
+      "workflow_key": "UNCONTESTED_DIVORCE",
+      "edge_type": "next",
+      "condition_key": "",
+      "condition_data": null,
+      "label": "",
+      "sequence": 1,
+      "weight": 0
+    },
+    {
+      "from_node": "NODE_1002_SERVICE_COMPLETE",
+      "to_node": "NODE_1003_ANSWER_FILED",
+      "workflow_key": "UNCONTESTED_DIVORCE",
+      "edge_type": "next",
+      "condition_key": "",
+      "condition_data": null,
+      "label": "",
+      "sequence": 2,
+      "weight": 0
+    },
+    {
+      "from_node": "NODE_1003_ANSWER_FILED",
+      "to_node": "NODE_1005_PRELIMINARY_CONFERENCE",
+      "workflow_key": "CONTESTED_DIVORCE",
+      "edge_type": "next",
+      "condition_key": "",
+      "condition_data": null,
+      "label": "",
+      "sequence": 3,
+      "weight": 0
+    },
+    {
+      "from_node": "NODE_1004_OSC_FILED",
+      "to_node": "NODE_1005_PRELIMINARY_CONFERENCE",
+      "workflow_key": "MOTION_PRACTICE",
+      "edge_type": "next",
+      "condition_key": "",
+      "condition_data": null,
+      "label": "",
+      "sequence": 4,
+      "weight": 0
+    },
+    {
+      "from_node": "NODE_1005_PRELIMINARY_CONFERENCE",
+      "to_node": "NODE_1006_DISCOVERY",
+      "workflow_key": "CONTESTED_DIVORCE",
+      "edge_type": "next",
+      "condition_key": "",
+      "condition_data": null,
+      "label": "",
+      "sequence": 5,
+      "weight": 0
+    },
+    {
+      "from_node": "NODE_1006_DISCOVERY",
+      "to_node": "NODE_1007_COMPLIANCE_CONFERENCE",
+      "workflow_key": "DISCOVERY",
+      "edge_type": "next",
+      "condition_key": "",
+      "condition_data": null,
+      "label": "",
+      "sequence": 6,
+      "weight": 0
+    },
+    {
+      "from_node": "NODE_1007_COMPLIANCE_CONFERENCE",
+      "to_node": "NODE_1008_SETTLEMENT",
+      "workflow_key": "DISCOVERY",
+      "edge_type": "next",
+      "condition_key": "",
+      "condition_data": null,
+      "label": "",
+      "sequence": 7,
+      "weight": 0
+    },
+    {
+      "from_node": "NODE_1007_COMPLIANCE_CONFERENCE",
+      "to_node": "NODE_1009_TRIAL",
+      "workflow_key": "DISCOVERY",
+      "edge_type": "next",
+      "condition_key": "",
+      "condition_data": null,
+      "label": "",
+      "sequence": 8,
+      "weight": 0
+    },
+    {
+      "from_node": "NODE_1008_SETTLEMENT",
+      "to_node": "NODE_1010_JUDGMENT",
+      "workflow_key": "CONTESTED_DIVORCE",
+      "edge_type": "next",
+      "condition_key": "",
+      "condition_data": null,
+      "label": "",
+      "sequence": 9,
+      "weight": 0
+    },
+    {
+      "from_node": "NODE_1009_TRIAL",
+      "to_node": "NODE_1010_JUDGMENT",
+      "workflow_key": "CONTESTED_DIVORCE",
+      "edge_type": "next",
+      "condition_key": "",
+      "condition_data": null,
+      "label": "",
+      "sequence": 10,
+      "weight": 0
+    },
+    {
+      "from_node": "NODE_2001_CUSTODY_PETITION",
+      "to_node": "NODE_2002_CUSTODY_HEARING",
+      "workflow_key": "CUSTODY",
+      "edge_type": "next",
+      "condition_key": "",
+      "condition_data": null,
+      "label": "",
+      "sequence": 11,
+      "weight": 0
+    },
+    {
+      "from_node": "NODE_2002_CUSTODY_HEARING",
+      "to_node": "NODE_2003_CUSTODY_ORDER",
+      "workflow_key": "CUSTODY",
+      "edge_type": "next",
+      "condition_key": "",
+      "condition_data": null,
+      "label": "",
+      "sequence": 12,
+      "weight": 0
+    },
+    {
+      "from_node": "NODE_3001_SUPPORT_PETITION",
+      "to_node": "NODE_3002_SUPPORT_ORDER",
+      "workflow_key": "CHILD_SUPPORT",
+      "edge_type": "next",
+      "condition_key": "",
+      "condition_data": null,
+      "label": "",
+      "sequence": 13,
+      "weight": 0
+    },
+    {
+      "from_node": "NODE_4001_FAMILY_OFFENSE",
+      "to_node": "NODE_4002_TEMP_OP",
+      "workflow_key": "ORDER_OF_PROTECTION",
+      "edge_type": "next",
+      "condition_key": "",
+      "condition_data": null,
+      "label": "",
+      "sequence": 14,
+      "weight": 0
+    },
+    {
+      "from_node": "NODE_4002_TEMP_OP",
+      "to_node": "NODE_4003_FINAL_OP",
+      "workflow_key": "ORDER_OF_PROTECTION",
+      "edge_type": "next",
+      "condition_key": "",
+      "condition_data": null,
+      "label": "",
+      "sequence": 15,
+      "weight": 0
+    },
+    {
+      "from_node": "NODE_5001_ENFORCEMENT_FILED",
+      "to_node": "NODE_5002_ENFORCEMENT_ORDER",
+      "workflow_key": "ENFORCEMENT",
+      "edge_type": "next",
+      "condition_key": "",
+      "condition_data": null,
+      "label": "",
+      "sequence": 16,
+      "weight": 0
+    },
+    {
+      "from_node": "NODE_6001_MODIFICATION_FILED",
+      "to_node": "NODE_6002_MODIFICATION_ORDER",
+      "workflow_key": "MODIFICATION",
+      "edge_type": "next",
+      "condition_key": "",
+      "condition_data": null,
+      "label": "",
+      "sequence": 17,
+      "weight": 0
+    }
+  ]
+}

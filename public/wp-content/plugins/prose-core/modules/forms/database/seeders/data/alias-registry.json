@@ -1,0 +1,103 @@
+{
+  "registry_version": "1.2.0",
+  "aliases": [
+    {
+      "canonical_code": "UCCJEA-7",
+      "alias_codes": [
+        "4-24",
+        "5-16",
+        "UIFSA-10"
+      ],
+      "scope": "in_scope",
+      "note": "Electronic Testimony Application"
+    },
+    {
+      "canonical_code": "UD-COMPOSITE",
+      "alias_codes": [
+        "UNCODED-103"
+      ],
+      "scope": "in_scope",
+      "note": "Composite Uncontested Divorce Forms"
+    },
+    {
+      "canonical_code": "DRL-NOTICE-MAINT",
+      "alias_codes": [
+        "UNCODED-167"
+      ],
+      "scope": "in_scope",
+      "note": "Notice of Guideline Maintenance"
+    },
+    {
+      "canonical_code": "LDSS-CS-SVC",
+      "alias_codes": [
+        "UNCODED-447"
+      ],
+      "scope": "in_scope",
+      "note": "Short Form Application for Child Support Services"
+    },
+    {
+      "canonical_code": "10-9",
+      "alias_codes": [
+        "7-5"
+      ],
+      "scope": "out_of_scope",
+      "note": "Determination Upon Fact-finding Hearing"
+    },
+    {
+      "canonical_code": "GF-15",
+      "alias_codes": [
+        "3-44"
+      ],
+      "scope": "mixed",
+      "note": "Order on Motion"
+    },
+    {
+      "canonical_code": "10-1b",
+      "alias_codes": [
+        "6"
+      ],
+      "scope": "out_of_scope",
+      "note": "Order of Investigation"
+    },
+    {
+      "canonical_code": "PH-4a",
+      "alias_codes": [
+        "PH-4-b",
+        "PH-4c"
+      ],
+      "scope": "out_of_scope",
+      "note": "Statement to Court of Permanency Hearing Reports"
+    },
+    {
+      "canonical_code": "7-18",
+      "alias_codes": [
+        "3-38"
+      ],
+      "scope": "out_of_scope",
+      "note": "Petition Extension of Placement"
+    }
+  ],
+  "deprecated": [
+    "FC-1",
+    "FC-2",
+    "FC-3",
+    "FC-7",
+    "UD-4a"
+  ],
+  "variant_sets": [
+    {
+      "codes": [
+        "GF-5b",
+        "GF-5c (CRIM-4)"
+      ],
+      "reason": "Distinct TOP affirmation variants — do not merge"
+    },
+    {
+      "codes": [
+        "3-32",
+        "3-34"
+      ],
+      "reason": "Distinct felony disposition variants — do not merge"
+    }
+  ]
+}
