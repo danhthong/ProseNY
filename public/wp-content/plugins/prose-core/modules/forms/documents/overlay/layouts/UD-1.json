@@ -14,8 +14,8 @@
             "label": "County",
             "source": "county",
             "page": 1,
-            "x": 400,
-            "y": 118,
+            "x": 405,
+            "y": 125,
             "font_size": 10
         },
         {
@@ -23,8 +23,8 @@
             "label": "Plaintiff Name",
             "source": "petitioner_name",
             "page": 1,
-            "x": 90,
-            "y": 250,
+            "x": 165,
+            "y": 165,
             "font_size": 11
         },
         {
@@ -32,8 +32,8 @@
             "label": "Defendant Name",
             "source": "respondent_name",
             "page": 1,
-            "x": 90,
-            "y": 300,
+            "x": 165,
+            "y": 245,
             "font_size": 11
         },
         {
@@ -41,22 +41,22 @@
             "label": "Grounds for Divorce",
             "source": "grounds",
             "page": 1,
-            "x": 90,
-            "y": 430,
-            "font_size": 10,
+            "x": 200,
+            "y": 500,
+            "font_size": 9,
             "multiline": true,
-            "max_width": 430
+            "max_width": 250
         },
         {
             "key": "ancillary_relief",
             "label": "Ancillary Relief Requested",
             "source": "relief_requested",
             "page": 1,
-            "x": 90,
-            "y": 530,
-            "font_size": 10,
+            "x": 320,
+            "y": 575,
+            "font_size": 9,
             "multiline": true,
-            "max_width": 430
+            "max_width": 480
         }
     ]
 }

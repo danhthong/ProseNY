@@ -48,23 +48,24 @@ final class Overlay_Render_Result {
 	 */
 	private function defaults(): array {
 		return array(
-			'success'        => true,
-			'mode'           => self::MODE_OVERLAY,
-			'form_code'      => '',
-			'template'       => '',
-			'page_count'     => 1,
-			'page_size'      => array(
+			'success'            => true,
+			'mode'               => self::MODE_OVERLAY,
+			'form_code'          => '',
+			'template'           => '',
+			'page_count'         => 1,
+			'page_size'          => array(
 				'width'  => 0.0,
 				'height' => 0.0,
 			),
-			'field_count'    => 0,
-			'rendered_count' => 0,
-			'skipped_count'  => 0,
-			'file_path'      => '',
-			'download_url'   => '',
-			'checksum'       => '',
-			'bytes'          => 0,
-			'warnings'       => array(),
+			'field_count'        => 0,
+			'rendered_count'     => 0,
+			'skipped_count'      => 0,
+			'file_path'          => '',
+			'download_url'       => '',
+			'checksum'           => '',
+			'bytes'              => 0,
+			'warnings'           => array(),
+			'render_duration_ms' => 0,
 		);
 	}
 
@@ -192,6 +193,15 @@ final class Overlay_Render_Result {
 	 */
 	public function warnings(): array {
 		return (array) $this->data['warnings'];
+	}
+
+	/**
+	 * Render duration in milliseconds.
+	 *
+	 * @return int
+	 */
+	public function render_duration_ms(): int {
+		return (int) $this->data['render_duration_ms'];
 	}
 
 	/**

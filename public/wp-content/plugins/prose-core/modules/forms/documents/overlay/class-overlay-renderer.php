@@ -18,11 +18,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Class Overlay_Renderer
  *
  * Renders field values at calibrated coordinates onto a page sized to match the
- * official court PDF, producing an overlay-layer PDF. The overlay is designed to
- * be stamped onto the original (preserved) PDF by a downstream compositor
- * (FPDI/pdftk/Ghostscript); this foundation produces the coordinate-accurate
- * layer and a debug overlay for manual calibration. It never modifies the
- * official PDF.
+ * official court PDF. When a rasterizer (Poppler `pdftoppm`) is available, the
+ * official PDF page is rendered to a JPEG and composited as a layout-preserving
+ * background behind crisp vector text — producing a filled, filing-ready PDF
+ * (mode STAMPED). When no rasterizer is available it falls back to a standalone
+ * overlay layer (mode OVERLAY). It never modifies the official PDF on disk.
  *
  * Layout coordinates use a top-left origin; the renderer converts to PDF user
  * space (origin bottom-left).
@@ -44,14 +44,23 @@ final class Overlay_Renderer {
 	private ?Pdf_Storage_Service $storage;
 
 	/**
+	 * Page rasterizer (optional).
+	 *
+	 * @var Pdf_Rasterizer|null
+	 */
+	private ?Pdf_Rasterizer $rasterizer;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Form_Layout_Registry|null $registry Layout registry.
-	 * @param Pdf_Storage_Service|null  $storage  Storage service.
+	 * @param Form_Layout_Registry|null $registry   Layout registry.
+	 * @param Pdf_Storage_Service|null  $storage    Storage service.
+	 * @param Pdf_Rasterizer|null       $rasterizer Page rasterizer.
 	 */
-	public function __construct( ?Form_Layout_Registry $registry = null, ?Pdf_Storage_Service $storage = null ) {
-		$this->registry = $registry ?? new Form_Layout_Registry();
-		$this->storage  = $storage;
+	public function __construct( ?Form_Layout_Registry $registry = null, ?Pdf_Storage_Service $storage = null, ?Pdf_Rasterizer $rasterizer = null ) {
+		$this->registry   = $registry ?? new Form_Layout_Registry();
+		$this->storage    = $storage;
+		$this->rasterizer = $rasterizer;
 	}
 
 	/**
@@ -74,12 +83,119 @@ final class Overlay_Renderer {
 	 * @return Overlay_Render_Result
 	 */
 	public function render( string $form_code, array $values, array $options = array() ): Overlay_Render_Result {
+		$start    = microtime( true );
 		$layout   = $this->registry->load( $form_code );
 		$size     = $this->resolve_size( $layout, $options );
 		$canvas   = new Overlay_Pdf_Canvas( $size['width'], $size['height'], (int) $layout['pages'] );
+		$warnings = array();
+
+		$counts = $this->draw_fields( $canvas, $layout, $size, $values );
+		$bytes  = $canvas->render();
+
+		return $this->result(
+			Overlay_Render_Result::MODE_OVERLAY,
+			$form_code,
+			$layout,
+			$size,
+			count( $layout['fields'] ),
+			$counts['rendered'],
+			$counts['skipped'],
+			$warnings,
+			$bytes,
+			$options,
+			$this->elapsed_ms( $start )
+		);
+	}
+
+	/**
+	 * Render a filled, filing-ready PDF: composite the rasterized official PDF
+	 * page(s) as a background, then overlay field values at coordinates.
+	 *
+	 * The original PDF is never modified. Requires a rasterizer (Poppler); when
+	 * one is unavailable, falls back to a standalone overlay layer and records a
+	 * warning.
+	 *
+	 * @param string               $form_code Form code.
+	 * @param array<string, mixed> $values    Canonical field values.
+	 * @param array<string, mixed> $options   Options: template_path, filename, store, dpi.
+	 * @return Overlay_Render_Result
+	 */
+	public function render_filled( string $form_code, array $values, array $options = array() ): Overlay_Render_Result {
+		$start    = microtime( true );
+		$layout   = $this->registry->load( $form_code );
+		$size     = $this->resolve_size( $layout, $options );
+		$canvas   = new Overlay_Pdf_Canvas( $size['width'], $size['height'], (int) $layout['pages'] );
+		$warnings = array();
+
+		$mode = $this->apply_background( $canvas, $options, $warnings );
+
+		$counts = $this->draw_fields( $canvas, $layout, $size, $values );
+		$bytes  = $canvas->render();
+
+		return $this->result(
+			$mode,
+			$form_code,
+			$layout,
+			$size,
+			count( $layout['fields'] ),
+			$counts['rendered'],
+			$counts['skipped'],
+			$warnings,
+			$bytes,
+			$options,
+			$this->elapsed_ms( $start )
+		);
+	}
+
+	/**
+	 * Composite the rasterized official PDF as a per-page background.
+	 *
+	 * @param Overlay_Pdf_Canvas   $canvas   Canvas.
+	 * @param array<string, mixed> $options  Options (template_path, dpi).
+	 * @param string[]             $warnings Warnings (by reference).
+	 * @return string Render mode (STAMPED when composited, else OVERLAY).
+	 */
+	private function apply_background( Overlay_Pdf_Canvas $canvas, array $options, array &$warnings ): string {
+		$template_path = (string) ( $options['template_path'] ?? '' );
+
+		if ( '' === $template_path || ! is_readable( $template_path ) ) {
+			$warnings[] = 'official template not found; produced overlay layer without background';
+			return Overlay_Render_Result::MODE_OVERLAY;
+		}
+
+		$rasterizer = $this->rasterizer ?? new Pdf_Rasterizer( (int) ( $options['dpi'] ?? 200 ) );
+
+		if ( ! $rasterizer->available() ) {
+			$warnings[] = 'no rasterizer (pdftoppm) available; produced overlay layer without background';
+			return Overlay_Render_Result::MODE_OVERLAY;
+		}
+
+		$pages = $rasterizer->to_jpeg_pages( $template_path );
+
+		if ( array() === $pages ) {
+			$warnings[] = 'rasterizer produced no pages; produced overlay layer without background';
+			return Overlay_Render_Result::MODE_OVERLAY;
+		}
+
+		foreach ( $pages as $index => $jpeg ) {
+			$canvas->set_background( $index, $jpeg );
+		}
+
+		return Overlay_Render_Result::MODE_STAMPED;
+	}
+
+	/**
+	 * Draw all layout field values onto the canvas.
+	 *
+	 * @param Overlay_Pdf_Canvas                 $canvas Canvas.
+	 * @param array<string, mixed>               $layout Layout.
+	 * @param array{width: float, height: float} $size   Page size.
+	 * @param array<string, mixed>               $values Values.
+	 * @return array{rendered: int, skipped: int}
+	 */
+	private function draw_fields( Overlay_Pdf_Canvas $canvas, array $layout, array $size, array $values ): array {
 		$rendered = 0;
 		$skipped  = 0;
-		$warnings = array();
 
 		foreach ( $layout['fields'] as $field ) {
 			$page  = min( (int) $field['page'] - 1, (int) $layout['pages'] - 1 );
@@ -106,20 +222,20 @@ final class Overlay_Renderer {
 			++$rendered;
 		}
 
-		$bytes = $canvas->render();
-
-		return $this->result(
-			Overlay_Render_Result::MODE_OVERLAY,
-			$form_code,
-			$layout,
-			$size,
-			count( $layout['fields'] ),
-			$rendered,
-			$skipped,
-			$warnings,
-			$bytes,
-			$options
+		return array(
+			'rendered' => $rendered,
+			'skipped'  => $skipped,
 		);
+	}
+
+	/**
+	 * Elapsed milliseconds since a start microtime.
+	 *
+	 * @param float $start Start (microtime float).
+	 * @return int
+	 */
+	private function elapsed_ms( float $start ): int {
+		return (int) round( ( microtime( true ) - $start ) * 1000 );
 	}
 
 	/**
@@ -130,11 +246,20 @@ final class Overlay_Renderer {
 	 * @return Overlay_Render_Result
 	 */
 	public function render_debug( string $form_code, array $options = array() ): Overlay_Render_Result {
-		$layout = $this->registry->load( $form_code );
-		$size   = $this->resolve_size( $layout, $options );
-		$canvas = new Overlay_Pdf_Canvas( $size['width'], $size['height'], (int) $layout['pages'] );
+		$start    = microtime( true );
+		$layout   = $this->registry->load( $form_code );
+		$size     = $this->resolve_size( $layout, $options );
+		$canvas   = new Overlay_Pdf_Canvas( $size['width'], $size['height'], (int) $layout['pages'] );
+		$values   = (array) ( $options['values'] ?? array() );
+		$warnings = array();
 
-		$grid = ! isset( $options['grid'] ) || (bool) $options['grid'];
+		$background = (bool) ( $options['background'] ?? false );
+
+		if ( $background ) {
+			$this->apply_background( $canvas, $options, $warnings );
+		}
+
+		$grid = isset( $options['grid'] ) ? (bool) $options['grid'] : ! $background;
 
 		if ( $grid ) {
 			$this->draw_grid( $canvas, $size, (int) $layout['pages'] );
@@ -149,10 +274,17 @@ final class Overlay_Renderer {
 
 			$canvas->rect( $page, (float) $field['x'], $box_y, $width, $height, 0.55 );
 
-			// Field label (key) above the box, in red.
-			$canvas->text_rgb( $page, (float) $field['x'], $size['height'] - (float) $field['y'] + 3.0, 7.0, $field['key'], 0.8, 0.0, 0.0 );
+			// Field label "[key]" above the box, in red.
+			$canvas->text_rgb( $page, (float) $field['x'], $size['height'] - (float) $field['y'] + 3.0, 7.0, '[' . $field['key'] . ']', 0.8, 0.0, 0.0 );
 
-			// Coordinates below the box, in blue.
+			// Resolved value at the field baseline (black), if provided.
+			$value = $this->stringify( $values[ $field['source'] ] ?? ( $values[ $field['key'] ] ?? null ) );
+
+			if ( '' !== $value ) {
+				$this->draw_text_block( $canvas, $page, $size['height'], $field, $value );
+			}
+
+			// Coordinate marker below the box, in blue.
 			$coord = sprintf( '(%s,%s) p%d s%s%s', $this->n( $field['x'] ), $this->n( $field['y'] ), (int) $field['page'], $this->n( $field['font_size'] ), $field['multiline'] ? ' ML' : '' );
 			$canvas->text_rgb( $page, (float) $field['x'], $box_y - 8.0, 6.0, $coord, 0.0, 0.0, 0.8 );
 		}
@@ -167,9 +299,10 @@ final class Overlay_Renderer {
 			count( $layout['fields'] ),
 			count( $layout['fields'] ),
 			0,
-			array(),
+			$warnings,
 			$bytes,
-			$options
+			$options,
+			$this->elapsed_ms( $start )
 		);
 	}
 
@@ -186,6 +319,7 @@ final class Overlay_Renderer {
 	 * @param string[]                           $warnings   Warnings.
 	 * @param string                             $bytes      PDF bytes.
 	 * @param array<string, mixed>               $options    Options.
+	 * @param int                                $duration_ms Render duration (ms).
 	 * @return Overlay_Render_Result
 	 */
 	private function result(
@@ -198,7 +332,8 @@ final class Overlay_Renderer {
 		int $skipped,
 		array $warnings,
 		string $bytes,
-		array $options
+		array $options,
+		int $duration_ms = 0
 	): Overlay_Render_Result {
 		$checksum  = 'sha256:' . hash( 'sha256', $bytes );
 		$file_path = '';
@@ -215,21 +350,22 @@ final class Overlay_Renderer {
 
 		return new Overlay_Render_Result(
 			array(
-				'success'        => true,
-				'mode'           => $mode,
-				'form_code'      => $form_code,
-				'template'       => (string) $layout['template'],
-				'page_count'     => (int) $layout['pages'],
-				'page_size'      => $size,
-				'field_count'    => $field_count,
-				'rendered_count' => $rendered,
-				'skipped_count'  => $skipped,
-				'file_path'      => $file_path,
-				'download_url'   => $download,
-				'checksum'       => $checksum,
-				'bytes'          => strlen( $bytes ),
-				'warnings'       => $warnings,
-				'pdf'            => $bytes,
+				'success'            => true,
+				'mode'               => $mode,
+				'form_code'          => $form_code,
+				'template'           => (string) $layout['template'],
+				'page_count'         => (int) $layout['pages'],
+				'page_size'          => $size,
+				'field_count'        => $field_count,
+				'rendered_count'     => $rendered,
+				'skipped_count'      => $skipped,
+				'file_path'          => $file_path,
+				'download_url'       => $download,
+				'checksum'           => $checksum,
+				'bytes'              => strlen( $bytes ),
+				'warnings'           => $warnings,
+				'render_duration_ms' => $duration_ms,
+				'pdf'                => $bytes,
 			)
 		);
 	}

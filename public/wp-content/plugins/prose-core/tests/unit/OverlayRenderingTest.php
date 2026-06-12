@@ -15,7 +15,9 @@ use ProSe\Core\Forms\Documents\Overlay\Layout_Validation_Service;
 use ProSe\Core\Forms\Documents\Overlay\Overlay_Pdf_Canvas;
 use ProSe\Core\Forms\Documents\Overlay\Overlay_Render_Result;
 use ProSe\Core\Forms\Documents\Overlay\Overlay_Renderer;
+use ProSe\Core\Forms\Documents\Overlay\Pdf_Layout_Debugger;
 use ProSe\Core\Forms\Documents\Overlay\Pdf_Page_Geometry;
+use ProSe\Core\Forms\Documents\Overlay\Pdf_Rasterizer;
 
 /**
  * Class OverlayRenderingTest
@@ -249,6 +251,155 @@ class OverlayRenderingTest extends TestCase {
 		$this->assertStringStartsWith( '%PDF-1.4', $result->pdf() );
 		// Rectangles are drawn (re ... S operator present).
 		$this->assertStringContainsString( ' re ', $result->pdf() );
+	}
+
+	/**
+	 * Sample dummy data for the sprint.
+	 *
+	 * @return array<string, string>
+	 */
+	private function dummy_values(): array {
+		return array(
+			'petitioner_name'  => 'Jane Doe',
+			'respondent_name'  => 'John Doe',
+			'county'           => 'New York County',
+			'grounds'          => 'DRL 170(7) - irretrievable breakdown',
+			'relief_requested' => 'Restoration of maiden name',
+		);
+	}
+
+	/**
+	 * Resolve the official UD-1 template path, if present.
+	 *
+	 * @return string
+	 */
+	private function ud1_template(): string {
+		$path = realpath( PROSE_CORE_PATH . '../../../wp-content/uploads/prose/forms/ud-1.pdf' );
+
+		return false === $path ? '' : $path;
+	}
+
+	/**
+	 * The filled render without a template falls back to an overlay layer.
+	 */
+	public function test_render_filled_without_template_falls_back(): void {
+		$registry = new Form_Layout_Registry( $this->layouts_dir() );
+		$renderer = new Overlay_Renderer( $registry );
+
+		$result = $renderer->render_filled( 'UD-1', $this->dummy_values() );
+
+		$this->assertSame( Overlay_Render_Result::MODE_OVERLAY, $result->mode() );
+		$this->assertNotEmpty( $result->warnings() );
+		$this->assertSame( 5, $result->rendered_count() );
+		$this->assertSame( 0, $result->skipped_count() );
+		$this->assertStringContainsString( 'Jane Doe', $result->pdf() );
+		$this->assertGreaterThanOrEqual( 0, $result->render_duration_ms() );
+	}
+
+	/**
+	 * The filled render composites the official PDF as a JPEG background when a
+	 * rasterizer and the official template are available.
+	 */
+	public function test_render_filled_composites_official_pdf(): void {
+		$template = $this->ud1_template();
+
+		if ( '' === $template ) {
+			$this->markTestSkipped( 'Official ud-1.pdf not available.' );
+		}
+
+		if ( ! ( new Pdf_Rasterizer() )->available() ) {
+			$this->markTestSkipped( 'pdftoppm (Poppler) not available.' );
+		}
+
+		$registry = new Form_Layout_Registry( $this->layouts_dir() );
+		$renderer = new Overlay_Renderer( $registry );
+
+		$result = $renderer->render_filled(
+			'UD-1',
+			$this->dummy_values(),
+			array(
+				'template_path' => $template,
+				'dpi'           => 150,
+			)
+		);
+
+		$this->assertSame( Overlay_Render_Result::MODE_STAMPED, $result->mode() );
+		$this->assertSame( 5, $result->rendered_count() );
+		$this->assertSame( 0, $result->skipped_count() );
+		$this->assertStringContainsString( '/DCTDecode', $result->pdf() );
+		$this->assertStringContainsString( '/XObject', $result->pdf() );
+		$this->assertStringContainsString( 'Jane Doe', $result->pdf() );
+	}
+
+	/**
+	 * The layout debugger draws a grid, rulers, markers, labels, boxes and dims.
+	 */
+	public function test_layout_debugger_generates_grid(): void {
+		$registry = new Form_Layout_Registry( $this->layouts_dir() );
+		$debugger = new Pdf_Layout_Debugger( $registry );
+
+		$report = $debugger->generate( 'UD-1', array( 'background' => false ) );
+
+		$this->assertSame( 'UD-1', $report['form_code'] );
+		$this->assertSame( 5, $report['field_count'] );
+		$this->assertSame( Pdf_Layout_Debugger::GRID_STEP, $report['grid_step'] );
+		$this->assertFalse( $report['composited'] );
+		$this->assertCount( 5, $report['fields'] );
+
+		$pdf = (string) $report['pdf'];
+		$this->assertStringStartsWith( '%PDF-1.4', $pdf );
+		$this->assertStringContainsString( ' re ', $pdf );          // bounding boxes / markers.
+		$this->assertStringContainsString( ' l S', $pdf );          // grid / crosshair lines.
+		$this->assertStringContainsString( '[county]', $pdf );      // field label.
+		$this->assertStringContainsString( 'x=', $pdf );            // coordinate readout.
+		$this->assertStringContainsString( 'Page', $pdf );          // page dimensions.
+	}
+
+	/**
+	 * The grid step is configurable.
+	 */
+	public function test_layout_debugger_custom_grid_step(): void {
+		$registry = new Form_Layout_Registry( $this->layouts_dir() );
+		$debugger = new Pdf_Layout_Debugger( $registry );
+
+		$report = $debugger->generate(
+			'UD-1',
+			array(
+				'background' => false,
+				'grid_step'  => 50,
+			)
+		);
+
+		$this->assertSame( 50, $report['grid_step'] );
+	}
+
+	/**
+	 * The debugger composites the official PDF when a rasterizer is available.
+	 */
+	public function test_layout_debugger_composites_official_pdf(): void {
+		$template = $this->ud1_template();
+
+		if ( '' === $template ) {
+			$this->markTestSkipped( 'Official ud-1.pdf not available.' );
+		}
+
+		if ( ! ( new Pdf_Rasterizer() )->available() ) {
+			$this->markTestSkipped( 'pdftoppm (Poppler) not available.' );
+		}
+
+		$registry = new Form_Layout_Registry( $this->layouts_dir() );
+		$debugger = new Pdf_Layout_Debugger( $registry );
+
+		$report = $debugger->generate(
+			'UD-1',
+			array(
+				'template_path' => $template,
+				'dpi'           => 150,
+			)
+		);
+
+		$this->assertTrue( $report['composited'] );
+		$this->assertStringContainsString( '/DCTDecode', (string) $report['pdf'] );
 	}
 
 	/**

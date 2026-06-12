@@ -53,6 +53,13 @@ final class Overlay_Pdf_Canvas {
 	private int $page_count;
 
 	/**
+	 * Per-page background images (JPEG). Keyed by page index.
+	 *
+	 * @var array<int, array{jpeg: string, width: int, height: int, colorspace: string}>
+	 */
+	private array $backgrounds = array();
+
+	/**
 	 * Constructor.
 	 *
 	 * @param float $width      Page width (points).
@@ -72,6 +79,32 @@ final class Overlay_Pdf_Canvas {
 	 */
 	public function height(): float {
 		return $this->height;
+	}
+
+	/**
+	 * Set a full-page JPEG background image for a page. Used to composite the
+	 * rasterized official PDF behind the overlay so the original court layout
+	 * is preserved.
+	 *
+	 * @param int    $page  Page index (0-based).
+	 * @param string $jpeg  Raw JPEG bytes.
+	 * @return bool True when the JPEG was accepted.
+	 */
+	public function set_background( int $page, string $jpeg ): bool {
+		$info = $this->jpeg_info( $jpeg );
+
+		if ( null === $info ) {
+			return false;
+		}
+
+		$this->backgrounds[ $page ] = array(
+			'jpeg'       => $jpeg,
+			'width'      => $info['width'],
+			'height'     => $info['height'],
+			'colorspace' => $info['colorspace'],
+		);
+
+		return true;
 	}
 
 	/**
@@ -173,29 +206,65 @@ final class Overlay_Pdf_Canvas {
 	public function render(): string {
 		$objects   = array();
 		$kids      = array();
-		$font_obj  = 3 + ( $this->page_count * 2 );
+		$page_ids  = array();
+		$content   = array();
+		$image_ids = array();
+
 		$object_id = 3;
 
 		for ( $page = 0; $page < $this->page_count; $page++ ) {
-			$content_id = $object_id + 1;
-			$kids[]     = $object_id . ' 0 R';
+			$page_ids[ $page ] = $object_id;
+			$content[ $page ]  = $object_id + 1;
+			$kids[]            = $object_id . ' 0 R';
+			$object_id        += 2;
+		}
 
-			$objects[ $object_id ] = sprintf(
-				'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 %s %s] /Resources << /Font << /F1 %d 0 R >> >> /Contents %d 0 R >>',
+		$font_obj = $object_id;
+		++$object_id;
+
+		foreach ( array_keys( $this->backgrounds ) as $page ) {
+			$image_ids[ $page ] = $object_id;
+			++$object_id;
+		}
+
+		for ( $page = 0; $page < $this->page_count; $page++ ) {
+			$resources = sprintf( '/Font << /F1 %d 0 R >>', $font_obj );
+			$prefix    = '';
+
+			if ( isset( $image_ids[ $page ] ) ) {
+				$resources .= sprintf( ' /XObject << /Im0 %d 0 R >>', $image_ids[ $page ] );
+				$prefix     = sprintf(
+					"q %s 0 0 %s 0 0 cm /Im0 Do Q\n",
+					$this->num( $this->width ),
+					$this->num( $this->height )
+				);
+			}
+
+			$objects[ $page_ids[ $page ] ] = sprintf(
+				'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 %s %s] /Resources << %s >> /Contents %d 0 R >>',
 				$this->num( $this->width ),
 				$this->num( $this->height ),
-				$font_obj,
-				$content_id
+				$resources,
+				$content[ $page ]
 			);
 
-			$stream                 = implode( "\n", $this->ops[ $page ] ?? array() );
-			$objects[ $content_id ] = sprintf(
+			$stream                       = $prefix . implode( "\n", $this->ops[ $page ] ?? array() );
+			$objects[ $content[ $page ] ] = sprintf(
 				"<< /Length %d >>\nstream\n%s\nendstream",
 				strlen( $stream ),
 				$stream
 			);
+		}
 
-			$object_id += 2;
+		foreach ( $this->backgrounds as $page => $bg ) {
+			$objects[ $image_ids[ $page ] ] = sprintf(
+				"<< /Type /XObject /Subtype /Image /Width %d /Height %d /ColorSpace %s /BitsPerComponent 8 /Filter /DCTDecode /Length %d >>\nstream\n%s\nendstream",
+				$bg['width'],
+				$bg['height'],
+				$bg['colorspace'],
+				strlen( $bg['jpeg'] ),
+				$bg['jpeg']
+			);
 		}
 
 		$objects[1]           = '<< /Type /Catalog /Pages 2 0 R >>';
@@ -203,6 +272,62 @@ final class Overlay_Pdf_Canvas {
 		$objects[ $font_obj ] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>';
 
 		return $this->assemble( $objects );
+	}
+
+	/**
+	 * Parse JPEG dimensions and color space from the SOF marker.
+	 *
+	 * @param string $jpeg Raw JPEG bytes.
+	 * @return array{width: int, height: int, colorspace: string}|null
+	 */
+	private function jpeg_info( string $jpeg ): ?array {
+		$len = strlen( $jpeg );
+
+		if ( $len < 4 || "\xFF\xD8" !== substr( $jpeg, 0, 2 ) ) {
+			return null;
+		}
+
+		$pos = 2;
+
+		while ( $pos + 9 < $len ) {
+			if ( "\xFF" !== $jpeg[ $pos ] ) {
+				++$pos;
+				continue;
+			}
+
+			$marker = ord( $jpeg[ $pos + 1 ] );
+			$pos   += 2;
+
+			// SOFn markers carry frame geometry (skip DHT 0xC4, DAC 0xCC, JPGn 0xC8).
+			if ( $marker >= 0xC0 && $marker <= 0xCF && 0xC4 !== $marker && 0xC8 !== $marker && 0xCC !== $marker ) {
+				$components = ord( $jpeg[ $pos + 7 ] );
+				$height     = ( ord( $jpeg[ $pos + 3 ] ) << 8 ) | ord( $jpeg[ $pos + 4 ] );
+				$width      = ( ord( $jpeg[ $pos + 5 ] ) << 8 ) | ord( $jpeg[ $pos + 6 ] );
+
+				$colorspace = '/DeviceRGB';
+
+				if ( 1 === $components ) {
+					$colorspace = '/DeviceGray';
+				} elseif ( 4 === $components ) {
+					$colorspace = '/DeviceCMYK';
+				}
+
+				return array(
+					'width'      => $width,
+					'height'     => $height,
+					'colorspace' => $colorspace,
+				);
+			}
+
+			if ( $pos + 1 >= $len ) {
+				break;
+			}
+
+			$segment = ( ord( $jpeg[ $pos ] ) << 8 ) | ord( $jpeg[ $pos + 1 ] );
+			$pos    += $segment;
+		}
+
+		return null;
 	}
 
 	/**
@@ -261,6 +386,16 @@ final class Overlay_Pdf_Canvas {
 	 * @return string
 	 */
 	private function escape( string $text ): string {
+		// Standard Helvetica uses WinAnsi (CP1252); convert from UTF-8 so glyphs
+		// such as the section sign render correctly.
+		if ( function_exists( 'iconv' ) ) {
+			$converted = @iconv( 'UTF-8', 'Windows-1252//TRANSLIT', $text ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+
+			if ( false !== $converted ) {
+				$text = $converted;
+			}
+		}
+
 		$text = (string) preg_replace( '/[\x00-\x08\x0B\x0C\x0E-\x1F]/', '', $text );
 
 		return strtr(
