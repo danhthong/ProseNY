@@ -1,0 +1,35 @@
+{
+    "package_key": "PKG_ORDER_OF_PROTECTION",
+    "forms": [
+        "FC-1",
+        "FC-7"
+    ],
+    "page_count": 2,
+    "form_count": 2,
+    "merge_strategy": "builtin",
+    "checksum": "sha256:10f5b7406706b37a535af7694a3f62677798271ea602817f889ac912009bf6ea",
+    "generated_at": "2026-06-11 21:13:21",
+    "source_case_id": 6005,
+    "forms_detail": [
+        {
+            "form_code": "FC-1",
+            "title": "General Petition",
+            "template_version": "1.0",
+            "pages": 1,
+            "field_count": 4,
+            "resolved_count": 4,
+            "missing_count": 0,
+            "strategy": "builtin"
+        },
+        {
+            "form_code": "FC-7",
+            "title": "Family Offense Petition",
+            "template_version": "1.0",
+            "pages": 1,
+            "field_count": 4,
+            "resolved_count": 4,
+            "missing_count": 0,
+            "strategy": "builtin"
+        }
+    ]
+}

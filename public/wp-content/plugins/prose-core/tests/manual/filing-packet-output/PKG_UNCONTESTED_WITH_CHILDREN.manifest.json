@@ -1,0 +1,90 @@
+{
+    "package_key": "PKG_UNCONTESTED_WITH_CHILDREN",
+    "forms": [
+        "UD-1",
+        "UD-2",
+        "UD-3",
+        "UD-4",
+        "UD-6",
+        "UD-7",
+        "UD-8"
+    ],
+    "page_count": 7,
+    "form_count": 7,
+    "merge_strategy": "builtin",
+    "checksum": "sha256:a0eaab11aa44cab8967d7c286bc175e367fdc7ae73f1245d71c48fd474481190",
+    "generated_at": "2026-06-11 21:13:21",
+    "source_case_id": 6002,
+    "forms_detail": [
+        {
+            "form_code": "UD-1",
+            "title": "Summons With Notice",
+            "template_version": "1.0",
+            "pages": 1,
+            "field_count": 4,
+            "resolved_count": 4,
+            "missing_count": 0,
+            "strategy": "builtin"
+        },
+        {
+            "form_code": "UD-2",
+            "title": "Verified Complaint",
+            "template_version": "1.0",
+            "pages": 1,
+            "field_count": 6,
+            "resolved_count": 5,
+            "missing_count": 0,
+            "strategy": "builtin"
+        },
+        {
+            "form_code": "UD-3",
+            "title": "Affidavit of Plaintiff",
+            "template_version": "1.0",
+            "pages": 1,
+            "field_count": 3,
+            "resolved_count": 3,
+            "missing_count": 0,
+            "strategy": "builtin"
+        },
+        {
+            "form_code": "UD-4",
+            "title": "Affidavit of Service",
+            "template_version": "1.0",
+            "pages": 1,
+            "field_count": 2,
+            "resolved_count": 2,
+            "missing_count": 0,
+            "strategy": "builtin"
+        },
+        {
+            "form_code": "UD-6",
+            "title": "Affidavit of Regularity",
+            "template_version": "1.0",
+            "pages": 1,
+            "field_count": 3,
+            "resolved_count": 2,
+            "missing_count": 0,
+            "strategy": "builtin"
+        },
+        {
+            "form_code": "UD-7",
+            "title": "Findings of Fact / Judgment of Divorce",
+            "template_version": "1.0",
+            "pages": 1,
+            "field_count": 5,
+            "resolved_count": 5,
+            "missing_count": 0,
+            "strategy": "builtin"
+        },
+        {
+            "form_code": "UD-8",
+            "title": "Child Support Worksheet",
+            "template_version": "1.0",
+            "pages": 1,
+            "field_count": 4,
+            "resolved_count": 3,
+            "missing_count": 1,
+            "strategy": "builtin"
+        }
+    ]
+}

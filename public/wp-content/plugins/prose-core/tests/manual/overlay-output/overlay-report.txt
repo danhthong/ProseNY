@@ -1,0 +1,34 @@
+Overlay Rendering foundation - manual report
+generated: 2026-06-12 05:13:43 UTC
+output dir: /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/overlay-output/
+official template: /Users/dangthong/LocalSites/proseny/app/public/wp-content/uploads/prose/forms/ud-1.pdf
+================================================================
+
+LAYOUT VALIDATION (UD-1)
+----------------------------------------------------------------
+  valid:    yes
+  errors:   (none)
+  warnings: (none)
+
+DEBUG OVERLAY (overlay-debug.pdf)
+----------------------------------------------------------------
+  page size:   612 x 792 pt
+  fields:      5
+  pdf path:    /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/overlay-output/overlay-debug.pdf
+  checksum:    sha256:85d6f592e6d6f7c898dd0eec22ebc85f7162f551108becebbdb2c5269640675e
+  bytes:       3923
+
+SAMPLE OVERLAY (UD-1-overlay.pdf)
+----------------------------------------------------------------
+  mode:        overlay
+  page size:   612 x 792 pt
+  fields:      5
+  rendered:    5
+  skipped:     0
+  pdf path:    /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/overlay-output/UD-1-overlay.pdf
+  checksum:    sha256:48f4138b631a5ff56eb38d2c899f21a33b6092bc58f3492ff848160c3a536236
+  bytes:       1010
+
+Note: the official PDF is preserved (never modified). This overlay layer
+is sized to the official page geometry and is intended to be stamped onto
+the original PDF by a downstream compositor (FPDI/pdftk/Ghostscript).

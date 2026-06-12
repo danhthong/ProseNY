@@ -1,0 +1,35 @@
+{
+    "package_key": "PKG_CUSTODY_PETITION",
+    "forms": [
+        "FC-1",
+        "FC-3"
+    ],
+    "page_count": 2,
+    "form_count": 2,
+    "merge_strategy": "builtin",
+    "checksum": "sha256:fbe3f660e6366dbf7c421864327c53845d44b68d8cd1c47cb596c31d782acfa8",
+    "generated_at": "2026-06-11 21:13:21",
+    "source_case_id": 6003,
+    "forms_detail": [
+        {
+            "form_code": "FC-1",
+            "title": "General Petition",
+            "template_version": "1.0",
+            "pages": 1,
+            "field_count": 4,
+            "resolved_count": 4,
+            "missing_count": 0,
+            "strategy": "builtin"
+        },
+        {
+            "form_code": "FC-3",
+            "title": "Custody / Visitation Petition",
+            "template_version": "1.0",
+            "pages": 1,
+            "field_count": 4,
+            "resolved_count": 4,
+            "missing_count": 0,
+            "strategy": "builtin"
+        }
+    ]
+}

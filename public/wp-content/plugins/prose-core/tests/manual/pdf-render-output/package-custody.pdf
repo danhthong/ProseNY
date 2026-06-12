@@ -1,0 +1,101 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [4 0 R 6 0 R 8 0 R] /Count 3 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 5 0 R >>
+endobj
+5 0 obj
+<< /Length 461 >>
+stream
+BT
+/F1 11 Tf
+15 TL
+1 0 0 1 54 736 Tm
+(Document Package) Tj
+T*(================================================================) Tj
+T*(Package: PKG_CUSTODY_PETITION) Tj
+T*(Completion: 100%    Ready: YES) Tj
+T*(Generated: 2026-06-11 20:52:31 UTC) Tj
+T*(Source case: 5002    Version: 1) Tj
+T*() Tj
+T*(Forms in this package:) Tj
+T*(  FC-1   General Petition                         GENERATED) Tj
+T*(  FC-3   Custody / Visitation Petition            GENERATED) Tj
+ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 7 0 R >>
+endobj
+7 0 obj
+<< /Length 569 >>
+stream
+BT
+/F1 11 Tf
+15 TL
+1 0 0 1 54 736 Tm
+(FC-1  General Petition) Tj
+T*(----------------------------------------------------------------) Tj
+T*(Template: FC-1 v1.0 \(builtin\)) Tj
+T*(Status: GENERATED    Requirement: required) Tj
+T*(Package: PKG_CUSTODY_PETITION) Tj
+T*(Generated: 2026-06-11 20:52:31 UTC) Tj
+T*() Tj
+T*(Fields:) Tj
+T*(  PETITIONER_NAME        [text]       Maria Cruz  *) Tj
+T*(  RESPONDENT_NAME        [text]       Luis Cruz  *) Tj
+T*(  COUNTY                 [text]       KINGS_COUNTY  *) Tj
+T*(  COURT                  [radio]      FAMILY_COURT  *) Tj
+ET
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 9 0 R >>
+endobj
+9 0 obj
+<< /Length 590 >>
+stream
+BT
+/F1 11 Tf
+15 TL
+1 0 0 1 54 736 Tm
+(FC-3  Custody / Visitation Petition) Tj
+T*(----------------------------------------------------------------) Tj
+T*(Template: FC-3 v1.0 \(builtin\)) Tj
+T*(Status: GENERATED    Requirement: required) Tj
+T*(Package: PKG_CUSTODY_PETITION) Tj
+T*(Generated: 2026-06-11 20:52:31 UTC) Tj
+T*() Tj
+T*(Fields:) Tj
+T*(  PETITIONER_NAME        [text]       Maria Cruz  *) Tj
+T*(  RESPONDENT_NAME        [text]       Luis Cruz  *) Tj
+T*(  CHILDREN_COUNT         [text]       2  *) Tj
+T*(  RELIEF_REQUESTED       [multiline]  Sole legal and physical custody  *) Tj
+ET
+endstream
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000133 00000 n 
+0000000230 00000 n 
+0000000356 00000 n 
+0000000868 00000 n 
+0000000994 00000 n 
+0000001614 00000 n 
+0000001740 00000 n 
+trailer
+<< /Size 10 /Root 1 0 R >>
+startxref
+2381
+%%EOF

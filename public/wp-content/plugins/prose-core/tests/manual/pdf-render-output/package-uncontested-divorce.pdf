@@ -1,0 +1,212 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [4 0 R 6 0 R 8 0 R 10 0 R 12 0 R 14 0 R 16 0 R] /Count 7 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 5 0 R >>
+endobj
+5 0 obj
+<< /Length 736 >>
+stream
+BT
+/F1 11 Tf
+15 TL
+1 0 0 1 54 736 Tm
+(Document Package) Tj
+T*(================================================================) Tj
+T*(Package: PKG_UNCONTESTED_NO_CHILDREN) Tj
+T*(Completion: 100%    Ready: YES) Tj
+T*(Generated: 2026-06-11 20:52:31 UTC) Tj
+T*(Source case: 5001    Version: 1) Tj
+T*() Tj
+T*(Forms in this package:) Tj
+T*(  UD-1   Summons With Notice                      GENERATED) Tj
+T*(  UD-2   Verified Complaint                       GENERATED) Tj
+T*(  UD-3   Affidavit of Plaintiff                   GENERATED) Tj
+T*(  UD-4   Affidavit of Service                     GENERATED) Tj
+T*(  UD-6   Affidavit of Regularity                  GENERATED) Tj
+T*(  UD-7   Findings of Fact / Judgment of Divorce   GENERATED) Tj
+ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 7 0 R >>
+endobj
+7 0 obj
+<< /Length 580 >>
+stream
+BT
+/F1 11 Tf
+15 TL
+1 0 0 1 54 736 Tm
+(UD-1  Summons With Notice) Tj
+T*(----------------------------------------------------------------) Tj
+T*(Template: UD-1 v1.0 \(builtin\)) Tj
+T*(Status: GENERATED    Requirement: required) Tj
+T*(Package: PKG_UNCONTESTED_NO_CHILDREN) Tj
+T*(Generated: 2026-06-11 20:52:31 UTC) Tj
+T*() Tj
+T*(Fields:) Tj
+T*(  PETITIONER_NAME        [text]       Jane Doe  *) Tj
+T*(  RESPONDENT_NAME        [text]       John Doe  *) Tj
+T*(  COUNTY                 [text]       NEW_YORK_COUNTY  *) Tj
+T*(  COURT                  [radio]      SUPREME_COURT  *) Tj
+ET
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 9 0 R >>
+endobj
+9 0 obj
+<< /Length 686 >>
+stream
+BT
+/F1 11 Tf
+15 TL
+1 0 0 1 54 736 Tm
+(UD-2  Verified Complaint) Tj
+T*(----------------------------------------------------------------) Tj
+T*(Template: UD-2 v1.0 \(builtin\)) Tj
+T*(Status: GENERATED    Requirement: required) Tj
+T*(Package: PKG_UNCONTESTED_NO_CHILDREN) Tj
+T*(Generated: 2026-06-11 20:52:31 UTC) Tj
+T*() Tj
+T*(Fields:) Tj
+T*(  PETITIONER_NAME        [text]       Jane Doe  *) Tj
+T*(  RESPONDENT_NAME        [text]       John Doe  *) Tj
+T*(  MARRIAGE_DATE          [date]       2010-06-01  *) Tj
+T*(  GROUNDS                [radio]      DRL 170\(7\)  *) Tj
+T*(  MARRIAGE_PLACE         [text]       New York, NY) Tj
+T*(  SEPARATION_DATE        [date]       <missing>) Tj
+ET
+endstream
+endobj
+10 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 11 0 R >>
+endobj
+11 0 obj
+<< /Length 513 >>
+stream
+BT
+/F1 11 Tf
+15 TL
+1 0 0 1 54 736 Tm
+(UD-3  Affidavit of Plaintiff) Tj
+T*(----------------------------------------------------------------) Tj
+T*(Template: UD-3 v1.0 \(builtin\)) Tj
+T*(Status: GENERATED    Requirement: required) Tj
+T*(Package: PKG_UNCONTESTED_NO_CHILDREN) Tj
+T*(Generated: 2026-06-11 20:52:31 UTC) Tj
+T*() Tj
+T*(Fields:) Tj
+T*(  PETITIONER_NAME        [text]       Jane Doe  *) Tj
+T*(  RESPONDENT_NAME        [text]       John Doe  *) Tj
+T*(  MARRIAGE_DATE          [date]       2010-06-01) Tj
+ET
+endstream
+endobj
+12 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 13 0 R >>
+endobj
+13 0 obj
+<< /Length 457 >>
+stream
+BT
+/F1 11 Tf
+15 TL
+1 0 0 1 54 736 Tm
+(UD-4  Affidavit of Service) Tj
+T*(----------------------------------------------------------------) Tj
+T*(Template: UD-4 v1.0 \(builtin\)) Tj
+T*(Status: GENERATED    Requirement: required) Tj
+T*(Package: PKG_UNCONTESTED_NO_CHILDREN) Tj
+T*(Generated: 2026-06-11 20:52:31 UTC) Tj
+T*() Tj
+T*(Fields:) Tj
+T*(  RESPONDENT_NAME        [text]       John Doe  *) Tj
+T*(  SERVICE_DATE           [date]       2026-02-01  *) Tj
+ET
+endstream
+endobj
+14 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 15 0 R >>
+endobj
+15 0 obj
+<< /Length 513 >>
+stream
+BT
+/F1 11 Tf
+15 TL
+1 0 0 1 54 736 Tm
+(UD-6  Affidavit of Regularity) Tj
+T*(----------------------------------------------------------------) Tj
+T*(Template: UD-6 v1.0 \(builtin\)) Tj
+T*(Status: GENERATED    Requirement: required) Tj
+T*(Package: PKG_UNCONTESTED_NO_CHILDREN) Tj
+T*(Generated: 2026-06-11 20:52:31 UTC) Tj
+T*() Tj
+T*(Fields:) Tj
+T*(  PETITIONER_NAME        [text]       Jane Doe  *) Tj
+T*(  RESPONDENT_NAME        [text]       John Doe  *) Tj
+T*(  INDEX_NUMBER           [text]       <missing>) Tj
+ET
+endstream
+endobj
+16 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents 17 0 R >>
+endobj
+17 0 obj
+<< /Length 658 >>
+stream
+BT
+/F1 11 Tf
+15 TL
+1 0 0 1 54 736 Tm
+(UD-7  Findings of Fact / Judgment of Divorce) Tj
+T*(----------------------------------------------------------------) Tj
+T*(Template: UD-7 v1.0 \(builtin\)) Tj
+T*(Status: GENERATED    Requirement: required) Tj
+T*(Package: PKG_UNCONTESTED_NO_CHILDREN) Tj
+T*(Generated: 2026-06-11 20:52:31 UTC) Tj
+T*() Tj
+T*(Fields:) Tj
+T*(  PETITIONER_NAME        [text]       Jane Doe  *) Tj
+T*(  RESPONDENT_NAME        [text]       John Doe  *) Tj
+T*(  MARRIAGE_DATE          [date]       2010-06-01  *) Tj
+T*(  COUNTY                 [text]       NEW_YORK_COUNTY  *) Tj
+T*(  COURT                  [radio]      SUPREME_COURT  *) Tj
+ET
+endstream
+endobj
+xref
+0 18
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000161 00000 n 
+0000000258 00000 n 
+0000000384 00000 n 
+0000001171 00000 n 
+0000001297 00000 n 
+0000001928 00000 n 
+0000002054 00000 n 
+0000002791 00000 n 
+0000002919 00000 n 
+0000003484 00000 n 
+0000003612 00000 n 
+0000004121 00000 n 
+0000004249 00000 n 
+0000004814 00000 n 
+0000004942 00000 n 
+trailer
+<< /Size 18 /Root 1 0 R >>
+startxref
+5652
+%%EOF

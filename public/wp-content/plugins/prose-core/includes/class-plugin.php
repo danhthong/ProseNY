@@ -122,7 +122,21 @@ final class Plugin {
 	private function init(): void {
 		\ProSe\Core\Forms\Database\Database_Installer::maybe_upgrade();
 		$this->load_modules();
+		$this->register_cli();
 		$this->loader->run();
+	}
+
+	/**
+	 * Register WP-CLI commands when running under WP-CLI.
+	 *
+	 * @return void
+	 */
+	private function register_cli(): void {
+		if ( ! defined( 'WP_CLI' ) || ! WP_CLI ) {
+			return;
+		}
+
+		\WP_CLI::add_command( 'prose pdf', \ProSe\Core\Forms\Documents\Pdf\Pdf_Audit_Command::class );
 	}
 
 	/**

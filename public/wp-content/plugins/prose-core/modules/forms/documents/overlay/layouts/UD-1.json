@@ -1,0 +1,62 @@
+{
+    "form_code": "UD-1",
+    "title": "Summons With Notice",
+    "template": "ud-1.pdf",
+    "origin": "top-left",
+    "page_size": {
+        "width": 612,
+        "height": 792
+    },
+    "pages": 1,
+    "fields": [
+        {
+            "key": "county",
+            "label": "County",
+            "source": "county",
+            "page": 1,
+            "x": 400,
+            "y": 118,
+            "font_size": 10
+        },
+        {
+            "key": "plaintiff_name",
+            "label": "Plaintiff Name",
+            "source": "petitioner_name",
+            "page": 1,
+            "x": 90,
+            "y": 250,
+            "font_size": 11
+        },
+        {
+            "key": "defendant_name",
+            "label": "Defendant Name",
+            "source": "respondent_name",
+            "page": 1,
+            "x": 90,
+            "y": 300,
+            "font_size": 11
+        },
+        {
+            "key": "grounds",
+            "label": "Grounds for Divorce",
+            "source": "grounds",
+            "page": 1,
+            "x": 90,
+            "y": 430,
+            "font_size": 10,
+            "multiline": true,
+            "max_width": 430
+        },
+        {
+            "key": "ancillary_relief",
+            "label": "Ancillary Relief Requested",
+            "source": "relief_requested",
+            "page": 1,
+            "x": 90,
+            "y": 530,
+            "font_size": 10,
+            "multiline": true,
+            "max_width": 430
+        }
+    ]
+}

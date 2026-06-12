@@ -1,0 +1,96 @@
+PDF Renderer - manual render report
+generated: 2026-06-11 20:52:31 UTC
+output dir: /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/pdf-render-output/
+================================================================
+
+ud1-sample.pdf
+----------------------------------------------------------------
+  template used:        UD-1 v1.0 (builtin)
+  field count:          4
+  resolved field count: 4
+  missing field count:  0
+  pdf path:             /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/pdf-render-output/ud1-sample.pdf
+  download url:         https://example.test/prose-documents/ud1-sample.pdf
+  checksum:             sha256:dfb4eb8ba36529414ce1b659a4bab57c4cf2e2fc93e00a1fa320a29731a08810
+  bytes:                1157
+  render duration (ms): 0.881
+  audit:                generated_at=2026-06-11 20:52:31 generated_by=0 source_case_id=5001 source_package_id=PKG_UNCONTESTED_NO_CHILDREN template_version=1.0
+
+ud2-sample.pdf
+----------------------------------------------------------------
+  template used:        UD-2 v1.0 (builtin)
+  field count:          6
+  resolved field count: 5
+  missing field count:  0
+  pdf path:             /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/pdf-render-output/ud2-sample.pdf
+  download url:         https://example.test/prose-documents/ud2-sample.pdf
+  checksum:             sha256:acdb781ff8e463b0414055a453470decfd7db6b9aec0302083d910eb8f7438ba
+  bytes:                1264
+  render duration (ms): 0.358
+  audit:                generated_at=2026-06-11 20:52:31 generated_by=0 source_case_id=5001 source_package_id=PKG_UNCONTESTED_NO_CHILDREN template_version=1.0
+
+fc1-sample.pdf
+----------------------------------------------------------------
+  template used:        FC-1 v1.0 (builtin)
+  field count:          4
+  resolved field count: 4
+  missing field count:  0
+  pdf path:             /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/pdf-render-output/fc1-sample.pdf
+  download url:         https://example.test/prose-documents/fc1-sample.pdf
+  checksum:             sha256:6c7d87e22286421d2e484074020cd0f5b0b30da84d2308284a04f8f9b49e27a4
+  bytes:                1146
+  render duration (ms): 0.167
+  audit:                generated_at=2026-06-11 20:52:31 generated_by=0 source_case_id=5003 source_package_id=PKG_ORDER_OF_PROTECTION template_version=1.0
+
+fc7-sample.pdf
+----------------------------------------------------------------
+  template used:        FC-7 v1.0 (builtin)
+  field count:          4
+  resolved field count: 4
+  missing field count:  0
+  pdf path:             /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/pdf-render-output/fc7-sample.pdf
+  download url:         https://example.test/prose-documents/fc7-sample.pdf
+  checksum:             sha256:c42a9e7af9a94a75a4479d770e9992ad468959ee59342b3a567928a8a92616f0
+  bytes:                1168
+  render duration (ms): 0.16
+  audit:                generated_at=2026-06-11 20:52:31 generated_by=0 source_case_id=5003 source_package_id=PKG_ORDER_OF_PROTECTION template_version=1.0
+
+package-uncontested-divorce.pdf
+----------------------------------------------------------------
+  template used:        PKG_UNCONTESTED_NO_CHILDREN vbundle-1.0 (builtin)
+  field count:          23
+  resolved field count: 21
+  missing field count:  0
+  pdf path:             /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/pdf-render-output/package-uncontested-divorce.pdf
+  download url:         https://example.test/prose-documents/package-uncontested-divorce.pdf
+  checksum:             sha256:3900a121fc281fdb8a61f2cf302d48a8884326389d3f38929aff3acc79afa530
+  bytes:                6077
+  render duration (ms): 0.5
+  audit:                generated_at=2026-06-11 20:52:31 generated_by=0 source_case_id=5001 source_package_id=PKG_UNCONTESTED_NO_CHILDREN template_version=bundle-1.0
+
+package-custody.pdf
+----------------------------------------------------------------
+  template used:        PKG_CUSTODY_PETITION vbundle-1.0 (builtin)
+  field count:          8
+  resolved field count: 8
+  missing field count:  0
+  pdf path:             /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/pdf-render-output/package-custody.pdf
+  download url:         https://example.test/prose-documents/package-custody.pdf
+  checksum:             sha256:9cd8b1c48a076ad38e72a7fa22a734689b611d7ff1aa0e6fd3c2148c498598b8
+  bytes:                2646
+  render duration (ms): 0.228
+  audit:                generated_at=2026-06-11 20:52:31 generated_by=0 source_case_id=5002 source_package_id=PKG_CUSTODY_PETITION template_version=bundle-1.0
+
+package-order-of-protection.pdf
+----------------------------------------------------------------
+  template used:        PKG_ORDER_OF_PROTECTION vbundle-1.0 (builtin)
+  field count:          8
+  resolved field count: 8
+  missing field count:  0
+  pdf path:             /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/pdf-render-output/package-order-of-protection.pdf
+  download url:         https://example.test/prose-documents/package-order-of-protection.pdf
+  checksum:             sha256:b0c7e4bef24cfdd324a06c20b255a9eeed75f0ac6cde99c90b6471de6acbf54a
+  bytes:                2650
+  render duration (ms): 0.328
+  audit:                generated_at=2026-06-11 20:52:31 generated_by=0 source_case_id=5003 source_package_id=PKG_ORDER_OF_PROTECTION template_version=bundle-1.0
+

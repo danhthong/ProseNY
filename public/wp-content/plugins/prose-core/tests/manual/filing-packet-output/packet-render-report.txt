@@ -1,0 +1,144 @@
+Court Filing Packet Engine - manual render report
+generated: 2026-06-11 21:13:21 UTC
+output dir: /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/filing-packet-output/
+acroform fill available: no (builtin layout fallback)
+================================================================
+
+INDIVIDUAL FILLED FORMS
+================================================================
+
+ud1-filled.pdf
+----------------------------------------------------------------
+  form:                 UD-1  Summons With Notice
+  fill strategy:        builtin
+  template version:     1.0
+  field count:          4
+  resolved field count: 4
+  missing field count:  0
+  pages:                1
+  pdf path:             /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/filing-packet-output/ud1-filled.pdf
+  checksum:             sha256:d700bea326dff9e631e2a37cceea7869caa3370f1f7fde3c6a555a5af37918c6
+  bytes:                1029
+
+ud2-filled.pdf
+----------------------------------------------------------------
+  form:                 UD-2  Verified Complaint
+  fill strategy:        builtin
+  template version:     1.0
+  field count:          6
+  resolved field count: 5
+  missing field count:  0
+  pages:                1
+  pdf path:             /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/filing-packet-output/ud2-filled.pdf
+  checksum:             sha256:647bb78905b9af6d99b5de20a74df7e1b5b91c1349a7aff60d9ab5815ddbadb1
+  bytes:                1116
+
+fc1-filled.pdf
+----------------------------------------------------------------
+  form:                 FC-1  General Petition
+  fill strategy:        builtin
+  template version:     1.0
+  field count:          4
+  resolved field count: 4
+  missing field count:  0
+  pages:                1
+  pdf path:             /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/filing-packet-output/fc1-filled.pdf
+  checksum:             sha256:eb60051bdce5eb339cfb854a5cbd74f22d309b79fd5b2c4fb770e4471b32f645
+  bytes:                1018
+
+fc7-filled.pdf
+----------------------------------------------------------------
+  form:                 FC-7  Family Offense Petition
+  fill strategy:        builtin
+  template version:     1.0
+  field count:          4
+  resolved field count: 4
+  missing field count:  0
+  pages:                1
+  pdf path:             /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/filing-packet-output/fc7-filled.pdf
+  checksum:             sha256:6913e283a42b58d261aeb74a5ce0e874298dacdd54ca1bb978ed8c21937e2791
+  bytes:                1040
+
+FILING PACKETS
+================================================================
+
+PKG_UNCONTESTED_NO_CHILDREN
+----------------------------------------------------------------
+  forms (filing order): UD-1, UD-2, UD-3, UD-4, UD-6, UD-7
+  merge strategy:       builtin
+  page count:           6
+  field count:          23
+  resolved field count: 21
+  missing field count:  0
+  packet pdf:           /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/filing-packet-output/PKG_UNCONTESTED_NO_CHILDREN.pdf
+  manifest:             /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/filing-packet-output/PKG_UNCONTESTED_NO_CHILDREN.manifest.json
+  download url:         https://example.test/prose-documents/PKG_UNCONTESTED_NO_CHILDREN.pdf
+  checksum:             sha256:54bc9ee7fc9c2396d41df4e8b40d26994af41cd182b3fde057b0ac4e8d42f453
+  bytes:                4373
+  render duration (ms): 2.6
+  audit:                generated_at=2026-06-11 21:13:21 generated_by=0 source_case_id=6001 source_package_id=PKG_UNCONTESTED_NO_CHILDREN version=1
+
+PKG_UNCONTESTED_WITH_CHILDREN
+----------------------------------------------------------------
+  forms (filing order): UD-1, UD-2, UD-3, UD-4, UD-6, UD-7, UD-8
+  merge strategy:       builtin
+  page count:           7
+  field count:          27
+  resolved field count: 24
+  missing field count:  1
+  packet pdf:           /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/filing-packet-output/PKG_UNCONTESTED_WITH_CHILDREN.pdf
+  manifest:             /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/filing-packet-output/PKG_UNCONTESTED_WITH_CHILDREN.manifest.json
+  download url:         https://example.test/prose-documents/PKG_UNCONTESTED_WITH_CHILDREN.pdf
+  checksum:             sha256:a0eaab11aa44cab8967d7c286bc175e367fdc7ae73f1245d71c48fd474481190
+  bytes:                5078
+  render duration (ms): 2.51
+  audit:                generated_at=2026-06-11 21:13:21 generated_by=0 source_case_id=6002 source_package_id=PKG_UNCONTESTED_WITH_CHILDREN version=1
+
+PKG_CUSTODY_PETITION
+----------------------------------------------------------------
+  forms (filing order): FC-1, FC-3
+  merge strategy:       builtin
+  page count:           2
+  field count:          8
+  resolved field count: 8
+  missing field count:  0
+  packet pdf:           /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/filing-packet-output/PKG_CUSTODY_PETITION.pdf
+  manifest:             /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/filing-packet-output/PKG_CUSTODY_PETITION.manifest.json
+  download url:         https://example.test/prose-documents/PKG_CUSTODY_PETITION.pdf
+  checksum:             sha256:fbe3f660e6366dbf7c421864327c53845d44b68d8cd1c47cb596c31d782acfa8
+  bytes:                1704
+  render duration (ms): 0.82
+  audit:                generated_at=2026-06-11 21:13:21 generated_by=0 source_case_id=6003 source_package_id=PKG_CUSTODY_PETITION version=1
+
+PKG_CHILD_SUPPORT_PETITION
+----------------------------------------------------------------
+  forms (filing order): FC-1, FC-2
+  merge strategy:       builtin
+  page count:           2
+  field count:          8
+  resolved field count: 8
+  missing field count:  0
+  packet pdf:           /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/filing-packet-output/PKG_CHILD_SUPPORT_PETITION.pdf
+  manifest:             /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/filing-packet-output/PKG_CHILD_SUPPORT_PETITION.manifest.json
+  download url:         https://example.test/prose-documents/PKG_CHILD_SUPPORT_PETITION.pdf
+  checksum:             sha256:767f5a25706845ec538e133c43491f2bf027f3d4753ada117b53bbb3ebb438ff
+  bytes:                1680
+  render duration (ms): 0.86
+  audit:                generated_at=2026-06-11 21:13:21 generated_by=0 source_case_id=6004 source_package_id=PKG_CHILD_SUPPORT_PETITION version=1
+
+PKG_ORDER_OF_PROTECTION
+----------------------------------------------------------------
+  forms (filing order): FC-1, FC-7
+  merge strategy:       builtin
+  page count:           2
+  field count:          8
+  resolved field count: 8
+  missing field count:  0
+  packet pdf:           /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/filing-packet-output/PKG_ORDER_OF_PROTECTION.pdf
+  manifest:             /Users/dangthong/LocalSites/proseny/app/public/wp-content/plugins/prose-core/tests/manual/filing-packet-output/PKG_ORDER_OF_PROTECTION.manifest.json
+  download url:         https://example.test/prose-documents/PKG_ORDER_OF_PROTECTION.pdf
+  checksum:             sha256:10f5b7406706b37a535af7694a3f62677798271ea602817f889ac912009bf6ea
+  bytes:                1705
+  render duration (ms): 0.85
+  audit:                generated_at=2026-06-11 21:13:21 generated_by=0 source_case_id=6005 source_package_id=PKG_ORDER_OF_PROTECTION version=1
+

@@ -1,0 +1,35 @@
+{
+    "package_key": "PKG_CHILD_SUPPORT_PETITION",
+    "forms": [
+        "FC-1",
+        "FC-2"
+    ],
+    "page_count": 2,
+    "form_count": 2,
+    "merge_strategy": "builtin",
+    "checksum": "sha256:767f5a25706845ec538e133c43491f2bf027f3d4753ada117b53bbb3ebb438ff",
+    "generated_at": "2026-06-11 21:13:21",
+    "source_case_id": 6004,
+    "forms_detail": [
+        {
+            "form_code": "FC-1",
+            "title": "General Petition",
+            "template_version": "1.0",
+            "pages": 1,
+            "field_count": 4,
+            "resolved_count": 4,
+            "missing_count": 0,
+            "strategy": "builtin"
+        },
+        {
+            "form_code": "FC-2",
+            "title": "Child Support Petition",
+            "template_version": "1.0",
+            "pages": 1,
+            "field_count": 4,
+            "resolved_count": 4,
+            "missing_count": 0,
+            "strategy": "builtin"
+        }
+    ]
+}

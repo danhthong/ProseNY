@@ -1,0 +1,79 @@
+{
+    "package_key": "PKG_UNCONTESTED_NO_CHILDREN",
+    "forms": [
+        "UD-1",
+        "UD-2",
+        "UD-3",
+        "UD-4",
+        "UD-6",
+        "UD-7"
+    ],
+    "page_count": 6,
+    "form_count": 6,
+    "merge_strategy": "builtin",
+    "checksum": "sha256:54bc9ee7fc9c2396d41df4e8b40d26994af41cd182b3fde057b0ac4e8d42f453",
+    "generated_at": "2026-06-11 21:13:21",
+    "source_case_id": 6001,
+    "forms_detail": [
+        {
+            "form_code": "UD-1",
+            "title": "Summons With Notice",
+            "template_version": "1.0",
+            "pages": 1,
+            "field_count": 4,
+            "resolved_count": 4,
+            "missing_count": 0,
+            "strategy": "builtin"
+        },
+        {
+            "form_code": "UD-2",
+            "title": "Verified Complaint",
+            "template_version": "1.0",
+            "pages": 1,
+            "field_count": 6,
+            "resolved_count": 5,
+            "missing_count": 0,
+            "strategy": "builtin"
+        },
+        {
+            "form_code": "UD-3",
+            "title": "Affidavit of Plaintiff",
+            "template_version": "1.0",
+            "pages": 1,
+            "field_count": 3,
+            "resolved_count": 3,
+            "missing_count": 0,
+            "strategy": "builtin"
+        },
+        {
+            "form_code": "UD-4",
+            "title": "Affidavit of Service",
+            "template_version": "1.0",
+            "pages": 1,
+            "field_count": 2,
+            "resolved_count": 2,
+            "missing_count": 0,
+            "strategy": "builtin"
+        },
+        {
+            "form_code": "UD-6",
+            "title": "Affidavit of Regularity",
+            "template_version": "1.0",
+            "pages": 1,
+            "field_count": 3,
+            "resolved_count": 2,
+            "missing_count": 0,
+            "strategy": "builtin"
+        },
+        {
+            "form_code": "UD-7",
+            "title": "Findings of Fact / Judgment of Divorce",
+            "template_version": "1.0",
+            "pages": 1,
+            "field_count": 5,
+            "resolved_count": 5,
+            "missing_count": 0,
+            "strategy": "builtin"
+        }
+    ]
+}
