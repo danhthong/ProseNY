@@ -3,6 +3,7 @@
 	<testsuites>
 		<testsuite name="prose-core">
 			<directory>tests/unit</directory>
+			<directory>modules/routing/tests</directory>
 		</testsuite>
 	</testsuites>
 </phpunit>
