@@ -75,7 +75,15 @@
 
 		function finish( data ) {
 			setProgress( total );
-			status.textContent = format( cfg.i18n.completed, [ data.created, data.updated, data.failed ] );
+			status.textContent = format( cfg.i18n.completed, [
+				data.created,
+				data.updated,
+				data.failed,
+				data.urls_processed || 0,
+				data.files_downloaded || 0,
+				data.files_skipped || 0,
+				data.files_failed || 0
+			] );
 			if ( restart ) {
 				restart.style.display = '';
 			}

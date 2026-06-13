@@ -22,6 +22,18 @@ class Form_File_Manager {
 	private const UPLOAD_SUBDIR = 'prose/forms';
 
 	/**
+	 * Subdirectory under each form slug for court source documents.
+	 */
+	private const SOURCE_SUBDIR = 'original';
+
+	/**
+	 * Allowed court document extensions for multi-file import.
+	 *
+	 * @var string[]
+	 */
+	private const SUPPORTED_EXTENSIONS = array( 'pdf', 'doc', 'docx', 'wpd', 'rtf', 'txt' );
+
+	/**
 	 * Get (and ensure) the upload directory for form PDFs.
 	 *
 	 * @return array{path: string, url: string}|\WP_Error
@@ -64,6 +76,343 @@ class Form_File_Manager {
 		$result = $this->get_upload_dir();
 
 		return ! is_wp_error( $result );
+	}
+
+	/**
+	 * Get (and ensure) the per-form source directory.
+	 *
+	 * Structure: uploads/prose/forms/{form-slug}/original/
+	 *
+	 * @param string $form_slug Sanitized form slug (e.g. ud-12).
+	 * @return array{path: string, url: string}|\WP_Error
+	 */
+	public function get_form_source_dir( string $form_slug ) {
+		$form_slug = $this->sanitize_form_slug( $form_slug );
+
+		if ( '' === $form_slug ) {
+			return new \WP_Error( 'prose_invalid_slug', __( 'Invalid form slug.', 'prose-core' ) );
+		}
+
+		$upload_dir = $this->get_upload_dir();
+
+		if ( is_wp_error( $upload_dir ) ) {
+			return $upload_dir;
+		}
+
+		$path = $upload_dir['path'] . $form_slug . '/' . self::SOURCE_SUBDIR . '/';
+		$url  = $upload_dir['url'] . $form_slug . '/' . self::SOURCE_SUBDIR . '/';
+
+		if ( ! wp_mkdir_p( $path ) ) {
+			return new \WP_Error(
+				'prose_upload_dir',
+				__( 'Could not create the form source directory.', 'prose-core' )
+			);
+		}
+
+		$this->write_directory_guard( $path );
+		$this->write_directory_guard( $upload_dir['path'] . $form_slug . '/' );
+
+		return array(
+			'path' => $path,
+			'url'  => $url,
+		);
+	}
+
+	/**
+	 * Whether an extension is supported for court source downloads.
+	 *
+	 * @param string $extension Extension without leading dot.
+	 * @return bool
+	 */
+	public function is_supported_extension( string $extension ): bool {
+		$extension = strtolower( trim( $extension, '. ' ) );
+
+		return in_array( $extension, self::SUPPORTED_EXTENSIONS, true );
+	}
+
+	/**
+	 * Resolve a readable local path for a stored filename.
+	 *
+	 * Checks the legacy flat directory first, then the per-form original subdir.
+	 *
+	 * @param string $form_slug Form slug (may be empty for flat-only lookup).
+	 * @param string $filename  Stored filename.
+	 * @return string Readable path or empty string.
+	 */
+	public function resolve_local_path( string $form_slug, string $filename ): string {
+		$filename = sanitize_file_name( $filename );
+
+		if ( '' === $filename ) {
+			return '';
+		}
+
+		$upload_dir = $this->get_upload_dir();
+
+		if ( is_wp_error( $upload_dir ) ) {
+			return '';
+		}
+
+		$flat_path = $upload_dir['path'] . $filename;
+
+		if ( is_readable( $flat_path ) ) {
+			return $flat_path;
+		}
+
+		$form_slug = $this->sanitize_form_slug( $form_slug );
+
+		if ( '' !== $form_slug ) {
+			$subdir_path = $upload_dir['path'] . $form_slug . '/' . self::SOURCE_SUBDIR . '/' . $filename;
+
+			if ( is_readable( $subdir_path ) ) {
+				return $subdir_path;
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Determine whether a download should be skipped.
+	 *
+	 * @param string               $url            Remote source URL.
+	 * @param string               $dest_path      Target filesystem path.
+	 * @param array<int, array<string, mixed>> $existing_files Existing file metadata entries.
+	 * @return bool
+	 */
+	public function should_skip_download( string $url, string $dest_path, array $existing_files ): bool {
+		$url = esc_url_raw( $url );
+
+		foreach ( $existing_files as $entry ) {
+			if ( ! is_array( $entry ) ) {
+				continue;
+			}
+
+			$existing_url = esc_url_raw( (string) ( $entry['source_url'] ?? '' ) );
+
+			if ( '' === $existing_url || $existing_url !== $url ) {
+				continue;
+			}
+
+			$status = (string) ( $entry['download_status'] ?? '' );
+
+			if ( in_array( $status, array( 'success', 'skipped' ), true ) ) {
+				$existing_path = (string) ( $entry['local_path'] ?? '' );
+
+				if ( '' !== $existing_path && is_readable( $existing_path ) ) {
+					return true;
+				}
+
+				if ( is_readable( $dest_path ) ) {
+					return true;
+				}
+			}
+		}
+
+		return is_readable( $dest_path );
+	}
+
+	/**
+	 * Download all source files for a form from URL/filename pairs.
+	 *
+	 * @param array<int, array{url: string, filename: string}> $pairs          URL/filename pairs.
+	 * @param string                                           $form_slug       Form slug for storage.
+	 * @param array<int, array<string, mixed>>                 $existing_files  Prior metadata entries.
+	 * @return array{
+	 *     files: array<int, array<string, mixed>>,
+	 *     stats: array{urls_processed: int, files_downloaded: int, files_skipped: int, files_failed: int},
+	 *     messages: string[]
+	 * }
+	 */
+	public function download_all_source_files( array $pairs, string $form_slug, array $existing_files = [] ): array {
+		$files    = array();
+		$messages = array();
+		$stats    = array(
+			'urls_processed'   => 0,
+			'files_downloaded' => 0,
+			'files_skipped'    => 0,
+			'files_failed'     => 0,
+		);
+
+		$merged_by_url = array();
+
+		foreach ( $existing_files as $entry ) {
+			if ( ! is_array( $entry ) ) {
+				continue;
+			}
+
+			$key = esc_url_raw( (string) ( $entry['source_url'] ?? '' ) );
+
+			if ( '' !== $key ) {
+				$merged_by_url[ $key ] = $entry;
+			}
+		}
+
+		foreach ( $pairs as $pair ) {
+			$url      = (string) ( $pair['url'] ?? '' );
+			$filename = (string) ( $pair['filename'] ?? '' );
+
+			if ( '' === $url ) {
+				continue;
+			}
+
+			++$stats['urls_processed'];
+
+			$result = $this->download_source_file( $url, $form_slug, $filename, array_values( $merged_by_url ) );
+
+			if ( is_wp_error( $result ) ) {
+				++$stats['files_failed'];
+				$messages[] = $result->get_error_message();
+
+				$extension = strtolower( pathinfo( $filename ?: basename( (string) wp_parse_url( $url, PHP_URL_PATH ) ), PATHINFO_EXTENSION ) );
+				$entry     = array(
+					'filename'        => sanitize_file_name( $filename ?: basename( (string) wp_parse_url( $url, PHP_URL_PATH ) ) ),
+					'extension'       => $extension,
+					'source_url'      => esc_url_raw( $url ),
+					'download_status' => 'failed',
+				);
+			} else {
+				$status = (string) ( $result['download_status'] ?? 'success' );
+
+				switch ( $status ) {
+					case 'skipped':
+						++$stats['files_skipped'];
+						break;
+					case 'unsupported':
+						++$stats['files_failed'];
+						if ( ! empty( $result['message'] ) ) {
+							$messages[] = (string) $result['message'];
+						}
+						break;
+					case 'success':
+						++$stats['files_downloaded'];
+						break;
+					default:
+						++$stats['files_failed'];
+						break;
+				}
+
+				$entry = $result;
+			}
+
+			$url_key = esc_url_raw( (string) ( $entry['source_url'] ?? $url ) );
+
+			if ( '' !== $url_key ) {
+				$merged_by_url[ $url_key ] = $entry;
+			}
+
+			$files[] = $entry;
+		}
+
+		return array(
+			'files'    => array_values( $merged_by_url ),
+			'stats'    => $stats,
+			'messages' => $messages,
+		);
+	}
+
+	/**
+	 * Download a court source file and store it under the form original directory.
+	 *
+	 * @param string                           $url            Remote URL.
+	 * @param string                           $form_slug      Form slug for storage path.
+	 * @param string                           $filename       Optional preferred filename.
+	 * @param array<int, array<string, mixed>> $existing_files Existing metadata entries for skip logic.
+	 * @return array<string, mixed>|\WP_Error
+	 */
+	public function download_source_file( string $url, string $form_slug, string $filename = '', array $existing_files = [] ) {
+		$url = esc_url_raw( $url );
+
+		if ( '' === $url ) {
+			return new \WP_Error( 'prose_invalid_url', __( 'Invalid source URL.', 'prose-core' ) );
+		}
+
+		$form_slug = $this->sanitize_form_slug( $form_slug );
+
+		if ( '' === $form_slug ) {
+			return new \WP_Error( 'prose_invalid_slug', __( 'Invalid form slug.', 'prose-core' ) );
+		}
+
+		$source_dir = $this->get_form_source_dir( $form_slug );
+
+		if ( is_wp_error( $source_dir ) ) {
+			return $source_dir;
+		}
+
+		if ( '' === $filename ) {
+			$filename = basename( (string) wp_parse_url( $url, PHP_URL_PATH ) );
+		}
+
+		$filename  = sanitize_file_name( $filename );
+		$extension = strtolower( pathinfo( $filename, PATHINFO_EXTENSION ) );
+
+		if ( '' === $filename ) {
+			$filename  = sanitize_file_name( $form_slug . '.pdf' );
+			$extension = 'pdf';
+		}
+
+		if ( ! $this->is_supported_extension( $extension ) ) {
+			return array(
+				'filename'        => $filename,
+				'extension'       => $extension,
+				'source_url'      => $url,
+				'download_status' => 'unsupported',
+				'message'         => sprintf(
+					/* translators: %s: file extension */
+					__( 'Unsupported file extension: %s', 'prose-core' ),
+					$extension
+				),
+			);
+		}
+
+		$dest = $source_dir['path'] . $filename;
+
+		if ( $this->should_skip_download( $url, $dest, $existing_files ) ) {
+			$existing_entry = $this->find_existing_entry( $url, $existing_files );
+			$local_path     = is_readable( $dest ) ? $dest : (string) ( $existing_entry['local_path'] ?? '' );
+			$local_url      = is_readable( $dest )
+				? $source_dir['url'] . $filename
+				: (string) ( $existing_entry['local_url'] ?? '' );
+
+			return array(
+				'filename'        => $filename,
+				'extension'       => $extension,
+				'source_url'      => $url,
+				'local_path'      => $local_path,
+				'local_url'       => $local_url,
+				'download_status' => 'skipped',
+			);
+		}
+
+		if ( file_exists( $dest ) ) {
+			$existing_url = $this->find_url_for_path( $dest, $existing_files );
+
+			if ( '' !== $existing_url && esc_url_raw( $existing_url ) !== $url ) {
+				return new \WP_Error(
+					'prose_filename_collision',
+					sprintf(
+						/* translators: 1: filename, 2: URL */
+						__( 'Filename collision for %1$s: file exists with a different source URL (%2$s).', 'prose-core' ),
+						$filename,
+						$url
+					)
+				);
+			}
+		}
+
+		$written = $this->download_url_to_path( $url, $dest, $extension );
+
+		if ( is_wp_error( $written ) ) {
+			return $written;
+		}
+
+		return array(
+			'filename'        => $filename,
+			'extension'       => $extension,
+			'source_url'      => $url,
+			'local_path'      => $dest,
+			'local_url'       => $source_dir['url'] . $filename,
+			'download_status' => 'success',
+		);
 	}
 
 	/**
@@ -119,7 +468,7 @@ class Form_File_Manager {
 		}
 
 		// Fallback: WordPress HTTP API with browser-like headers.
-		$body = $this->fetch_body( $url );
+		$body = $this->fetch_body( $url, 'pdf' );
 
 		if ( ! is_wp_error( $body ) && '' !== $body ) {
 			$written = $this->write_file( $dest, $body );
@@ -144,12 +493,13 @@ class Form_File_Manager {
 	}
 
 	/**
-	 * Fetch a PDF body via the WordPress HTTP API.
+	 * Fetch a remote file body via the WordPress HTTP API.
 	 *
-	 * @param string $url Remote URL.
+	 * @param string $url       Remote URL.
+	 * @param string $extension File extension hint for Accept header.
 	 * @return string|\WP_Error
 	 */
-	private function fetch_body( string $url ) {
+	private function fetch_body( string $url, string $extension = 'pdf' ) {
 		/**
 		 * Filter whether to verify SSL certificates when downloading PDFs.
 		 *
@@ -161,11 +511,11 @@ class Form_File_Manager {
 		 */
 		$sslverify = apply_filters( 'prose_core_download_sslverify', true, $url );
 
-		$response = $this->request( $url, $sslverify );
+		$response = $this->request( $url, $sslverify, $extension );
 
 		// Retry without SSL verification if the local CA bundle is broken.
 		if ( $sslverify && is_wp_error( $response ) && $this->is_ssl_error( $response ) ) {
-			$response = $this->request( $url, false );
+			$response = $this->request( $url, false, $extension );
 		}
 
 		if ( is_wp_error( $response ) ) {
@@ -564,13 +914,14 @@ class Form_File_Manager {
 	}
 
 	/**
-	 * Perform an HTTP GET request for a PDF.
+	 * Perform an HTTP GET request for a remote file.
 	 *
 	 * @param string $url       Remote URL.
 	 * @param bool   $sslverify Whether to verify SSL.
+	 * @param string $extension File extension hint for Accept header.
 	 * @return array<string, mixed>|\WP_Error
 	 */
-	private function request( string $url, bool $sslverify ) {
+	private function request( string $url, bool $sslverify, string $extension = 'pdf' ) {
 		/**
 		 * Filter the User-Agent used when downloading PDFs.
 		 *
@@ -588,6 +939,9 @@ class Form_File_Manager {
 
 		$host    = (string) wp_parse_url( $url, PHP_URL_HOST );
 		$referer = $host ? ( wp_parse_url( $url, PHP_URL_SCHEME ) ?: 'https' ) . '://' . $host . '/' : '';
+		$accept  = 'pdf' === strtolower( $extension )
+			? 'application/pdf,application/octet-stream,text/html;q=0.9,*/*;q=0.8'
+			: '*/*';
 
 		return wp_remote_get(
 			$url,
@@ -597,7 +951,7 @@ class Form_File_Manager {
 				'redirection' => 5,
 				'user-agent'  => $user_agent,
 				'headers'     => array(
-					'Accept'          => 'application/pdf,application/octet-stream,text/html;q=0.9,*/*;q=0.8',
+					'Accept'          => $accept,
 					'Accept-Language' => 'en-US,en;q=0.9',
 					'Referer'         => $referer,
 				),
@@ -639,5 +993,104 @@ class Form_File_Manager {
 		}
 
 		return $unique;
+	}
+
+	/**
+	 * Download a remote URL to a destination path.
+	 *
+	 * @param string $url       Remote URL.
+	 * @param string $dest      Destination path.
+	 * @param string $extension File extension for Accept header.
+	 * @return true|\WP_Error
+	 */
+	private function download_url_to_path( string $url, string $dest, string $extension = 'pdf' ) {
+		$curl_error = '';
+
+		if ( $this->download_with_curl( $url, $dest, $curl_error ) ) {
+			return true;
+		}
+
+		$body = $this->fetch_body( $url, $extension );
+
+		if ( ! is_wp_error( $body ) && '' !== $body ) {
+			$written = $this->write_file( $dest, $body );
+
+			if ( ! is_wp_error( $written ) ) {
+				return true;
+			}
+
+			return $written;
+		}
+
+		if ( $body instanceof \WP_Error ) {
+			return $body;
+		}
+
+		return new \WP_Error(
+			'prose_download_failed',
+			'' !== $curl_error
+				? $curl_error
+				: __( 'Failed to download file.', 'prose-core' )
+		);
+	}
+
+	/**
+	 * Sanitize a form slug for directory names.
+	 *
+	 * @param string $form_slug Raw slug.
+	 * @return string
+	 */
+	private function sanitize_form_slug( string $form_slug ): string {
+		$form_slug = strtolower( trim( $form_slug ) );
+
+		if ( '' === $form_slug ) {
+			return '';
+		}
+
+		return sanitize_title( $form_slug );
+	}
+
+	/**
+	 * Find an existing metadata entry by source URL.
+	 *
+	 * @param string                           $url            Source URL.
+	 * @param array<int, array<string, mixed>> $existing_files Existing entries.
+	 * @return array<string, mixed>
+	 */
+	private function find_existing_entry( string $url, array $existing_files ): array {
+		$url = esc_url_raw( $url );
+
+		foreach ( $existing_files as $entry ) {
+			if ( ! is_array( $entry ) ) {
+				continue;
+			}
+
+			if ( esc_url_raw( (string) ( $entry['source_url'] ?? '' ) ) === $url ) {
+				return $entry;
+			}
+		}
+
+		return array();
+	}
+
+	/**
+	 * Find a source URL associated with a local path in metadata.
+	 *
+	 * @param string                           $path           Local path.
+	 * @param array<int, array<string, mixed>> $existing_files Existing entries.
+	 * @return string
+	 */
+	private function find_url_for_path( string $path, array $existing_files ): string {
+		foreach ( $existing_files as $entry ) {
+			if ( ! is_array( $entry ) ) {
+				continue;
+			}
+
+			if ( (string) ( $entry['local_path'] ?? '' ) === $path ) {
+				return (string) ( $entry['source_url'] ?? '' );
+			}
+		}
+
+		return '';
 	}
 }

@@ -45,6 +45,37 @@ if ( ! function_exists( 'sanitize_text_field' ) ) {
 	}
 }
 
+if ( ! function_exists( 'sanitize_file_name' ) ) {
+	/**
+	 * @param string $filename Filename.
+	 * @return string
+	 */
+	function sanitize_file_name( $filename ) {
+		return preg_replace( '/[^A-Za-z0-9._-]/', '-', (string) $filename );
+	}
+}
+
+if ( ! function_exists( 'sanitize_title' ) ) {
+	/**
+	 * @param string $title Title.
+	 * @return string
+	 */
+	function sanitize_title( $title ) {
+		$title = strtolower( trim( (string) $title ) );
+		return preg_replace( '/[^a-z0-9-]/', '-', $title );
+	}
+}
+
+if ( ! function_exists( 'esc_url_raw' ) ) {
+	/**
+	 * @param string $url URL.
+	 * @return string
+	 */
+	function esc_url_raw( $url ) {
+		return trim( (string) $url );
+	}
+}
+
 if ( ! function_exists( 'trailingslashit' ) ) {
 	/**
 	 * @param string $string URL or path.

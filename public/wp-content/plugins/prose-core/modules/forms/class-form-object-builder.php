@@ -90,6 +90,7 @@ final class Form_Object_Builder {
 			'court_routing'      => $this->json_array( $post_id, Form_Meta::META_COURT_ROUTING ),
 			'official_url'       => (string) get_post_meta( $post_id, Form_Meta::META_OFFICIAL_URL, true ),
 			'official_pdf_url'   => (string) ( get_post_meta( $post_id, Form_Meta::META_SOURCE_PDF_URL, true ) ?: get_post_meta( $post_id, Form_Meta::META_FILE_URL, true ) ),
+			'source_files'       => $this->source_files_array( $post_id ),
 			'description'        => (string) get_post_meta( $post_id, Form_Meta::META_DESCRIPTION, true ),
 			'user_summary'       => (string) get_post_meta( $post_id, Form_Meta::META_USER_SUMMARY, true ),
 			'confidence_score'   => $confidence,
@@ -256,5 +257,29 @@ final class Form_Object_Builder {
 		$decoded = json_decode( $raw, true );
 
 		return is_array( $decoded ) ? array_values( $decoded ) : array();
+	}
+
+	/**
+	 * Load court source file entries from post meta.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function source_files_array( int $post_id ): array {
+		$raw = get_post_meta( $post_id, Form_Meta::META_SOURCE_FILES, true );
+
+		if ( is_string( $raw ) && '' !== trim( $raw ) ) {
+			$decoded = json_decode( $raw, true );
+		} elseif ( is_array( $raw ) ) {
+			$decoded = $raw;
+		} else {
+			return array();
+		}
+
+		if ( ! is_array( $decoded ) || empty( $decoded['files'] ) || ! is_array( $decoded['files'] ) ) {
+			return array();
+		}
+
+		return array_values( $decoded['files'] );
 	}
 }

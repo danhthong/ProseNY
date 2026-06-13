@@ -242,6 +242,8 @@ class Form_Admin {
 						<td><input type="url" class="large-text" id="prose_source_pdf_url" name="prose_source_pdf_url" value="<?php echo esc_attr( $values['source_pdf_url'] ); ?>" /></td>
 					</tr>
 				</table>
+
+				<?php $this->render_source_files_table( $values['source_files'] ); ?>
 			</div>
 
 			<div class="prose-form-tabs__panel" data-panel="analysis" role="tabpanel" hidden>
@@ -510,6 +512,7 @@ class Form_Admin {
 			'file_name'                  => (string) get_post_meta( $post_id, Form_Meta::META_FILE_NAME, true ),
 			'file_url'                   => (string) get_post_meta( $post_id, Form_Meta::META_FILE_URL, true ),
 			'source_pdf_url'             => (string) get_post_meta( $post_id, Form_Meta::META_SOURCE_PDF_URL, true ),
+			'source_files'               => $this->get_source_files( $post_id ),
 			'pdf_fillable'               => (bool) get_post_meta( $post_id, Form_Meta::META_PDF_FILLABLE, true ),
 			'pdf_field_count'            => (string) get_post_meta( $post_id, Form_Meta::META_PDF_FIELD_COUNT, true ),
 			'pdf_fields_json'            => $this->format_json_for_display( (string) get_post_meta( $post_id, Form_Meta::META_PDF_FIELDS_JSON, true ) ),
@@ -520,6 +523,77 @@ class Form_Admin {
 			'plain_language_description' => (string) get_post_meta( $post_id, Form_Meta::META_PLAIN_LANGUAGE_DESCRIPTION, true ),
 			'common_mistakes'            => $this->format_json_for_display( (string) get_post_meta( $post_id, Form_Meta::META_COMMON_MISTAKES, true ) ),
 		);
+	}
+
+	/**
+	 * Load source file metadata for admin display.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function get_source_files( int $post_id ): array {
+		$raw = get_post_meta( $post_id, Form_Meta::META_SOURCE_FILES, true );
+
+		if ( is_string( $raw ) && '' !== trim( $raw ) ) {
+			$decoded = json_decode( $raw, true );
+
+			if ( is_array( $decoded ) && ! empty( $decoded['files'] ) && is_array( $decoded['files'] ) ) {
+				return $decoded['files'];
+			}
+		}
+
+		if ( is_array( $raw ) && ! empty( $raw['files'] ) && is_array( $raw['files'] ) ) {
+			return $raw['files'];
+		}
+
+		return array();
+	}
+
+	/**
+	 * Render a read-only table of imported court source files.
+	 *
+	 * @param array<int, array<string, mixed>> $source_files Source file entries.
+	 * @return void
+	 */
+	private function render_source_files_table( array $source_files ): void {
+		if ( empty( $source_files ) ) {
+			return;
+		}
+		?>
+		<h3><?php esc_html_e( 'Court Source Files', 'prose-core' ); ?></h3>
+		<table class="widefat striped">
+			<thead>
+				<tr>
+					<th><?php esc_html_e( 'Filename', 'prose-core' ); ?></th>
+					<th><?php esc_html_e( 'Extension', 'prose-core' ); ?></th>
+					<th><?php esc_html_e( 'Status', 'prose-core' ); ?></th>
+					<th><?php esc_html_e( 'Download', 'prose-core' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ( $source_files as $entry ) : ?>
+					<?php if ( ! is_array( $entry ) ) : ?>
+						<?php continue; ?>
+					<?php endif; ?>
+					<tr>
+						<td><?php echo esc_html( (string) ( $entry['filename'] ?? '' ) ); ?></td>
+						<td><?php echo esc_html( (string) ( $entry['extension'] ?? '' ) ); ?></td>
+						<td><?php echo esc_html( (string) ( $entry['download_status'] ?? '' ) ); ?></td>
+						<td>
+							<?php if ( ! empty( $entry['local_url'] ) ) : ?>
+								<a href="<?php echo esc_url( (string) $entry['local_url'] ); ?>" target="_blank" rel="noopener noreferrer">
+									<?php esc_html_e( 'Open', 'prose-core' ); ?>
+								</a>
+							<?php else : ?>
+								<span class="prose-readonly">—</span>
+							<?php endif; ?>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+		<p class="description"><?php esc_html_e( 'All court documents imported for this form. Populated automatically during CSV import.', 'prose-core' ); ?></p>
+		<?php
 	}
 
 	/**

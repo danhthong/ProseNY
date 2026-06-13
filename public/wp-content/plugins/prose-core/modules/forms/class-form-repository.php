@@ -85,6 +85,7 @@ class Form_Repository {
 	 *     file_name?: string,
 	 *     file_url?: string,
 	 *     source_pdf_url?: string,
+	 *     source_files?: string|array,
 	 *     case_types?: string[],
 	 *     court?: string[],
 	 *     workflow_stage?: string[],
@@ -177,6 +178,7 @@ class Form_Repository {
 		$json_fields = array(
 			'dependencies' => Form_Meta::META_DEPENDENCIES,
 			'conditions'   => Form_Meta::META_CONDITIONS,
+			'source_files' => Form_Meta::META_SOURCE_FILES,
 		);
 
 		foreach ( $json_fields as $data_key => $meta_key ) {

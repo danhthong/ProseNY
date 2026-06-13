@@ -47,7 +47,7 @@ prose-core/
       class-form-meta.php       # register_post_meta fields
       class-form-admin.php      # tabbed edit screen, PDF viewer, workflow preview
       class-form-importer.php   # Import Forms page + batched AJAX import
-      class-form-file-manager.php  # PDF storage + cross-platform downloader
+      class-form-file-manager.php  # Court file storage + cross-platform downloader
       class-form-repository.php # Data access layer
       class-pdf-analyzer.php    # PDF text/field extraction + normalization
       pdf/                      # Hybrid PDF engine (PHP + optional Python)
@@ -85,7 +85,7 @@ prose-core/
 | Group | Keys |
 |---|---|
 | **Core** | `prose_form_code`, `prose_county`, `prose_workflow_key`, `prose_workflow_order`, `prose_packet_group`, `prose_required`, `prose_dependencies`, `prose_conditions` |
-| **PDF storage** | `prose_file_name`, `prose_file_url`, `prose_source_pdf_url` |
+| **PDF storage** | `prose_file_name`, `prose_file_url`, `prose_source_pdf_url`, `prose_source_files` |
 | **PDF analysis** | `prose_pdf_fillable`, `prose_pdf_field_count`, `prose_pdf_fields_json`, `prose_pdf_analyzed_at` |
 | **Classification** | `prose_supported_court`, `prose_detected_court`, `prose_detected_county`, `prose_detected_case_type`, `prose_detected_workflow_stage`, `prose_classification_confidence`, `prose_classification_source`, `prose_classification_signals`, `prose_classification_warning`, `prose_needs_review`, `prose_manual_override`, `prose_questionnaire_keys`, `prose_workflow_package`, `prose_classification_log` |
 | **Automation** | `prose_fillable_fields`, `prose_field_mapping_json` |
@@ -103,16 +103,18 @@ prose-core/
    - **Court** (optional, comma-separated)
    - **PDF Filenames** (pipe `|` separated)
    - **Resolved PDF URLs** (pipe `|` separated)
-3. The importer processes rows in batches over AJAX and shows a progress bar plus a per-row result table (created / updated / failed).
+3. The importer processes rows in batches over AJAX and shows a progress bar plus a per-row result table (created / updated / failed) and file-level stats (URLs processed, downloaded, skipped, failed).
 
 For each row the importer:
 
 1. Creates or updates a form by Form Code.
 2. Sets the title.
 3. Creates any missing `prose_case_type` and `prose_court` terms and assigns them.
-4. Downloads the first PDF (preferring `.pdf` entries) into `uploads/prose/forms/`.
-5. Saves Form Code, Court, Case Type, Source PDF URL, File Name, and File URL.
-6. Runs the **Form Intelligence Engine** on the downloaded PDF (court, county, case type, workflow stage, fillable fields, questionnaire keys, dependencies, workflow package, AI summary).
+4. Downloads **all** pipe-delimited court documents (PDF, DOC, DOCX, WPD, RTF, TXT) into `uploads/prose/forms/{form-slug}/original/`.
+5. Saves Form Code, Court, Case Type, legacy File Name / File URL / Source PDF URL (primary PDF), and the new `prose_source_files` JSON metadata.
+6. Runs the **Form Intelligence Engine** on the primary PDF (court, county, case type, workflow stage, fillable fields, questionnaire keys, dependencies, workflow package, AI summary).
+
+See [docs/form-import-multi-file.md](docs/form-import-multi-file.md) for storage layout, metadata schema, and duplicate protection rules.
 
 ## Form Intelligence Engine
 

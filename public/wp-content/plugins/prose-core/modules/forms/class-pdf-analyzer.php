@@ -156,18 +156,71 @@ class Pdf_Analyzer {
 		$file_name = (string) get_post_meta( $post_id, Form_Meta::META_FILE_NAME, true );
 
 		if ( '' === $file_name ) {
-			return '';
+			return $this->resolve_pdf_path_from_source_files( $post_id );
 		}
 
+		$form_code    = (string) get_post_meta( $post_id, Form_Meta::META_FORM_CODE, true );
 		$file_manager = new Form_File_Manager();
-		$upload_dir   = $file_manager->get_upload_dir();
+		$path         = $file_manager->resolve_local_path( sanitize_title( $form_code ), $file_name );
 
-		if ( is_wp_error( $upload_dir ) ) {
+		if ( '' !== $path ) {
+			return $path;
+		}
+
+		return $this->resolve_pdf_path_from_source_files( $post_id );
+	}
+
+	/**
+	 * Resolve a PDF path from multi-file source metadata.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return string
+	 */
+	private function resolve_pdf_path_from_source_files( int $post_id ): string {
+		$raw = get_post_meta( $post_id, Form_Meta::META_SOURCE_FILES, true );
+
+		if ( is_string( $raw ) && '' !== trim( $raw ) ) {
+			$decoded = json_decode( $raw, true );
+		} elseif ( is_array( $raw ) ) {
+			$decoded = $raw;
+		} else {
 			return '';
 		}
 
-		$path = $upload_dir['path'] . sanitize_file_name( $file_name );
+		if ( ! is_array( $decoded ) || empty( $decoded['files'] ) || ! is_array( $decoded['files'] ) ) {
+			return '';
+		}
 
-		return is_readable( $path ) ? $path : '';
+		$form_code    = (string) get_post_meta( $post_id, Form_Meta::META_FORM_CODE, true );
+		$file_manager = new Form_File_Manager();
+
+		foreach ( $decoded['files'] as $entry ) {
+			if ( ! is_array( $entry ) ) {
+				continue;
+			}
+
+			$extension = strtolower( (string) ( $entry['extension'] ?? '' ) );
+			$filename  = (string) ( $entry['filename'] ?? '' );
+
+			if ( 'pdf' !== $extension && ! str_ends_with( strtolower( $filename ), '.pdf' ) ) {
+				continue;
+			}
+
+			$local_path = (string) ( $entry['local_path'] ?? '' );
+
+			if ( '' !== $local_path && is_readable( $local_path ) ) {
+				return $local_path;
+			}
+
+			if ( '' !== $filename ) {
+				$resolved = $file_manager->resolve_local_path( sanitize_title( $form_code ), $filename );
+
+				if ( '' !== $resolved ) {
+					return $resolved;
+				}
+			}
+		}
+
+		return '';
 	}
 }

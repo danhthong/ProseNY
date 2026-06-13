@@ -138,6 +138,7 @@ final class Plugin {
 
 		\WP_CLI::add_command( 'prose pdf', \ProSe\Core\Forms\Documents\Pdf\Pdf_Audit_Command::class );
 		\WP_CLI::add_command( 'prose pdf calibrate', \ProSe\Core\Forms\Documents\Overlay\Pdf_Calibrate_Command::class );
+		\WP_CLI::add_command( 'prose forms migrate-source-files', \ProSe\Core\Forms\Form_Migrate_Source_Files_Command::class );
 	}
 
 	/**

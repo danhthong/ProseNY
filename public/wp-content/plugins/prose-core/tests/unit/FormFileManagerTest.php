@@ -1,0 +1,79 @@
+<?php
+/**
+ * Tests for Form_File_Manager multi-file helpers.
+ *
+ * @package ProSeCore
+ */
+
+use PHPUnit\Framework\TestCase;
+use ProSe\Core\Forms\Form_File_Manager;
+
+/**
+ * Class FormFileManagerTest
+ */
+class FormFileManagerTest extends TestCase {
+
+	/**
+	 * Supported extensions include court document formats.
+	 */
+	public function test_is_supported_extension(): void {
+		$manager = new Form_File_Manager();
+
+		$this->assertTrue( $manager->is_supported_extension( 'pdf' ) );
+		$this->assertTrue( $manager->is_supported_extension( 'wpd' ) );
+		$this->assertTrue( $manager->is_supported_extension( 'docx' ) );
+		$this->assertFalse( $manager->is_supported_extension( 'exe' ) );
+	}
+
+	/**
+	 * Skip download when URL already succeeded in metadata and file exists.
+	 */
+	public function test_should_skip_download_for_existing_url(): void {
+		$manager = new Form_File_Manager();
+		$tmpdir  = sys_get_temp_dir() . '/prose-test-' . uniqid( '', true );
+		mkdir( $tmpdir, 0777, true );
+		$dest = $tmpdir . '/ud-12.pdf';
+		file_put_contents( $dest, 'pdf-bytes' );
+
+		$existing = array(
+			array(
+				'source_url'      => 'https://example.com/ud-12.pdf',
+				'download_status' => 'success',
+				'local_path'      => $dest,
+			),
+		);
+
+		$this->assertTrue(
+			$manager->should_skip_download(
+				'https://example.com/ud-12.pdf',
+				$dest,
+				$existing
+			)
+		);
+
+		unlink( $dest );
+		rmdir( $tmpdir );
+	}
+
+	/**
+	 * Skip download when destination file already exists.
+	 */
+	public function test_should_skip_download_when_dest_exists(): void {
+		$manager = new Form_File_Manager();
+		$tmpdir  = sys_get_temp_dir() . '/prose-test-' . uniqid( '', true );
+		mkdir( $tmpdir, 0777, true );
+		$dest = $tmpdir . '/ud-12.wpd';
+		file_put_contents( $dest, 'wpd-bytes' );
+
+		$this->assertTrue(
+			$manager->should_skip_download(
+				'https://example.com/ud-12.wpd',
+				$dest,
+				array()
+			)
+		);
+
+		unlink( $dest );
+		rmdir( $tmpdir );
+	}
+}

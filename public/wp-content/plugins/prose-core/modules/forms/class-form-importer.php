@@ -142,7 +142,7 @@ class Form_Importer {
 				'i18n'      => array(
 					'starting'  => __( 'Starting import...', 'prose-core' ),
 					'progress'  => __( 'Processing %1$d of %2$d forms...', 'prose-core' ),
-					'completed' => __( 'Import complete: %1$d created, %2$d updated, %3$d failed.', 'prose-core' ),
+					'completed' => __( 'Import complete: %1$d created, %2$d updated, %3$d failed. Files: %4$d URLs processed, %5$d downloaded, %6$d skipped, %7$d failed.', 'prose-core' ),
 					'error'     => __( 'An error occurred during import.', 'prose-core' ),
 					'httpError' => __( 'Server error (HTTP %s). Check PHP error logs or enable WP_DEBUG.', 'prose-core' ),
 				),
@@ -365,13 +365,17 @@ class Form_Importer {
 
 			wp_send_json_success(
 				array(
-					'processed' => (int) $batch['job']['offset'],
-					'total'     => (int) $batch['job']['total'],
-					'created'   => (int) $batch['job']['created'],
-					'updated'   => (int) $batch['job']['updated'],
-					'failed'    => (int) $batch['job']['failed'],
-					'done'      => $done,
-					'results'   => $batch['results'],
+					'processed'        => (int) $batch['job']['offset'],
+					'total'            => (int) $batch['job']['total'],
+					'created'          => (int) $batch['job']['created'],
+					'updated'          => (int) $batch['job']['updated'],
+					'failed'           => (int) $batch['job']['failed'],
+					'urls_processed'   => (int) ( $batch['job']['urls_processed'] ?? 0 ),
+					'files_downloaded' => (int) ( $batch['job']['files_downloaded'] ?? 0 ),
+					'files_skipped'    => (int) ( $batch['job']['files_skipped'] ?? 0 ),
+					'files_failed'     => (int) ( $batch['job']['files_failed'] ?? 0 ),
+					'done'             => $done,
+					'results'          => $batch['results'],
 				)
 			);
 		} catch ( \Throwable $exception ) {
@@ -451,13 +455,17 @@ class Form_Importer {
 		$token = wp_generate_password( 20, false );
 
 		$job = array(
-			'file'    => $file_path,
-			'map'     => $column_map,
-			'total'   => $total,
-			'offset'  => 0,
-			'created' => 0,
-			'updated' => 0,
-			'failed'  => 0,
+			'file'             => $file_path,
+			'map'              => $column_map,
+			'total'            => $total,
+			'offset'           => 0,
+			'created'          => 0,
+			'updated'          => 0,
+			'failed'           => 0,
+			'urls_processed'   => 0,
+			'files_downloaded' => 0,
+			'files_skipped'    => 0,
+			'files_failed'     => 0,
 		);
 
 		set_transient( self::JOB_PREFIX . $token, $job, HOUR_IN_SECONDS );
@@ -515,6 +523,13 @@ class Form_Importer {
 					break;
 			}
 
+			if ( ! empty( $result['file_stats'] ) && is_array( $result['file_stats'] ) ) {
+				$job['urls_processed']   += (int) ( $result['file_stats']['urls_processed'] ?? 0 );
+				$job['files_downloaded'] += (int) ( $result['file_stats']['files_downloaded'] ?? 0 );
+				$job['files_skipped']    += (int) ( $result['file_stats']['files_skipped'] ?? 0 );
+				$job['files_failed']     += (int) ( $result['file_stats']['files_failed'] ?? 0 );
+			}
+
 			++$job['offset'];
 			++$processed;
 
@@ -570,7 +585,8 @@ class Form_Importer {
 		$courts     = $this->parse_list( $court, ',' );
 		$url_list   = $this->parse_list( $pdf_urls, '|' );
 		$name_list  = $this->parse_list( $filenames, '|' );
-		$pdf_pair   = $this->select_pdf( $url_list, $name_list );
+		$pairs      = $this->build_source_file_pairs( $url_list, $name_list );
+		$form_slug  = '' !== $form_id ? sanitize_title( $form_id ) : sanitize_title( $title );
 
 		$data = array(
 			'form_code'  => $form_id,
@@ -580,23 +596,68 @@ class Form_Importer {
 			'court'      => $courts,
 		);
 
-		$messages = array();
+		$messages   = array();
+		$file_stats = array(
+			'urls_processed'   => 0,
+			'files_downloaded' => 0,
+			'files_skipped'    => 0,
+			'files_failed'     => 0,
+		);
 
-		if ( ! empty( $pdf_pair['url'] ) ) {
-			$data['source_pdf_url'] = $pdf_pair['url'];
+		$existing_files = array();
+		$existing_post  = '' !== $form_id
+			? $this->repository->get_by_form_code( $form_id )
+			: ( '' !== $title ? $this->repository->get_by_title( $title ) : null );
 
-			$download = $this->file_manager->download_pdf(
-				$pdf_pair['url'],
-				'' !== $form_id ? $form_id : sanitize_title( $title ),
-				$pdf_pair['filename'] ?? ''
+		if ( $existing_post instanceof \WP_Post ) {
+			$existing_files = $this->get_existing_source_files( (int) $existing_post->ID );
+		}
+
+		if ( ! empty( $pairs ) ) {
+			$download_result = $this->file_manager->download_all_source_files(
+				$pairs,
+				$form_slug,
+				$existing_files
 			);
 
-			if ( is_wp_error( $download ) ) {
-				$messages[] = $download->get_error_message();
-			} else {
-				$data['file_name'] = $download['filename'];
-				$data['file_url']  = $download['url'];
+			$file_stats = $download_result['stats'];
+			$messages   = array_merge( $messages, $download_result['messages'] );
+
+			$data['source_files'] = array(
+				'files' => $download_result['files'],
+			);
+
+			$primary = $this->select_primary_pdf( $download_result['files'] );
+
+			if ( ! empty( $primary['url'] ) ) {
+				$data['source_pdf_url'] = $primary['url'];
+
+				if ( ! empty( $primary['filename'] ) ) {
+					$data['file_name'] = $primary['filename'];
+				}
+
+				if ( ! empty( $primary['local_url'] ) ) {
+					$data['file_url'] = $primary['local_url'];
+				} elseif ( ! empty( $primary['filename'] ) ) {
+					$local_url = $this->file_manager->resolve_local_path( $form_slug, $primary['filename'] );
+
+					if ( '' !== $local_url ) {
+						$upload_dir = $this->file_manager->get_upload_dir();
+
+						if ( ! is_wp_error( $upload_dir ) ) {
+							$data['file_url'] = str_replace(
+								$upload_dir['path'],
+								$upload_dir['url'],
+								$local_url
+							);
+						}
+					}
+				}
 			}
+		} elseif ( ! empty( $existing_files ) ) {
+			$data['source_files'] = array(
+				'files' => $existing_files,
+			);
 		}
 
 		$result = $this->repository->create_or_update( $data );
@@ -612,6 +673,17 @@ class Form_Importer {
 
 		$status  = ! empty( $result['created'] ) ? 'created' : 'updated';
 		$message = ! empty( $messages ) ? implode( ' ', $messages ) : __( 'Imported successfully.', 'prose-core' );
+
+		if ( $file_stats['urls_processed'] > 0 ) {
+			$message .= ' ' . sprintf(
+				/* translators: 1: URLs processed, 2: downloaded, 3: skipped, 4: failed */
+				__( 'Files: %1$d URLs, %2$d downloaded, %3$d skipped, %4$d failed.', 'prose-core' ),
+				(int) $file_stats['urls_processed'],
+				(int) $file_stats['files_downloaded'],
+				(int) $file_stats['files_skipped'],
+				(int) $file_stats['files_failed']
+			);
+		}
 
 		$post_id = (int) $result['post_id'];
 
@@ -636,11 +708,71 @@ class Form_Importer {
 		}
 
 		return array(
-			'form_id' => $form_id,
-			'title'   => $title,
-			'status'  => $status,
-			'message' => $message,
+			'form_id'    => $form_id,
+			'title'      => $title,
+			'status'     => $status,
+			'message'    => $message,
+			'file_stats' => $file_stats,
 		);
+	}
+
+	/**
+	 * Load existing source file metadata for a form post.
+	 *
+	 * @param int $post_id Form post ID.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function get_existing_source_files( int $post_id ): array {
+		$raw = get_post_meta( $post_id, Form_Meta::META_SOURCE_FILES, true );
+
+		if ( is_string( $raw ) && '' !== trim( $raw ) ) {
+			$decoded = json_decode( $raw, true );
+
+			if ( is_array( $decoded ) && ! empty( $decoded['files'] ) && is_array( $decoded['files'] ) ) {
+				return $decoded['files'];
+			}
+		}
+
+		if ( is_array( $raw ) && ! empty( $raw['files'] ) && is_array( $raw['files'] ) ) {
+			return $raw['files'];
+		}
+
+		return array();
+	}
+
+	/**
+	 * Build deduplicated URL/filename pairs from CSV lists.
+	 *
+	 * @param string[] $urls      Source URLs.
+	 * @param string[] $filenames Source filenames.
+	 * @return array<int, array{url: string, filename: string}>
+	 */
+	public function build_source_file_pairs( array $urls, array $filenames ): array {
+		$pairs = array();
+		$seen  = array();
+
+		foreach ( $urls as $index => $url ) {
+			$url = trim( (string) $url );
+
+			if ( '' === $url ) {
+				continue;
+			}
+
+			$normalized = esc_url_raw( $url );
+
+			if ( '' === $normalized || isset( $seen[ $normalized ] ) ) {
+				continue;
+			}
+
+			$filename = $filenames[ $index ] ?? basename( (string) wp_parse_url( $url, PHP_URL_PATH ) );
+			$pairs[]  = array(
+				'url'      => $url,
+				'filename' => trim( (string) $filename ),
+			);
+			$seen[ $normalized ] = true;
+		}
+
+		return $pairs;
 	}
 
 	/**
@@ -754,6 +886,55 @@ class Form_Importer {
 	}
 
 	/**
+	 * Select the primary PDF for legacy single-file metadata.
+	 *
+	 * Prefers the first successful .pdf entry; falls back to the first PDF URL.
+	 *
+	 * @param array<int, array<string, mixed>> $files Downloaded file metadata entries.
+	 * @return array{url: string, filename: string, local_url: string}
+	 */
+	public function select_primary_pdf( array $files ): array {
+		if ( empty( $files ) ) {
+			return array(
+				'url'       => '',
+				'filename'  => '',
+				'local_url' => '',
+			);
+		}
+
+		foreach ( $files as $entry ) {
+			if ( ! is_array( $entry ) ) {
+				continue;
+			}
+
+			$filename  = (string) ( $entry['filename'] ?? '' );
+			$url       = (string) ( $entry['source_url'] ?? '' );
+			$extension = strtolower( (string) ( $entry['extension'] ?? pathinfo( $filename, PATHINFO_EXTENSION ) ) );
+			$status    = (string) ( $entry['download_status'] ?? '' );
+
+			if ( in_array( $status, array( 'failed', 'unsupported' ), true ) ) {
+				continue;
+			}
+
+			if ( 'pdf' === $extension || str_ends_with( strtolower( $filename ), '.pdf' ) || str_ends_with( strtolower( $url ), '.pdf' ) ) {
+				return array(
+					'url'       => $url,
+					'filename'  => $filename,
+					'local_url' => (string) ( $entry['local_url'] ?? '' ),
+				);
+			}
+		}
+
+		$first = $files[0];
+
+		return array(
+			'url'       => (string) ( $first['source_url'] ?? '' ),
+			'filename'  => (string) ( $first['filename'] ?? '' ),
+			'local_url' => (string) ( $first['local_url'] ?? '' ),
+		);
+	}
+
+	/**
 	 * Select the best PDF URL/filename pair from lists.
 	 *
 	 * Prefers the first .pdf entry; falls back to the first item.
@@ -761,6 +942,7 @@ class Form_Importer {
 	 * @param string[] $urls      PDF URLs.
 	 * @param string[] $filenames PDF filenames.
 	 * @return array{url: string, filename: string}
+	 * @deprecated Use build_source_file_pairs() and select_primary_pdf() instead.
 	 */
 	private function select_pdf( array $urls, array $filenames ): array {
 		if ( empty( $urls ) ) {

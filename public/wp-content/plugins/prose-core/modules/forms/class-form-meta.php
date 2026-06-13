@@ -33,6 +33,7 @@ class Form_Meta {
 	public const META_FILE_NAME        = 'prose_file_name';
 	public const META_FILE_URL         = 'prose_file_url';
 	public const META_SOURCE_PDF_URL   = 'prose_source_pdf_url';
+	public const META_SOURCE_FILES     = 'prose_source_files';
 
 	// PDF analysis.
 	public const META_PDF_FILLABLE     = 'prose_pdf_fillable';
@@ -169,6 +170,7 @@ class Form_Meta {
 			self::META_CLASSIFICATION_LOG,
 			self::META_CLASSIFICATION_SIGNALS,
 			self::META_AI_SUMMARY_STRUCTURED,
+			self::META_SOURCE_FILES,
 			self::META_WORKFLOW_IDS,
 			self::META_PACKAGE_IDS,
 			self::META_WORKFLOW_STAGES,
