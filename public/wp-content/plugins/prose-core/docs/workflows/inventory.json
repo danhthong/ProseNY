@@ -1,0 +1,1249 @@
+{
+    "generated_at": "2026-06-13T13:23:55+00:00",
+    "total": 12,
+    "supreme_court": 4,
+    "family_court": 8,
+    "workflows": [
+        {
+            "workflow": "adoption_nyc",
+            "workflow_category": "family_court",
+            "court": "family_court",
+            "issue_type": "adoption",
+            "counties_supported": [
+                "New York",
+                "Kings",
+                "Queens",
+                "Bronx",
+                "Richmond"
+            ],
+            "triggers": [
+                "adoption",
+                "adopt a child",
+                "stepparent adoption",
+                "agency adoption",
+                "private placement adoption"
+            ],
+            "entry_questions": [
+                "Are you seeking to adopt a child?",
+                "Is this an agency or private-placement adoption?"
+            ],
+            "routing_priority": 30,
+            "intake_priority": 30,
+            "stages": [
+                "petition",
+                "consent_and_notice",
+                "investigation",
+                "hearing",
+                "order"
+            ],
+            "workflow_outcomes": [
+                "adoption_order"
+            ],
+            "required_fields": [
+                {
+                    "key": "county",
+                    "type": "string",
+                    "required": true,
+                    "question": "In which NYC county are you filing?"
+                },
+                {
+                    "key": "child_name",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is the full name of the child?"
+                },
+                {
+                    "key": "child_birth_date",
+                    "type": "date",
+                    "required": true,
+                    "question": "What is the child's date of birth?"
+                },
+                {
+                    "key": "petitioner_information",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is your full legal name and contact information?"
+                },
+                {
+                    "key": "adoption_type",
+                    "type": "string",
+                    "required": true,
+                    "question": "Is this an agency or private-placement adoption?"
+                },
+                {
+                    "key": "agency_name",
+                    "type": "string",
+                    "required": false,
+                    "question": "If an agency adoption, what is the name of the agency?"
+                }
+            ],
+            "required_forms": [
+                "1-A",
+                "1-C",
+                "1-E"
+            ],
+            "supporting_documents": [
+                "birth_certificate",
+                "marriage_certificate",
+                "home_study_report",
+                "surrender_or_consent_documents",
+                "agency_approval_letter"
+            ]
+        },
+        {
+            "workflow": "child_support_nyc",
+            "workflow_category": "family_court",
+            "court": "family_court",
+            "issue_type": "child_support",
+            "counties_supported": [
+                "New York",
+                "Kings",
+                "Queens",
+                "Bronx",
+                "Richmond"
+            ],
+            "triggers": [
+                "child support",
+                "support order",
+                "support payments",
+                "pay child support",
+                "collect child support"
+            ],
+            "entry_questions": [
+                "Are you seeking child support?",
+                "Is there an active divorce case?"
+            ],
+            "routing_priority": 50,
+            "intake_priority": 50,
+            "stages": [
+                "petition",
+                "service",
+                "hearing",
+                "order",
+                "modification",
+                "enforcement"
+            ],
+            "workflow_outcomes": [
+                "child_support_order"
+            ],
+            "required_fields": [
+                {
+                    "key": "county",
+                    "type": "string",
+                    "required": true,
+                    "question": "In which NYC county are you filing?"
+                },
+                {
+                    "key": "child_count",
+                    "type": "integer",
+                    "required": true,
+                    "question": "How many children are involved?"
+                },
+                {
+                    "key": "child_names",
+                    "type": "array",
+                    "required": true,
+                    "question": "What are the full names of the children?"
+                },
+                {
+                    "key": "child_birth_dates",
+                    "type": "array",
+                    "required": true,
+                    "question": "What are the birth dates of the children?"
+                },
+                {
+                    "key": "petitioner_information",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is your full legal name and contact information?"
+                },
+                {
+                    "key": "respondent_information",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is the other parent's full legal name and contact information?"
+                },
+                {
+                    "key": "income",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is the income of each parent?"
+                },
+                {
+                    "key": "existing_orders",
+                    "type": "array",
+                    "required": false,
+                    "question": "Are there any existing support orders?"
+                }
+            ],
+            "required_forms": [
+                "4-3",
+                "4-11",
+                "4-12",
+                "4-1"
+            ],
+            "supporting_documents": [
+                "birth_certificates",
+                "proof_of_income",
+                "tax_returns",
+                "pay_stubs",
+                "existing_court_orders"
+            ]
+        },
+        {
+            "workflow": "contested_divorce_nyc",
+            "workflow_category": "divorce",
+            "court": "supreme_court",
+            "issue_type": "divorce",
+            "counties_supported": [
+                "New York",
+                "Kings",
+                "Queens",
+                "Bronx",
+                "Richmond"
+            ],
+            "triggers": [
+                "contested divorce",
+                "divorce dispute",
+                "spouse will not agree",
+                "divorce trial",
+                "matrimonial action"
+            ],
+            "entry_questions": [
+                "Do you want a divorce?",
+                "Does your spouse disagree with the divorce or its terms?",
+                "Has your spouse filed an answer or retained an attorney?"
+            ],
+            "routing_priority": 95,
+            "intake_priority": 90,
+            "stages": [
+                "commencement",
+                "service",
+                "answer",
+                "preliminary_conference",
+                "discovery",
+                "compliance_conference",
+                "settlement",
+                "trial",
+                "judgment"
+            ],
+            "workflow_outcomes": [
+                "judgment_of_divorce",
+                "custody_terms",
+                "visitation_terms",
+                "child_support_terms",
+                "maintenance_award",
+                "property_division_terms"
+            ],
+            "required_fields": [
+                {
+                    "key": "county",
+                    "type": "string",
+                    "required": true,
+                    "question": "In which NYC county are you filing?"
+                },
+                {
+                    "key": "marriage_date",
+                    "type": "date",
+                    "required": true,
+                    "question": "On what date were you married?"
+                },
+                {
+                    "key": "grounds_for_divorce",
+                    "type": "string",
+                    "required": true,
+                    "question": "What are your grounds for divorce?"
+                },
+                {
+                    "key": "plaintiff_information",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is your full legal name and contact information?"
+                },
+                {
+                    "key": "defendant_information",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is your spouse's full legal name and contact information?"
+                },
+                {
+                    "key": "has_minor_children",
+                    "type": "boolean",
+                    "required": true,
+                    "question": "Do you have any children under 21 with your spouse?"
+                },
+                {
+                    "key": "child_count",
+                    "type": "integer",
+                    "required": false,
+                    "question": "How many children are involved?"
+                },
+                {
+                    "key": "existing_orders",
+                    "type": "array",
+                    "required": false,
+                    "question": "Are there any existing court orders involving you and your spouse?"
+                },
+                {
+                    "key": "assets",
+                    "type": "array",
+                    "required": true,
+                    "question": "What marital assets are involved?"
+                },
+                {
+                    "key": "debts",
+                    "type": "array",
+                    "required": true,
+                    "question": "What marital debts are involved?"
+                },
+                {
+                    "key": "income",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is your annual income?"
+                }
+            ],
+            "required_forms": [
+                "UD-1",
+                "UD-2",
+                "UD-3",
+                "UD-5",
+                "UD-13",
+                "UD-9",
+                "UD-10",
+                "UD-11",
+                "UD-14",
+                "UD-8(1)",
+                "UD-8(2)",
+                "UD-8(3)"
+            ],
+            "supporting_documents": [
+                "marriage_certificate",
+                "birth_certificates",
+                "financial_disclosures",
+                "statement_of_net_worth",
+                "proof_of_income",
+                "tax_returns",
+                "existing_court_orders",
+                "property_deeds",
+                "retirement_account_statements"
+            ]
+        },
+        {
+            "workflow": "custody_nyc",
+            "workflow_category": "family_court",
+            "court": "family_court",
+            "issue_type": "custody",
+            "counties_supported": [
+                "New York",
+                "Kings",
+                "Queens",
+                "Bronx",
+                "Richmond"
+            ],
+            "triggers": [
+                "custody",
+                "child custody",
+                "legal custody",
+                "physical custody",
+                "parenting time"
+            ],
+            "entry_questions": [
+                "Are you seeking custody of a child?",
+                "Is there an active divorce case?"
+            ],
+            "routing_priority": 50,
+            "intake_priority": 50,
+            "stages": [
+                "petition",
+                "service",
+                "hearing",
+                "order",
+                "modification",
+                "violation",
+                "enforcement"
+            ],
+            "workflow_outcomes": [
+                "custody_order",
+                "visitation_order"
+            ],
+            "required_fields": [
+                {
+                    "key": "county",
+                    "type": "string",
+                    "required": true,
+                    "question": "In which NYC county are you filing?"
+                },
+                {
+                    "key": "child_count",
+                    "type": "integer",
+                    "required": true,
+                    "question": "How many children are involved?"
+                },
+                {
+                    "key": "child_names",
+                    "type": "array",
+                    "required": true,
+                    "question": "What are the full names of the children?"
+                },
+                {
+                    "key": "child_birth_dates",
+                    "type": "array",
+                    "required": true,
+                    "question": "What are the birth dates of the children?"
+                },
+                {
+                    "key": "petitioner_information",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is your full legal name and contact information?"
+                },
+                {
+                    "key": "respondent_information",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is the other parent's full legal name and contact information?"
+                },
+                {
+                    "key": "existing_orders",
+                    "type": "array",
+                    "required": false,
+                    "question": "Are there any existing custody or visitation orders?"
+                }
+            ],
+            "required_forms": [
+                "GF-17",
+                "GF-40",
+                "GF-41",
+                "GF-41",
+                "GF-21"
+            ],
+            "supporting_documents": [
+                "birth_certificates",
+                "existing_court_orders",
+                "school_records",
+                "proof_of_residency"
+            ]
+        },
+        {
+            "workflow": "default_divorce_nyc",
+            "workflow_category": "divorce",
+            "court": "supreme_court",
+            "issue_type": "divorce",
+            "counties_supported": [
+                "New York",
+                "Kings",
+                "Queens",
+                "Bronx",
+                "Richmond"
+            ],
+            "triggers": [
+                "default divorce",
+                "no answer",
+                "defendant did not respond",
+                "default judgment divorce"
+            ],
+            "entry_questions": [
+                "Do you want a divorce?",
+                "Was your spouse served with divorce papers?",
+                "Did your spouse fail to respond within the required time?"
+            ],
+            "routing_priority": 85,
+            "intake_priority": 90,
+            "stages": [
+                "commencement",
+                "service",
+                "default",
+                "judgment"
+            ],
+            "workflow_outcomes": [
+                "judgment_of_divorce"
+            ],
+            "required_fields": [
+                {
+                    "key": "county",
+                    "type": "string",
+                    "required": true,
+                    "question": "In which NYC county are you filing?"
+                },
+                {
+                    "key": "marriage_date",
+                    "type": "date",
+                    "required": true,
+                    "question": "On what date were you married?"
+                },
+                {
+                    "key": "grounds_for_divorce",
+                    "type": "string",
+                    "required": true,
+                    "question": "What are your grounds for divorce?"
+                },
+                {
+                    "key": "plaintiff_information",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is your full legal name and contact information?"
+                },
+                {
+                    "key": "defendant_information",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is your spouse's full legal name and contact information?"
+                },
+                {
+                    "key": "service_date",
+                    "type": "date",
+                    "required": true,
+                    "question": "On what date was your spouse served?"
+                },
+                {
+                    "key": "has_minor_children",
+                    "type": "boolean",
+                    "required": true,
+                    "question": "Do you have any children under 21 with your spouse?"
+                },
+                {
+                    "key": "child_count",
+                    "type": "integer",
+                    "required": false,
+                    "question": "How many children are involved?"
+                }
+            ],
+            "required_forms": [
+                "UD-1",
+                "UD-2",
+                "UD-3",
+                "UD-5",
+                "UD-6",
+                "UD-9",
+                "UD-10",
+                "UD-11",
+                "UD-14",
+                "UD-8(3)"
+            ],
+            "supporting_documents": [
+                "marriage_certificate",
+                "proof_of_service",
+                "birth_certificates",
+                "affidavit_of_regularity"
+            ]
+        },
+        {
+            "workflow": "family_offense_nyc",
+            "workflow_category": "family_court",
+            "court": "family_court",
+            "issue_type": "family_offense",
+            "counties_supported": [
+                "New York",
+                "Kings",
+                "Queens",
+                "Bronx",
+                "Richmond"
+            ],
+            "triggers": [
+                "family offense",
+                "domestic violence",
+                "abuse",
+                "harassment",
+                "assault by family member"
+            ],
+            "entry_questions": [
+                "Has a family or household member harmed or threatened you?",
+                "Are you seeking protection from that person?",
+                "What is your relationship to that person?"
+            ],
+            "routing_priority": 80,
+            "intake_priority": 95,
+            "stages": [
+                "petition",
+                "temporary_order_of_protection",
+                "hearing",
+                "final_order_of_protection",
+                "violation",
+                "enforcement"
+            ],
+            "workflow_outcomes": [
+                "temporary_order_of_protection",
+                "final_order_of_protection"
+            ],
+            "required_fields": [
+                {
+                    "key": "county",
+                    "type": "string",
+                    "required": true,
+                    "question": "In which NYC county are you filing?"
+                },
+                {
+                    "key": "petitioner_information",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is your full legal name and contact information?"
+                },
+                {
+                    "key": "respondent_information",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is the name and contact information of the person you need protection from?"
+                },
+                {
+                    "key": "relationship_to_respondent",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is your relationship to that person?"
+                },
+                {
+                    "key": "incident_description",
+                    "type": "string",
+                    "required": true,
+                    "question": "What happened? Please describe the incident(s)."
+                },
+                {
+                    "key": "incident_date",
+                    "type": "date",
+                    "required": true,
+                    "question": "When did the most recent incident occur?"
+                },
+                {
+                    "key": "minor_children_involved",
+                    "type": "boolean",
+                    "required": true,
+                    "question": "Are any children involved or in need of protection?"
+                }
+            ],
+            "required_forms": [
+                "8-2",
+                "GF-21"
+            ],
+            "supporting_documents": [
+                "police_reports",
+                "photographs",
+                "medical_records",
+                "witness_statements",
+                "existing_orders_of_protection"
+            ]
+        },
+        {
+            "workflow": "guardianship_nyc",
+            "workflow_category": "family_court",
+            "court": "family_court",
+            "issue_type": "guardianship",
+            "counties_supported": [
+                "New York",
+                "Kings",
+                "Queens",
+                "Bronx",
+                "Richmond"
+            ],
+            "triggers": [
+                "guardianship",
+                "legal guardian",
+                "guardian of the person",
+                "kinship guardian",
+                "standby guardian"
+            ],
+            "entry_questions": [
+                "Are you seeking to become the legal guardian of a minor?",
+                "Who currently cares for the child?"
+            ],
+            "routing_priority": 35,
+            "intake_priority": 35,
+            "stages": [
+                "petition",
+                "service",
+                "investigation",
+                "hearing",
+                "order"
+            ],
+            "workflow_outcomes": [
+                "guardianship_order"
+            ],
+            "required_fields": [
+                {
+                    "key": "county",
+                    "type": "string",
+                    "required": true,
+                    "question": "In which NYC county are you filing?"
+                },
+                {
+                    "key": "child_name",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is the full name of the child?"
+                },
+                {
+                    "key": "child_birth_date",
+                    "type": "date",
+                    "required": true,
+                    "question": "What is the child's date of birth?"
+                },
+                {
+                    "key": "petitioner_information",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is your full legal name and contact information?"
+                },
+                {
+                    "key": "parents_information",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is the name and contact information of the child's parents?"
+                },
+                {
+                    "key": "guardianship_type",
+                    "type": "string",
+                    "required": true,
+                    "question": "What type of guardianship are you seeking?"
+                }
+            ],
+            "required_forms": [
+                "6-1",
+                "6-1c",
+                "6-8"
+            ],
+            "supporting_documents": [
+                "birth_certificate",
+                "death_certificate_of_parent",
+                "consent_of_parent",
+                "home_study_report",
+                "background_check_results"
+            ]
+        },
+        {
+            "workflow": "order_of_protection_nyc",
+            "workflow_category": "family_court",
+            "court": "family_court",
+            "issue_type": "order_of_protection",
+            "counties_supported": [
+                "New York",
+                "Kings",
+                "Queens",
+                "Bronx",
+                "Richmond"
+            ],
+            "triggers": [
+                "order of protection",
+                "restraining order",
+                "stay away order",
+                "protection order",
+                "OP"
+            ],
+            "entry_questions": [
+                "Are you seeking an order of protection?",
+                "Is the person you need protection from a family or household member?",
+                "Are you in immediate danger?"
+            ],
+            "routing_priority": 85,
+            "intake_priority": 100,
+            "stages": [
+                "petition",
+                "temporary_order",
+                "hearing",
+                "final_order",
+                "extension",
+                "enforcement"
+            ],
+            "workflow_outcomes": [
+                "temporary_order_of_protection",
+                "final_order_of_protection"
+            ],
+            "required_fields": [
+                {
+                    "key": "county",
+                    "type": "string",
+                    "required": true,
+                    "question": "In which NYC county are you filing?"
+                },
+                {
+                    "key": "petitioner_information",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is your full legal name and contact information?"
+                },
+                {
+                    "key": "respondent_information",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is the name and contact information of the person you need protection from?"
+                },
+                {
+                    "key": "relationship_to_respondent",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is your relationship to that person?"
+                },
+                {
+                    "key": "incident_description",
+                    "type": "string",
+                    "required": true,
+                    "question": "What happened? Please describe the incident(s)."
+                },
+                {
+                    "key": "relief_requested",
+                    "type": "string",
+                    "required": true,
+                    "question": "What protection are you asking the court to order?"
+                },
+                {
+                    "key": "minor_children_involved",
+                    "type": "boolean",
+                    "required": true,
+                    "question": "Are any children involved or in need of protection?"
+                }
+            ],
+            "required_forms": [
+                "8-2"
+            ],
+            "supporting_documents": [
+                "police_reports",
+                "photographs",
+                "medical_records",
+                "existing_orders_of_protection"
+            ]
+        },
+        {
+            "workflow": "paternity_nyc",
+            "workflow_category": "family_court",
+            "court": "family_court",
+            "issue_type": "paternity",
+            "counties_supported": [
+                "New York",
+                "Kings",
+                "Queens",
+                "Bronx",
+                "Richmond"
+            ],
+            "triggers": [
+                "paternity",
+                "establish father",
+                "acknowledgment of paternity",
+                "who is the father",
+                "DNA test"
+            ],
+            "entry_questions": [
+                "Are you trying to establish who the legal father of a child is?",
+                "Is there an active divorce case?"
+            ],
+            "routing_priority": 40,
+            "intake_priority": 40,
+            "stages": [
+                "petition",
+                "service",
+                "hearing",
+                "genetic_testing",
+                "order"
+            ],
+            "workflow_outcomes": [
+                "order_of_filiation",
+                "paternity_establishment"
+            ],
+            "required_fields": [
+                {
+                    "key": "county",
+                    "type": "string",
+                    "required": true,
+                    "question": "In which NYC county are you filing?"
+                },
+                {
+                    "key": "child_name",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is the full name of the child?"
+                },
+                {
+                    "key": "child_birth_date",
+                    "type": "date",
+                    "required": true,
+                    "question": "What is the child's date of birth?"
+                },
+                {
+                    "key": "petitioner_information",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is your full legal name and contact information?"
+                },
+                {
+                    "key": "respondent_information",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is the alleged father's full legal name and contact information?"
+                },
+                {
+                    "key": "mother_information",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is the mother's full legal name and contact information?"
+                }
+            ],
+            "required_forms": [
+                "5-1"
+            ],
+            "supporting_documents": [
+                "birth_certificate",
+                "acknowledgment_of_paternity",
+                "genetic_testing_results"
+            ]
+        },
+        {
+            "workflow": "uncontested_divorce_children_nyc",
+            "workflow_category": "divorce",
+            "court": "supreme_court",
+            "issue_type": "divorce",
+            "counties_supported": [
+                "New York",
+                "Kings",
+                "Queens",
+                "Bronx",
+                "Richmond"
+            ],
+            "triggers": [
+                "divorce",
+                "agreed divorce",
+                "we both agree",
+                "divorce with children",
+                "uncontested divorce with children",
+                "divorce and custody",
+                "divorce and child support"
+            ],
+            "entry_questions": [
+                "Do you want a divorce?",
+                "Does your spouse agree to the divorce?",
+                "Do you have children under 21?"
+            ],
+            "routing_priority": 100,
+            "intake_priority": 90,
+            "stages": [
+                "commencement",
+                "service",
+                "calendar",
+                "judgment"
+            ],
+            "workflow_outcomes": [
+                "judgment_of_divorce",
+                "custody_terms",
+                "visitation_terms",
+                "child_support_terms"
+            ],
+            "required_fields": [
+                {
+                    "key": "county",
+                    "type": "string",
+                    "required": true,
+                    "question": "In which NYC county are you filing?"
+                },
+                {
+                    "key": "marriage_date",
+                    "type": "date",
+                    "required": true,
+                    "question": "On what date were you married?"
+                },
+                {
+                    "key": "separation_date",
+                    "type": "date",
+                    "required": true,
+                    "question": "On what date did you and your spouse separate?"
+                },
+                {
+                    "key": "grounds_for_divorce",
+                    "type": "string",
+                    "required": true,
+                    "question": "What are your grounds for divorce?"
+                },
+                {
+                    "key": "plaintiff_information",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is your full legal name and contact information?"
+                },
+                {
+                    "key": "defendant_information",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is your spouse's full legal name and contact information?"
+                },
+                {
+                    "key": "has_minor_children",
+                    "type": "boolean",
+                    "required": true,
+                    "question": "Do you have any children under 21 with your spouse?"
+                },
+                {
+                    "key": "child_count",
+                    "type": "integer",
+                    "required": true,
+                    "question": "How many children are involved?"
+                },
+                {
+                    "key": "child_names",
+                    "type": "array",
+                    "required": true,
+                    "question": "What are the full names of your children?"
+                },
+                {
+                    "key": "child_birth_dates",
+                    "type": "array",
+                    "required": true,
+                    "question": "What are the birth dates of your children?"
+                },
+                {
+                    "key": "custody_arrangement",
+                    "type": "string",
+                    "required": true,
+                    "question": "What custody arrangement have you agreed to?"
+                },
+                {
+                    "key": "visitation_arrangement",
+                    "type": "string",
+                    "required": false,
+                    "question": "What visitation or parenting time schedule have you agreed to?"
+                },
+                {
+                    "key": "child_support_terms",
+                    "type": "string",
+                    "required": true,
+                    "question": "What child support terms have you agreed to?"
+                },
+                {
+                    "key": "marital_property_resolved",
+                    "type": "boolean",
+                    "required": true,
+                    "question": "Have you and your spouse resolved all marital property and debt issues?"
+                }
+            ],
+            "required_forms": [
+                "UD-1",
+                "UD-2",
+                "UD-3",
+                "UD-4",
+                "UD-5",
+                "UD-6",
+                "UD-7",
+                "UD-8(1)",
+                "UD-8(2)",
+                "UD-8(3)",
+                "UD-8a",
+                "UD-9",
+                "UD-10",
+                "UD-12",
+                "UD-13",
+                "UD-11",
+                "UD-14",
+                "UD-8b",
+                "LDSS-5258"
+            ],
+            "supporting_documents": [
+                "marriage_certificate",
+                "birth_certificates",
+                "proof_of_residency",
+                "separation_agreement_or_stipulation",
+                "parenting_plan",
+                "financial_disclosures",
+                "statement_of_net_worth",
+                "proof_of_income"
+            ]
+        },
+        {
+            "workflow": "uncontested_divorce_no_children_nyc",
+            "workflow_category": "divorce",
+            "court": "supreme_court",
+            "issue_type": "divorce",
+            "counties_supported": [
+                "New York",
+                "Kings",
+                "Queens",
+                "Bronx",
+                "Richmond"
+            ],
+            "triggers": [
+                "divorce",
+                "uncontested divorce",
+                "agreed divorce",
+                "we both agree",
+                "divorce without children",
+                "no children divorce"
+            ],
+            "entry_questions": [
+                "Do you want a divorce?",
+                "Does your spouse agree to the divorce?",
+                "Do you have any children under 21?"
+            ],
+            "routing_priority": 90,
+            "intake_priority": 90,
+            "stages": [
+                "commencement",
+                "service",
+                "calendar",
+                "judgment"
+            ],
+            "workflow_outcomes": [
+                "judgment_of_divorce",
+                "property_division_terms"
+            ],
+            "required_fields": [
+                {
+                    "key": "county",
+                    "type": "string",
+                    "required": true,
+                    "question": "In which NYC county are you filing?"
+                },
+                {
+                    "key": "marriage_date",
+                    "type": "date",
+                    "required": true,
+                    "question": "On what date were you married?"
+                },
+                {
+                    "key": "separation_date",
+                    "type": "date",
+                    "required": true,
+                    "question": "On what date did you and your spouse separate?"
+                },
+                {
+                    "key": "grounds_for_divorce",
+                    "type": "string",
+                    "required": true,
+                    "question": "What are your grounds for divorce?"
+                },
+                {
+                    "key": "plaintiff_information",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is your full legal name and contact information?"
+                },
+                {
+                    "key": "defendant_information",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is your spouse's full legal name and contact information?"
+                },
+                {
+                    "key": "has_minor_children",
+                    "type": "boolean",
+                    "required": true,
+                    "question": "Do you have any children under 21 with your spouse?"
+                },
+                {
+                    "key": "marital_property_resolved",
+                    "type": "boolean",
+                    "required": true,
+                    "question": "Have you and your spouse resolved all marital property and debt issues?"
+                }
+            ],
+            "required_forms": [
+                "UD-1",
+                "UD-2",
+                "UD-3",
+                "UD-4",
+                "UD-5",
+                "UD-6",
+                "UD-7",
+                "UD-9",
+                "UD-10",
+                "UD-12",
+                "UD-13",
+                "UD-11",
+                "UD-14",
+                "UD-1a"
+            ],
+            "supporting_documents": [
+                "marriage_certificate",
+                "proof_of_residency",
+                "separation_agreement_or_stipulation",
+                "financial_disclosures",
+                "statement_of_net_worth"
+            ]
+        },
+        {
+            "workflow": "visitation_nyc",
+            "workflow_category": "family_court",
+            "court": "family_court",
+            "issue_type": "visitation",
+            "counties_supported": [
+                "New York",
+                "Kings",
+                "Queens",
+                "Bronx",
+                "Richmond"
+            ],
+            "triggers": [
+                "visitation",
+                "parenting time",
+                "access",
+                "see my child",
+                "visitation schedule"
+            ],
+            "entry_questions": [
+                "Are you seeking visitation or parenting time with a child?",
+                "Is there an active divorce case?"
+            ],
+            "routing_priority": 45,
+            "intake_priority": 45,
+            "stages": [
+                "petition",
+                "service",
+                "hearing",
+                "order",
+                "modification",
+                "violation",
+                "enforcement"
+            ],
+            "workflow_outcomes": [
+                "visitation_order"
+            ],
+            "required_fields": [
+                {
+                    "key": "county",
+                    "type": "string",
+                    "required": true,
+                    "question": "In which NYC county are you filing?"
+                },
+                {
+                    "key": "child_count",
+                    "type": "integer",
+                    "required": true,
+                    "question": "How many children are involved?"
+                },
+                {
+                    "key": "child_names",
+                    "type": "array",
+                    "required": true,
+                    "question": "What are the full names of the children?"
+                },
+                {
+                    "key": "petitioner_information",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is your full legal name and contact information?"
+                },
+                {
+                    "key": "respondent_information",
+                    "type": "string",
+                    "required": true,
+                    "question": "What is the other parent's full legal name and contact information?"
+                },
+                {
+                    "key": "proposed_visitation_schedule",
+                    "type": "string",
+                    "required": false,
+                    "question": "What visitation or parenting time schedule are you requesting?"
+                },
+                {
+                    "key": "existing_orders",
+                    "type": "array",
+                    "required": false,
+                    "question": "Are there any existing custody or visitation orders?"
+                }
+            ],
+            "required_forms": [
+                "GF-17",
+                "GF-40",
+                "GF-41",
+                "GF-41"
+            ],
+            "supporting_documents": [
+                "birth_certificates",
+                "existing_court_orders",
+                "parenting_plan"
+            ]
+        }
+    ]
+}

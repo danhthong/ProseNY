@@ -1,0 +1,79 @@
+{
+  "workflow": "adoption_nyc",
+  "workflow_category": "family_court",
+  "issue_type": "adoption",
+  "court": "family_court",
+  "counties_supported": ["New York", "Kings", "Queens", "Bronx", "Richmond"],
+  "description": "Family Court proceeding to adopt a child in NYC. Agency and private-placement adoptions use distinct petition forms.",
+  "triggers": [
+    "adoption",
+    "adopt a child",
+    "stepparent adoption",
+    "agency adoption",
+    "private placement adoption"
+  ],
+  "entry_questions": [
+    "Are you seeking to adopt a child?",
+    "Is this an agency or private-placement adoption?"
+  ],
+  "routing_rules": [],
+  "routing_priority": 30,
+  "intake_priority": 30,
+  "entry_conditions": [
+    "User seeks to adopt a child",
+    "Adoption proceeding is commenced in NYC Family Court",
+    "Required consents or surrenders are addressed per DRL Article 7"
+  ],
+  "required_fields": [
+    { "key": "county", "type": "string", "required": true, "question": "In which NYC county are you filing?" },
+    { "key": "child_name", "type": "string", "required": true, "question": "What is the full name of the child?" },
+    { "key": "child_birth_date", "type": "date", "required": true, "question": "What is the child's date of birth?" },
+    { "key": "petitioner_information", "type": "string", "required": true, "question": "What is your full legal name and contact information?" },
+    { "key": "adoption_type", "type": "string", "required": true, "question": "Is this an agency or private-placement adoption?" },
+    { "key": "agency_name", "type": "string", "required": false, "question": "If an agency adoption, what is the name of the agency?" }
+  ],
+  "stages": [
+    "petition",
+    "consent_and_notice",
+    "investigation",
+    "hearing",
+    "order"
+  ],
+  "workflow_outcomes": [
+    "adoption_order"
+  ],
+  "required_forms": [
+    {
+      "stage": "petition",
+      "forms": [
+        { "code": "1-A", "internal_code": null, "title": "Petition for Adoption (Agency)" },
+        { "code": "1-C", "internal_code": null, "title": "Petition for Adoption (Private-Placement)" }
+      ]
+    }
+  ],
+  "optional_forms": [
+    {
+      "stage": "petition",
+      "forms": [
+        { "code": "1-E", "internal_code": null, "title": "Affirmation Regarding Prior Court Jurisdiction" }
+      ]
+    }
+  ],
+  "supporting_documents": [
+    "birth_certificate",
+    "marriage_certificate",
+    "home_study_report",
+    "surrender_or_consent_documents",
+    "agency_approval_letter"
+  ],
+  "includes": [],
+  "internal": {
+    "workflow_enum": "ADOPTION",
+    "node_sequence": []
+  },
+  "source_references": [
+    "https://www.nycourts.gov/courthelp/Family/adoption.shtml",
+    "https://www.nycourts.gov/family-forms",
+    "https://www.law.cornell.edu/regulations/new-york/22-NYCRR-D-ch-IV-app-Adoption-Forms-form-1-A"
+  ]
+}

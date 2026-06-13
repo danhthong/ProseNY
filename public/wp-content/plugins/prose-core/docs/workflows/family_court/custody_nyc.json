@@ -1,0 +1,111 @@
+{
+  "workflow": "custody_nyc",
+  "workflow_category": "family_court",
+  "issue_type": "custody",
+  "court": "family_court",
+  "counties_supported": ["New York", "Kings", "Queens", "Bronx", "Richmond"],
+  "description": "Family Court proceeding to establish or modify legal and physical custody of a minor child in NYC.",
+  "triggers": [
+    "custody",
+    "child custody",
+    "legal custody",
+    "physical custody",
+    "parenting time"
+  ],
+  "entry_questions": [
+    "Are you seeking custody of a child?",
+    "Is there an active divorce case?"
+  ],
+  "routing_rules": [
+    {
+      "condition": "active_divorce=true",
+      "workflow": "uncontested_divorce_children_nyc"
+    },
+    {
+      "condition": "active_divorce=contested",
+      "workflow": "contested_divorce_nyc"
+    }
+  ],
+  "routing_priority": 50,
+  "intake_priority": 50,
+  "entry_conditions": [
+    "User is seeking custody of a child",
+    "No active divorce workflow controls custody",
+    "Case is commenced in NYC Family Court"
+  ],
+  "required_fields": [
+    { "key": "county", "type": "string", "required": true, "question": "In which NYC county are you filing?" },
+    { "key": "child_count", "type": "integer", "required": true, "question": "How many children are involved?" },
+    { "key": "child_names", "type": "array", "required": true, "question": "What are the full names of the children?" },
+    { "key": "child_birth_dates", "type": "array", "required": true, "question": "What are the birth dates of the children?" },
+    { "key": "petitioner_information", "type": "string", "required": true, "question": "What is your full legal name and contact information?" },
+    { "key": "respondent_information", "type": "string", "required": true, "question": "What is the other parent's full legal name and contact information?" },
+    { "key": "existing_orders", "type": "array", "required": false, "question": "Are there any existing custody or visitation orders?" }
+  ],
+  "stages": [
+    "petition",
+    "service",
+    "hearing",
+    "order",
+    "modification",
+    "violation",
+    "enforcement"
+  ],
+  "workflow_outcomes": [
+    "custody_order",
+    "visitation_order"
+  ],
+  "required_forms": [
+    {
+      "stage": "petition",
+      "forms": [
+        { "code": "GF-17", "internal_code": "FC-1", "title": "Petition for Custody and/or Visitation" }
+      ]
+    },
+    {
+      "stage": "modification",
+      "forms": [
+        { "code": "GF-40", "internal_code": null, "title": "Petition for Modification of Custody/Visitation Order" }
+      ]
+    },
+    {
+      "stage": "violation",
+      "forms": [
+        { "code": "GF-41", "internal_code": null, "title": "Petition for Violation of Custody/Visitation Order" }
+      ]
+    },
+    {
+      "stage": "enforcement",
+      "forms": [
+        { "code": "GF-41", "internal_code": null, "title": "Petition for Violation of Custody/Visitation Order" }
+      ]
+    }
+  ],
+  "optional_forms": [
+    {
+      "stage": "petition",
+      "forms": [
+        { "code": "GF-21", "internal_code": null, "title": "Request for Address Confidentiality" }
+      ]
+    }
+  ],
+  "supporting_documents": [
+    "birth_certificates",
+    "existing_court_orders",
+    "school_records",
+    "proof_of_residency"
+  ],
+  "includes": [],
+  "internal": {
+    "workflow_enum": "CUSTODY",
+    "node_sequence": [
+      "NODE_2001_CUSTODY_PETITION",
+      "NODE_2002_CUSTODY_HEARING",
+      "NODE_2003_CUSTODY_ORDER"
+    ]
+  },
+  "source_references": [
+    "https://www.nycourts.gov/family-forms",
+    "https://familylegalcare.org/courtforms/"
+  ]
+}

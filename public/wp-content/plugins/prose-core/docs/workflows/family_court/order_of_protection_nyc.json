@@ -1,0 +1,78 @@
+{
+  "workflow": "order_of_protection_nyc",
+  "workflow_category": "family_court",
+  "issue_type": "order_of_protection",
+  "court": "family_court",
+  "counties_supported": ["New York", "Kings", "Queens", "Bronx", "Richmond"],
+  "description": "Family Court order of protection obtained through a family offense petition. This workflow represents the user's entry point when seeking an order of protection specifically.",
+  "triggers": [
+    "order of protection",
+    "restraining order",
+    "stay away order",
+    "protection order",
+    "OP"
+  ],
+  "entry_questions": [
+    "Are you seeking an order of protection?",
+    "Is the person you need protection from a family or household member?",
+    "Are you in immediate danger?"
+  ],
+  "routing_rules": [],
+  "routing_priority": 85,
+  "intake_priority": 100,
+  "entry_conditions": [
+    "User seeks an order of protection in Family Court",
+    "Respondent is a family or household member as defined by FCA §812",
+    "Proceeding is commenced via a family offense petition"
+  ],
+  "required_fields": [
+    { "key": "county", "type": "string", "required": true, "question": "In which NYC county are you filing?" },
+    { "key": "petitioner_information", "type": "string", "required": true, "question": "What is your full legal name and contact information?" },
+    { "key": "respondent_information", "type": "string", "required": true, "question": "What is the name and contact information of the person you need protection from?" },
+    { "key": "relationship_to_respondent", "type": "string", "required": true, "question": "What is your relationship to that person?" },
+    { "key": "incident_description", "type": "string", "required": true, "question": "What happened? Please describe the incident(s)." },
+    { "key": "relief_requested", "type": "string", "required": true, "question": "What protection are you asking the court to order?" },
+    { "key": "minor_children_involved", "type": "boolean", "required": true, "question": "Are any children involved or in need of protection?" }
+  ],
+  "stages": [
+    "petition",
+    "temporary_order",
+    "hearing",
+    "final_order",
+    "extension",
+    "enforcement"
+  ],
+  "workflow_outcomes": [
+    "temporary_order_of_protection",
+    "final_order_of_protection"
+  ],
+  "required_forms": [
+    {
+      "stage": "petition",
+      "forms": [
+        { "code": "8-2", "internal_code": "FC-7", "title": "Family Offense Petition" }
+      ]
+    }
+  ],
+  "optional_forms": [],
+  "supporting_documents": [
+    "police_reports",
+    "photographs",
+    "medical_records",
+    "existing_orders_of_protection"
+  ],
+  "includes": [],
+  "internal": {
+    "workflow_enum": "ORDER_OF_PROTECTION",
+    "node_sequence": [
+      "NODE_4001_FAMILY_OFFENSE",
+      "NODE_4002_TEMP_OP",
+      "NODE_4003_FINAL_OP"
+    ]
+  },
+  "source_references": [
+    "https://www.nycourts.gov/family-forms",
+    "https://www.nycourts.gov/faq/orderofprotection.shtml",
+    "https://nycourts.gov/LegacyPDFS/FORMS/familycourt/pdfs/8-2.pdf"
+  ]
+}

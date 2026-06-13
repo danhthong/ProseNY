@@ -1,0 +1,78 @@
+{
+  "workflow": "guardianship_nyc",
+  "workflow_category": "family_court",
+  "issue_type": "guardianship",
+  "court": "family_court",
+  "counties_supported": ["New York", "Kings", "Queens", "Bronx", "Richmond"],
+  "description": "Family Court proceeding to appoint a guardian of the person of a minor child in NYC.",
+  "triggers": [
+    "guardianship",
+    "legal guardian",
+    "guardian of the person",
+    "kinship guardian",
+    "standby guardian"
+  ],
+  "entry_questions": [
+    "Are you seeking to become the legal guardian of a minor?",
+    "Who currently cares for the child?"
+  ],
+  "routing_rules": [],
+  "routing_priority": 35,
+  "intake_priority": 35,
+  "entry_conditions": [
+    "User seeks appointment as guardian of a minor",
+    "Guardianship proceeding is appropriate under FCA Article 6 or SCPA",
+    "Case is commenced in NYC Family Court"
+  ],
+  "required_fields": [
+    { "key": "county", "type": "string", "required": true, "question": "In which NYC county are you filing?" },
+    { "key": "child_name", "type": "string", "required": true, "question": "What is the full name of the child?" },
+    { "key": "child_birth_date", "type": "date", "required": true, "question": "What is the child's date of birth?" },
+    { "key": "petitioner_information", "type": "string", "required": true, "question": "What is your full legal name and contact information?" },
+    { "key": "parents_information", "type": "string", "required": true, "question": "What is the name and contact information of the child's parents?" },
+    { "key": "guardianship_type", "type": "string", "required": true, "question": "What type of guardianship are you seeking?" }
+  ],
+  "stages": [
+    "petition",
+    "service",
+    "investigation",
+    "hearing",
+    "order"
+  ],
+  "workflow_outcomes": [
+    "guardianship_order"
+  ],
+  "required_forms": [
+    {
+      "stage": "petition",
+      "forms": [
+        { "code": "6-1", "internal_code": null, "title": "Petition for Appointment as Guardian of Person" }
+      ]
+    }
+  ],
+  "optional_forms": [
+    {
+      "stage": "petition",
+      "forms": [
+        { "code": "6-1c", "internal_code": null, "title": "Petition for Kinship Guardian" },
+        { "code": "6-8", "internal_code": null, "title": "Petition for Appointment of Standby Guardian" }
+      ]
+    }
+  ],
+  "supporting_documents": [
+    "birth_certificate",
+    "death_certificate_of_parent",
+    "consent_of_parent",
+    "home_study_report",
+    "background_check_results"
+  ],
+  "includes": [],
+  "internal": {
+    "workflow_enum": "GUARDIANSHIP",
+    "node_sequence": []
+  },
+  "source_references": [
+    "https://www.nycourts.gov/family-forms",
+    "https://govt.westlaw.com/nycrr/Browse/Home/NewYork/UnofficialNewYorkCodesRulesandRegulations?guid=Iecd17990bbec11dd8529f5ff2182bffa"
+  ]
+}

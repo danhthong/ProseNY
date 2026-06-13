@@ -1,0 +1,154 @@
+{
+  "workflow": "contested_divorce_nyc",
+  "workflow_category": "divorce",
+  "issue_type": "divorce",
+  "court": "supreme_court",
+  "counties_supported": ["New York", "Kings", "Queens", "Bronx", "Richmond"],
+  "description": "Contested matrimonial action in NYC Supreme Court. Discovery, settlement, trial, judgment, maintenance, and property division are procedural stages within this workflow—not separate entry workflows.",
+  "triggers": [
+    "contested divorce",
+    "divorce dispute",
+    "spouse will not agree",
+    "divorce trial",
+    "matrimonial action"
+  ],
+  "entry_questions": [
+    "Do you want a divorce?",
+    "Does your spouse disagree with the divorce or its terms?",
+    "Has your spouse filed an answer or retained an attorney?"
+  ],
+  "routing_rules": [],
+  "routing_priority": 95,
+  "intake_priority": 90,
+  "entry_conditions": [
+    "User seeks a divorce in NYC",
+    "The other party disputes terms or has filed an answer",
+    "Matrimonial action is contested"
+  ],
+  "required_fields": [
+    { "key": "county", "type": "string", "required": true, "question": "In which NYC county are you filing?" },
+    { "key": "marriage_date", "type": "date", "required": true, "question": "On what date were you married?" },
+    { "key": "grounds_for_divorce", "type": "string", "required": true, "question": "What are your grounds for divorce?" },
+    { "key": "plaintiff_information", "type": "string", "required": true, "question": "What is your full legal name and contact information?" },
+    { "key": "defendant_information", "type": "string", "required": true, "question": "What is your spouse's full legal name and contact information?" },
+    { "key": "has_minor_children", "type": "boolean", "required": true, "question": "Do you have any children under 21 with your spouse?" },
+    { "key": "child_count", "type": "integer", "required": false, "question": "How many children are involved?" },
+    { "key": "existing_orders", "type": "array", "required": false, "question": "Are there any existing court orders involving you and your spouse?" },
+    { "key": "assets", "type": "array", "required": true, "question": "What marital assets are involved?" },
+    { "key": "debts", "type": "array", "required": true, "question": "What marital debts are involved?" },
+    { "key": "income", "type": "string", "required": true, "question": "What is your annual income?" }
+  ],
+  "stages": [
+    "commencement",
+    "service",
+    "answer",
+    "preliminary_conference",
+    "discovery",
+    "compliance_conference",
+    "settlement",
+    "trial",
+    "judgment"
+  ],
+  "workflow_outcomes": [
+    "judgment_of_divorce",
+    "custody_terms",
+    "visitation_terms",
+    "child_support_terms",
+    "maintenance_award",
+    "property_division_terms"
+  ],
+  "required_forms": [
+    {
+      "stage": "commencement",
+      "forms": [
+        { "code": "UD-1", "internal_code": "UD-1", "title": "Summons With Notice" },
+        { "code": "UD-2", "internal_code": "UD-2", "title": "Verified Complaint" }
+      ]
+    },
+    {
+      "stage": "service",
+      "forms": [
+        { "code": "UD-3", "internal_code": "UD-3", "title": "Affirmation of Service" }
+      ]
+    },
+    {
+      "stage": "answer",
+      "forms": [
+        { "code": "UD-5", "internal_code": "UD-5", "title": "Answer" }
+      ]
+    },
+    {
+      "stage": "preliminary_conference",
+      "forms": [
+        { "code": "UD-13", "internal_code": "RJI", "title": "Request for Judicial Intervention" }
+      ]
+    },
+    {
+      "stage": "discovery",
+      "forms": []
+    },
+    {
+      "stage": "compliance_conference",
+      "forms": []
+    },
+    {
+      "stage": "settlement",
+      "forms": []
+    },
+    {
+      "stage": "trial",
+      "forms": [
+        { "code": "UD-9", "internal_code": "NOI", "title": "Note of Issue" }
+      ]
+    },
+    {
+      "stage": "judgment",
+      "forms": [
+        { "code": "UD-10", "internal_code": null, "title": "Findings of Fact and Conclusions of Law" },
+        { "code": "UD-11", "internal_code": null, "title": "Judgment of Divorce" },
+        { "code": "UD-14", "internal_code": null, "title": "Notice of Entry" }
+      ]
+    }
+  ],
+  "optional_forms": [
+    {
+      "stage": "discovery",
+      "forms": [
+        { "code": "UD-8(1)", "internal_code": "UD-8", "title": "Annual Income Worksheet" },
+        { "code": "UD-8(2)", "internal_code": null, "title": "Maintenance Guidelines Worksheet" },
+        { "code": "UD-8(3)", "internal_code": null, "title": "Child Support Worksheet" }
+      ]
+    }
+  ],
+  "supporting_documents": [
+    "marriage_certificate",
+    "birth_certificates",
+    "financial_disclosures",
+    "statement_of_net_worth",
+    "proof_of_income",
+    "tax_returns",
+    "existing_court_orders",
+    "property_deeds",
+    "retirement_account_statements"
+  ],
+  "includes": ["custody", "visitation", "child_support", "maintenance", "property_division", "discovery", "motion_practice"],
+  "internal": {
+    "workflow_enum": "CONTESTED_DIVORCE",
+    "node_sequence": [
+      "NODE_1001_DIVORCE_FILED",
+      "NODE_1002_SERVICE_COMPLETE",
+      "NODE_1003_ANSWER_FILED",
+      "NODE_1005_PRELIMINARY_CONFERENCE",
+      "NODE_1006_DISCOVERY",
+      "NODE_1007_COMPLIANCE_CONFERENCE",
+      "NODE_1008_SETTLEMENT",
+      "NODE_1009_TRIAL",
+      "NODE_1010_JUDGMENT"
+    ]
+  },
+  "source_references": [
+    "https://www.nycourts.gov/courthelp/family/divorceStarting.shtml",
+    "https://www.nycourts.gov/LegacyPDFS/divorce/COMPOSITE-UNCONTESTED-DIVORCE-FORMS.pdf",
+    "https://www.nycourts.gov/matrimonial-practice-advisory-and-rules-committee/whats-new-matrimonial-legislation-court-rules-forms"
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "workflow": "child_support_nyc",
+  "workflow_category": "family_court",
+  "issue_type": "child_support",
+  "court": "family_court",
+  "counties_supported": ["New York", "Kings", "Queens", "Bronx", "Richmond"],
+  "description": "Family Court proceeding to establish, modify, or enforce a child support order in NYC.",
+  "triggers": [
+    "child support",
+    "support order",
+    "support payments",
+    "pay child support",
+    "collect child support"
+  ],
+  "entry_questions": [
+    "Are you seeking child support?",
+    "Is there an active divorce case?"
+  ],
+  "routing_rules": [
+    {
+      "condition": "active_divorce=true",
+      "workflow": "uncontested_divorce_children_nyc"
+    },
+    {
+      "condition": "active_divorce=contested",
+      "workflow": "contested_divorce_nyc"
+    }
+  ],
+  "routing_priority": 50,
+  "intake_priority": 50,
+  "entry_conditions": [
+    "User is seeking a child support order",
+    "No active divorce workflow controls child support",
+    "Case is commenced in NYC Family Court"
+  ],
+  "required_fields": [
+    { "key": "county", "type": "string", "required": true, "question": "In which NYC county are you filing?" },
+    { "key": "child_count", "type": "integer", "required": true, "question": "How many children are involved?" },
+    { "key": "child_names", "type": "array", "required": true, "question": "What are the full names of the children?" },
+    { "key": "child_birth_dates", "type": "array", "required": true, "question": "What are the birth dates of the children?" },
+    { "key": "petitioner_information", "type": "string", "required": true, "question": "What is your full legal name and contact information?" },
+    { "key": "respondent_information", "type": "string", "required": true, "question": "What is the other parent's full legal name and contact information?" },
+    { "key": "income", "type": "string", "required": true, "question": "What is the income of each parent?" },
+    { "key": "existing_orders", "type": "array", "required": false, "question": "Are there any existing support orders?" }
+  ],
+  "stages": [
+    "petition",
+    "service",
+    "hearing",
+    "order",
+    "modification",
+    "enforcement"
+  ],
+  "workflow_outcomes": [
+    "child_support_order"
+  ],
+  "required_forms": [
+    {
+      "stage": "petition",
+      "forms": [
+        { "code": "4-3", "internal_code": "FC-2", "title": "Petition for Child Support (Individual)" }
+      ]
+    },
+    {
+      "stage": "modification",
+      "forms": [
+        { "code": "4-11", "internal_code": null, "title": "Petition for Modification of Child Support Order" }
+      ]
+    },
+    {
+      "stage": "enforcement",
+      "forms": [
+        { "code": "4-12", "internal_code": null, "title": "Petition for Violation of Support Order" }
+      ]
+    }
+  ],
+  "optional_forms": [
+    {
+      "stage": "petition",
+      "forms": [
+        { "code": "4-1", "internal_code": null, "title": "Petition for Order Upon Support Agreement" }
+      ]
+    }
+  ],
+  "supporting_documents": [
+    "birth_certificates",
+    "proof_of_income",
+    "tax_returns",
+    "pay_stubs",
+    "existing_court_orders"
+  ],
+  "includes": [],
+  "internal": {
+    "workflow_enum": "CHILD_SUPPORT",
+    "node_sequence": [
+      "NODE_3001_SUPPORT_PETITION",
+      "NODE_3002_SUPPORT_ORDER"
+    ]
+  },
+  "source_references": [
+    "https://www.nycourts.gov/family-forms",
+    "https://www.nycourts.gov/courthelp/diy/supportModification.shtml",
+    "https://familylegalcare.org/courtforms/"
+  ]
+}
