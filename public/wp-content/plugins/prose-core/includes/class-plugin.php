@@ -21,6 +21,7 @@ use ProSe\Core\Forms\Forms_Module;
 use ProSe\Core\Forms\Package_CPT;
 use ProSe\Core\Forms\Package_Repository;
 use ProSe\Core\Intake\Intake_Module;
+use ProSe\Core\PackageBuilder\Package_Builder_Module;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -161,6 +162,7 @@ final class Plugin {
 			array(
 				Forms_Module::class,
 				Intake_Module::class,
+				Package_Builder_Module::class,
 			)
 		);
 

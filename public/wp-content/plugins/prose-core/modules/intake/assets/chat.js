@@ -151,14 +151,31 @@
 					session.case_profile = data.case_profile || session.case_profile || {};
 					saveSession( session.conversation_id, session.case_profile );
 
+					// Announce a resolved workflow so downstream widgets (e.g. the
+					// Package Builder preview) can react. Package selection stays
+					// server-side; this only forwards the resolved workflow key.
+					var resolvedWorkflow = ( data.case_profile && data.case_profile.workflow ) || data.workflow || '';
+					if ( resolvedWorkflow ) {
+						document.dispatchEvent( new CustomEvent( 'prose:workflow-resolved', {
+							detail: {
+								conversation_id: session.conversation_id,
+								workflow: resolvedWorkflow
+							}
+						} ) );
+					}
+
 					setCompletion( data.completion );
 
 					var question = ( data.next_question || '' ).trim();
-					thinking.textContent = question || ( STRINGS.complete || 'Thanks — intake complete.' );
+					var intakeComplete = question === '' && 100 === ( data.completion || 0 );
 
-					if ( ! question ) {
+					thinking.textContent = question || ( intakeComplete ? ( STRINGS.complete || 'Thanks — intake complete.' ) : ( STRINGS.error || 'Something went wrong. Please try again.' ) );
+
+					if ( intakeComplete ) {
 						thinking.classList.add( 'prose-intake__bubble--complete' );
 						input.disabled = true;
+					} else if ( ! question ) {
+						thinking.classList.add( 'prose-intake__bubble--error' );
 					}
 				} )
 				.catch( function () {

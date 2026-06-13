@@ -107,9 +107,10 @@ final class Intake_Agent {
 		$extracted = array();
 
 		// Prior routing decision (retained when a later turn is inconclusive).
-		$prior_workflow = $profile->workflow();
-		$prior_issue    = $profile->issue();
-		$prior_court    = $profile->court();
+		$prior_workflow            = $profile->workflow();
+		$prior_issue               = $profile->issue();
+		$prior_court               = $profile->court();
+		$prior_candidate_workflows = $profile->candidate_workflows();
 
 		// Resolve the pending answer before routing so discriminator answers
 		// (e.g. a bare "yes" to "Do you have children?") influence resolution.
@@ -158,9 +159,17 @@ final class Intake_Agent {
 			}
 		}
 
+		$this->sync_routing_facts_to_workflow( $profile->facts(), $required_fields );
+
 		$missing     = $this->completion->missing_required( $required_fields, $profile->facts() );
 		$completion  = $this->completion->calculate( $required_fields, $profile->facts() );
-		$next        = $this->selector->select( $required_fields, $missing, $workflow, $result->missing_fields() );
+		$routing_missing = $result->missing_fields();
+
+		if ( empty( $routing_missing ) && ( null === $workflow || '' === $workflow ) && ! empty( $prior_candidate_workflows ) ) {
+			$routing_missing = $this->routing_missing_for_candidates( $prior_candidate_workflows, $profile->facts() );
+		}
+
+		$next = $this->selector->select( $required_fields, $missing, $workflow, $routing_missing );
 
 		$profile_array = $profile->to_array();
 
@@ -175,9 +184,13 @@ final class Intake_Agent {
 			$profile_array['court'] = $prior_court;
 		}
 
+		if ( empty( $profile_array['candidate_workflows'] ) && ! empty( $prior_candidate_workflows ) && ( null === $workflow || '' === $workflow ) ) {
+			$profile_array['candidate_workflows'] = $prior_candidate_workflows;
+		}
+
 		$profile_array['pending_field'] = $next['field'];
 
-		return array(
+		$response = array(
 			'conversation_id' => $profile->conversation_id(),
 			'workflow'        => $workflow,
 			'facts_extracted' => $extracted,
@@ -186,6 +199,31 @@ final class Intake_Agent {
 			'next_question'   => $next['question'],
 			'completion'      => $completion,
 		);
+
+		if ( $this->debug_enabled() ) {
+			$response['debug'] = array(
+				'workflow'        => $workflow,
+				'required_fields' => array_values(
+					array_map(
+						static function ( array $field ): string {
+							return (string) ( $field['key'] ?? '' );
+						},
+						array_filter(
+							$required_fields,
+							static function ( array $field ): bool {
+								return true === ( $field['required'] ?? false );
+							}
+						)
+					)
+				),
+				'known_facts'     => $profile->facts()->export(),
+				'missing_fields'  => $missing,
+				'routing_missing' => $routing_missing,
+				'completion'      => $completion,
+			);
+		}
+
+		return $response;
 	}
 
 	/**
@@ -249,6 +287,57 @@ final class Intake_Agent {
 		}
 
 		return $clean;
+	}
+
+	/**
+	 * Mirror routing discriminator facts onto workflow required_field keys.
+	 *
+	 * Routing uses `children`; workflow metadata uses `has_minor_children`.
+	 *
+	 * @param \ProSe\Core\Routing\Fact_Store $facts           Fact store.
+	 * @param array<int, array<string, mixed>> $required_fields Required fields.
+	 * @return void
+	 */
+	private function sync_routing_facts_to_workflow( \ProSe\Core\Routing\Fact_Store $facts, array $required_fields ): void {
+		$keys = array();
+
+		foreach ( $required_fields as $field ) {
+			$key = (string) ( $field['key'] ?? '' );
+
+			if ( '' !== $key ) {
+				$keys[ $key ] = true;
+			}
+		}
+
+		if ( isset( $keys['has_minor_children'] ) && $facts->has( 'children' ) && ! $facts->has( 'has_minor_children' ) ) {
+			$facts->set( 'has_minor_children', (bool) $facts->get( 'children' ) );
+		}
+	}
+
+	/**
+	 * Routing missing fields for a preserved candidate set.
+	 *
+	 * @param string[]                           $candidate_workflows Candidate workflows.
+	 * @param \ProSe\Core\Routing\Fact_Store     $facts               Facts.
+	 * @return string[]
+	 */
+	private function routing_missing_for_candidates( array $candidate_workflows, \ProSe\Core\Routing\Fact_Store $facts ): array {
+		$detector = new \ProSe\Core\Routing\Validators\Missing_Info_Detector();
+
+		return $detector->detect( $candidate_workflows, $facts );
+	}
+
+	/**
+	 * Whether intake debug payload should be attached.
+	 *
+	 * @return bool
+	 */
+	private function debug_enabled(): bool {
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			return true;
+		}
+
+		return function_exists( 'current_user_can' ) && current_user_can( 'manage_options' );
 	}
 
 	/**

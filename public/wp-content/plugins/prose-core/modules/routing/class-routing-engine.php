@@ -111,6 +111,10 @@ final class Routing_Engine {
 	 * @return Routing_Result
 	 */
 	public function route_profile( string $text, Case_Profile $profile ): Routing_Result {
+		$prior_issue               = $profile->issue();
+		$prior_court               = $profile->court();
+		$prior_candidate_workflows = $profile->candidate_workflows();
+
 		$facts = $profile->facts();
 		$facts->merge( $this->intent_detector->extract_facts( $text ) );
 
@@ -118,7 +122,18 @@ final class Routing_Engine {
 		$signals = $intent['signals'];
 
 		$issue = $this->issue_resolver->resolve( $text, $signals );
+
+		// Short follow-up answers (e.g. "No", "Brooklyn") carry no issue signal.
+		// Retain the session issue so routing does not reset mid-intake.
+		if ( ( null === $issue || '' === $issue ) && null !== $prior_issue && '' !== $prior_issue ) {
+			$issue = $prior_issue;
+		}
+
 		$court = $this->court_resolver->resolve( $issue, $signals );
+
+		if ( ( null === $court || '' === $court ) && null !== $prior_court && '' !== $prior_court ) {
+			$court = $prior_court;
+		}
 
 		$workflow_resolution = $this->workflow_resolver->resolve( $issue, $text, $facts );
 
@@ -130,6 +145,10 @@ final class Routing_Engine {
 		if ( null === $workflow || '' === $workflow ) {
 			if ( empty( $candidate_workflows ) && null !== $issue ) {
 				$candidate_workflows = array_keys( $this->catalog->by_issue( $this->base_issue( $issue ) ) );
+			}
+
+			if ( empty( $candidate_workflows ) && ! empty( $prior_candidate_workflows ) ) {
+				$candidate_workflows = $prior_candidate_workflows;
 			}
 
 			$candidate_workflows = $this->filter_ambiguity_candidates( $candidate_workflows, $issue );

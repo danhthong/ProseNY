@@ -261,6 +261,24 @@ class IntakeAgentTest extends TestCase {
 	}
 
 	/**
+	 * Divorce intake must not complete after only the children routing answer.
+	 */
+	public function test_divorce_does_not_complete_after_children_only(): void {
+		$turn1 = $this->agent->process( 'I want divorce' );
+		$this->assertSame( 'Do you have any children under 21?', $turn1['next_question'] );
+		$this->assertSame( '', (string) ( $turn1['workflow'] ?? '' ) );
+
+		$turn2 = $this->agent->process( 'No', $turn1['case_profile'] );
+
+		$this->assertSame( 'uncontested_divorce_no_children_nyc', $turn2['workflow'] );
+		$this->assertNotEmpty( $turn2['missing_fields'], 'Workflow required fields should remain.' );
+		$this->assertNotSame( '', $turn2['next_question'], 'Intake must continue after children answer.' );
+		$this->assertLessThan( 100, $turn2['completion'] );
+		$this->assertSame( 'In which NYC county are you filing?', $turn2['next_question'] );
+		$this->assertFalse( $turn2['case_profile']['facts']['has_minor_children'] );
+	}
+
+	/**
 	 * Every response carries a conversation id.
 	 */
 	public function test_every_response_has_conversation_id(): void {

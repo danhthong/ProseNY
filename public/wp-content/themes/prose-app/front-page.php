@@ -131,6 +131,13 @@ $prose_prompts = array(
 					echo do_shortcode( '[prose_intake_chat]' );
 				}
 				?>
+
+				<?php // Package preview (plugin-provided). Reacts to a resolved workflow, drives POST /prose/v1/package/preview. ?>
+				<?php
+				if ( shortcode_exists( 'prose_package_preview' ) ) {
+					echo do_shortcode( '[prose_package_preview]' );
+				}
+				?>
 			</div>
 
 			<?php // Suggested prompts (2x2 desktop, stacked mobile). Prefill the widget input on click. ?>

@@ -1,0 +1,148 @@
+.prose-package {
+	box-sizing: border-box;
+	width: 100%;
+	margin-top: 16px;
+	padding: 20px;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	background: #fff;
+	font-family: inherit;
+	color: #0f172a;
+}
+
+.prose-package *,
+.prose-package *::before,
+.prose-package *::after {
+	box-sizing: border-box;
+}
+
+.prose-package__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 12px;
+}
+
+.prose-package__title {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 700;
+}
+
+.prose-package__status {
+	flex: none;
+	padding: 4px 10px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 600;
+	background: #f1f5f9;
+	color: #475569;
+}
+
+.prose-package__status--ready {
+	background: #dcfce7;
+	color: #15803d;
+}
+
+.prose-package__status--incomplete {
+	background: #fef3c7;
+	color: #b45309;
+}
+
+.prose-package__summary {
+	margin-bottom: 12px;
+	font-size: 13px;
+	color: #64748b;
+}
+
+.prose-package__stage {
+	margin-bottom: 14px;
+}
+
+.prose-package__stage-label {
+	margin: 0 0 6px;
+	font-size: 12px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: #94a3b8;
+}
+
+.prose-package__form {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 8px 0;
+	border-top: 1px solid #f1f5f9;
+	font-size: 14px;
+}
+
+.prose-package__form-main {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.prose-package__form-code {
+	font-weight: 600;
+}
+
+.prose-package__form-title {
+	font-size: 12px;
+	color: #64748b;
+}
+
+.prose-package__badge {
+	flex: none;
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 600;
+}
+
+.prose-package__badge--required {
+	background: #e0e7ff;
+	color: #4338ca;
+}
+
+.prose-package__badge--optional {
+	background: #f1f5f9;
+	color: #64748b;
+}
+
+.prose-package__badge--ready {
+	background: #dcfce7;
+	color: #15803d;
+}
+
+.prose-package__badge--pending {
+	background: #fee2e2;
+	color: #b91c1c;
+}
+
+.prose-package__footer {
+	margin-top: 8px;
+}
+
+.prose-package__download {
+	width: 100%;
+	padding: 10px 16px;
+	border: 0;
+	border-radius: 10px;
+	background: #4f46e5;
+	color: #fff;
+	font-size: 14px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.prose-package__download:hover {
+	background: #4338ca;
+}
+
+.prose-package__download[disabled] {
+	opacity: 0.6;
+	cursor: default;
+}

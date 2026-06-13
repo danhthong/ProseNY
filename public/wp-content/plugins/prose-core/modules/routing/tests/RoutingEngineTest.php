@@ -185,4 +185,28 @@ class RoutingEngineTest extends TestCase {
 		$this->assertSame( 'custody', $profile->issue() );
 		$this->assertSame( 'family_court', $profile->court() );
 	}
+
+	/**
+	 * Short follow-up answers retain the session issue and routing candidates.
+	 */
+	public function test_route_profile_retains_issue_on_short_answer(): void {
+		$profile = Case_Profile::from_array(
+			array(
+				'issue'               => 'divorce',
+				'court'               => 'supreme_court',
+				'facts'               => array( 'children' => false ),
+				'candidate_workflows' => array(
+					'contested_divorce_nyc',
+					'uncontested_divorce_children_nyc',
+					'uncontested_divorce_no_children_nyc',
+				),
+			)
+		);
+
+		$result = $this->engine->route_profile( 'No', $profile );
+
+		$this->assertSame( 'divorce', $result->issue() );
+		$this->assertSame( 'supreme_court', $result->court() );
+		$this->assertSame( 'uncontested_divorce_no_children_nyc', $result->workflow() );
+	}
 }

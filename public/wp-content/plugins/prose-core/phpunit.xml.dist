@@ -5,6 +5,7 @@
 			<directory>tests/unit</directory>
 			<directory>modules/routing/tests</directory>
 			<directory>modules/intake/tests</directory>
+			<directory>modules/packagebuilder/tests</directory>
 		</testsuite>
 	</testsuites>
 </phpunit>
