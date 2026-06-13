@@ -19,6 +19,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Case_Profile {
 
 	/**
+	 * Stable conversation identifier (future persistence/resume key).
+	 *
+	 * @var string
+	 */
+	private string $conversation_id = '';
+
+	/**
 	 * Resolved issue type.
 	 *
 	 * @var string|null
@@ -93,6 +100,7 @@ final class Case_Profile {
 		$facts = Fact_Store::from_array( is_array( $data['facts'] ?? null ) ? $data['facts'] : array() );
 		$profile = new self( $facts );
 
+		$profile->conversation_id      = isset( $data['conversation_id'] ) && is_string( $data['conversation_id'] ) ? $data['conversation_id'] : '';
 		$profile->issue                = isset( $data['issue'] ) && is_string( $data['issue'] ) && '' !== $data['issue'] ? $data['issue'] : null;
 		$profile->court                = isset( $data['court'] ) && is_string( $data['court'] ) && '' !== $data['court'] ? $data['court'] : null;
 		$profile->workflow             = isset( $data['workflow'] ) && is_string( $data['workflow'] ) && '' !== $data['workflow'] ? $data['workflow'] : null;
@@ -102,6 +110,25 @@ final class Case_Profile {
 		$profile->progress             = isset( $data['progress'] ) ? (int) $data['progress'] : 0;
 
 		return $profile;
+	}
+
+	/**
+	 * Conversation identifier.
+	 *
+	 * @return string
+	 */
+	public function conversation_id(): string {
+		return $this->conversation_id;
+	}
+
+	/**
+	 * Set the conversation identifier.
+	 *
+	 * @param string $conversation_id Conversation identifier.
+	 * @return void
+	 */
+	public function set_conversation_id( string $conversation_id ): void {
+		$this->conversation_id = $conversation_id;
 	}
 
 	/**
@@ -198,6 +225,7 @@ final class Case_Profile {
 	 */
 	public function to_array(): array {
 		return array(
+			'conversation_id'      => $this->conversation_id,
 			'issue'                => $this->issue,
 			'court'                => $this->court,
 			'workflow'             => $this->workflow,

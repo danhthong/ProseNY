@@ -1,0 +1,84 @@
+<?php
+/**
+ * Intake module bootstrap.
+ *
+ * Wires the deterministic Intake Agent: REST endpoint, admin tester, and the
+ * frontend chat widget shortcode.
+ *
+ * @package ProSeCore
+ */
+
+namespace ProSe\Core\Intake;
+
+use ProSe\Core\Intake\Admin\Intake_Tester_Page;
+use ProSe\Core\Loader;
+use ProSe\Core\Module_Interface;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Class Intake_Module
+ */
+final class Intake_Module implements Module_Interface {
+
+	/**
+	 * Intake agent.
+	 *
+	 * @var Intake_Agent
+	 */
+	private Intake_Agent $agent;
+
+	/**
+	 * REST controller.
+	 *
+	 * @var Intake_Rest_Controller
+	 */
+	private Intake_Rest_Controller $rest_controller;
+
+	/**
+	 * Admin tester page.
+	 *
+	 * @var Intake_Tester_Page
+	 */
+	private Intake_Tester_Page $tester_page;
+
+	/**
+	 * Chat shortcode.
+	 *
+	 * @var Intake_Chat_Shortcode
+	 */
+	private Intake_Chat_Shortcode $shortcode;
+
+	/**
+	 * Constructor.
+	 */
+	public function __construct() {
+		$this->agent           = new Intake_Agent();
+		$this->rest_controller = new Intake_Rest_Controller( $this->agent );
+		$this->tester_page     = new Intake_Tester_Page( $this->agent );
+		$this->shortcode       = new Intake_Chat_Shortcode();
+	}
+
+	/**
+	 * Register module hooks.
+	 *
+	 * @param Loader $loader Hook loader.
+	 * @return void
+	 */
+	public function register( Loader $loader ): void {
+		$this->rest_controller->register( $loader );
+		$this->tester_page->register( $loader );
+		$this->shortcode->register( $loader );
+	}
+
+	/**
+	 * Intake agent accessor (for other modules).
+	 *
+	 * @return Intake_Agent
+	 */
+	public function get_agent(): Intake_Agent {
+		return $this->agent;
+	}
+}

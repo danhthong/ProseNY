@@ -124,66 +124,22 @@ $prose_prompts = array(
 
 			<div class="hidden h-4 w-px md:block" aria-hidden="true"></div>
 
-			<?php // ChatInput — fixed to bottom on mobile, inline on desktop. ?>
-			<form
-				class="fixed inset-x-0 bottom-0 z-20 flex w-full flex-col gap-3 border-t border-slate-200 bg-white px-4 py-4 md:static md:w-[720px] md:max-w-full md:rounded-2xl md:border md:px-5 md:shadow-[0_2px_4px_rgba(0,0,0,0.06),0_4px_6px_rgba(0,0,0,0.07)]"
-				role="search"
-				onsubmit="return false;"
-			>
-				<label for="prose-chat-input" class="sr-only"><?php esc_html_e( 'Type your message', 'prose-app' ); ?></label>
-				<textarea
-					id="prose-chat-input"
-					rows="1"
-					class="w-full resize-none border-0 bg-transparent p-0 text-[16px] leading-[24px] text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-0"
-					placeholder="<?php esc_attr_e( 'Type your message here...', 'prose-app' ); ?>"
-				></textarea>
+			<?php // Intake chat widget (plugin-provided). Drives POST /prose/v1/intake. ?>
+			<div class="w-full md:w-[720px] md:max-w-full">
+				<?php
+				if ( shortcode_exists( 'prose_intake_chat' ) ) {
+					echo do_shortcode( '[prose_intake_chat]' );
+				}
+				?>
+			</div>
 
-				<div class="flex items-center justify-between">
-					<div class="flex items-center gap-2">
-						<button type="button" class="flex size-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50" aria-label="<?php esc_attr_e( 'Add attachment', 'prose-app' ); ?>">
-							<svg class="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-								<line x1="12" y1="5" x2="12" y2="19" />
-								<line x1="5" y1="12" x2="19" y2="12" />
-							</svg>
-						</button>
-						<button type="button" class="flex size-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50" aria-label="<?php esc_attr_e( 'Browse', 'prose-app' ); ?>">
-							<svg class="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-								<circle cx="12" cy="12" r="9" />
-								<line x1="3" y1="12" x2="21" y2="12" />
-								<path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18z" />
-							</svg>
-						</button>
-						<button type="button" class="flex size-8 items-center justify-center rounded-full border border-slate-200 text-slate-500 hover:bg-slate-50" aria-label="<?php esc_attr_e( 'More tools', 'prose-app' ); ?>">
-							<svg class="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-								<path d="M12 3l1.9 4.8L18.7 9.7l-4.8 1.9L12 16.4l-1.9-4.8L5.3 9.7l4.8-1.9z" />
-							</svg>
-						</button>
-					</div>
-
-					<div class="flex items-center gap-2">
-						<button type="button" class="flex size-8 items-center justify-center rounded-full text-slate-500 hover:bg-slate-50" aria-label="<?php esc_attr_e( 'Voice input', 'prose-app' ); ?>">
-							<svg class="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-								<rect x="9" y="3" width="6" height="11" rx="3" />
-								<path d="M5 11a7 7 0 0 0 14 0" />
-								<line x1="12" y1="18" x2="12" y2="21" />
-							</svg>
-						</button>
-						<button type="submit" class="flex size-9 items-center justify-center rounded-full bg-indigo-600 text-white hover:bg-indigo-700" aria-label="<?php esc_attr_e( 'Send message', 'prose-app' ); ?>">
-							<svg class="size-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-								<line x1="12" y1="19" x2="12" y2="5" />
-								<polyline points="5 12 12 5 19 12" />
-							</svg>
-						</button>
-					</div>
-				</div>
-			</form>
-
-			<?php // Suggested prompts (2x2 desktop, stacked mobile). ?>
+			<?php // Suggested prompts (2x2 desktop, stacked mobile). Prefill the widget input on click. ?>
 			<div class="flex w-full flex-wrap gap-3 md:w-[720px]">
 				<?php foreach ( $prose_prompts as $prompt ) : ?>
 					<button
 						type="button"
 						class="flex w-full flex-col gap-1.5 rounded-xl border border-slate-100 bg-white px-4 py-[14px] text-left hover:border-slate-200 hover:bg-slate-50 md:w-[354px]"
+						data-prose-intake-prompt="<?php echo esc_attr( $prompt['title'] ); ?>"
 					>
 						<span class="text-[14px] font-semibold text-slate-900"><?php echo esc_html( $prompt['title'] ); ?></span>
 						<span class="text-[13px] leading-[18px] text-slate-500"><?php echo esc_html( $prompt['desc'] ); ?></span>

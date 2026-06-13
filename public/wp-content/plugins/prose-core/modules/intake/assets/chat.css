@@ -1,0 +1,206 @@
+/**
+ * ProSe Intake Chat Widget (MVP) styles.
+ *
+ * Self-contained, framework-free styles so the widget works in any theme.
+ */
+
+.prose-intake {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	width: 100%;
+	max-width: 720px;
+	margin: 0 auto;
+	padding: 20px;
+	background: #ffffff;
+	border: 1px solid #e2e8f0;
+	border-radius: 16px;
+	box-shadow: 0 2px 4px rgba( 15, 23, 42, 0.06 ), 0 4px 12px rgba( 15, 23, 42, 0.05 );
+	box-sizing: border-box;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+	color: #0f172a;
+}
+
+.prose-intake *,
+.prose-intake *::before,
+.prose-intake *::after {
+	box-sizing: border-box;
+}
+
+.prose-intake__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.prose-intake__title {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 700;
+	line-height: 1.3;
+	color: #0f172a;
+}
+
+.prose-intake__reset {
+	appearance: none;
+	border: 1px solid #e2e8f0;
+	background: #f8fafc;
+	color: #475569;
+	font-size: 13px;
+	font-weight: 500;
+	padding: 6px 12px;
+	border-radius: 8px;
+	cursor: pointer;
+}
+
+.prose-intake__reset:hover {
+	background: #f1f5f9;
+	color: #0f172a;
+}
+
+.prose-intake__progress {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.prose-intake__progress-label {
+	display: flex;
+	justify-content: space-between;
+	font-size: 12px;
+	font-weight: 600;
+	color: #64748b;
+}
+
+.prose-intake__progress-track {
+	height: 8px;
+	background: #e2e8f0;
+	border-radius: 999px;
+	overflow: hidden;
+}
+
+.prose-intake__progress-bar {
+	height: 100%;
+	width: 0;
+	background: #4f46e5;
+	border-radius: 999px;
+	transition: width 0.35s ease;
+}
+
+.prose-intake__transcript {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	min-height: 120px;
+	max-height: 420px;
+	overflow-y: auto;
+	padding: 4px;
+}
+
+.prose-intake__bubble {
+	max-width: 85%;
+	padding: 10px 14px;
+	border-radius: 14px;
+	font-size: 15px;
+	line-height: 1.45;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+}
+
+.prose-intake__bubble--user {
+	align-self: flex-end;
+	background: #4f46e5;
+	color: #ffffff;
+	border-bottom-right-radius: 4px;
+}
+
+.prose-intake__bubble--agent {
+	align-self: flex-start;
+	background: #f1f5f9;
+	color: #0f172a;
+	border-bottom-left-radius: 4px;
+}
+
+.prose-intake__bubble--system {
+	align-self: center;
+	background: transparent;
+	color: #94a3b8;
+	font-size: 13px;
+}
+
+.prose-intake__bubble--complete {
+	background: #ecfdf5;
+	color: #047857;
+}
+
+.prose-intake__bubble--error {
+	background: #fef2f2;
+	color: #b91c1c;
+}
+
+.prose-intake__form {
+	display: flex;
+	align-items: flex-end;
+	gap: 10px;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	padding: 8px 8px 8px 14px;
+	background: #ffffff;
+}
+
+.prose-intake__form:focus-within {
+	border-color: #c7d2fe;
+	box-shadow: 0 0 0 3px rgba( 79, 70, 229, 0.12 );
+}
+
+.prose-intake__input {
+	flex: 1;
+	border: 0;
+	outline: none;
+	resize: none;
+	font-size: 15px;
+	line-height: 1.5;
+	padding: 6px 0;
+	background: transparent;
+	color: #0f172a;
+	font-family: inherit;
+	max-height: 160px;
+}
+
+.prose-intake__input:disabled {
+	color: #94a3b8;
+}
+
+.prose-intake__send {
+	appearance: none;
+	border: 0;
+	background: #4f46e5;
+	color: #ffffff;
+	font-size: 14px;
+	font-weight: 600;
+	padding: 9px 18px;
+	border-radius: 9px;
+	cursor: pointer;
+	flex-shrink: 0;
+}
+
+.prose-intake__send:hover {
+	background: #4338ca;
+}
+
+.prose-intake__send:disabled {
+	background: #a5b4fc;
+	cursor: not-allowed;
+}
+
+@media ( max-width: 600px ) {
+	.prose-intake {
+		padding: 16px;
+		border-radius: 12px;
+	}
+
+	.prose-intake__bubble {
+		max-width: 92%;
+	}
+}

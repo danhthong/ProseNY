@@ -20,6 +20,7 @@ use ProSe\Core\Forms\Form_Taxonomy;
 use ProSe\Core\Forms\Forms_Module;
 use ProSe\Core\Forms\Package_CPT;
 use ProSe\Core\Forms\Package_Repository;
+use ProSe\Core\Intake\Intake_Module;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -159,6 +160,7 @@ final class Plugin {
 			'prose_core_modules',
 			array(
 				Forms_Module::class,
+				Intake_Module::class,
 			)
 		);
 
