@@ -1,0 +1,46 @@
+{
+    "form_code": "TPR-4",
+    "internal_code": "TPR-4",
+    "title": "Petition (Parents Deceased)",
+    "court": "family_court",
+    "category": "guardianship",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "tpr-4.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/tpr-4.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "tpr-4.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/tpr-4.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/petition-parents-deceased?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Termination of Parental Rights - Guardianship"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

@@ -1,0 +1,46 @@
+{
+    "form_code": "27-A",
+    "internal_code": "27-A",
+    "title": "Adoption-Petition for Access to Sealed Adoption Records",
+    "court": "family_court",
+    "category": "adoption",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "adop27-a.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/adop27-a.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "adop27-a.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/adop27-a.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/adoption-petition-access-sealed-adoption-records",
+    "case_types": [
+        "Family Forms",
+        "Adoption - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

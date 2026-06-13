@@ -1,0 +1,46 @@
+{
+    "form_code": "UCCJEA-1",
+    "internal_code": "UCCJEA-1",
+    "title": "Petition for Custody/Visitation - UCCJEA",
+    "court": "family_court",
+    "category": "custody",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "uccjea-1.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/uccjea-1.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "uccjea-1.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/uccjea-1.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/petition-custodyvisitation-uccjea?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Uniform Child Custody & Enforcement Act (UCCJEA)"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

@@ -1,0 +1,39 @@
+{
+    "form_code": "GF-29",
+    "internal_code": "GF-29",
+    "title": "Appearance Notice",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "doc": {
+            "filename": "gf-29.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/gf-29.doc",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "",
+    "editable_source": "",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": false,
+    "import_status": "partial",
+    "official_url": "https://www.nycourts.gov/forms/appearance-notice",
+    "case_types": [
+        "Family Forms"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "none",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

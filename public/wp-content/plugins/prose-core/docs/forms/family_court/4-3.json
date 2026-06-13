@@ -1,0 +1,57 @@
+{
+    "form_code": "4-3",
+    "internal_code": "4-3",
+    "title": "Petition - Individual",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "form-4-3-support-spousal-only-petition-ncfc-5-2016.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-03/form-4-3-support-spousal-only-petition-ncfc-5-2016.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "4-3_0.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/4-3_0.docx",
+            "download_status": "pending"
+        },
+        "fillable_pdf": {
+            "filename": "fillable-form-4-3-support-spousal-only-petition-ncfc-5-2016.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-03/fillable-form-4-3-support-spousal-only-petition-ncfc-5-2016.pdf",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": true,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/petition-individual?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms"
+    ],
+    "aliases": [],
+    "workflow_references": [
+        {
+            "workflow": "child_support_nyc",
+            "stage": "petition",
+            "requirement": "required"
+        }
+    ],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

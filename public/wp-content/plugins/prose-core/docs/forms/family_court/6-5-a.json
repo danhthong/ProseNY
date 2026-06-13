@@ -1,0 +1,55 @@
+{
+    "form_code": "6-5-a",
+    "internal_code": "6-5-a",
+    "title": "Order Appointing Kinship Guardian [Subsidized Kinship Guardian Program] and/or Permanent Guardian",
+    "court": "family_court",
+    "category": "guardianship",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "6-5-a.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-04/6-5-a.pdf",
+            "download_status": "pending"
+        },
+        "doc": {
+            "filename": "6-5-a.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-04/6-5-a.doc",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "6-5-a.WPD",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-04/6-5-a.WPD",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-appointing-kinship-guardian-subsidized-kinship-guardian-program-andor-permanent?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Termination of Parental Rights - Guardianship"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

@@ -1,0 +1,40 @@
+{
+    "form_code": "PH-4a",
+    "internal_code": "PH-4a",
+    "title": "Statement to Court of Permanency Hearing Reports and/or Notices Sent",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "ph-4a.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/ph-4a.pdf",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/statement-court-permanency-hearing-reports-andor-notices-sent?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Permanency Hearings: Foster Care Reentry"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

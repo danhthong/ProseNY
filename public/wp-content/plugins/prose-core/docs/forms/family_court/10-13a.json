@@ -1,0 +1,46 @@
+{
+    "form_code": "10-13a",
+    "internal_code": "10-13a",
+    "title": "Affirmation in Support of Motion for an Order of Violation of Order of Disposition",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "10-13a.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/10-13a.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "10-13a.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/10-13a.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/affirmation-support-motion-order-violation-order-disposition?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Child Protective"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

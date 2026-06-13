@@ -1,0 +1,55 @@
+{
+    "form_code": "TRP-2a",
+    "internal_code": "TRP-2a",
+    "title": "Findings of Fact, Conclusions of Law, and Order of Disposition-Suspended Judgement - Permanent Neglect",
+    "court": "family_court",
+    "category": "guardianship",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "tpr-2a.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/tpr-2a.pdf",
+            "download_status": "pending"
+        },
+        "doc": {
+            "filename": "tpr-2a.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/tpr-2a.doc",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "tpr-2a.WPD",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/tpr-2a.WPD",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/findings-fact-conclusions-law-and-order-disposition-suspended-judgement-permanent-neglect?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Termination of Parental Rights - Guardianship"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

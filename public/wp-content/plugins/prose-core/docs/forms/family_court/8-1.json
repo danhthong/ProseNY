@@ -1,0 +1,47 @@
+{
+    "form_code": "8-1",
+    "internal_code": "8-1",
+    "title": "Information for Victims of Domestic Violence",
+    "court": "family_court",
+    "category": "family_offense",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "8-1_chinese-trad.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-04/8-1_chinese-trad.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "8-1_english-word.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/8-1_english-word.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/information-victims-domestic-violence?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Domestic Violence",
+        "Family Offense"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

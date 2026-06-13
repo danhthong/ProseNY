@@ -1,0 +1,53 @@
+{
+    "form_code": "SC-1",
+    "internal_code": "SC-1",
+    "title": "Temporary Order of Protection (Supreme Court)",
+    "court": "supreme_court",
+    "category": "divorce",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "sc-1.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/sc-1.pdf",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "sc-1.wpd",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/sc-1.wpd",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/temporary-order-protection-supreme-court?topic=611&wrapped=true",
+    "case_types": [
+        "Divorce",
+        "Divorce - Orders of Protection",
+        "Domestic Violence",
+        "Domestic Violence - Orders of Protection",
+        "Family Forms",
+        "General - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

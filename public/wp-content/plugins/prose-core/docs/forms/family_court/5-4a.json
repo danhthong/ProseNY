@@ -1,0 +1,55 @@
+{
+    "form_code": "5-4a",
+    "internal_code": "5-4a",
+    "title": "Order on Motion to Challenge Genetic Marker or DNA testing Directive",
+    "court": "family_court",
+    "category": "paternity",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "5-4a.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/5-4a.pdf",
+            "download_status": "pending"
+        },
+        "doc": {
+            "filename": "5-4a.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/5-4a.doc",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "5-4a.WPD",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/5-4a.WPD",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-motion-challenge-genetic-marker-or-dna-testing-directive?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Family - Paternity"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

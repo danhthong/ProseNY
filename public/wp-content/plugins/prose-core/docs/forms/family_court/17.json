@@ -1,0 +1,46 @@
+{
+    "form_code": "17",
+    "internal_code": "17",
+    "title": "Petition For Enforcement of Post-adoption Contact Agreement (after Adoption Finalization)",
+    "court": "family_court",
+    "category": "adoption",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "adop17.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/adop17.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "adop17.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/adop17.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/petition-enforcement-post-adoption-contact-agreement-after-adoption-finalization?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Adoption - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

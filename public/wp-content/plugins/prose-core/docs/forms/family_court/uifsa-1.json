@@ -1,0 +1,40 @@
+{
+    "form_code": "UIFSA-1",
+    "internal_code": "UIFSA-1",
+    "title": "Child Support Enforcement Transmittal #1 Initial Request",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "uifsa-1-child-support-enforcement-transmittal-1-initial-request.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/uifsa-1-child-support-enforcement-transmittal-1-initial-request.pdf",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/child-support-enforcement-transmittal-1-initial-request",
+    "case_types": [
+        "Uniform Interstate Family Support Act (UIFSA)",
+        "Family Forms"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

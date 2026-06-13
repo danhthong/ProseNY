@@ -1,0 +1,45 @@
+{
+    "form_code": "OURT-ECORDS-EQUEST-BY-AIL-OR-MAIL-ORM",
+    "internal_code": "OURT-ECORDS-EQUEST-BY-AIL-OR-MAIL-ORM",
+    "title": "Court Records Request by Mail or Email Form",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "ncfc-court-records-request-by-mail-or-fax-form.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-03/ncfc-court-records-request-by-mail-or-fax-form.pdf",
+            "download_status": "pending"
+        },
+        "fillable_pdf": {
+            "filename": "ncfc-court-records-request-by-mail-or-fax-form-fillable.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-03/ncfc-court-records-request-by-mail-or-fax-form-fillable.pdf",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "fillable_pdf",
+    "editable_source": "fillable_pdf",
+    "wpd_conversion": [],
+    "fillable_pdf_available": true,
+    "docx_available": false,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/court-records-request-mail-or-email-form",
+    "case_types": [
+        "Family Forms"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_acroform",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

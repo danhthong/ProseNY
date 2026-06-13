@@ -1,0 +1,55 @@
+{
+    "form_code": "4-24, 5-16, UIFSA-10",
+    "internal_code": "4-24, 5-16, UIFSA-10",
+    "title": "Electronic Testimony Application, Waiver of Personal Appearance and Order",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "4-24.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/4-24.pdf",
+            "download_status": "pending"
+        },
+        "doc": {
+            "filename": "4-24.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/4-24.doc",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "4-24.wpd",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/4-24.wpd",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/electronic-testimony-application-waiver-personal-appearance-and-order",
+    "case_types": [
+        "Family Forms",
+        "Uniform Interstate Family Support Act (UIFSA)"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

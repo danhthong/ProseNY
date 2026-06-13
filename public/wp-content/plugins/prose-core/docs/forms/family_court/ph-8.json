@@ -1,0 +1,46 @@
+{
+    "form_code": "PH-8",
+    "internal_code": "PH-8",
+    "title": "Order on Motion to Reenter Foster Care",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "ph-8.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/ph-8.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "ph-8.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/ph-8.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-motion-reenter-foster-care?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Permanency Hearings: Foster Care Reentry"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

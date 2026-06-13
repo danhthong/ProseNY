@@ -1,0 +1,61 @@
+{
+    "form_code": "6-4",
+    "internal_code": "6-4",
+    "title": "Waiver of Process, Renunciation Or Consent to (Letters of Guardianship) (Standby Guardianship)",
+    "court": "family_court",
+    "category": "guardianship",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "form-6-4-guardianship-waiver-and-consent-by-parents-etc-ncfc.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-03/form-6-4-guardianship-waiver-and-consent-by-parents-etc-ncfc.pdf",
+            "download_status": "pending"
+        },
+        "doc": {
+            "filename": "6-4.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/6-4.doc",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "6-4.wpd",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/6-4.wpd",
+            "download_status": "pending"
+        },
+        "fillable_pdf": {
+            "filename": "form-6-4-guardianship-waiver-and-consent-by-parents-etc-ncfc-fillable.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-03/form-6-4-guardianship-waiver-and-consent-by-parents-etc-ncfc-fillable.pdf",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "fillable_pdf",
+    "editable_source": "fillable_pdf",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": true,
+    "docx_available": false,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/waiver-process-renunciation-or-consent-letters-guardianship-standby-guardianship?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Termination of Parental Rights - Guardianship"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_acroform",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

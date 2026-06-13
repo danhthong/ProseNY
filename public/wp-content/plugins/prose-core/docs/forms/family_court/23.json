@@ -1,0 +1,46 @@
+{
+    "form_code": "23",
+    "internal_code": "23",
+    "title": "Affirmation and Report (Disinterested Person Certification Proceeding) (Private Placement)",
+    "court": "family_court",
+    "category": "adoption",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "adop-23.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/adop-23.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "adop-23.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/adop-23.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/affirmation-and-report-disinterested-person-certification-proceeding-private-placement",
+    "case_types": [
+        "Family Forms",
+        "Adoption - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

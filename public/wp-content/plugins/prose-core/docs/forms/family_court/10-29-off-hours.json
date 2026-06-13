@@ -1,0 +1,40 @@
+{
+    "form_code": "10-29 off hours",
+    "internal_code": "10-29 off hours",
+    "title": "Child Protective-Order on Application for Access to Child(ren) and/or Home before Petition Filed (plus off-hours protocol)",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "10-29-offhours.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/10-29-offhours.pdf",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/child-protective-order-application-access-children-andor-home-petition-filed-plus-hours",
+    "case_types": [
+        "Family Forms",
+        "Child Protective"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

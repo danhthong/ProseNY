@@ -1,0 +1,54 @@
+{
+    "form_code": "10-8",
+    "internal_code": "10-8",
+    "title": "Order - Adjournment in Contemplation of Dismissal",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "10-8.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-05/10-8.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "10-8.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-05/10-8.docx",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "10-8.WPD",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/10-8.WPD",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-adjournment-contemplation-dismissal?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

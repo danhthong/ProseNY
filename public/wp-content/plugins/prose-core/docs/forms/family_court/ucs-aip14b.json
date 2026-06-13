@@ -1,0 +1,46 @@
+{
+    "form_code": "UCS-AIP14B",
+    "internal_code": "UCS-AIP14B",
+    "title": "Annual Report of Guardian Person Only",
+    "court": "family_court",
+    "category": "guardianship",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "ucs-aip14b-annualreportofguardianpersononly.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-04/-ucs-aip14b-annualreportofguardianpersononly.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "ucs-aip14b-annualreportofguardianpersononly.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-04/-ucs-aip14b-annualreportofguardianpersononly.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/annual-report-guardian-person-only?topic=611&wrapped=true",
+    "case_types": [
+        "Guardianship",
+        "Article 81"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

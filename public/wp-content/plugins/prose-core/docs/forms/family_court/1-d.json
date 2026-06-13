@@ -1,0 +1,49 @@
+{
+    "form_code": "1-D",
+    "internal_code": "1-D",
+    "title": "Child's Medical History",
+    "court": "family_court",
+    "category": "adoption",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "adop1-d.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/adop1-d.pdf",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "adop1-d.WPD",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/adop1-d.WPD",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/childs-medical-history",
+    "case_types": [
+        "Family Forms",
+        "Adoption - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

@@ -1,0 +1,52 @@
+{
+    "form_code": "4-11",
+    "internal_code": "4-11",
+    "title": "Petition for Modification of an Order of Support",
+    "court": "family_court",
+    "category": "child_support",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "form-4-11-modificaton-of-an-order-of-support-petition-ncfc-3-2015.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-03/form-4-11-modificaton-of-an-order-of-support-petition-ncfc-3-2015.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "4-11.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/4-11.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/petition-modification-order-support?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Child Support"
+    ],
+    "aliases": [],
+    "workflow_references": [
+        {
+            "workflow": "child_support_nyc",
+            "stage": "modification",
+            "requirement": "required"
+        }
+    ],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

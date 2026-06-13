@@ -1,0 +1,53 @@
+{
+    "form_code": "4-24a, 5-16a, UIFSA-10",
+    "internal_code": "4-24a, 5-16a, UIFSA-10",
+    "title": "Support, Paternity, UIFSA - Order on Electronic Testimony Application",
+    "court": "family_court",
+    "category": "child_support",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "ncfc-elctronictestimony.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-03/ncfc-elctronictestimony.pdf",
+            "download_status": "pending"
+        },
+        "doc": {
+            "filename": "4-24a.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/4-24a.doc",
+            "download_status": "pending"
+        },
+        "fillable_pdf": {
+            "filename": "ncfc-electronictestimonyfillable.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-03/ncfc-electronictestimonyfillable.pdf",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "fillable_pdf",
+    "editable_source": "fillable_pdf",
+    "wpd_conversion": [],
+    "fillable_pdf_available": true,
+    "docx_available": false,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/support-paternity-uifsa-order-electronic-testimony-application?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Child Support",
+        "Family - Paternity"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_acroform",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

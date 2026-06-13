@@ -1,0 +1,55 @@
+{
+    "form_code": "2-G",
+    "internal_code": "2-G",
+    "title": "Extra-Judicial Consent (Birth or Legal Parent - Private Placement)",
+    "court": "family_court",
+    "category": "adoption",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "adop2-g.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/adop2-g.pdf",
+            "download_status": "pending"
+        },
+        "doc": {
+            "filename": "adop2-g.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/adop2-g.doc",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "adop2-g.WPD",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/adop2-g.WPD",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/extra-judicial-consent-birth-or-legal-parent-private-placement",
+    "case_types": [
+        "Family Forms",
+        "Adoption - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

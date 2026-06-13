@@ -1,0 +1,46 @@
+{
+    "form_code": "GF-45a",
+    "internal_code": "GF-45a",
+    "title": "Family First Prevention Services Act - Affidavit in Support of Placement in a Qualified Residential Treatment Program (QRTP)",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "gf-45a.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/gf-45a.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "gf-45a.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/gf-45a.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/family-first-prevention-services-act-affidavit-support-placement-qualified-residential?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "General - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

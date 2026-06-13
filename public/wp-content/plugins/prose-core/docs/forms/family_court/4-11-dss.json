@@ -1,0 +1,39 @@
+{
+    "form_code": "4-11 DSS",
+    "internal_code": "4-11 DSS",
+    "title": "Support Modification against DSS",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "form-4-11-modificaton-of-an-order-of-support-petition-ncfc-when-filing-against-dss-3-2015.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-03/form-4-11-modificaton-of-an-order-of-support-petition-ncfc-when-filing-against-dss-3-2015.pdf",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/support-modification-against-dss?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

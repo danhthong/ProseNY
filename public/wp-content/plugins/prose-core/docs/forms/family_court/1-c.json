@@ -1,0 +1,52 @@
+{
+    "form_code": "1-C",
+    "internal_code": "1-C",
+    "title": "Petition for Adoption (Private Placement)",
+    "court": "family_court",
+    "category": "adoption",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "adop1-c.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/adop1-c.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "adop1-c.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/adop1-c.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/petition-adoption-private-placement?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Adoption - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [
+        {
+            "workflow": "adoption_nyc",
+            "stage": "petition",
+            "requirement": "required"
+        }
+    ],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

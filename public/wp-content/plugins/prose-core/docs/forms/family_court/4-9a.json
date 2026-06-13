@@ -1,0 +1,40 @@
+{
+    "form_code": "4-9a",
+    "internal_code": "4-9a",
+    "title": "LDDS-5038: Income Withholding Order (Spousal Support only",
+    "court": "family_court",
+    "category": "child_support",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "4-9a-ldss-5038.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/4-9a-ldss-5038.pdf",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/ldds-5038-income-withholding-order-spousal-support-only?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Child Support"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

@@ -1,0 +1,139 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://courtflow.ai/schemas/form.schema.json",
+  "title": "CourtFlow Form Definition",
+  "description": "Canonical form metadata record for the Forms Repository.",
+  "type": "object",
+  "required": [
+    "form_code",
+    "internal_code",
+    "title",
+    "court",
+    "category",
+    "county_specific",
+    "counties_supported",
+    "source_files",
+    "preferred_source",
+    "editable_source",
+    "fillable_pdf_available",
+    "docx_available",
+    "wpd_available",
+    "import_status",
+    "workflow_references",
+    "fillable_strategy",
+    "field_mapping_status",
+    "generation_ready"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "form_code": {
+      "type": "string",
+      "minLength": 1
+    },
+    "internal_code": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "court": {
+      "type": "string",
+      "enum": ["supreme_court", "family_court"]
+    },
+    "category": {
+      "type": "string"
+    },
+    "county_specific": {
+      "type": "boolean"
+    },
+    "counties_supported": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source_files": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["filename", "path", "source_url", "download_status"],
+        "additionalProperties": false,
+        "properties": {
+          "filename": { "type": "string" },
+          "path": { "type": "string" },
+          "source_url": { "type": "string" },
+          "download_status": {
+            "type": "string",
+            "enum": ["success", "skipped", "failed", "unsupported", "pending", "unknown"]
+          }
+        }
+      }
+    },
+    "preferred_source": {
+      "type": "string"
+    },
+    "editable_source": {
+      "type": "string",
+      "enum": ["docx", "converted_docx", "fillable_pdf", "pdf", ""]
+    },
+    "wpd_conversion": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "original_wpd": { "type": "string" },
+        "converted_docx": { "type": ["string", "null"] }
+      }
+    },
+    "fillable_pdf_available": {
+      "type": "boolean"
+    },
+    "docx_available": {
+      "type": "boolean"
+    },
+    "wpd_available": {
+      "type": "boolean"
+    },
+    "import_status": {
+      "type": "string",
+      "enum": ["pending", "partial", "complete", "failed"]
+    },
+    "official_url": {
+      "type": "string"
+    },
+    "case_types": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "aliases": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "workflow_references": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["workflow", "stage", "requirement"],
+        "additionalProperties": false,
+        "properties": {
+          "workflow": { "type": "string" },
+          "stage": { "type": "string" },
+          "requirement": {
+            "type": "string",
+            "enum": ["required", "optional"]
+          }
+        }
+      }
+    },
+    "fillable_strategy": {
+      "type": "string",
+      "enum": ["docx_template", "pdf_acroform", "pdf_overlay", "none"]
+    },
+    "field_mapping_status": {
+      "type": "string",
+      "enum": ["unmapped", "partial", "mapped", "not_required"]
+    },
+    "generation_ready": {
+      "type": "boolean"
+    }
+  }
+}

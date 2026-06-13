@@ -1,0 +1,46 @@
+{
+    "form_code": "2-E",
+    "internal_code": "2-E",
+    "title": "Affirmation and Consent of Person Having Lawful Custody (Other than Birth or Legal Parent - Private Placement)",
+    "court": "family_court",
+    "category": "adoption",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "adop-2-e.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-04/adop-2-e.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "adop-2-e.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/adop-2-e.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/affirmation-and-consent-person-having-lawful-custody-other-birth-or-legal-parent-private?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Adoption - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

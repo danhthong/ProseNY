@@ -1,0 +1,46 @@
+{
+    "form_code": "GF-12-a",
+    "internal_code": "GF-12-a",
+    "title": "Affirmation Of Party Under CPLR \u00a73103(A)",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "gf-12-a.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-05/gf-12-a.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "gf-12-a.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-04/gf-12-a.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/affirmation-party-under-cplr-ss3103a?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "General - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

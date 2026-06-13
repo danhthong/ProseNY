@@ -1,0 +1,46 @@
+{
+    "form_code": "10-1b",
+    "internal_code": "10-1b",
+    "title": "Order of Investigation",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "10-1b.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/10-1b.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "10-1b.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/10-1b.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-investigation?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Child Protective"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

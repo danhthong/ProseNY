@@ -1,0 +1,58 @@
+{
+    "form_code": "6-1",
+    "internal_code": "6-1",
+    "title": "Petition - Appointment of Guardian of Person",
+    "court": "family_court",
+    "category": "guardianship",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "6-1.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/6-1.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "6-1.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/6-1.docx",
+            "download_status": "pending"
+        },
+        "fillable_pdf": {
+            "filename": "form-6-1-guardianship-petition-ncfc-3-2015-fillable.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-03/form-6-1-guardianship-petition-ncfc-3-2015-fillable.pdf",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": true,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/petition-appointment-guardian-person?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Termination of Parental Rights - Guardianship"
+    ],
+    "aliases": [],
+    "workflow_references": [
+        {
+            "workflow": "guardianship_nyc",
+            "stage": "petition",
+            "requirement": "required"
+        }
+    ],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

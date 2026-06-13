@@ -1,0 +1,36 @@
+{
+    "form_code": "LDSS-5258",
+    "internal_code": "LDSS-5258",
+    "title": "Enrollment for Child Support Services",
+    "court": "supreme_court",
+    "category": "divorce",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": [],
+    "preferred_source": "",
+    "editable_source": "",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "",
+    "case_types": [],
+    "aliases": [],
+    "workflow_references": [
+        {
+            "workflow": "uncontested_divorce_children_nyc",
+            "stage": "calendar",
+            "requirement": "optional"
+        }
+    ],
+    "fillable_strategy": "none",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

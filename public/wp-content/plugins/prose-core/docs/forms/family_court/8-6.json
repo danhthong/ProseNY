@@ -1,0 +1,47 @@
+{
+    "form_code": "8-6",
+    "internal_code": "8-6",
+    "title": "Order - Firearms Licenses and Surrenders",
+    "court": "family_court",
+    "category": "family_offense",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "8-6.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/8-6.pdf",
+            "download_status": "pending"
+        },
+        "doc": {
+            "filename": "8-6.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/8-6.doc",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-firearms-licenses-and-surrenders?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Domestic Violence",
+        "Family Offense"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

@@ -1,0 +1,40 @@
+{
+    "form_code": "27-C",
+    "internal_code": "27-C",
+    "title": "Adoption\u2013Affirmation of Service of Petition for Access to Sealed Adoption Records",
+    "court": "family_court",
+    "category": "adoption",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "adop-27c.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-05/adop-27c.pdf",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/adoption-affirmation-service-petition-access-sealed-adoption-records",
+    "case_types": [
+        "Family Forms",
+        "Adoption - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

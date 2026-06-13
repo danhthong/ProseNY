@@ -1,0 +1,62 @@
+{
+    "form_code": "GF-40",
+    "internal_code": "GF-40",
+    "title": "Petition for Modification of Custody/Visitation Order Made by Supreme or Family Court",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "gf-40.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-05/gf-40.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "gf-40.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-05/gf-40.docx",
+            "download_status": "pending"
+        },
+        "fillable_pdf": {
+            "filename": "fillable-custody-or-visitation-modification-petition-general-form-40.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-03/fillable-custody-or-visitation-modification-petition-general-form-40.pdf",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": true,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/petition-modification-custodyvisitation-order-made-supreme-or-family-court?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms"
+    ],
+    "aliases": [],
+    "workflow_references": [
+        {
+            "workflow": "custody_nyc",
+            "stage": "modification",
+            "requirement": "required"
+        },
+        {
+            "workflow": "visitation_nyc",
+            "stage": "modification",
+            "requirement": "required"
+        }
+    ],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

@@ -1,0 +1,46 @@
+{
+    "form_code": "GF-10a",
+    "internal_code": "GF-10a",
+    "title": "Affirmation in Support of Motion - Extension or Modification of Order of Protection",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "gf-10a.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/gf-10a.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "gf-10a.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/gf-10a.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/affirmation-support-motion-extension-or-modification-order-protection?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "General - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

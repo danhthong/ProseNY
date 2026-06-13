@@ -1,0 +1,47 @@
+{
+    "form_code": "PPLICATION-FOR-AN-RDER-TO-ERMINATE-OR-EVER-EASE-RIMINAL",
+    "internal_code": "PPLICATION-FOR-AN-RDER-TO-ERMINATE-OR-EVER-EASE-RIMINAL",
+    "title": "Application for an Order to Terminate or Sever Lease (Criminal)",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "application-to-terminate-lease.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/application-to-terminate-lease.pdf",
+            "download_status": "pending"
+        },
+        "doc": {
+            "filename": "application-to-terminate-lease.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/application-to-terminate-lease.doc",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/application-order-terminate-or-sever-lease-criminal",
+    "case_types": [
+        "Family Forms",
+        "Domestic Violence",
+        "Domestic Violence - Orders of Protection"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

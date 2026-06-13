@@ -1,0 +1,62 @@
+{
+    "form_code": "GF-21",
+    "internal_code": "GF-21",
+    "title": "Address Confidentiality Affirmation",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "gf-21-address-confidentiality-affidavit-ncfc.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-03/gf-21-address-confidentiality-affidavit-ncfc.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "gf-21.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/gf-21.docx",
+            "download_status": "pending"
+        },
+        "fillable_pdf": {
+            "filename": "gf-21-address-confidentiality-affidavit-ncfc-fillable.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-03/gf-21-address-confidentiality-affidavit-ncfc-fillable.pdf",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": true,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/address-confidentiality-affirmation-0?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms"
+    ],
+    "aliases": [],
+    "workflow_references": [
+        {
+            "workflow": "custody_nyc",
+            "stage": "petition",
+            "requirement": "optional"
+        },
+        {
+            "workflow": "family_offense_nyc",
+            "stage": "petition",
+            "requirement": "optional"
+        }
+    ],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

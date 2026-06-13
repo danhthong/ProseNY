@@ -1,0 +1,49 @@
+{
+    "form_code": "10-29b",
+    "internal_code": "10-29b",
+    "title": "Child Protective - Report After Court Order - Order for Pre-petition Access to Child(ren) and/or Home",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "10-29b.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/10-29b.pdf",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "10-29b.WPD",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/10-29b.WPD",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/child-protective-report-after-court-order-order-pre-petition-access-children-andor-home",
+    "case_types": [
+        "Family Forms",
+        "Child Protective"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

@@ -1,0 +1,55 @@
+{
+    "form_code": "358-a-7",
+    "internal_code": "358-a-7",
+    "title": "Order of Disposition - Petition for Pre-placement approval of Standby Placement Instrument",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "358-a-7.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-04/358-a-7.pdf",
+            "download_status": "pending"
+        },
+        "doc": {
+            "filename": "358-a-7_0.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/358-a-7_0.doc",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "358-a-7.wpd",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/358-a-7.wpd",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-disposition-petition-pre-placement-approval-standby-placement-instrument?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Foster Care Placement"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

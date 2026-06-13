@@ -1,0 +1,55 @@
+{
+    "form_code": "UCCJEA-15",
+    "internal_code": "UCCJEA-15",
+    "title": "Notice of Request for Registration of an Out-of-State Child Custody or Visitation",
+    "court": "family_court",
+    "category": "custody",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "uccjea-15.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/uccjea-15.pdf",
+            "download_status": "pending"
+        },
+        "doc": {
+            "filename": "uccjea-15.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/uccjea-15.doc",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "uccjea-15.wpd",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/uccjea-15.wpd",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/notice-request-registration-out-state-child-custody-or-visitation?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Uniform Child Custody & Enforcement Act (UCCJEA)"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

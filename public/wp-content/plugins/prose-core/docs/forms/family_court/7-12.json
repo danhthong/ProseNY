@@ -1,0 +1,55 @@
+{
+    "form_code": "7-12",
+    "internal_code": "7-12",
+    "title": "Order (Discontinuation of Treatment)",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "7-12.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/7-12.pdf",
+            "download_status": "pending"
+        },
+        "doc": {
+            "filename": "7-12.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/7-12.doc",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "7-12.WPD",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/7-12.WPD",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-discontinuation-treatment?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Person in Need of Supervision (PINS)"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

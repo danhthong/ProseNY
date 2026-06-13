@@ -1,0 +1,46 @@
+{
+    "form_code": "4-20a",
+    "internal_code": "4-20a",
+    "title": "Affirmation in Support of Motion to Vacate Adjusted Order of Support",
+    "court": "family_court",
+    "category": "child_support",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "4-20a.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/4-20a.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "4-20a.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/4-20a.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/affirmation-support-motion-vacate-adjusted-order-support?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Child Support"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

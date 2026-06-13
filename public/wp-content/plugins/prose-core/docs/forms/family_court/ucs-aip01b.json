@@ -1,0 +1,45 @@
+{
+    "form_code": "UCS-AIP01B",
+    "internal_code": "UCS-AIP01B",
+    "title": "Verified Petition",
+    "court": "family_court",
+    "category": "guardianship",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "ucs-aip01b-verifiedpetition.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-04/-ucs-aip01b-verifiedpetition.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "ucs-aip01b-verifiedpetition.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-04/-ucs-aip01b-verifiedpetition.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/verified-petition-0?topic=611&wrapped=true",
+    "case_types": [
+        "Guardianship"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

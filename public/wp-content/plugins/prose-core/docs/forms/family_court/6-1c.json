@@ -1,0 +1,36 @@
+{
+    "form_code": "6-1c",
+    "internal_code": "6-1c",
+    "title": "Petition for Kinship Guardian",
+    "court": "family_court",
+    "category": "guardianship",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": [],
+    "preferred_source": "",
+    "editable_source": "",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "",
+    "case_types": [],
+    "aliases": [],
+    "workflow_references": [
+        {
+            "workflow": "guardianship_nyc",
+            "stage": "petition",
+            "requirement": "optional"
+        }
+    ],
+    "fillable_strategy": "none",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

@@ -1,0 +1,46 @@
+{
+    "form_code": "UCS-AIP18C",
+    "internal_code": "UCS-AIP18C",
+    "title": "Affirmation in Support of Motion to Settle Final Account",
+    "court": "family_court",
+    "category": "guardianship",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "ucs-aip18c-affirmationinsupportofmotiontosettlefinalaccount.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-04/-ucs-aip18c-affirmationinsupportofmotiontosettlefinalaccount.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "ucs-aip18c-affirmationinsupportofmotiontosettlefinalaccount.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-04/-ucs-aip18c-affirmationinsupportofmotiontosettlefinalaccount.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/affirmation-support-motion-settle-final-account?topic=611&wrapped=true",
+    "case_types": [
+        "Guardianship",
+        "Article 81"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

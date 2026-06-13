@@ -1,0 +1,40 @@
+{
+    "form_code": "GF-48",
+    "internal_code": "GF-48",
+    "title": "Family Court Personal Information Form",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "gf-48.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-04/gf-48.pdf",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/family-court-personal-information-form?topic=611&wrapped=true",
+    "case_types": [
+        "General - Family",
+        "Family Forms"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

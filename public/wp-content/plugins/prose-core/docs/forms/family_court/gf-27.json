@@ -1,0 +1,60 @@
+{
+    "form_code": "GF-27",
+    "internal_code": "GF-27",
+    "title": "Order - Transfer of Proceedings",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "gf-27.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-05/gf-27.pdf",
+            "download_status": "pending"
+        },
+        "doc": {
+            "filename": "gf-27.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/gf-27.doc",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "gf-27_0.WPD",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/gf-27_0.WPD",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "gf-27.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-05/gf-27.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-transfer-proceedings?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

@@ -1,0 +1,46 @@
+{
+    "form_code": "TPR-10",
+    "internal_code": "TPR-10",
+    "title": "Petition (Severely or Repeatedly Abused Child)",
+    "court": "family_court",
+    "category": "guardianship",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "tpr-10.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-05/tpr-10.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "tpr-10.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-05/tpr-10.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/petition-severely-or-repeatedly-abused-child?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Termination of Parental Rights - Guardianship"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

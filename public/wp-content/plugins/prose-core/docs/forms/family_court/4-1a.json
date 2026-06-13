@@ -1,0 +1,46 @@
+{
+    "form_code": "4-1a",
+    "internal_code": "4-1a",
+    "title": "Summons - Support",
+    "court": "family_court",
+    "category": "child_support",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "4-1a.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/4-1a.pdf",
+            "download_status": "pending"
+        },
+        "doc": {
+            "filename": "4-1a.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/4-1a.doc",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/summons-support?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Child Support"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

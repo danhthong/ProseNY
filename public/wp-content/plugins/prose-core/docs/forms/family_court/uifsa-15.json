@@ -1,0 +1,40 @@
+{
+    "form_code": "UIFSA-15",
+    "internal_code": "UIFSA-15",
+    "title": "Personal Information Form for UIFSA \u00a7 311",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "uifsa-15-personal-information-form-for-uifsa-ss-311.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/uifsa-15-personal-information-form-for-uifsa-ss-311.pdf",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/personal-information-form-uifsa-ss-311?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Uniform Interstate Family Support Act (UIFSA)"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

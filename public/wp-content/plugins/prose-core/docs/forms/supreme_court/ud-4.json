@@ -1,0 +1,41 @@
+{
+    "form_code": "UD-4",
+    "internal_code": "UD-4",
+    "title": "Sworn Statement of Removal of Barriers to Remarriage",
+    "court": "supreme_court",
+    "category": "divorce",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": [],
+    "preferred_source": "",
+    "editable_source": "",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "",
+    "case_types": [],
+    "aliases": [],
+    "workflow_references": [
+        {
+            "workflow": "uncontested_divorce_children_nyc",
+            "stage": "calendar",
+            "requirement": "required"
+        },
+        {
+            "workflow": "uncontested_divorce_no_children_nyc",
+            "stage": "calendar",
+            "requirement": "required"
+        }
+    ],
+    "fillable_strategy": "none",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

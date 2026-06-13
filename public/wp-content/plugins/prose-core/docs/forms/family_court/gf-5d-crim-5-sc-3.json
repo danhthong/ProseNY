@@ -1,0 +1,47 @@
+{
+    "form_code": "GF-5d (CRIM-5; SC-3)",
+    "internal_code": "GF-5d (CRIM-5; SC-3)",
+    "title": "Affirmation in Support of Modification of Family Court Temporary Order of Protection or Order of Protection",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "gf-5d.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-04/gf-5d.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "gf-5d.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/gf-5d.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/affirmation-support-modification-family-court-temporary-order-protection-or-order-protection?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Domestic Violence",
+        "General - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

@@ -1,0 +1,46 @@
+{
+    "form_code": "7-19",
+    "internal_code": "7-19",
+    "title": "Order - Extension of Placement and Permanency Hearing Order (PINS)",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "7-19.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/7-19.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "7-19.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/7-19.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-extension-placement-and-permanency-hearing-order-pins?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Person in Need of Supervision (PINS)"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

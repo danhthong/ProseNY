@@ -1,0 +1,55 @@
+{
+    "form_code": "3",
+    "internal_code": "3",
+    "title": "Order Directing Service of Notice",
+    "court": "family_court",
+    "category": "adoption",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "adop3.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/adop3.pdf",
+            "download_status": "pending"
+        },
+        "doc": {
+            "filename": "adop3.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/adop3.doc",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "adop3.WPD",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/adop3.WPD",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-directing-service-notice?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Adoption - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

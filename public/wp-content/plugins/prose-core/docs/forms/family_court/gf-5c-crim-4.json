@@ -1,0 +1,47 @@
+{
+    "form_code": "GF-5c (CRIM-4)",
+    "internal_code": "GF-5c (CRIM-4)",
+    "title": "Affirmation in Support of Issuance of Family Court Temporary Order of Protection (Peace or Police Officer, Agency, or Designated Person)",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "gf-5c.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/gf-5c.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "gf-5c.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/gf-5c.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/affirmation-support-issuance-family-court-temporary-order-protection-peace-or-police-officer?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Domestic Violence",
+        "General - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

@@ -1,0 +1,55 @@
+{
+    "form_code": "UIFSA-12",
+    "internal_code": "UIFSA-12",
+    "title": "Petition to Vacate Registration of Out-of-State Support Order",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "uifsa-12.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/uifsa-12.pdf",
+            "download_status": "pending"
+        },
+        "doc": {
+            "filename": "uifsa-12.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/uifsa-12.doc",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "uifsa-12.WPD",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/uifsa-12.WPD",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/petition-vacate-registration-out-state-support-order?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Uniform Interstate Family Support Act (UIFSA)"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

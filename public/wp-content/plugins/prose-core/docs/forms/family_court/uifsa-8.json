@@ -1,0 +1,40 @@
+{
+    "form_code": "UIFSA-8",
+    "internal_code": "UIFSA-8",
+    "title": "Notice of Determination of Controlling Order",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "uifsa-8-notice-of-determination-of-controlling-order.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/uifsa-8-notice-of-determination-of-controlling-order.pdf",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/notice-determination-controlling-order?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Uniform Interstate Family Support Act (UIFSA)"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

@@ -1,0 +1,56 @@
+{
+    "form_code": "8-5",
+    "internal_code": "8-5",
+    "title": "Order of Disposition - Family Offense",
+    "court": "family_court",
+    "category": "family_offense",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "8-5.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/8-5.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "8-5.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/8-5.docx",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "8-5.WPD",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/8-5.WPD",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-disposition-family-offense?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Domestic Violence",
+        "Family Offense"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

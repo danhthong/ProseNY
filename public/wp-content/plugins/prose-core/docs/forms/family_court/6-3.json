@@ -1,0 +1,61 @@
+{
+    "form_code": "6-3",
+    "internal_code": "6-3",
+    "title": "Consent of Person Over 18 and Preference of Person Over 14 Regarding Appointment of Guardian",
+    "court": "family_court",
+    "category": "guardianship",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "6-3.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/6-3.pdf",
+            "download_status": "pending"
+        },
+        "doc": {
+            "filename": "6-3.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/6-3.doc",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "6-3.wpd",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/6-3.wpd",
+            "download_status": "pending"
+        },
+        "fillable_pdf": {
+            "filename": "form-6-3-guardianship-consent-or-preference-ncfc-fillable.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-03/form-6-3-guardianship-consent-or-preference-ncfc-fillable.pdf",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "fillable_pdf",
+    "editable_source": "fillable_pdf",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": true,
+    "docx_available": false,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/consent-person-over-18-and-preference-person-over-14-regarding-appointment-guardian",
+    "case_types": [
+        "Family Forms",
+        "Termination of Parental Rights - Guardianship"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_acroform",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

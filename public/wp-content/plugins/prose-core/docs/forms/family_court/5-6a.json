@@ -1,0 +1,55 @@
+{
+    "form_code": "5-6a",
+    "internal_code": "5-6a",
+    "title": "Order - Temporary Order of Support After DNA Ordered",
+    "court": "family_court",
+    "category": "paternity",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "5-6a.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/5-6a.pdf",
+            "download_status": "pending"
+        },
+        "doc": {
+            "filename": "5-6a.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/5-6a.doc",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "5-6a.WPD",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/5-6a.WPD",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-temporary-order-support-after-dna-ordered?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Family - Paternity"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

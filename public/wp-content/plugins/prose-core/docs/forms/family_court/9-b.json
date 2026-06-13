@@ -1,0 +1,46 @@
+{
+    "form_code": "9-B",
+    "internal_code": "9-B",
+    "title": "Affirmation of Financial Disclosure \u2013 Parents (Private-Placement)",
+    "court": "family_court",
+    "category": "adoption",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "adop-9b.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-06/adop-9b.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "adop-9b.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/adop-9b.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/affirmation-financial-disclosure-parents-private-placement?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Adoption - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

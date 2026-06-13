@@ -1,0 +1,46 @@
+{
+    "form_code": "SURR-7",
+    "internal_code": "SURR-7",
+    "title": "Petition for Review of Failure of Material Condition in Conditional Surrender and violation of Post-adoption Contact Agreement (Prior to Adoption Finalization)",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "surr-7.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/surr-7.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "surr-7.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/surr-7.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/petition-review-failure-material-condition-conditional-surrender-and-violation-post-adoption?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Surrender"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

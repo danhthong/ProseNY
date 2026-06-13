@@ -1,0 +1,46 @@
+{
+    "form_code": "5-7a",
+    "internal_code": "5-7a",
+    "title": "Order of Filiation (Non-Article 5/5-B)",
+    "court": "family_court",
+    "category": "paternity",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "5-7a.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/5-7a.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "5-7a.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/5-7a.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-filiation-non-article-55-b?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Family - Paternity"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

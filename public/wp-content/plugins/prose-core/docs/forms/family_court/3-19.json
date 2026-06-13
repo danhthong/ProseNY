@@ -1,0 +1,46 @@
+{
+    "form_code": "3-19",
+    "internal_code": "3-19",
+    "title": "Order Regarding Incapacitated Person (After Probable Cause Hearing)",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "3-19.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-04/3-19.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "3-19.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-04/3-19.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-regarding-incapacitated-person-after-probable-cause-hearing?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Juvenile Delinquency - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

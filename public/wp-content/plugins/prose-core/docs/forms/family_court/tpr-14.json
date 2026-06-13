@@ -1,0 +1,55 @@
+{
+    "form_code": "TPR-14",
+    "internal_code": "TPR-14",
+    "title": "Termination of Parental Right Order Regarding Venue",
+    "court": "family_court",
+    "category": "guardianship",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "tpr-14.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/tpr-14.pdf",
+            "download_status": "pending"
+        },
+        "doc": {
+            "filename": "tpr-14.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/tpr-14.doc",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "tpr-14.WPD",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/tpr-14.WPD",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/termination-parental-right-order-regarding-venue?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Termination of Parental Rights - Guardianship"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

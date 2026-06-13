@@ -1,0 +1,51 @@
+{
+    "form_code": "4-12",
+    "internal_code": "4-12",
+    "title": "Petition - Violation of Support Order",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "4-12.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/4-12.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "4-12.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/4-12.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/petition-violation-support-order?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms"
+    ],
+    "aliases": [],
+    "workflow_references": [
+        {
+            "workflow": "child_support_nyc",
+            "stage": "enforcement",
+            "requirement": "required"
+        }
+    ],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

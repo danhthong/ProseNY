@@ -1,0 +1,46 @@
+{
+    "form_code": "LDSS-2725",
+    "internal_code": "LDSS-2725",
+    "title": "NYS OCFS Request/Response for Name and/or address of Father of Child Born Out of Wedlock",
+    "court": "family_court",
+    "category": "adoption",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "ocfs-2725-request-response-for-name-and-or-address-of-father-of-child-born-out-of-wedlock-pdf.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/ocfs-2725-request-response-for-name-and-or-address-of-father-of-child-born-out-of-wedlock-pdf.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "ocfs-2725-request-response-for-name-and-or-address-of-father-of-child-born-out-of-wedlock-word.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/ocfs-2725-request-response-for-name-and-or-address-of-father-of-child-born-out-of-wedlock-word.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/nys-ocfs-requestresponse-name-andor-address-father-child-born-out-wedlock?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Adoption - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

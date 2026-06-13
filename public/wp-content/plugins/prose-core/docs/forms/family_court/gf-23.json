@@ -1,0 +1,56 @@
+{
+    "form_code": "GF-23",
+    "internal_code": "GF-23",
+    "title": "Writ of Habeas Corpus",
+    "court": "family_court",
+    "category": "custody",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "gf-23.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-05/gf-23.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "gf-23.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-05/gf-23.docx",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "gf-23.WPD",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/gf-23.WPD",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/writ-habeas-corpus?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Child Custody or Visitation",
+        "General - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

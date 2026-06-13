@@ -1,0 +1,55 @@
+{
+    "form_code": "GF-33",
+    "internal_code": "GF-33",
+    "title": "Order Authorizing Services Other Than Counsel",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "gf-33.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/gf-33.pdf",
+            "download_status": "pending"
+        },
+        "doc": {
+            "filename": "gf-33.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/gf-33.doc",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "gf-33.WPD",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/gf-33.WPD",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-authorizing-services-other-counsel?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "General - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

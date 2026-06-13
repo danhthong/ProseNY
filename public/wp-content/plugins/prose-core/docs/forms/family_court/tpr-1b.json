@@ -1,0 +1,46 @@
+{
+    "form_code": "TPR-1b",
+    "internal_code": "TPR-1b",
+    "title": "Affirmation of Caseworker Regarding Persons Entitled to Notice of Proceeding to Terminate Parental Rights of Child in Foster Care",
+    "court": "family_court",
+    "category": "guardianship",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "tpr-1b.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/tpr-1b.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "tpr-1b_0.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/tpr-1b_0.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/affirmation-caseworker-regarding-persons-entitled-notice-proceeding-terminate-parental-rights?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Termination of Parental Rights - Guardianship"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

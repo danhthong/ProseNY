@@ -1,0 +1,48 @@
+{
+    "form_code": "CRIM-2",
+    "internal_code": "CRIM-2",
+    "title": "Order of Protection/Non-Family Offense (Criminal Courts)",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "crim2.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/crim2.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "crim2.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/crim2.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-protectionnon-family-offense-criminal-courts?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Domestic Violence",
+        "Domestic Violence - Orders of Protection",
+        "General - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

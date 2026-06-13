@@ -1,0 +1,55 @@
+{
+    "form_code": "13-B",
+    "internal_code": "13-B",
+    "title": "Order Of Adoption (Private placement)",
+    "court": "family_court",
+    "category": "adoption",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "adop13-b.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/adop13-b.pdf",
+            "download_status": "pending"
+        },
+        "doc": {
+            "filename": "adop13-b.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/adop13-b.doc",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "adop13-b.WPD",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/adop13-b.WPD",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-adoption-private-placement?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Adoption - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

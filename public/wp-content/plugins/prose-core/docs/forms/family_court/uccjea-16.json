@@ -1,0 +1,49 @@
+{
+    "form_code": "UCCJEA-16",
+    "internal_code": "UCCJEA-16",
+    "title": "Objection to the Registration of Out-of-State Child Custody/Visitation Order - UCCJEA",
+    "court": "family_court",
+    "category": "custody",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "uccjea-16.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/uccjea-16.pdf",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "uccjea-16.wpd",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/uccjea-16.wpd",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/objection-registration-out-state-child-custodyvisitation-order-uccjea?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Uniform Child Custody & Enforcement Act (UCCJEA)"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

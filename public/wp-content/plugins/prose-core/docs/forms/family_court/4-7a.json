@@ -1,0 +1,45 @@
+{
+    "form_code": "4-7a",
+    "internal_code": "4-7a",
+    "title": "Order (After Filing of Objections)",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "4-7a.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/4-7a.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "4-17a.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/4-17a.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-after-filing-objections?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

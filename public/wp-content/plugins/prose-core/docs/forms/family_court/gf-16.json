@@ -1,0 +1,55 @@
+{
+    "form_code": "GF-16",
+    "internal_code": "GF-16",
+    "title": "Order - Dismissal",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "gf-16.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/gf-16.pdf",
+            "download_status": "pending"
+        },
+        "doc": {
+            "filename": "gf-16.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/gf-16.doc",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "gf-16.wpd",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/gf-16.wpd",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-dismissal?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "General - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

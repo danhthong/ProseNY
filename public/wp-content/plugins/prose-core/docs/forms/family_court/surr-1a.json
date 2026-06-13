@@ -1,0 +1,46 @@
+{
+    "form_code": "SURR-1a",
+    "internal_code": "SURR-1a",
+    "title": "Affirmation of Caseworker Regarding Persons Entitled to Notice of Surrender of Child in Foster Care",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "surr-1a.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/surr-1a.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "surr-1a.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-01/surr-1a.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/affirmation-caseworker-regarding-persons-entitled-notice-surrender-child-foster-care?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Surrender"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

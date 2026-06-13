@@ -1,0 +1,55 @@
+{
+    "form_code": "7-3",
+    "internal_code": "7-3",
+    "title": "Order Directing Detention (Post-Petition)",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "7-3.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/7-3.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "7-3.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/7-3.docx",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "7-3.WPD",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/7-3.WPD",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-directing-detention-post-petition?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Person in Need of Supervision (PINS)"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

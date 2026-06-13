@@ -1,0 +1,37 @@
+{
+    "form_code": "UCS-NC5",
+    "internal_code": "UCS-NC5",
+    "title": "Family Name Change Petition \u2013 Supplemental Form",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "fillable_pdf": {
+            "filename": "supplementalfamilynamechangepetition-fillable.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-04/supplementalfamilynamechangepetition-fillable.pdf",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "fillable_pdf",
+    "editable_source": "fillable_pdf",
+    "wpd_conversion": [],
+    "fillable_pdf_available": true,
+    "docx_available": false,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/family-name-change-petition-supplemental-form?topic=611&wrapped=true",
+    "case_types": [],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_acroform",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

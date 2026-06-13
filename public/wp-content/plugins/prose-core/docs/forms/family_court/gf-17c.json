@@ -1,0 +1,47 @@
+{
+    "form_code": "GF-17c",
+    "internal_code": "GF-17c",
+    "title": "Affirmation of Attorney for Child in Support of Motion for an Order for Sibling Placement or Contact)",
+    "court": "family_court",
+    "category": "custody",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "gf-17c.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-04/gf-17c.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "gf-17c.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-04/gf-17c.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/affirmation-attorney-child-support-motion-order-sibling-placement-or-contact?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Child Custody or Visitation",
+        "General - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

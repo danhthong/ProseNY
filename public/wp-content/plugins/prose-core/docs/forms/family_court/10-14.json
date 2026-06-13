@@ -1,0 +1,46 @@
+{
+    "form_code": "10-14",
+    "internal_code": "10-14",
+    "title": "Order - Violation of Order of Disposition",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "10-14.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/10-14.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "10-14.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/10-14.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-violation-order-disposition?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Child Protective"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

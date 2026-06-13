@@ -1,0 +1,64 @@
+{
+    "form_code": "8-2",
+    "internal_code": "8-2",
+    "title": "Petition - Family Offense",
+    "court": "family_court",
+    "category": "family_offense",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "8-2.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/8-2.pdf",
+            "download_status": "pending"
+        },
+        "fillable_pdf": {
+            "filename": "ucs-fc8-2-familyoffensepetition-fillable.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/-ucs-fc8-2-familyoffensepetition-fillable.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "8-2.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/8-2.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": true,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/petition-family-offense?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Domestic Violence",
+        "Family Offense"
+    ],
+    "aliases": [],
+    "workflow_references": [
+        {
+            "workflow": "family_offense_nyc",
+            "stage": "petition",
+            "requirement": "required"
+        },
+        {
+            "workflow": "order_of_protection_nyc",
+            "stage": "petition",
+            "requirement": "required"
+        }
+    ],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

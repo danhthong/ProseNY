@@ -1,0 +1,55 @@
+{
+    "form_code": "10-2",
+    "internal_code": "10-2",
+    "title": "Order (Directing Temporary Removal Of Child After Petition Filed)",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "10-2.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/10-2.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "10-2.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/10-2.docx",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "10-2.WPD",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/10-2.WPD",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-directing-temporary-removal-child-after-petition-filed-0?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Child Protective"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

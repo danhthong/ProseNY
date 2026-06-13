@@ -1,0 +1,45 @@
+{
+    "form_code": "UCS-AIP21A",
+    "internal_code": "UCS-AIP21A",
+    "title": "Petition to Transfer From NY to Another State",
+    "court": "family_court",
+    "category": "guardianship",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "ucs-aip21a-petitiontotransferfromnytoanotherstate.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-04/-ucs-aip21a-petitiontotransferfromnytoanotherstate.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "ucs-aip21a-petitiontotransferfromnytoanotherstate.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-04/-ucs-aip21a-petitiontotransferfromnytoanotherstate.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/petition-transfer-ny-another-state?topic=611&wrapped=true",
+    "case_types": [
+        "Guardianship"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

@@ -1,0 +1,46 @@
+{
+    "form_code": "4-8c",
+    "internal_code": "4-8c",
+    "title": "Order - Order to Correct Income Execution for Support Enforcement",
+    "court": "family_court",
+    "category": "child_support",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "4-8c.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/4-8c.pdf",
+            "download_status": "pending"
+        },
+        "doc": {
+            "filename": "4-8c_0.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/4-8c_0.doc",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-order-correct-income-execution-support-enforcement?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Child Support"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

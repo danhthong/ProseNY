@@ -1,0 +1,45 @@
+{
+    "form_code": "4-13",
+    "internal_code": "4-13",
+    "title": "Petition for Enforcement of an Order",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "4-13.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/4-13.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "4-13.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/4-13.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/petition-enforcement-order?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

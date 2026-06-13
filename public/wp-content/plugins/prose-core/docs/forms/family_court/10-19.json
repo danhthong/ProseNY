@@ -1,0 +1,55 @@
+{
+    "form_code": "10-19",
+    "internal_code": "10-19",
+    "title": "Order of Transfer to Criminal Court of Referral to District Attorney",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "10-19.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/10-19.pdf",
+            "download_status": "pending"
+        },
+        "doc": {
+            "filename": "10-19.doc",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/10-19.doc",
+            "download_status": "pending"
+        },
+        "wpd": {
+            "filename": "10-19.WPD",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2025-12/10-19.WPD",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "pdf",
+    "editable_source": "pdf",
+    "wpd_conversion": {
+        "original_wpd": "",
+        "converted_docx": null
+    },
+    "fillable_pdf_available": false,
+    "docx_available": false,
+    "wpd_available": true,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/order-transfer-criminal-court-referral-district-attorney?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "Child Protective"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "pdf_overlay",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}

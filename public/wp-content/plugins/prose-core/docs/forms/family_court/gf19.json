@@ -1,0 +1,46 @@
+{
+    "form_code": "GF19",
+    "internal_code": "GF19",
+    "title": "Petition for Transfer of Proceeding Concerning an Indian Child",
+    "court": "family_court",
+    "category": "general",
+    "county_specific": false,
+    "counties_supported": [
+        "New York",
+        "Kings",
+        "Queens",
+        "Bronx",
+        "Richmond"
+    ],
+    "source_files": {
+        "pdf": {
+            "filename": "gf-19.pdf",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-05/gf-19.pdf",
+            "download_status": "pending"
+        },
+        "docx": {
+            "filename": "gf-19.docx",
+            "path": "",
+            "source_url": "https://webfiles.nycourts.gov/public/2026-05/gf-19.docx",
+            "download_status": "pending"
+        }
+    },
+    "preferred_source": "docx",
+    "editable_source": "docx",
+    "wpd_conversion": [],
+    "fillable_pdf_available": false,
+    "docx_available": true,
+    "wpd_available": false,
+    "import_status": "pending",
+    "official_url": "https://www.nycourts.gov/forms/petition-transfer-proceeding-concerning-indian-child?topic=611&wrapped=true",
+    "case_types": [
+        "Family Forms",
+        "General - Family"
+    ],
+    "aliases": [],
+    "workflow_references": [],
+    "fillable_strategy": "docx_template",
+    "field_mapping_status": "unmapped",
+    "generation_ready": false
+}
