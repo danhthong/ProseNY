@@ -242,7 +242,7 @@ class Form_Importer {
 	 */
 	private function render_upload_form(): void {
 		?>
-		<p><?php esc_html_e( 'Upload a CSV file to import court forms. Expected columns include Form Number, Form Title, Case Type, Court (optional), PDF Filenames, and Resolved PDF URLs.', 'prose-core' ); ?></p>
+		<p><?php esc_html_e( 'Upload a CSV file to import court forms. Expected columns include Form Number, Form Title, Case Type, Court (optional), PDF Filenames, Resolved PDF URLs, and Local PDF Path (optional, pipe-separated).', 'prose-core' ); ?></p>
 		<form method="post" enctype="multipart/form-data" class="prose-import-form">
 			<?php wp_nonce_field( self::NONCE_ACTION, 'prose_import_nonce' ); ?>
 			<table class="form-table" role="presentation">
@@ -253,7 +253,7 @@ class Form_Importer {
 					<td>
 						<input type="file" name="prose_csv_file" id="prose_csv_file" accept=".csv,text/csv" required />
 						<p class="description">
-							<?php esc_html_e( 'Supported headers: Form Number (or Extracted Form Number), Form Title (or Original Form Title), Case Type, Court (optional), PDF Filenames, Resolved PDF URLs.', 'prose-core' ); ?>
+							<?php esc_html_e( 'Supported headers: Form Number (or Extracted Form Number), Form Title (or Original Form Title), Case Type, Court (optional), PDF Filenames, Resolved PDF URLs, Local PDF Path (optional).', 'prose-core' ); ?>
 						</p>
 					</td>
 				</tr>
@@ -569,8 +569,9 @@ class Form_Importer {
 		$title     = $this->get_column_value( $row, $column_map, 'form_title' );
 		$case_type = $this->get_column_value( $row, $column_map, 'case_type' );
 		$court     = $this->get_column_value( $row, $column_map, 'court' );
-		$filenames = $this->get_column_value( $row, $column_map, 'pdf_filenames' );
-		$pdf_urls  = $this->get_column_value( $row, $column_map, 'resolved_pdf_urls' );
+		$filenames   = $this->get_column_value( $row, $column_map, 'pdf_filenames' );
+		$pdf_urls    = $this->get_column_value( $row, $column_map, 'resolved_pdf_urls' );
+		$local_paths = $this->get_column_value( $row, $column_map, 'local_pdf_paths' );
 
 		if ( '' === $title && '' === $form_id ) {
 			return array(
@@ -583,9 +584,10 @@ class Form_Importer {
 
 		$case_types = $this->parse_list( $case_type, ',' );
 		$courts     = $this->parse_list( $court, ',' );
-		$url_list   = $this->parse_list( $pdf_urls, '|' );
-		$name_list  = $this->parse_list( $filenames, '|' );
-		$pairs      = $this->build_source_file_pairs( $url_list, $name_list );
+		$url_list    = $this->parse_list( $pdf_urls, '|' );
+		$name_list   = $this->parse_list( $filenames, '|' );
+		$path_list   = $this->parse_list( $local_paths, '|' );
+		$pairs       = $this->build_source_file_pairs( $url_list, $name_list, $path_list );
 		$form_slug  = '' !== $form_id ? sanitize_title( $form_id ) : sanitize_title( $title );
 
 		$data = array(
@@ -743,31 +745,42 @@ class Form_Importer {
 	/**
 	 * Build deduplicated URL/filename pairs from CSV lists.
 	 *
-	 * @param string[] $urls      Source URLs.
-	 * @param string[] $filenames Source filenames.
-	 * @return array<int, array{url: string, filename: string}>
+	 * @param string[] $urls        Source URLs.
+	 * @param string[] $filenames   Source filenames.
+	 * @param string[] $local_paths Optional local filesystem paths (pipe-aligned).
+	 * @return array<int, array{url: string, filename: string, local_path: string}>
 	 */
-	public function build_source_file_pairs( array $urls, array $filenames ): array {
+	public function build_source_file_pairs( array $urls, array $filenames, array $local_paths = [] ): array {
 		$pairs = array();
 		$seen  = array();
+		$count = max( count( $urls ), count( $local_paths ) );
 
-		foreach ( $urls as $index => $url ) {
-			$url = trim( (string) $url );
+		for ( $index = 0; $index < $count; ++$index ) {
+			$url        = trim( (string) ( $urls[ $index ] ?? '' ) );
+			$local_path = trim( (string) ( $local_paths[ $index ] ?? '' ) );
 
-			if ( '' === $url ) {
+			if ( '' === $url && '' === $local_path ) {
 				continue;
 			}
 
-			$normalized = esc_url_raw( $url );
+			$normalized = '' !== $url ? esc_url_raw( $url ) : 'local:' . $local_path;
 
-			if ( '' === $normalized || isset( $seen[ $normalized ] ) ) {
+			if ( isset( $seen[ $normalized ] ) ) {
 				continue;
 			}
 
-			$filename = $filenames[ $index ] ?? basename( (string) wp_parse_url( $url, PHP_URL_PATH ) );
-			$pairs[]  = array(
-				'url'      => $url,
-				'filename' => trim( (string) $filename ),
+			$filename = $filenames[ $index ] ?? '';
+
+			if ( '' === $filename && '' !== $url ) {
+				$filename = basename( (string) wp_parse_url( $url, PHP_URL_PATH ) );
+			} elseif ( '' === $filename && '' !== $local_path ) {
+				$filename = basename( $local_path );
+			}
+
+			$pairs[] = array(
+				'url'        => $url,
+				'filename'   => trim( (string) $filename ),
+				'local_path' => $local_path,
 			);
 			$seen[ $normalized ] = true;
 		}
@@ -789,6 +802,7 @@ class Form_Importer {
 			'court'             => array( 'court' ),
 			'pdf_filenames'     => array( 'pdf filenames' ),
 			'resolved_pdf_urls' => array( 'resolved pdf urls' ),
+			'local_pdf_paths'   => array( 'local pdf path', 'local pdf paths' ),
 		);
 
 		$normalized_header = array();

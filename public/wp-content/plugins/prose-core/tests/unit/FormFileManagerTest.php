@@ -76,4 +76,32 @@ class FormFileManagerTest extends TestCase {
 		unlink( $dest );
 		rmdir( $tmpdir );
 	}
+
+	/**
+	 * Legacy flat adoption copies an existing uploads/prose/forms/{filename} file.
+	 */
+	public function test_adopt_legacy_flat_file(): void {
+		$manager    = new Form_File_Manager();
+		$upload_dir = $manager->get_upload_dir();
+		$this->assertIsArray( $upload_dir );
+
+		$legacy_name = 'prose-adopt-test-' . uniqid( '', true ) . '.pdf';
+		$legacy_path = $upload_dir['path'] . $legacy_name;
+		file_put_contents( $legacy_path, '%PDF-1.4 test' );
+
+		$adopted = $manager->adopt_legacy_flat_file(
+			'https://example.com/' . $legacy_name,
+			'adopt-test',
+			$legacy_name
+		);
+
+		$this->assertIsArray( $adopted );
+		$this->assertSame( 'success', $adopted['download_status'] );
+		$this->assertTrue( is_readable( (string) $adopted['local_path'] ) );
+
+		unlink( $legacy_path );
+		if ( is_readable( (string) $adopted['local_path'] ) ) {
+			unlink( (string) $adopted['local_path'] );
+		}
+	}
 }

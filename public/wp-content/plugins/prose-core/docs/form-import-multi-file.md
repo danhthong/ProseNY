@@ -77,6 +77,44 @@ The Import Forms progress screen reports:
 - Re-import skips URLs already recorded in `prose_source_files` when the file exists
 - Existing files are not overwritten when a different URL targets the same filename
 
+## Cloudflare / HTTP 403 Troubleshooting
+
+NY Courts (`webfiles.nycourts.gov`) may return **HTTP 403** to stock curl and PHP HTTP clients because Cloudflare fingerprints TLS handshakes.
+
+The importer tries, in order:
+
+1. **Local PDF Path** column (pipe-separated, aligned with URLs) — copy from disk when the Python collector ran with `--download-pdfs`
+2. **Remote download** via system curl (with browser User-Agent and Referer)
+3. **Legacy flat file adoption** — if a prior import left `uploads/prose/forms/{filename}`, copy it into `{slug}/original/`
+
+### Recommended: bundled curl_cffi downloader
+
+The plugin ships a browser-impersonating downloader backed by `curl_cffi`. Set it up once:
+
+```bash
+bash plugins/prose-core/bin/setup-curl-impersonate.sh
+```
+
+This creates a local virtualenv at `bin/.venv-curl-impersonate/` and verifies a real court download. The bundled mu-plugin (`mu-plugins/prose-curl-impersonate.php`) then points the `prose_core_curl_binary` filter at `bin/curl-impersonate-cffi`, so all imports route through it automatically.
+
+The plugin recognizes any binary whose name contains `impersonate` and invokes it with the transfer-only argument set; the shim parses `-o <dest>` and the URL and downloads via `curl_cffi`, retrying across Chrome/Safari/Edge fingerprints to clear transient Cloudflare challenges.
+
+### Alternative: native curl-impersonate
+
+```php
+add_filter( 'prose_core_curl_binary', function () {
+    return '/usr/local/bin/curl_chrome116'; // adjust path
+} );
+```
+
+### Alternative: pre-download with the Python pipeline
+
+```bash
+python enrich_forms.py --download-pdfs
+```
+
+Then import `forms_enriched.csv` including the `Local PDF Path` column; the importer copies the local files instead of fetching them.
+
 ## Path Resolution
 
 `Pdf_Analyzer::resolve_pdf_path()` checks:

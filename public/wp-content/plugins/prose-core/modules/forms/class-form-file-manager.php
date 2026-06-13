@@ -214,7 +214,7 @@ class Form_File_Manager {
 	/**
 	 * Download all source files for a form from URL/filename pairs.
 	 *
-	 * @param array<int, array{url: string, filename: string}> $pairs          URL/filename pairs.
+	 * @param array<int, array{url: string, filename: string, local_path?: string}> $pairs          URL/filename/local path triples.
 	 * @param string                                           $form_slug       Form slug for storage.
 	 * @param array<int, array<string, mixed>>                 $existing_files  Prior metadata entries.
 	 * @return array{
@@ -248,16 +248,23 @@ class Form_File_Manager {
 		}
 
 		foreach ( $pairs as $pair ) {
-			$url      = (string) ( $pair['url'] ?? '' );
-			$filename = (string) ( $pair['filename'] ?? '' );
+			$url        = (string) ( $pair['url'] ?? '' );
+			$filename   = (string) ( $pair['filename'] ?? '' );
+			$local_path = (string) ( $pair['local_path'] ?? '' );
 
-			if ( '' === $url ) {
+			if ( '' === $url && '' === $local_path ) {
 				continue;
 			}
 
 			++$stats['urls_processed'];
 
-			$result = $this->download_source_file( $url, $form_slug, $filename, array_values( $merged_by_url ) );
+			$result = $this->import_source_file(
+				$url,
+				$form_slug,
+				$filename,
+				array_values( $merged_by_url ),
+				$local_path
+			);
 
 			if ( is_wp_error( $result ) ) {
 				++$stats['files_failed'];
@@ -296,6 +303,10 @@ class Form_File_Manager {
 
 			$url_key = esc_url_raw( (string) ( $entry['source_url'] ?? $url ) );
 
+			if ( '' === $url_key && ! empty( $entry['local_path'] ) ) {
+				$url_key = 'local:' . (string) $entry['local_path'];
+			}
+
 			if ( '' !== $url_key ) {
 				$merged_by_url[ $url_key ] = $entry;
 			}
@@ -307,6 +318,220 @@ class Form_File_Manager {
 			'files'    => array_values( $merged_by_url ),
 			'stats'    => $stats,
 			'messages' => $messages,
+		);
+	}
+
+	/**
+	 * Import a court source file from a local path and/or remote URL.
+	 *
+	 * Tries, in order: skip existing, copy from CSV local path, remote download,
+	 * then adopt from legacy flat storage under uploads/prose/forms/.
+	 *
+	 * @param string                           $url            Remote URL (may be empty when local only).
+	 * @param string                           $form_slug      Form slug for storage path.
+	 * @param string                           $filename       Preferred filename.
+	 * @param array<int, array<string, mixed>> $existing_files Existing metadata entries.
+	 * @param string                           $local_path     Optional local filesystem path from CSV.
+	 * @return array<string, mixed>|\WP_Error
+	 */
+	public function import_source_file(
+		string $url,
+		string $form_slug,
+		string $filename = '',
+		array $existing_files = [],
+		string $local_path = ''
+	) {
+		$url = esc_url_raw( $url );
+
+		if ( '' === $filename && '' !== $url ) {
+			$filename = basename( (string) wp_parse_url( $url, PHP_URL_PATH ) );
+		} elseif ( '' === $filename && '' !== $local_path ) {
+			$filename = basename( $local_path );
+		}
+
+		if ( '' !== $local_path ) {
+			$copied = $this->copy_local_source_file( $local_path, $form_slug, $filename, $url, $existing_files );
+
+			if ( ! is_wp_error( $copied ) ) {
+				return $copied;
+			}
+		}
+
+		if ( '' === $url ) {
+			return new \WP_Error(
+				'prose_missing_source',
+				__( 'No remote URL or readable local path was provided for this file.', 'prose-core' )
+			);
+		}
+
+		$result = $this->download_source_file( $url, $form_slug, $filename, $existing_files );
+
+		if ( ! is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		/**
+		 * Filter whether legacy flat files may be adopted when remote download fails.
+		 *
+		 * @param bool   $allowed  Whether to adopt from uploads/prose/forms/{filename}.
+		 * @param string $url      Remote URL.
+		 * @param string $filename Target filename.
+		 */
+		if ( apply_filters( 'prose_core_adopt_legacy_flat_files', true, $url, $filename ) ) {
+			$adopted = $this->adopt_legacy_flat_file( $url, $form_slug, $filename, $existing_files );
+
+			if ( ! is_wp_error( $adopted ) ) {
+				return $adopted;
+			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Copy a file from a local path into the form original directory.
+	 *
+	 * @param string                           $source_path    Readable local source path.
+	 * @param string                           $form_slug      Form slug.
+	 * @param string                           $filename       Target filename.
+	 * @param string                           $source_url     Optional remote URL for metadata.
+	 * @param array<int, array<string, mixed>> $existing_files Existing metadata entries.
+	 * @return array<string, mixed>|\WP_Error
+	 */
+	public function copy_local_source_file(
+		string $source_path,
+		string $form_slug,
+		string $filename,
+		string $source_url = '',
+		array $existing_files = []
+	) {
+		$source_path = $this->normalize_local_path( $source_path );
+
+		if ( '' === $source_path || ! is_readable( $source_path ) ) {
+			return new \WP_Error(
+				'prose_local_missing',
+				sprintf(
+					/* translators: %s: local file path */
+					__( 'Local source file is not readable: %s', 'prose-core' ),
+					$source_path
+				)
+			);
+		}
+
+		$form_slug = $this->sanitize_form_slug( $form_slug );
+
+		if ( '' === $form_slug ) {
+			return new \WP_Error( 'prose_invalid_slug', __( 'Invalid form slug.', 'prose-core' ) );
+		}
+
+		$filename  = sanitize_file_name( $filename );
+		$extension = strtolower( pathinfo( $filename, PATHINFO_EXTENSION ) );
+
+		if ( '' === $filename ) {
+			$filename  = sanitize_file_name( basename( $source_path ) );
+			$extension = strtolower( pathinfo( $filename, PATHINFO_EXTENSION ) );
+		}
+
+		if ( ! $this->is_supported_extension( $extension ) ) {
+			return new \WP_Error(
+				'prose_unsupported_extension',
+				sprintf(
+					/* translators: %s: file extension */
+					__( 'Unsupported file extension: %s', 'prose-core' ),
+					$extension
+				)
+			);
+		}
+
+		$source_dir = $this->get_form_source_dir( $form_slug );
+
+		if ( is_wp_error( $source_dir ) ) {
+			return $source_dir;
+		}
+
+		$dest = $source_dir['path'] . $filename;
+		$url  = esc_url_raw( $source_url );
+
+		if ( $this->should_skip_download( $url, $dest, $existing_files ) ) {
+			return array(
+				'filename'        => $filename,
+				'extension'       => $extension,
+				'source_url'      => $url,
+				'local_path'      => is_readable( $dest ) ? $dest : $source_path,
+				'local_url'       => is_readable( $dest ) ? $source_dir['url'] . $filename : '',
+				'download_status' => 'skipped',
+			);
+		}
+
+		if ( ! copy( $source_path, $dest ) ) {
+			return new \WP_Error(
+				'prose_copy_failed',
+				sprintf(
+					/* translators: %s: destination path */
+					__( 'Could not copy local file to %s', 'prose-core' ),
+					$dest
+				)
+			);
+		}
+
+		return array(
+			'filename'        => $filename,
+			'extension'       => $extension,
+			'source_url'      => $url,
+			'local_path'      => $dest,
+			'local_url'       => $source_dir['url'] . $filename,
+			'download_status' => 'success',
+		);
+	}
+
+	/**
+	 * Adopt an existing legacy flat file when remote download is blocked.
+	 *
+	 * Copies uploads/prose/forms/{filename} into the per-form original directory.
+	 *
+	 * @param string                           $url            Remote source URL.
+	 * @param string                           $form_slug      Form slug.
+	 * @param string                           $filename       Target filename.
+	 * @param array<int, array<string, mixed>> $existing_files Existing metadata entries.
+	 * @return array<string, mixed>|\WP_Error
+	 */
+	public function adopt_legacy_flat_file(
+		string $url,
+		string $form_slug,
+		string $filename,
+		array $existing_files = []
+	) {
+		$filename = sanitize_file_name( $filename );
+
+		if ( '' === $filename ) {
+			return new \WP_Error( 'prose_invalid_filename', __( 'Invalid filename.', 'prose-core' ) );
+		}
+
+		$upload_dir = $this->get_upload_dir();
+
+		if ( is_wp_error( $upload_dir ) ) {
+			return $upload_dir;
+		}
+
+		$legacy_path = $upload_dir['path'] . $filename;
+
+		if ( ! is_readable( $legacy_path ) ) {
+			return new \WP_Error(
+				'prose_legacy_missing',
+				sprintf(
+					/* translators: %s: filename */
+					__( 'No legacy flat file found for %s.', 'prose-core' ),
+					$filename
+				)
+			);
+		}
+
+		return $this->copy_local_source_file(
+			$legacy_path,
+			$form_slug,
+			$filename,
+			$url,
+			$existing_files
 		);
 	}
 
@@ -652,10 +877,17 @@ class Form_File_Manager {
 				$url
 			);
 
+			$host    = (string) wp_parse_url( $url, PHP_URL_HOST );
+			$referer = $host
+				? ( wp_parse_url( $url, PHP_URL_SCHEME ) ?: 'https' ) . '://' . $host . '/'
+				: 'https://www.nycourts.gov/';
+
 			$command = sprintf(
-				'%s -sS -L -f -A %s --max-time 120 -o %s %s',
+				'%s -sS -L -f -A %s -e %s -H %s --max-time 120 -o %s %s',
 				escapeshellarg( $binary ),
 				escapeshellarg( $user_agent ),
+				escapeshellarg( 'Referer: ' . $referer ),
+				escapeshellarg( 'Accept: */*' ),
 				escapeshellarg( $dest ),
 				escapeshellarg( $url )
 			);
@@ -795,7 +1027,7 @@ class Form_File_Manager {
 			return array();
 		}
 
-		$dirs    = array( '/usr/local/bin', '/usr/bin', '/opt/curl-impersonate', '/opt/curl-impersonate/bin' );
+		$dirs    = array( '/usr/local/bin', '/usr/bin', '/opt/homebrew/bin', '/opt/curl-impersonate', '/opt/curl-impersonate/bin' );
 		$allowed = $this->open_basedir_paths();
 		$found   = array();
 
@@ -1010,6 +1242,17 @@ class Form_File_Manager {
 			return true;
 		}
 
+		// Cloudflare blocks PHP's TLS fingerprint; retrying via wp_remote_get after
+		// curl already returned 403 is slow and produces a misleading error message.
+		if ( false !== stripos( $curl_error, '403' ) ) {
+			return new \WP_Error(
+				'prose_download_blocked',
+				'' !== $curl_error
+					? $curl_error
+					: __( 'Download blocked by the court server (HTTP 403).', 'prose-core' )
+			);
+		}
+
 		$body = $this->fetch_body( $url, $extension );
 
 		if ( ! is_wp_error( $body ) && '' !== $body ) {
@@ -1092,5 +1335,24 @@ class Form_File_Manager {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Normalize a local filesystem path from CSV input.
+	 *
+	 * @param string $path Raw path from CSV.
+	 * @return string
+	 */
+	private function normalize_local_path( string $path ): string {
+		$path = trim( $path );
+
+		if ( '' === $path ) {
+			return '';
+		}
+
+		// Strip optional surrounding quotes from CSV exports.
+		$path = trim( $path, "\"'" );
+
+		return wp_normalize_path( $path );
 	}
 }
