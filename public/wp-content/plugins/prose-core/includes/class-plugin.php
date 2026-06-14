@@ -23,6 +23,7 @@ use ProSe\Core\Forms\Package_Repository;
 use ProSe\Core\Assembly\Assembly_Module;
 use ProSe\Core\Intake\Intake_Module;
 use ProSe\Core\PackageBuilder\Package_Builder_Module;
+use ProSe\Core\Packet\Packet_Module;
 use ProSe\Core\Procedural\Procedural_Module;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -167,6 +168,7 @@ final class Plugin {
 				Package_Builder_Module::class,
 				Assembly_Module::class,
 				Procedural_Module::class,
+				Packet_Module::class,
 			)
 		);
 

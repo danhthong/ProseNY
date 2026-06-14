@@ -174,6 +174,10 @@ final class Procedural_Navigator {
 				'package'      => array(
 					'id' => $package_id,
 				),
+				'packet'       => array(
+					'package_id' => $package_id,
+					'available'  => $this->packet_is_available( $package_id ),
+				),
 				'forms'        => $form_codes,
 				'next_steps'   => $this->guidance->next_steps( $definition ),
 				'instructions' => $this->guidance->instructions( $county, $court_label ),
@@ -198,6 +202,26 @@ final class Procedural_Navigator {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Map a court id to a human-readable label.
+	 *
+	 * @param string $court_id Court id.
+	 * @return string
+	 */
+	/**
+	 * Read-only packet availability check (never generates).
+	 *
+	 * @param string $package_id Package enum id.
+	 * @return bool
+	 */
+	private function packet_is_available( string $package_id ): bool {
+		if ( ! function_exists( 'ProSe\\Core\\Packet\\prose_get_packet_service' ) ) {
+			return false;
+		}
+
+		return prose_get_packet_service()->is_available( $package_id );
 	}
 
 	/**
