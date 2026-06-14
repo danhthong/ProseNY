@@ -374,7 +374,17 @@ final class Pdf_Packet_Builder {
 			return call_user_func( $this->pdf_merger, $paths );
 		}
 
-		return $this->merge_with_pdftk( $paths );
+		// Prefer pdftk when available (preserves AcroForm fields best); fall
+		// back to the zero-dependency pure-PHP merger otherwise.
+		if ( class_exists( '\mikehaertl\pdftk\Pdf' ) ) {
+			$merged = $this->merge_with_pdftk( $paths );
+
+			if ( null !== $merged ) {
+				return $merged;
+			}
+		}
+
+		return ( new Pdf_Merger() )->merge( $paths );
 	}
 
 	/**

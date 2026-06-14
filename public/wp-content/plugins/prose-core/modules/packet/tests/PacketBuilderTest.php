@@ -11,7 +11,9 @@ use ProSe\Core\Forms\Classification\Vocabulary;
 use ProSe\Core\Packet\Packet_Manifest;
 use ProSe\Core\Packet\Packet_Service;
 use ProSe\Core\Packet\Packet_Store;
+use ProSe\Core\Packet\Pdf_Merger;
 use ProSe\Core\Packet\Pdf_Packet_Builder;
+use ProSe\Core\Packet\Pdf_Parser;
 use ProSe\Core\Packet\Pdf_Resolver;
 use ProSe\Core\Packet\Pdf_Validator;
 use ProSe\Core\Procedural\Procedural_Navigator;
@@ -246,6 +248,68 @@ class PacketBuilderTest extends TestCase {
 		$this->assertArrayHasKey( 'packet', $result['navigation'] );
 		$this->assertSame( 'PKG_UNCONTESTED_WITH_CHILDREN', $result['navigation']['packet']['package_id'] );
 		$this->assertFalse( $result['navigation']['packet']['available'] );
+	}
+
+	/**
+	 * Pure-PHP merger combines real single-page PDFs into a multi-page packet.
+	 */
+	public function test_pure_php_merger_combines_pages(): void {
+		$a = $this->pdf_dir . '/a.pdf';
+		$b = $this->pdf_dir . '/b.pdf';
+		file_put_contents( $a, $this->valid_single_page_pdf( 'Form A' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+		file_put_contents( $b, $this->valid_single_page_pdf( 'Form B' ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
+
+		$merged = ( new Pdf_Merger() )->merge( array( $a, $b ) );
+
+		$this->assertNotNull( $merged );
+		$this->assertSame( '%PDF-', substr( (string) $merged, 0, 5 ) );
+		$this->assertNotFalse( strpos( (string) $merged, '%%EOF' ) );
+
+		$parser = new Pdf_Parser( (string) $merged );
+		$this->assertCount( 2, $parser->get_page_numbers() );
+	}
+
+	/**
+	 * Merger fails gracefully on unreadable input.
+	 */
+	public function test_pure_php_merger_returns_null_on_bad_input(): void {
+		$this->assertNull( ( new Pdf_Merger() )->merge( array( '/no/such/file.pdf' ) ) );
+		$this->assertNull( ( new Pdf_Merger() )->merge( array() ) );
+	}
+
+	/**
+	 * Build a minimal but valid single-page PDF with a classic xref table.
+	 *
+	 * @param string $text Page text.
+	 * @return string
+	 */
+	private function valid_single_page_pdf( string $text ): string {
+		$objs       = array();
+		$objs[1]    = '<</Type/Catalog/Pages 2 0 R>>';
+		$objs[2]    = '<</Type/Pages/Kids[3 0 R]/Count 1>>';
+		$objs[3]    = '<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]/Resources<</Font<</F1 5 0 R>>>>/Contents 4 0 R>>';
+		$stream     = 'BT /F1 24 Tf 72 720 Td (' . $text . ') Tj ET';
+		$objs[4]    = '<</Length ' . strlen( $stream ) . ">>\nstream\n" . $stream . "\nendstream";
+		$objs[5]    = '<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>';
+
+		$pdf     = "%PDF-1.4\n";
+		$offsets = array();
+
+		for ( $i = 1; $i <= 5; $i++ ) {
+			$offsets[ $i ] = strlen( $pdf );
+			$pdf          .= $i . " 0 obj\n" . $objs[ $i ] . "\nendobj\n";
+		}
+
+		$xref = strlen( $pdf );
+		$pdf .= "xref\n0 6\n0000000000 65535 f \n";
+
+		for ( $i = 1; $i <= 5; $i++ ) {
+			$pdf .= sprintf( "%010d 00000 n \n", $offsets[ $i ] );
+		}
+
+		$pdf .= "trailer\n<</Size 6/Root 1 0 R>>\nstartxref\n" . $xref . "\n%%EOF\n";
+
+		return $pdf;
 	}
 
 	/**
