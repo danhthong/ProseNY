@@ -6,6 +6,8 @@
 			<directory>modules/routing/tests</directory>
 			<directory>modules/intake/tests</directory>
 			<directory>modules/packagebuilder/tests</directory>
+			<directory>modules/assembly/tests</directory>
+			<directory>modules/procedural/tests</directory>
 		</testsuite>
 	</testsuites>
 </phpunit>

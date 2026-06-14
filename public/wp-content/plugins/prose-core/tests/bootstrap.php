@@ -165,6 +165,71 @@ if ( ! function_exists( 'is_wp_error' ) ) {
 	}
 }
 
+$GLOBALS['prose_test_filters'] = array();
+
+if ( ! function_exists( 'add_filter' ) ) {
+	/**
+	 * @param string   $tag      Filter tag.
+	 * @param callable $callback Callback.
+	 * @return true
+	 */
+	function add_filter( $tag, $callback ) {
+		if ( ! isset( $GLOBALS['prose_test_filters'][ $tag ] ) ) {
+			$GLOBALS['prose_test_filters'][ $tag ] = array();
+		}
+
+		$GLOBALS['prose_test_filters'][ $tag ][] = $callback;
+
+		return true;
+	}
+}
+
+if ( ! function_exists( 'remove_filter' ) ) {
+	/**
+	 * @param string   $tag      Filter tag.
+	 * @param callable $callback Callback.
+	 * @return bool
+	 */
+	function remove_filter( $tag, $callback ) {
+		if ( ! isset( $GLOBALS['prose_test_filters'][ $tag ] ) ) {
+			return false;
+		}
+
+		$key = array_search( $callback, $GLOBALS['prose_test_filters'][ $tag ], true );
+
+		if ( false === $key ) {
+			return false;
+		}
+
+		unset( $GLOBALS['prose_test_filters'][ $tag ][ $key ] );
+
+		return true;
+	}
+}
+
+if ( ! function_exists( 'apply_filters' ) ) {
+	/**
+	 * @param string $tag  Filter tag.
+	 * @param mixed  $value Value.
+	 * @return mixed
+	 */
+	function apply_filters( $tag, $value ) {
+		$args = func_get_args();
+		array_shift( $args );
+
+		if ( empty( $GLOBALS['prose_test_filters'][ $tag ] ) ) {
+			return $value;
+		}
+
+		foreach ( $GLOBALS['prose_test_filters'][ $tag ] as $callback ) {
+			$args[0] = $value;
+			$value   = call_user_func_array( $callback, $args );
+		}
+
+		return $value;
+	}
+}
+
 if ( ! class_exists( 'WP_Error' ) ) {
 	/**
 	 * Minimal WP_Error stub for unit tests.
