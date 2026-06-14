@@ -233,8 +233,24 @@ final class Packet_Admin_Page {
 							<td><?php echo esc_html( (string) $row['package_name'] ); ?></td>
 							<td><?php echo esc_html( (string) $row['form_count'] ); ?></td>
 							<td><?php echo esc_html( (string) $row['packet_status'] ); ?></td>
-							<td><?php echo ! empty( $row['pdf_exists'] ) ? esc_html__( 'Yes', 'prose-core' ) : esc_html__( 'No', 'prose-core' ); ?></td>
-							<td><?php echo ! empty( $row['zip_exists'] ) ? esc_html__( 'Yes', 'prose-core' ) : esc_html__( 'No', 'prose-core' ); ?></td>
+							<td>
+								<?php if ( ! empty( $row['pdf_exists'] ) && '' !== (string) $row['pdf_packet_url'] ) : ?>
+									<a href="<?php echo esc_url( (string) $row['pdf_packet_url'] ); ?>" download><?php esc_html_e( 'Download PDF', 'prose-core' ); ?></a>
+								<?php elseif ( ! empty( $row['pdf_exists'] ) ) : ?>
+									<?php esc_html_e( 'Yes', 'prose-core' ); ?>
+								<?php else : ?>
+									<?php esc_html_e( 'No', 'prose-core' ); ?>
+								<?php endif; ?>
+							</td>
+							<td>
+								<?php if ( ! empty( $row['zip_exists'] ) && '' !== (string) $row['zip_packet_url'] ) : ?>
+									<a href="<?php echo esc_url( (string) $row['zip_packet_url'] ); ?>" download><?php esc_html_e( 'Download ZIP', 'prose-core' ); ?></a>
+								<?php elseif ( ! empty( $row['zip_exists'] ) ) : ?>
+									<?php esc_html_e( 'Yes', 'prose-core' ); ?>
+								<?php else : ?>
+									<?php esc_html_e( 'No', 'prose-core' ); ?>
+								<?php endif; ?>
+							</td>
 							<td><?php echo esc_html( implode( ', ', (array) $row['missing_pdfs'] ) ); ?></td>
 							<td><?php echo esc_html( implode( ', ', (array) $row['invalid_pdfs'] ) ); ?></td>
 							<td><?php echo esc_html( size_format( (int) $row['packet_size'], 1 ) ); ?></td>
