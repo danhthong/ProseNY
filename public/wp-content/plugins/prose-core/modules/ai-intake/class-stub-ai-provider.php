@@ -1,0 +1,243 @@
+<?php
+/**
+ * Deterministic AI provider for tests and offline development.
+ *
+ * @package ProSeCore
+ */
+
+namespace ProSe\Core\Ai_Intake;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Class Stub_Ai_Provider
+ */
+final class Stub_Ai_Provider implements Ai_Provider_Interface {
+
+	/**
+	 * Canned responses keyed by scenario id.
+	 *
+	 * @var array<string, string>
+	 */
+	private array $responses = array();
+
+	/**
+	 * Constructor.
+	 *
+	 * @param array<string, string> $responses Optional canned responses.
+	 */
+	public function __construct( array $responses = array() ) {
+		$this->responses = $responses;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function name(): string {
+		return 'stub';
+	}
+
+	/**
+	 * Set a canned response for a scenario.
+	 *
+	 * @param string $scenario Scenario key.
+	 * @param string $content  JSON response content.
+	 * @return void
+	 */
+	public function set_response( string $scenario, string $content ): void {
+		$this->responses[ $scenario ] = $content;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function complete( array $messages, array $options = array() ): array {
+		$last_user = '';
+
+		foreach ( array_reverse( $messages ) as $message ) {
+			if ( 'user' === ( $message['role'] ?? '' ) ) {
+				$last_user = (string) ( $message['content'] ?? '' );
+				break;
+			}
+		}
+
+		$scenario = (string) ( $options['scenario'] ?? '' );
+
+		if ( '' !== $scenario && isset( $this->responses[ $scenario ] ) ) {
+			return array(
+				'content'    => $this->responses[ $scenario ],
+				'latency_ms' => 1,
+				'raw'        => array(),
+			);
+		}
+
+		$content = $this->infer_response( $last_user, $messages, $options );
+
+		return array(
+			'content'    => $content,
+			'latency_ms' => 1,
+			'raw'        => array(),
+		);
+	}
+
+	/**
+	 * Infer a deterministic JSON response from the user message.
+	 *
+	 * @param string                             $message  Latest user message.
+	 * @param array<int, array<string, mixed>>   $messages Full message list.
+	 * @param array<string, mixed>               $options  Options including context.
+	 * @return string
+	 */
+	private function infer_response( string $message, array $messages, array $options ): string {
+		$context     = is_array( $options['context'] ?? null ) ? $options['context'] : array();
+		$pending     = (string) ( $context['pending_field'] ?? '' );
+		$mode        = (string) ( $options['mode'] ?? 'extract' );
+		$normalized  = strtolower( trim( $message ) );
+
+		if ( 'summarize' === $mode ) {
+			$facts = is_array( $context['facts'] ?? null ) ? $context['facts'] : array();
+			return wp_json_encode(
+				array(
+					'summary' => 'Confirmed facts: ' . wp_json_encode( $facts ),
+				)
+			);
+		}
+
+		if ( 'question' === $mode ) {
+			$field = (string) ( $context['target_field'] ?? '' );
+			$label = str_replace( '_', ' ', $field );
+
+			return wp_json_encode(
+				array(
+					'question' => 'Could you please tell me about your ' . $label . '?',
+				)
+			);
+		}
+
+		if ( 'clarify' === $mode ) {
+			return wp_json_encode(
+				array(
+					'clarification' => 'Just to clarify, could you confirm that for me?',
+				)
+			);
+		}
+
+		$updates = array();
+
+		if ( preg_match( '/\bmaybe\b/i', $message ) ) {
+			return wp_json_encode(
+				array(
+					'fact_updates' => array(
+						'county' => array(
+							'value'      => 'Queens',
+							'confidence' => 0.5,
+						),
+					),
+					'intent'       => 'answer_question',
+					'confidence'   => 0.5,
+				)
+			);
+		}
+
+		if ( preg_match( '/\b(queens|kings|brooklyn|bronx|manhattan|staten island|richmond)\b/i', $message, $m ) ) {
+			$updates['county'] = array(
+				'value'      => $this->normalize_county( $m[1] ),
+				'confidence' => 0.98,
+			);
+		} elseif ( 'county' === $pending && '' !== $normalized ) {
+			$updates['county'] = array(
+				'value'      => $this->normalize_county( $normalized ),
+				'confidence' => 0.95,
+			);
+		}
+
+		if ( preg_match( '/\b(spouse agrees|wife agrees|husband agrees|uncontested)\b/i', $message ) ) {
+			$updates['spouse_agrees'] = array(
+				'value'      => true,
+				'confidence' => 0.95,
+			);
+		} elseif ( 'spouse_agrees' === $pending && in_array( $normalized, array( 'yes', 'yeah', 'yep' ), true ) ) {
+			$updates['spouse_agrees'] = array(
+				'value'      => true,
+				'confidence' => 0.95,
+			);
+		} elseif ( 'spouse_agrees' === $pending && in_array( $normalized, array( 'no', 'nope' ), true ) ) {
+			$updates['spouse_agrees'] = array(
+				'value'      => false,
+				'confidence' => 0.95,
+			);
+		}
+
+		if ( preg_match( '/\b(two|2)\s+children\b/i', $message ) || preg_match( '/\bhave two children\b/i', $message ) ) {
+			$updates['child_count']         = array( 'value' => 2, 'confidence' => 0.95 );
+			$updates['has_minor_children']  = array( 'value' => true, 'confidence' => 0.95 );
+			$updates['children']            = array( 'value' => true, 'confidence' => 0.95 );
+		} elseif ( preg_match( '/\bno children\b/i', $message ) ) {
+			$updates['child_count']        = array( 'value' => 0, 'confidence' => 0.95 );
+			$updates['has_minor_children'] = array( 'value' => false, 'confidence' => 0.95 );
+			$updates['children']           = array( 'value' => false, 'confidence' => 0.95 );
+		} elseif ( in_array( $normalized, array( 'two', '2' ), true ) && in_array( $pending, array( 'child_count', 'children_count' ), true ) ) {
+			$updates['child_count'] = array( 'value' => 2, 'confidence' => 0.95 );
+		} elseif ( in_array( $normalized, array( 'no', 'none' ), true ) && in_array( $pending, array( 'child_count', 'children', 'has_minor_children' ), true ) ) {
+			$updates['child_count']        = array( 'value' => 0, 'confidence' => 0.95 );
+			$updates['has_minor_children'] = array( 'value' => false, 'confidence' => 0.95 );
+		}
+
+		if ( preg_match( '/\bdivorce\b/i', $message ) ) {
+			$updates['issue'] = array(
+				'value'      => 'divorce',
+				'confidence' => 0.95,
+			);
+		}
+
+		if ( preg_match( '/\b(custody|visitation)\b/i', $message ) ) {
+			$updates['issue'] = array(
+				'value'      => 'custody',
+				'confidence' => 0.95,
+			);
+		}
+
+		if ( preg_match( "/\b(i don'?t know|not sure|it'?s complicated)\b/i", $message ) ) {
+			return wp_json_encode(
+				array(
+					'fact_updates' => array(),
+					'intent'       => 'uncertain',
+					'confidence'   => 0.3,
+				)
+			);
+		}
+
+		return wp_json_encode(
+			array(
+				'fact_updates' => $updates,
+				'intent'       => 'answer_question',
+				'confidence'   => empty( $updates ) ? 0.5 : 0.95,
+			)
+		);
+	}
+
+	/**
+	 * Normalize borough/county names.
+	 *
+	 * @param string $input Raw input.
+	 * @return string
+	 */
+	private function normalize_county( string $input ): string {
+		$key = strtolower( trim( $input ) );
+
+		$map = array(
+			'brooklyn'      => 'Kings',
+			'kings'         => 'Kings',
+			'queens'        => 'Queens',
+			'queen'         => 'Queens',
+			'bronx'         => 'Bronx',
+			'manhattan'     => 'New York',
+			'staten island' => 'Richmond',
+			'richmond'      => 'Richmond',
+		);
+
+		return $map[ $key ] ?? ucwords( $input );
+	}
+}

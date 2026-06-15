@@ -114,6 +114,7 @@ final class Package_Preview_Shortcode {
 				array(
 					'restUrl'    => esc_url_raw( rest_url( Package_Builder_Rest_Controller::NAMESPACE . Package_Builder_Rest_Controller::ROUTE_PREVIEW ) ),
 					'buildUrl'   => esc_url_raw( rest_url( Package_Builder_Rest_Controller::NAMESPACE . Package_Builder_Rest_Controller::ROUTE_BUILD ) ),
+					'mergedUrl'  => esc_url_raw( rest_url( Package_Builder_Rest_Controller::NAMESPACE . Package_Builder_Rest_Controller::ROUTE_MERGED_PDF ) ),
 					'nonce'      => wp_create_nonce( 'wp_rest' ),
 					'storageKey' => 'prose_intake_session',
 					'strings'    => array(
@@ -123,9 +124,10 @@ final class Package_Preview_Shortcode {
 						'ready'      => __( 'Ready', 'prose-core' ),
 						'pending'    => __( 'Preparing', 'prose-core' ),
 						'incomplete' => __( 'Some required forms are not ready yet.', 'prose-core' ),
-						'download'   => __( 'Download package', 'prose-core' ),
-						'building'   => __( 'Building package…', 'prose-core' ),
+						'download'   => __( 'Download all forms (PDF)', 'prose-core' ),
+						'building'   => __( 'Preparing your PDF…', 'prose-core' ),
 						'error'      => __( 'Could not load your package. Please try again.', 'prose-core' ),
+						'noPdf'      => __( 'Blank forms for this matter are not available to download yet.', 'prose-core' ),
 					),
 				)
 			);
@@ -148,7 +150,7 @@ final class Package_Preview_Shortcode {
 
 			<footer class="prose-package__footer">
 				<button type="button" class="prose-package__download" data-prose-package-download hidden>
-					<?php esc_html_e( 'Download package', 'prose-core' ); ?>
+					<?php esc_html_e( 'Download all forms (PDF)', 'prose-core' ); ?>
 				</button>
 			</footer>
 		</section>

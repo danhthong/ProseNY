@@ -42,7 +42,7 @@ final class Completion_Calculator {
 
 			$key = (string) ( $field['key'] ?? '' );
 
-			if ( '' === $key ) {
+			if ( '' === $key || ! $this->is_applicable( $store, $key ) ) {
 				continue;
 			}
 
@@ -80,7 +80,7 @@ final class Completion_Calculator {
 
 			$key = (string) ( $field['key'] ?? '' );
 
-			if ( '' === $key ) {
+			if ( '' === $key || ! $this->is_applicable( $store, $key ) ) {
 				continue;
 			}
 
@@ -119,5 +119,28 @@ final class Completion_Calculator {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Whether a required field applies given known facts.
+	 *
+	 * Child detail fields are skipped when the user has indicated zero children.
+	 *
+	 * @param Fact_Store $store Fact store.
+	 * @param string     $key   Field key.
+	 * @return bool
+	 */
+	private function is_applicable( Fact_Store $store, string $key ): bool {
+		if ( ! in_array( $key, array( 'child_names', 'child_birth_dates' ), true ) ) {
+			return true;
+		}
+
+		if ( ! $store->has( 'child_count' ) ) {
+			return true;
+		}
+
+		$child_count = $store->get( 'child_count' );
+
+		return is_numeric( $child_count ) && (int) $child_count > 0;
 	}
 }

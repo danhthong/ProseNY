@@ -45,6 +45,52 @@ if ( ! function_exists( 'sanitize_text_field' ) ) {
 	}
 }
 
+if ( ! function_exists( 'sanitize_textarea_field' ) ) {
+	/**
+	 * @param string $str String.
+	 * @return string
+	 */
+	function sanitize_textarea_field( $str ) {
+		return trim( (string) $str );
+	}
+}
+
+$GLOBALS['prose_test_options'] = array();
+
+if ( ! function_exists( 'get_option' ) ) {
+	/**
+	 * @param string $option  Option name.
+	 * @param mixed  $default Default value.
+	 * @return mixed
+	 */
+	function get_option( $option, $default = false ) {
+		return $GLOBALS['prose_test_options'][ $option ] ?? $default;
+	}
+}
+
+if ( ! function_exists( 'update_option' ) ) {
+	/**
+	 * @param string $option Option name.
+	 * @param mixed  $value  Value.
+	 * @return bool
+	 */
+	function update_option( $option, $value ) {
+		$GLOBALS['prose_test_options'][ $option ] = $value;
+		return true;
+	}
+}
+
+if ( ! function_exists( 'delete_option' ) ) {
+	/**
+	 * @param string $option Option name.
+	 * @return bool
+	 */
+	function delete_option( $option ) {
+		unset( $GLOBALS['prose_test_options'][ $option ] );
+		return true;
+	}
+}
+
 if ( ! function_exists( 'sanitize_file_name' ) ) {
 	/**
 	 * @param string $filename Filename.

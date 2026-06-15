@@ -25,6 +25,7 @@ use ProSe\Core\Intake\Intake_Module;
 use ProSe\Core\PackageBuilder\Package_Builder_Module;
 use ProSe\Core\Guidance\Guidance_Module;
 use ProSe\Core\Guidance\Guidance_Repository;
+use ProSe\Core\Ai_Intake\AI_Intake_Module;
 use ProSe\Core\Packet\Packet_Module;
 use ProSe\Core\Procedural\Procedural_Module;
 
@@ -175,6 +176,7 @@ final class Plugin {
 				Procedural_Module::class,
 				Packet_Module::class,
 				Guidance_Module::class,
+				AI_Intake_Module::class,
 			)
 		);
 

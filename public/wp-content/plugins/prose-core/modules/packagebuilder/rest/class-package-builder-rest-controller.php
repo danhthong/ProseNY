@@ -13,6 +13,7 @@
 namespace ProSe\Core\PackageBuilder\Rest;
 
 use ProSe\Core\Loader;
+use ProSe\Core\PackageBuilder\Merged_Blank_Pdf_Service;
 use ProSe\Core\PackageBuilder\Package_Builder;
 use ProSe\Core\PackageBuilder\Package_Preview_Service;
 use ProSe\Core\PackageBuilder\Package_Type;
@@ -47,6 +48,11 @@ final class Package_Builder_Rest_Controller {
 	public const ROUTE_PREVIEW = '/package/preview';
 
 	/**
+	 * Merged blank PDF route.
+	 */
+	public const ROUTE_MERGED_PDF = '/package/merged-pdf';
+
+	/**
 	 * Package builder.
 	 *
 	 * @var Package_Builder
@@ -61,14 +67,27 @@ final class Package_Builder_Rest_Controller {
 	private Package_Preview_Service $preview;
 
 	/**
+	 * Merged blank PDF service.
+	 *
+	 * @var Merged_Blank_Pdf_Service
+	 */
+	private Merged_Blank_Pdf_Service $merged;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Package_Builder|null         $builder Package builder.
-	 * @param Package_Preview_Service|null $preview Preview service.
+	 * @param Package_Builder|null          $builder Package builder.
+	 * @param Package_Preview_Service|null  $preview Preview service.
+	 * @param Merged_Blank_Pdf_Service|null $merged  Merged blank PDF service.
 	 */
-	public function __construct( ?Package_Builder $builder = null, ?Package_Preview_Service $preview = null ) {
+	public function __construct(
+		?Package_Builder $builder = null,
+		?Package_Preview_Service $preview = null,
+		?Merged_Blank_Pdf_Service $merged = null
+	) {
 		$this->builder = $builder ?? new Package_Builder();
-		$this->preview = $preview ?? new Package_Preview_Service( $this->builder );
+		$this->merged  = $merged ?? new Merged_Blank_Pdf_Service();
+		$this->preview = $preview ?? new Package_Preview_Service( $this->builder, null, $this->merged );
 	}
 
 	/**
@@ -117,6 +136,17 @@ final class Package_Builder_Rest_Controller {
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'handle_preview' ),
+				'permission_callback' => '__return_true',
+				'args'                => $args,
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			self::ROUTE_MERGED_PDF,
+			array(
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'handle_merged_pdf' ),
 				'permission_callback' => '__return_true',
 				'args'                => $args,
 			)
@@ -189,6 +219,16 @@ final class Package_Builder_Rest_Controller {
 	 */
 	public function handle_preview( \WP_REST_Request $request ): \WP_REST_Response {
 		return rest_ensure_response( $this->preview->preview( $this->input( $request ) ) );
+	}
+
+	/**
+	 * POST /package/merged-pdf — build/return a single merged blank-forms PDF.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response
+	 */
+	public function handle_merged_pdf( \WP_REST_Request $request ): \WP_REST_Response {
+		return rest_ensure_response( $this->merged->build( (string) $request->get_param( 'workflow' ) ) );
 	}
 
 	/**

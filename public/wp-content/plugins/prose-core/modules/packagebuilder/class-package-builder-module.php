@@ -53,12 +53,20 @@ final class Package_Builder_Module implements Module_Interface {
 	private Package_Preview_Shortcode $shortcode;
 
 	/**
+	 * Merged blank PDF service.
+	 *
+	 * @var Merged_Blank_Pdf_Service
+	 */
+	private Merged_Blank_Pdf_Service $merged;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
 		$this->builder         = new Package_Builder();
-		$this->preview         = new Package_Preview_Service( $this->builder );
-		$this->rest_controller = new Package_Builder_Rest_Controller( $this->builder, $this->preview );
+		$this->merged          = new Merged_Blank_Pdf_Service();
+		$this->preview         = new Package_Preview_Service( $this->builder, null, $this->merged );
+		$this->rest_controller = new Package_Builder_Rest_Controller( $this->builder, $this->preview, $this->merged );
 		$this->shortcode       = new Package_Preview_Shortcode();
 	}
 

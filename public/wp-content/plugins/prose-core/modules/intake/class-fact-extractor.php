@@ -36,6 +36,7 @@ final class Fact_Extractor {
 		'brooklyn'        => 'Kings',
 		'richmond'        => 'Richmond',
 		'queens'          => 'Queens',
+		'queen'           => 'Queens',
 		'bronx'           => 'Bronx',
 		'kings'           => 'Kings',
 	);
@@ -110,6 +111,8 @@ final class Fact_Extractor {
 
 		if ( null !== $child_count ) {
 			$facts['child_count'] = $child_count;
+		} elseif ( isset( $keys['child_count'] ) && $this->is_zero_count_answer( $normalized, 'child_count' ) ) {
+			$facts['child_count'] = 0;
 		}
 
 		$county = $this->extract_county( $normalized );
@@ -157,6 +160,10 @@ final class Fact_Extractor {
 			case 'integer':
 				$value = $this->parse_integer( $normalized );
 
+				if ( null === $value && $this->is_zero_count_answer( $normalized, $field_key ) ) {
+					$value = 0;
+				}
+
 				return null === $value ? array() : array( $field_key => $value );
 
 			case 'boolean':
@@ -201,6 +208,10 @@ final class Fact_Extractor {
 
 		if ( null !== $integer ) {
 			return array( $field_key => $integer );
+		}
+
+		if ( $this->is_zero_count_answer( $normalized, $field_key ) ) {
+			return array( $field_key => 0 );
 		}
 
 		return array( $field_key => $trimmed );
@@ -282,6 +293,27 @@ final class Fact_Extractor {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Whether a message indicates zero children for a count field.
+	 *
+	 * @param string $normalized Normalized text.
+	 * @param string $field_key  Pending field key.
+	 * @return bool
+	 */
+	private function is_zero_count_answer( string $normalized, string $field_key ): bool {
+		if ( 'child_count' !== $field_key ) {
+			return false;
+		}
+
+		if ( preg_match( '/\bno children\b|\bwithout children\b|\bno kids\b|\bchildless\b|\bmean no children\b/', $normalized ) ) {
+			return true;
+		}
+
+		$boolean = $this->parse_boolean( $normalized );
+
+		return false === $boolean;
 	}
 
 	/**

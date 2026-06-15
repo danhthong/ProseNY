@@ -54,8 +54,23 @@ final class Autoloader {
 		}
 
 		if ( ! empty( $parts ) ) {
-			$module_dir       = strtolower( implode( '/', $parts ) );
+			$module_dir = strtolower( implode( '/', $parts ) );
 			$search_paths[] = PROSE_CORE_PATH . 'modules/' . $module_dir . '/class-' . $slug . '.php';
+
+			if ( str_ends_with( $class_name, '_Interface' ) ) {
+				$interface_base   = strtolower( str_replace( '_', '-', substr( $class_name, 0, -strlen( '_Interface' ) ) ) );
+				$search_paths[] = PROSE_CORE_PATH . 'modules/' . $module_dir . '/interface-' . $interface_base . '.php';
+			}
+
+			$hyphen_dir = str_replace( '_', '-', $module_dir );
+			if ( $hyphen_dir !== $module_dir ) {
+				$search_paths[] = PROSE_CORE_PATH . 'modules/' . $hyphen_dir . '/class-' . $slug . '.php';
+
+				if ( str_ends_with( $class_name, '_Interface' ) ) {
+					$interface_base   = strtolower( str_replace( '_', '-', substr( $class_name, 0, -strlen( '_Interface' ) ) ) );
+					$search_paths[] = PROSE_CORE_PATH . 'modules/' . $hyphen_dir . '/interface-' . $interface_base . '.php';
+				}
+			}
 		}
 
 		foreach ( $search_paths as $path ) {

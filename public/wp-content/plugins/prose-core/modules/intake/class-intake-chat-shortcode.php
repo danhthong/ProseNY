@@ -10,6 +10,7 @@
 
 namespace ProSe\Core\Intake;
 
+use ProSe\Core\Ai_Intake\Rest\AI_Intake_Rest_Controller;
 use ProSe\Core\Loader;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -119,11 +120,17 @@ final class Intake_Chat_Shortcode {
 		wp_enqueue_script( self::HANDLE );
 
 		if ( ! self::$localized ) {
+			$use_ai = function_exists( 'prose_intake_use_ai_interpreter' ) && prose_intake_use_ai_interpreter();
+			$route  = $use_ai
+				? AI_Intake_Rest_Controller::NAMESPACE . AI_Intake_Rest_Controller::ROUTE_INTERPRET
+				: Intake_Rest_Controller::NAMESPACE . Intake_Rest_Controller::ROUTE;
+
 			wp_localize_script(
 				self::HANDLE,
 				'ProseIntake',
 				array(
-					'restUrl'    => esc_url_raw( rest_url( Intake_Rest_Controller::NAMESPACE . Intake_Rest_Controller::ROUTE ) ),
+					'restUrl'    => esc_url_raw( rest_url( $route ) ),
+					'useAi'      => $use_ai,
 					'nonce'      => wp_create_nonce( 'wp_rest' ),
 					'storageKey' => 'prose_intake_session',
 					'strings'    => array(

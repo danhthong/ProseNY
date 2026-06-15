@@ -89,7 +89,12 @@
 		} );
 
 		if ( els.download ) {
-			els.download.hidden = 'ready' !== data.package_status;
+			var blank = data.blank_pdf || {};
+			els.download.hidden = ! blank.available;
+			els.download.disabled = false;
+			els.download.textContent = strings.download || 'Download all forms (PDF)';
+			// Cache a ready-made URL so the click can skip the build round-trip.
+			els.download.dataset.url = blank.download_url || '';
 		}
 	}
 
@@ -123,16 +128,26 @@
 
 	if ( els.download ) {
 		els.download.addEventListener( 'click', function () {
-			if ( ! lastInput ) {
+			// A merged PDF already on disk: download immediately.
+			if ( els.download.dataset.url ) {
+				window.open( els.download.dataset.url, '_blank' );
 				return;
 			}
+
+			if ( ! lastInput || ! cfg.mergedUrl ) {
+				return;
+			}
+
 			els.download.disabled = true;
-			els.download.textContent = strings.building || 'Building package…';
-			request( cfg.buildUrl, lastInput, function ( data ) {
+			els.download.textContent = strings.building || 'Preparing your PDF…';
+			request( cfg.mergedUrl, lastInput, function ( data ) {
 				els.download.disabled = false;
-				els.download.textContent = strings.download || 'Download package';
+				els.download.textContent = strings.download || 'Download all forms (PDF)';
 				if ( data && data.download_url ) {
-					window.location.href = data.download_url;
+					els.download.dataset.url = data.download_url;
+					window.open( data.download_url, '_blank' );
+				} else {
+					els.summary.textContent = strings.noPdf || strings.error || 'No PDF available.';
 				}
 			} );
 		} );

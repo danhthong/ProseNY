@@ -279,6 +279,33 @@ class IntakeAgentTest extends TestCase {
 	}
 
 	/**
+	 * Custody intake skips child detail questions when there are no children.
+	 */
+	public function test_custody_skips_child_details_when_no_children(): void {
+		$turn1 = $this->agent->process( 'Help me with child custody' );
+		$this->assertSame( 'custody_nyc', $turn1['workflow'] );
+		$this->assertSame( 'In which NYC county are you filing?', $turn1['next_question'] );
+
+		$turn2 = $this->agent->process( 'Queen', $turn1['case_profile'] );
+		$this->assertSame( 'Queens', $turn2['case_profile']['facts']['county'] );
+		$this->assertSame( 'How many children are involved?', $turn2['next_question'] );
+
+		$turn3 = $this->agent->process( 'No', $turn2['case_profile'] );
+		$this->assertSame( 0, $turn3['case_profile']['facts']['child_count'] );
+		$this->assertNotContains( 'child_names', $turn3['missing_fields'] );
+		$this->assertNotContains( 'child_birth_dates', $turn3['missing_fields'] );
+		$this->assertSame(
+			'What is your full legal name and contact information?',
+			$turn3['next_question']
+		);
+
+		$turn4 = $this->agent->process( 'I mean no children', $turn3['case_profile'] );
+		$this->assertSame( 0, $turn4['case_profile']['facts']['child_count'] );
+		$this->assertNotContains( 'child_names', $turn4['missing_fields'] );
+		$this->assertNotContains( 'child_birth_dates', $turn4['missing_fields'] );
+	}
+
+	/**
 	 * Every response carries a conversation id.
 	 */
 	public function test_every_response_has_conversation_id(): void {

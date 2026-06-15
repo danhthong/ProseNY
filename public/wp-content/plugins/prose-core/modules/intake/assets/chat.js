@@ -13,9 +13,9 @@
 	var STRINGS = CONFIG.strings || {};
 
 	/**
-	 * Read the persisted session ({ conversation_id, case_profile }).
+	 * Read the persisted session ({ conversation_id, case_profile, conversation, state }).
 	 *
-	 * @return {{conversation_id: string, case_profile: Object}}
+	 * @return {{conversation_id: string, case_profile: Object, conversation: Array, state: Object}}
 	 */
 	function loadSession() {
 		try {
@@ -25,13 +25,15 @@
 				if ( parsed && typeof parsed === 'object' ) {
 					return {
 						conversation_id: parsed.conversation_id || '',
-						case_profile: parsed.case_profile && typeof parsed.case_profile === 'object' ? parsed.case_profile : {}
+						case_profile: parsed.case_profile && typeof parsed.case_profile === 'object' ? parsed.case_profile : {},
+						conversation: Array.isArray( parsed.conversation ) ? parsed.conversation : [],
+						state: parsed.state && typeof parsed.state === 'object' ? parsed.state : {}
 					};
 				}
 			}
 		} catch ( e ) {}
 
-		return { conversation_id: '', case_profile: {} };
+		return { conversation_id: '', case_profile: {}, conversation: [], state: {} };
 	}
 
 	/**
@@ -39,12 +41,19 @@
 	 *
 	 * @param {string} conversationId Conversation id.
 	 * @param {Object} caseProfile    Case profile.
+	 * @param {Array}  conversation   Conversation history.
+	 * @param {Object} state          AI intake state.
 	 */
-	function saveSession( conversationId, caseProfile ) {
+	function saveSession( conversationId, caseProfile, conversation, state ) {
 		try {
 			window.localStorage.setItem(
 				STORAGE_KEY,
-				JSON.stringify( { conversation_id: conversationId, case_profile: caseProfile } )
+				JSON.stringify( {
+					conversation_id: conversationId,
+					case_profile: caseProfile,
+					conversation: conversation || [],
+					state: state || {}
+				} )
 			);
 		} catch ( e ) {}
 	}
@@ -129,16 +138,23 @@
 			addBubble( 'user', message );
 			var thinking = addBubble( 'agent', STRINGS.sending || 'Thinking…' );
 
+			var payload = {
+				message: message,
+				case_profile: session.case_profile || {}
+			};
+
+			if ( CONFIG.useAi ) {
+				payload.state = session.state && Object.keys( session.state ).length ? session.state : { case_profile: session.case_profile || {} };
+				payload.conversation = session.conversation || [];
+			}
+
 			fetch( CONFIG.restUrl, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
 					'X-WP-Nonce': CONFIG.nonce || ''
 				},
-				body: JSON.stringify( {
-					message: message,
-					case_profile: session.case_profile || {}
-				} )
+				body: JSON.stringify( payload )
 			} )
 				.then( function ( res ) {
 					if ( ! res.ok ) {
@@ -147,14 +163,27 @@
 					return res.json();
 				} )
 				.then( function ( data ) {
-					session.conversation_id = data.conversation_id || session.conversation_id;
-					session.case_profile = data.case_profile || session.case_profile || {};
-					saveSession( session.conversation_id, session.case_profile );
+					var result = data.result && typeof data.result === 'object' ? data.result : data;
+
+					session.conversation_id = data.conversation_id || result.conversation_id || session.conversation_id;
+					session.case_profile = data.case_profile || result.case_profile || session.case_profile || {};
+					session.state = result.state || data.state || session.state || {};
+
+					if ( CONFIG.useAi ) {
+						session.conversation = session.conversation || [];
+						session.conversation.push( { role: 'user', content: message } );
+						var agentText = ( data.next_question || result.question || '' ).trim();
+						if ( agentText ) {
+							session.conversation.push( { role: 'assistant', content: agentText } );
+						}
+					}
+
+					saveSession( session.conversation_id, session.case_profile, session.conversation, session.state );
 
 					// Announce a resolved workflow so downstream widgets (e.g. the
 					// Package Builder preview) can react. Package selection stays
 					// server-side; this only forwards the resolved workflow key.
-					var resolvedWorkflow = ( data.case_profile && data.case_profile.workflow ) || data.workflow || '';
+					var resolvedWorkflow = ( session.case_profile && session.case_profile.workflow ) || data.workflow || result.workflow || '';
 					if ( resolvedWorkflow ) {
 						document.dispatchEvent( new CustomEvent( 'prose:workflow-resolved', {
 							detail: {
@@ -164,18 +193,26 @@
 						} ) );
 					}
 
-					setCompletion( data.completion );
+					var completion = data.completion != null ? data.completion : ( result.completion || 0 );
+					setCompletion( completion );
 
-					var question = ( data.next_question || '' ).trim();
-					var intakeComplete = question === '' && 100 === ( data.completion || 0 );
+					var question = ( data.next_question || result.question || '' ).trim();
+					var intakeComplete = ( result.next_action === 'complete_intake' ) || ( question === '' && 100 === ( completion || 0 ) );
+					var needsReview = result.needs_review === true || result.next_action === 'needs_review';
 
-					thinking.textContent = question || ( intakeComplete ? ( STRINGS.complete || 'Thanks — intake complete.' ) : ( STRINGS.error || 'Something went wrong. Please try again.' ) );
-
-					if ( intakeComplete ) {
+					if ( needsReview ) {
+						thinking.textContent = STRINGS.review || 'We need a little more help with your intake. A team member may follow up.';
 						thinking.classList.add( 'prose-intake__bubble--complete' );
 						input.disabled = true;
-					} else if ( ! question ) {
-						thinking.classList.add( 'prose-intake__bubble--error' );
+					} else {
+						thinking.textContent = question || ( intakeComplete ? ( STRINGS.complete || 'Thanks — intake complete.' ) : ( STRINGS.error || 'Something went wrong. Please try again.' ) );
+
+						if ( intakeComplete ) {
+							thinking.classList.add( 'prose-intake__bubble--complete' );
+							input.disabled = true;
+						} else if ( ! question ) {
+							thinking.classList.add( 'prose-intake__bubble--error' );
+						}
 					}
 				} )
 				.catch( function () {
@@ -216,7 +253,7 @@
 		if ( resetBtn ) {
 			resetBtn.addEventListener( 'click', function () {
 				clearSession();
-				session = { conversation_id: '', case_profile: {} };
+				session = { conversation_id: '', case_profile: {}, conversation: [], state: {} };
 				transcript.innerHTML = '';
 				input.disabled = false;
 				setCompletion( 0 );

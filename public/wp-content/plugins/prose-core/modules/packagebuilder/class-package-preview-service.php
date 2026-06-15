@@ -37,14 +37,27 @@ final class Package_Preview_Service {
 	private Workflow_Catalog $workflows;
 
 	/**
+	 * Merged blank PDF service.
+	 *
+	 * @var Merged_Blank_Pdf_Service
+	 */
+	private Merged_Blank_Pdf_Service $merged;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Package_Builder|null  $builder   Package builder.
-	 * @param Workflow_Catalog|null $workflows Workflow catalog.
+	 * @param Package_Builder|null          $builder   Package builder.
+	 * @param Workflow_Catalog|null         $workflows Workflow catalog.
+	 * @param Merged_Blank_Pdf_Service|null $merged    Merged blank PDF service.
 	 */
-	public function __construct( ?Package_Builder $builder = null, ?Workflow_Catalog $workflows = null ) {
+	public function __construct(
+		?Package_Builder $builder = null,
+		?Workflow_Catalog $workflows = null,
+		?Merged_Blank_Pdf_Service $merged = null
+	) {
 		$this->builder   = $builder ?? new Package_Builder();
 		$this->workflows = $workflows ?? new Workflow_Catalog();
+		$this->merged    = $merged ?? new Merged_Blank_Pdf_Service();
 	}
 
 	/**
@@ -113,6 +126,7 @@ final class Package_Preview_Service {
 			),
 			'stages'            => array_values( $stages ),
 			'validation_errors' => is_array( $manifest['validation_errors'] ?? null ) ? $manifest['validation_errors'] : array(),
+			'blank_pdf'         => $this->merged->status( (string) ( $manifest['workflow'] ?? '' ) ),
 		);
 	}
 

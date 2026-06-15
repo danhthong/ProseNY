@@ -10,6 +10,7 @@
 			<directory>modules/procedural/tests</directory>
 			<directory>modules/packet/tests</directory>
 			<directory>modules/guidance/tests</directory>
+			<directory>modules/ai-intake/tests</directory>
 		</testsuite>
 	</testsuites>
 </phpunit>
