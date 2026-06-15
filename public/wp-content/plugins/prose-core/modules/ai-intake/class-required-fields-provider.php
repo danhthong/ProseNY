@@ -114,7 +114,12 @@ final class Required_Fields_Provider {
 		$workflow = $profile->workflow();
 		$prior    = $state->workflow();
 
-		if ( ( null === $workflow || '' === $workflow ) && null !== $prior && '' !== $prior ) {
+		// Retain a prior workflow only while routing is momentarily ambiguous AND
+		// the prior workflow still belongs to the current issue. If the user
+		// switched matters (e.g. child support -> divorce), the old workflow must
+		// not stick — otherwise the package preview keeps showing the wrong forms.
+		if ( ( null === $workflow || '' === $workflow ) && null !== $prior && '' !== $prior
+			&& $this->workflow_matches_issue( $prior, $profile->issue() ) ) {
 			$workflow = $prior;
 		}
 
@@ -333,6 +338,39 @@ final class Required_Fields_Provider {
 		}
 
 		return 'string';
+	}
+
+	/**
+	 * Whether a workflow still belongs to the currently resolved issue.
+	 *
+	 * @param string      $workflow Workflow key.
+	 * @param string|null $issue    Resolved issue.
+	 * @return bool
+	 */
+	private function workflow_matches_issue( string $workflow, ?string $issue ): bool {
+		if ( null === $issue || '' === $issue ) {
+			return true;
+		}
+
+		$definition = $this->catalog->by_key( $workflow );
+
+		if ( null === $definition ) {
+			return false;
+		}
+
+		$workflow_issue = (string) ( $definition['issue_type'] ?? '' );
+
+		return $this->base_issue( $workflow_issue ) === $this->base_issue( $issue );
+	}
+
+	/**
+	 * Reduce an issue to its base form (divorce* -> divorce).
+	 *
+	 * @param string $issue Issue type.
+	 * @return string
+	 */
+	private function base_issue( string $issue ): string {
+		return str_starts_with( $issue, 'divorce' ) ? 'divorce' : $issue;
 	}
 
 	/**

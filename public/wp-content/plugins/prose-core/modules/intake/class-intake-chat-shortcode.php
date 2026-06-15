@@ -40,6 +40,25 @@ final class Intake_Chat_Shortcode {
 	private static bool $localized = false;
 
 	/**
+	 * Whether the chat widget should use the OpenAI-backed interpreter endpoint.
+	 *
+	 * Defaults to true (100% OpenAI-driven intake). The AI module's helper
+	 * function may not be loaded at front-end render time, so we fall back to
+	 * the same filter with a true default — the REST route is registered
+	 * independently on rest_api_init and is always available for the POST.
+	 *
+	 * @return bool
+	 */
+	private static function use_ai_interpreter(): bool {
+		if ( function_exists( 'prose_intake_use_ai_interpreter' ) ) {
+			return (bool) prose_intake_use_ai_interpreter();
+		}
+
+		/** This filter is documented in modules/ai-intake/class-ai-intake-module.php */
+		return (bool) apply_filters( 'prose_intake_use_ai_interpreter', true );
+	}
+
+	/**
 	 * Register hooks.
 	 *
 	 * @param Loader $loader Hook loader.
@@ -120,7 +139,7 @@ final class Intake_Chat_Shortcode {
 		wp_enqueue_script( self::HANDLE );
 
 		if ( ! self::$localized ) {
-			$use_ai = function_exists( 'prose_intake_use_ai_interpreter' ) && prose_intake_use_ai_interpreter();
+			$use_ai = self::use_ai_interpreter();
 			$route  = $use_ai
 				? AI_Intake_Rest_Controller::NAMESPACE . AI_Intake_Rest_Controller::ROUTE_INTERPRET
 				: Intake_Rest_Controller::NAMESPACE . Intake_Rest_Controller::ROUTE;
@@ -136,7 +155,7 @@ final class Intake_Chat_Shortcode {
 					'strings'    => array(
 						'sending'   => __( 'Thinking…', 'prose-core' ),
 						'error'     => __( 'Something went wrong. Please try again.', 'prose-core' ),
-						'complete'  => __( 'Thanks — I have everything I need for now.', 'prose-core' ),
+						'complete'  => __( 'Your intake is complete. Feel free to ask any questions about your forms or next steps.', 'prose-core' ),
 						'greeting'  => __( 'How can I help with your legal matter today?', 'prose-core' ),
 						'reset'     => __( 'Start over', 'prose-core' ),
 						'send'      => __( 'Send', 'prose-core' ),

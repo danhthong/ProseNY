@@ -163,10 +163,11 @@ final class Intake_State {
 	/**
 	 * Merge fact updates with confidence rules.
 	 *
-	 * @param array<string, array{value: mixed, confidence: float}> $updates Fact updates.
+	 * @param array<string, array{value: mixed, confidence: float}> $updates          Fact updates.
+	 * @param bool                                              $allow_correction Allow overwriting confirmed facts (user corrections).
 	 * @return array<string, array{value: mixed, confidence: float}> Applied updates.
 	 */
-	public function merge_updates( array $updates ): array {
+	public function merge_updates( array $updates, bool $allow_correction = false ): array {
 		$applied = array();
 
 		foreach ( $updates as $key => $update ) {
@@ -187,11 +188,16 @@ final class Intake_State {
 
 			$existing = $this->facts[ $key ] ?? null;
 
-			if ( null !== $existing && ! empty( $existing['confirmed'] ) ) {
+			if ( null !== $existing && ! empty( $existing['confirmed'] ) && ! $allow_correction ) {
 				continue;
 			}
 
-			if ( null !== $existing && $confidence < (float) $existing['confidence'] ) {
+			if ( null !== $existing && ! empty( $existing['confirmed'] ) && $allow_correction
+				&& $this->values_equal( $existing['value'], $value ) ) {
+				continue;
+			}
+
+			if ( null !== $existing && $confidence < (float) $existing['confidence'] && ! $allow_correction ) {
 				continue;
 			}
 
@@ -205,6 +211,25 @@ final class Intake_State {
 		}
 
 		return $applied;
+	}
+
+	/**
+	 * Whether two stored values should be treated as equal.
+	 *
+	 * @param mixed $a First value.
+	 * @param mixed $b Second value.
+	 * @return bool
+	 */
+	private function values_equal( $a, $b ): bool {
+		if ( is_bool( $a ) || is_bool( $b ) ) {
+			return (bool) $a === (bool) $b;
+		}
+
+		if ( is_numeric( $a ) && is_numeric( $b ) ) {
+			return (int) $a === (int) $b;
+		}
+
+		return (string) $a === (string) $b;
 	}
 
 	/**

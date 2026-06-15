@@ -146,3 +146,13 @@
 	opacity: 0.6;
 	cursor: default;
 }
+
+.prose-package__download--highlight {
+	box-shadow: 0 0 0 3px rgba( 79, 70, 229, 0.45 );
+	animation: prose-package-pulse 1s ease-in-out 2;
+}
+
+@keyframes prose-package-pulse {
+	0%, 100% { transform: scale( 1 ); }
+	50% { transform: scale( 1.02 ); }
+}

@@ -144,8 +144,7 @@ final class Fact_Extractor {
 	 * @param string|null $type      Field type when known (string|integer|boolean|date|array).
 	 * @return array<string, mixed> Single-entry fact array, or empty when nothing usable.
 	 */
-	public function infer_pending_answer( string $message, string $field_key, ?string $type = null ): array {
-		if ( '' === $field_key ) {
+	public function infer_pending_answer( string $message, string $field_key, ?string $type = null ): array {		if ( '' === $field_key ) {
 			return array();
 		}
 
@@ -215,6 +214,40 @@ final class Fact_Extractor {
 		}
 
 		return array( $field_key => $trimmed );
+	}
+
+	/**
+	 * Strictly parse a value of a given type, returning null when the message
+	 * does not actually contain a value of that type.
+	 *
+	 * Unlike infer_pending_answer(), this never falls back to the raw text for
+	 * date/integer/boolean fields — so a correction such as "sorry, two kids"
+	 * is not mistaken for a date or a name answer.
+	 *
+	 * @param string $message User message.
+	 * @param string $type    Field type.
+	 * @return mixed Parsed value, or null when not present.
+	 */
+	public function strict_value( string $message, string $type ) {
+		$normalized = $this->catalog->normalize_text( $message );
+		$trimmed    = trim( $message );
+
+		switch ( $type ) {
+			case 'date':
+				return $this->parse_date( $trimmed );
+			case 'integer':
+				$value = $this->parse_integer( $normalized );
+
+				if ( null === $value && $this->is_zero_count_answer( $normalized, 'child_count' ) ) {
+					return 0;
+				}
+
+				return $value;
+			case 'boolean':
+				return $this->parse_boolean( $normalized );
+			default:
+				return '' === $trimmed ? null : $trimmed;
+		}
 	}
 
 	/**

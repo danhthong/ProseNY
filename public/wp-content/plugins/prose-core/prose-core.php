@@ -37,7 +37,7 @@ if ( version_compare( PHP_VERSION, '8.0', '<' ) ) {
 	return;
 }
 
-define( 'PROSE_CORE_VERSION', '1.0.2' );
+define( 'PROSE_CORE_VERSION', '1.0.15' );
 define( 'PROSE_CORE_FILE', __FILE__ );
 define( 'PROSE_CORE_PATH', plugin_dir_path( __FILE__ ) );
 define( 'PROSE_CORE_URL', plugin_dir_url( __FILE__ ) );

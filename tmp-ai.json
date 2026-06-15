@@ -1,0 +1,19 @@
+{
+  "message": "skip",
+  "state": {
+    "workflow": "uncontested_divorce_children_nyc",
+    "issue": "divorce",
+    "facts": {
+      "county": { "value": "New York", "confidence": 1, "confirmed": true },
+      "children": { "value": true, "confidence": 1, "confirmed": true },
+      "child_count": { "value": 2, "confidence": 1, "confirmed": true },
+      "spouse_agrees": { "value": true, "confidence": 1, "confirmed": true },
+      "marriage_date": { "value": "2010-01-01", "confidence": 1, "confirmed": true },
+      "separation_date": { "value": "2024-01-01", "confidence": 1, "confirmed": true }
+    }
+  },
+  "conversation": [
+    { "role": "assistant", "content": "What are your grounds for divorce?" },
+    { "role": "user", "content": "skip" }
+  ]
+}

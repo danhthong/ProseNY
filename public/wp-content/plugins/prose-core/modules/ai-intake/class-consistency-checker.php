@@ -51,6 +51,14 @@ final class Consistency_Checker {
 			);
 		}
 
+		if ( isset( $facts['minor_children_involved'] ) && false === $this->to_bool( $facts['minor_children_involved'] )
+			&& null !== $child_count && $child_count > 0 ) {
+			$contradictions[] = array(
+				'field'   => 'minor_children_involved',
+				'message' => 'You indicated no children are involved, but also provided a child count greater than zero.',
+			);
+		}
+
 		if ( isset( $facts['spouse_agrees'] ) && false === $this->to_bool( $facts['spouse_agrees'] )
 			&& str_contains( (string) $state->workflow(), 'uncontested' ) ) {
 			$contradictions[] = array(

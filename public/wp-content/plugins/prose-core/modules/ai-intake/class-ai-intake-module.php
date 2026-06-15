@@ -8,6 +8,7 @@
 namespace ProSe\Core\Ai_Intake;
 
 use ProSe\Core\Ai_Intake\Admin\AI_Settings_Page;
+use ProSe\Core\Ai_Intake\Admin\AI_Usage_Page;
 use ProSe\Core\Ai_Intake\Rest\AI_Intake_Rest_Controller;
 use ProSe\Core\Loader;
 use ProSe\Core\Module_Interface;
@@ -43,12 +44,20 @@ final class AI_Intake_Module implements Module_Interface {
 	private AI_Settings_Page $admin_page;
 
 	/**
+	 * Usage page (Tools).
+	 *
+	 * @var AI_Usage_Page
+	 */
+	private AI_Usage_Page $usage_page;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
 		$this->service         = new AI_Intake_Service();
 		$this->rest_controller = new AI_Intake_Rest_Controller( $this->service );
 		$this->admin_page      = new AI_Settings_Page( $this->service );
+		$this->usage_page      = new AI_Usage_Page();
 	}
 
 	/**
@@ -60,6 +69,7 @@ final class AI_Intake_Module implements Module_Interface {
 	public function register( Loader $loader ): void {
 		$this->rest_controller->register( $loader );
 		$this->admin_page->register( $loader );
+		$this->usage_page->register( $loader );
 	}
 
 	/**

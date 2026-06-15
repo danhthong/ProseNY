@@ -88,6 +88,27 @@
 
 		var session = loadSession();
 		var busy = false;
+		var lastWorkflow = ( session.case_profile && session.case_profile.workflow ) || '';
+
+		/**
+		 * Show (or refresh) the package preview / PDF download for a workflow.
+		 * Fires only for a real, non-empty workflow so the download stays visible
+		 * while chatting and is rebuilt only when the case actually changes.
+		 *
+		 * @param {string} workflow Workflow key.
+		 */
+		function announceWorkflow( workflow ) {
+			if ( ! workflow ) {
+				return;
+			}
+
+			document.dispatchEvent( new CustomEvent( 'prose:workflow-resolved', {
+				detail: {
+					conversation_id: session.conversation_id,
+					workflow: workflow
+				}
+			} ) );
+		}
 
 		/**
 		 * Append a message bubble to the transcript.
@@ -180,45 +201,61 @@
 
 					saveSession( session.conversation_id, session.case_profile, session.conversation, session.state );
 
-					// Announce a resolved workflow so downstream widgets (e.g. the
-					// Package Builder preview) can react. Package selection stays
-					// server-side; this only forwards the resolved workflow key.
+					// Announce workflow changes so downstream widgets (e.g. the
+					// Package Builder preview) can react. The PDF download stays
+					// visible the entire time the user chats; it is only rebuilt
+					// when the resolved case actually changes to a new workflow.
+					// We never clear it mid-conversation (a transient empty
+					// workflow on one turn must not hide an already-shown package).
 					var resolvedWorkflow = ( session.case_profile && session.case_profile.workflow ) || data.workflow || result.workflow || '';
-					if ( resolvedWorkflow ) {
-						document.dispatchEvent( new CustomEvent( 'prose:workflow-resolved', {
-							detail: {
-								conversation_id: session.conversation_id,
-								workflow: resolvedWorkflow
-							}
-						} ) );
+					if ( resolvedWorkflow && resolvedWorkflow !== lastWorkflow ) {
+						lastWorkflow = resolvedWorkflow;
+						announceWorkflow( resolvedWorkflow );
 					}
 
 					var completion = data.completion != null ? data.completion : ( result.completion || 0 );
 					setCompletion( completion );
 
 					var question = ( data.next_question || result.question || '' ).trim();
-					var intakeComplete = ( result.next_action === 'complete_intake' ) || ( question === '' && 100 === ( completion || 0 ) );
+					var nextAction = ( data.next_action || result.next_action || '' ).trim();
 					var needsReview = result.needs_review === true || result.next_action === 'needs_review';
+					var justCompleted = 'intake_complete' === result.intent || 'intake_complete' === data.intent;
+					var isGuidance = 'guidance' === nextAction || 'complete_intake' === nextAction || 'offer_package' === nextAction;
+					var apiFailed = false === data.success || 'error' === result.next_action;
+					var isComplete = justCompleted || isGuidance || completion >= 100;
 
 					if ( needsReview ) {
 						thinking.textContent = STRINGS.review || 'We need a little more help with your intake. A team member may follow up.';
 						thinking.classList.add( 'prose-intake__bubble--complete' );
 						input.disabled = true;
+					} else if ( apiFailed ) {
+						thinking.textContent = STRINGS.error || 'Something went wrong. Please try again.';
+						thinking.classList.add( 'prose-intake__bubble--error' );
+					} else if ( isComplete ) {
+						thinking.textContent = question || ( STRINGS.complete || 'I have everything I need for now. Your forms are ready to review and download below — ask me anything about the forms or filing.' );
+						thinking.classList.add( 'prose-intake__bubble--complete' );
 					} else {
-						thinking.textContent = question || ( intakeComplete ? ( STRINGS.complete || 'Thanks — intake complete.' ) : ( STRINGS.error || 'Something went wrong. Please try again.' ) );
-
-						if ( intakeComplete ) {
-							thinking.classList.add( 'prose-intake__bubble--complete' );
-							input.disabled = true;
-						} else if ( ! question ) {
-							thinking.classList.add( 'prose-intake__bubble--error' );
-						}
+						thinking.textContent = question || ( STRINGS.greeting || 'How can I help with your legal matter today?' );
 					}
 
 					// Direct path: user asked for specific forms — open the merged
 					// blank PDF immediately.
 					if ( result.next_action === 'offer_forms' && result.download && result.download.download_url ) {
 						window.open( result.download.download_url, '_blank' );
+					}
+
+					// Package path: scroll to the download button on the page.
+					if ( 'offer_package' === nextAction ) {
+						var dlBtn = document.querySelector( '[data-prose-package-download]:not([hidden])' );
+
+						if ( dlBtn ) {
+							dlBtn.scrollIntoView( { behavior: 'smooth', block: 'center' } );
+							dlBtn.classList.add( 'prose-package__download--highlight' );
+							window.setTimeout( function () {
+								dlBtn.classList.remove( 'prose-package__download--highlight' );
+								dlBtn.click();
+							}, 600 );
+						}
 					}
 				} )
 				.catch( function () {
@@ -260,6 +297,8 @@
 			resetBtn.addEventListener( 'click', function () {
 				clearSession();
 				session = { conversation_id: '', case_profile: {}, conversation: [], state: {} };
+				lastWorkflow = '';
+				document.dispatchEvent( new CustomEvent( 'prose:workflow-cleared', { detail: {} } ) );
 				transcript.innerHTML = '';
 				input.disabled = false;
 				setCompletion( 0 );
@@ -282,6 +321,36 @@
 		} );
 
 		addBubble( 'agent', STRINGS.greeting || 'How can I help with your legal matter today?' );
+
+		// Replay prior conversation (if any) so a page refresh restores the chat
+		// AND its package together — never a stale package over an empty-looking
+		// chat. A true first visit has no history, so nothing is restored and no
+		// package/download is shown until the user states their matter.
+		var history = Array.isArray( session.conversation ) ? session.conversation : [];
+
+		if ( history.length ) {
+			history.forEach( function ( turn ) {
+				if ( ! turn || ! turn.content ) {
+					return;
+				}
+
+				addBubble( 'user' === turn.role ? 'user' : 'agent', turn.content );
+			} );
+
+			if ( lastWorkflow ) {
+				var savedProgress = ( session.case_profile && session.case_profile.progress ) || 0;
+				setCompletion( savedProgress );
+				// Defer so the package-preview listener is registered regardless
+				// of script load order.
+				window.setTimeout( function () {
+					announceWorkflow( lastWorkflow );
+				}, 0 );
+			}
+		} else {
+			// No real interaction yet: treat as a clean first visit so the next
+			// resolved workflow still announces (and shows) the package.
+			lastWorkflow = '';
+		}
 	}
 
 	function boot() {

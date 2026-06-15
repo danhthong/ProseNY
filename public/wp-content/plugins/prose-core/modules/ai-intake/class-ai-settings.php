@@ -134,7 +134,7 @@ final class AI_Settings {
 		$api_key  = (string) $this->get( 'api_key', '' );
 
 		if ( 'openai' === $provider && '' !== trim( $api_key ) ) {
-			return new OpenAI_Client( $api_key );
+			return new OpenAI_Client( $api_key, new Usage_Logger() );
 		}
 
 		return new Stub_Ai_Provider();

@@ -162,4 +162,15 @@
 			preview( e.detail );
 		}
 	} );
+
+	// Hide the stale package when the user changes matters before the new one
+	// resolves (or resets the conversation).
+	document.addEventListener( 'prose:workflow-cleared', function () {
+		lastInput = null;
+		root.hidden = true;
+		if ( els.download ) {
+			els.download.hidden = true;
+			els.download.dataset.url = '';
+		}
+	} );
 }() );

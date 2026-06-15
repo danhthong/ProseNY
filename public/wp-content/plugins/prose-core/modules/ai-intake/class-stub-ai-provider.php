@@ -129,14 +129,15 @@ final class Stub_Ai_Provider implements Ai_Provider_Interface {
 		if ( preg_match( '/\bmaybe\b/i', $message ) ) {
 			return wp_json_encode(
 				array(
-					'fact_updates' => array(
+					'fact_updates'       => array(
 						'county' => array(
 							'value'      => 'Queens',
 							'confidence' => 0.5,
 						),
 					),
-					'intent'       => 'answer_question',
-					'confidence'   => 0.5,
+					'intent'             => 'answer_question',
+					'confidence'         => 0.5,
+					'conversation_reply' => 'Just to make sure I have it right — which county would that be?',
 				)
 			);
 		}
@@ -174,6 +175,11 @@ final class Stub_Ai_Provider implements Ai_Provider_Interface {
 			$updates['child_count']         = array( 'value' => 2, 'confidence' => 0.95 );
 			$updates['has_minor_children']  = array( 'value' => true, 'confidence' => 0.95 );
 			$updates['children']            = array( 'value' => true, 'confidence' => 0.95 );
+		} elseif ( preg_match( '/\b(one|1)\s+(child|children)\b/i', $message ) ) {
+			$updates['child_count']              = array( 'value' => 1, 'confidence' => 0.95 );
+			$updates['has_minor_children']         = array( 'value' => true, 'confidence' => 0.95 );
+			$updates['children']                   = array( 'value' => true, 'confidence' => 0.95 );
+			$updates['minor_children_involved']    = array( 'value' => true, 'confidence' => 0.95 );
 		} elseif ( preg_match( '/\bno children\b/i', $message ) ) {
 			$updates['child_count']        = array( 'value' => 0, 'confidence' => 0.95 );
 			$updates['has_minor_children'] = array( 'value' => false, 'confidence' => 0.95 );
@@ -202,20 +208,37 @@ final class Stub_Ai_Provider implements Ai_Provider_Interface {
 		if ( preg_match( "/\b(i don'?t know|not sure|it'?s complicated)\b/i", $message ) ) {
 			return wp_json_encode(
 				array(
-					'fact_updates' => array(),
-					'intent'       => 'uncertain',
-					'confidence'   => 0.3,
+					'fact_updates'       => array(),
+					'intent'             => 'uncertain',
+					'confidence'         => 0.3,
+					'conversation_reply' => 'No problem — take your time. Whenever you are ready, just share what you can and we will work through it together.',
 				)
 			);
 		}
 
 		return wp_json_encode(
 			array(
-				'fact_updates' => $updates,
-				'intent'       => 'answer_question',
-				'confidence'   => empty( $updates ) ? 0.5 : 0.95,
+				'fact_updates'       => $updates,
+				'intent'             => 'answer_question',
+				'confidence'         => empty( $updates ) ? 0.5 : 0.95,
+				'conversation_reply' => $this->stub_reply( $updates, $context ),
 			)
 		);
+	}
+
+	/**
+	 * Build a deterministic conversational reply for the converse mode.
+	 *
+	 * @param array<string, mixed> $updates Extracted updates.
+	 * @param array<string, mixed> $context Request context.
+	 * @return string
+	 */
+	private function stub_reply( array $updates, array $context ): string {
+		if ( ! empty( $updates ) ) {
+			return 'Thanks, I have noted that. Could you tell me a bit more about your situation so I can help further?';
+		}
+
+		return 'Could you tell me a little more about your legal matter so I can point you in the right direction?';
 	}
 
 	/**

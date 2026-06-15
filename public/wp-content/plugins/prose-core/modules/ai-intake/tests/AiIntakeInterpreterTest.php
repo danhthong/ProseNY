@@ -106,9 +106,9 @@ class AiIntakeInterpreterTest extends TestCase {
 	}
 
 	/**
-	 * No-children clarification path.
+	 * Short contextual answer keeps the conversation going naturally.
 	 */
-	public function test_no_children_clarification(): void {
+	public function test_short_answer_continues_conversation(): void {
 		$state = array(
 			'pending_field' => 'child_count',
 			'facts'         => array(),
@@ -116,8 +116,8 @@ class AiIntakeInterpreterTest extends TestCase {
 
 		$result = $this->interpreter->interpret( 'no', $state );
 
-		$this->assertNotEmpty( $result['clarifications'] );
-		$this->assertStringContainsString( 'clarify', strtolower( $result['clarifications'][0]['message'] ) );
+		$this->assertNotEmpty( $result['question'] );
+		$this->assertArrayHasKey( 'next_action', $result );
 	}
 
 	/**
@@ -271,15 +271,16 @@ class AiIntakeInterpreterTest extends TestCase {
 	}
 
 	/**
-	 * Low confidence updates trigger clarifications.
+	 * Uncertain/low-confidence input still yields a natural reply (no dead end).
 	 */
-	public function test_low_confidence_clarification(): void {
+	public function test_low_confidence_still_replies(): void {
 		$result = $this->interpreter->interpret(
 			'Queens maybe',
 			array( 'pending_field' => 'county' )
 		);
 
-		$this->assertNotEmpty( $result['clarifications'] );
+		$this->assertNotEmpty( $result['question'] );
+		$this->assertNotSame( 'needs_review', $result['next_action'] );
 	}
 
 	/**
@@ -311,9 +312,38 @@ class AiIntakeInterpreterTest extends TestCase {
 			)
 		);
 
-		$this->assertSame( 'complete_intake', $result['next_action'] );
 		$this->assertSame( 'intake_complete', $result['intent'] );
 		$this->assertSame( 100, $result['completion'] );
+		$this->assertContains( $result['next_action'], array( 'complete_intake', 'guidance' ) );
+		$this->assertNotEmpty( $result['question'] );
+	}
+
+	/**
+	 * User corrections can overwrite confirmed child facts.
+	 */
+	public function test_child_correction_after_completion(): void {
+		$facts = array(
+			'minor_children_involved' => array( 'value' => false, 'confidence' => 0.99, 'confirmed' => true ),
+			'children'                => array( 'value' => false, 'confidence' => 0.99, 'confirmed' => true ),
+			'has_minor_children'      => array( 'value' => false, 'confidence' => 0.99, 'confirmed' => true ),
+			'child_count'             => array( 'value' => 0, 'confidence' => 0.99, 'confirmed' => true ),
+			'county'                  => array( 'value' => 'Queens', 'confidence' => 0.99, 'confirmed' => true ),
+		);
+
+		$result = $this->interpreter->interpret(
+			'oh sorry one children',
+			array(
+				'workflow' => 'order_of_protection_nyc',
+				'facts'    => $facts,
+			)
+		);
+
+		$this->assertNotSame( 'needs_review', $result['next_action'] ?? '' );
+		$this->assertNotSame( 'error', $result['next_action'] ?? '' );
+		$this->assertEmpty( $result['contradictions'] ?? array() );
+		$this->assertNotEmpty( $result['question'] );
+		$this->assertSame( true, $result['state']['facts']['minor_children_involved']['value'] ?? null );
+		$this->assertSame( 1, $result['state']['facts']['child_count']['value'] ?? null );
 	}
 
 	/**

@@ -89,6 +89,20 @@ final class AI_Intake_Interpreter {
 	private AI_Logger $logger;
 
 	/**
+	 * Conversation engine (single-call extract + reply).
+	 *
+	 * @var Conversation_Engine
+	 */
+	private Conversation_Engine $engine;
+
+	/**
+	 * Workflow catalog (for guidance context).
+	 *
+	 * @var \ProSe\Core\Routing\Workflow_Catalog
+	 */
+	private \ProSe\Core\Routing\Workflow_Catalog $workflows;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Ai_Provider_Interface|null      $provider         Provider override.
@@ -101,6 +115,7 @@ final class AI_Intake_Interpreter {
 	 * @param Escalation_Detector|null        $escalation       Escalation detector.
 	 * @param AI_Settings|null                $settings         Settings.
 	 * @param AI_Logger|null                  $logger           Logger.
+	 * @param Conversation_Engine|null        $engine           Conversation engine.
 	 */
 	public function __construct(
 		?Ai_Provider_Interface $provider = null,
@@ -112,7 +127,8 @@ final class AI_Intake_Interpreter {
 		?Conversation_Memory $memory = null,
 		?Escalation_Detector $escalation = null,
 		?AI_Settings $settings = null,
-		?AI_Logger $logger = null
+		?AI_Logger $logger = null,
+		?Conversation_Engine $engine = null
 	) {
 		$this->settings        = $settings ?? new AI_Settings();
 		$this->logger          = $logger ?? new AI_Logger();
@@ -124,6 +140,8 @@ final class AI_Intake_Interpreter {
 		$this->clarification   = $clarification ?? new Clarification_Engine( $this->settings );
 		$this->memory          = $memory ?? new Conversation_Memory( $this->settings );
 		$this->escalation      = $escalation ?? new Escalation_Detector();
+		$this->engine          = $engine ?? new Conversation_Engine( $this->settings, $this->extractor );
+		$this->workflows       = new \ProSe\Core\Routing\Workflow_Catalog();
 	}
 
 	/**
@@ -147,6 +165,27 @@ final class AI_Intake_Interpreter {
 
 		if ( '' === $intake->conversation_summary() ) {
 			$intake->set_conversation_summary( $this->memory->fallback_summary( $intake ) );
+		}
+
+		$matter_switch = new \ProSe\Core\Intake\Matter_Switch();
+
+		if ( $matter_switch->should_reset( $message, $intake->workflow() ) ) {
+			$reset             = $matter_switch->reset_case_profile( $intake->to_case_profile( 0 ) );
+			$conversation_id   = (string) ( $reset['conversation_id'] ?? $intake->conversation_id() );
+			$intake            = Intake_State::from_array( array() );
+			$intake->set_conversation_id( $conversation_id );
+			$intake->set_conversation_summary( '' );
+
+			if ( ! empty( $reset['facts']['county'] ) ) {
+				$intake->merge_updates(
+					array(
+						'county' => array(
+							'value'      => $reset['facts']['county'],
+							'confidence' => 1.0,
+						),
+					)
+				);
+			}
 		}
 
 		// Direct path: the user wants blank forms and does not want to answer
@@ -194,48 +233,57 @@ final class AI_Intake_Interpreter {
 			// single routing question needed to identify the matter.
 		}
 
-		$memory_ctx = $this->memory->context( $intake, $conversation );
-
+		// --- Deterministic pre-resolve (ProSe owns routing & required fields) ---
+		$memory_ctx   = $this->memory->context( $intake, $conversation );
 		$resolved_pre = $this->fields_provider->resolve( $intake, $message );
-		$required_defs = $resolved_pre['extraction_defs'] ?? $resolved_pre['required_field_defs'];
+		$missing_pre  = $this->fields_provider->missing_prioritized( $resolved_pre['fields'], $intake );
+		$workflow_pre = $intake->workflow();
+		$was_complete = empty( $missing_pre ) && null !== $workflow_pre && '' !== $workflow_pre;
 
-		$extraction = $this->extractor->extract(
+		$completion_pre = $this->completion->calculate(
+			$resolved_pre['required_field_defs'],
+			$intake->plain_facts()
+		);
+
+		// --- Single conversational OpenAI call: extract facts + write reply ---
+		$turn = $this->engine->converse(
 			$message,
 			$intake,
-			$required_defs,
-			$memory_ctx,
+			array(
+				'extraction_defs' => $resolved_pre['extraction_defs'] ?? $resolved_pre['required_field_defs'],
+				'missing'         => $missing_pre,
+				'workflow'        => $workflow_pre,
+				'workflow_info'   => $this->workflow_info( $workflow_pre, $completion_pre ),
+				'package'         => $this->package_context( $missing_pre, $completion_pre, $workflow_pre ),
+				'completion'      => $completion_pre,
+				'contradictions'  => $this->consistency->check( $intake ),
+				'summary'         => $memory_ctx['summary'],
+				'recent'          => $memory_ctx['recent'],
+			),
 			$this->provider,
 			$this->logger
 		);
 
-		$applied = $intake->merge_updates( $extraction['updates'] );
+		$applied = $intake->merge_updates( $turn['updates'], $this->is_correction_message( $message ) );
+		$this->sync_child_facts( $intake );
 
-		$resolved = $this->fields_provider->resolve( $intake, $message );
-		$fields   = $resolved['fields'];
-		$missing  = $this->fields_provider->missing_prioritized( $fields, $intake );
-
+		// --- Deterministic post-resolve with the new facts (authoritative) ---
+		$resolved       = $this->fields_provider->resolve( $intake, $message );
+		$missing        = $this->fields_provider->missing_prioritized( $resolved['fields'], $intake );
 		$completion_pct = $this->completion->calculate(
 			$resolved['required_field_defs'],
 			$intake->plain_facts()
 		);
-
 		$contradictions = $this->consistency->check( $intake );
 
-		$clarifications = $this->clarification->build(
-			$extraction['low_confidence'],
-			$contradictions,
-			$intake,
-			$message,
-			$this->provider
-		);
-
-		$escalation = $this->escalation->detect(
-			$message,
-			$intake,
-			$extraction['raw_confidence']
-		);
-
 		$this->memory->maybe_update_summary( $intake, $conversation, $this->provider, $this->logger );
+
+		$reply        = trim( (string) $turn['reply'] );
+		$workflow     = $intake->workflow();
+		$has_workflow = null !== $workflow && '' !== $workflow;
+
+		// --- Escalation safety net (repeated genuine uncertainty) ---
+		$escalation = $this->escalation->detect( $message, $intake, $turn['raw_confidence'] );
 
 		if ( $escalation['needs_review'] ) {
 			return $this->build_result(
@@ -243,37 +291,23 @@ final class AI_Intake_Interpreter {
 				$applied,
 				$missing,
 				$contradictions,
-				$clarifications,
+				array(),
 				'needs_review',
 				'needs_review',
-				'',
-				$extraction['raw_confidence'],
+				'' !== $reply ? $reply : __( 'Thanks for sharing. A member of our team can help you from here.', 'prose-core' ),
+				$turn['raw_confidence'],
 				true,
 				$completion_pct
 			);
 		}
 
-		if ( ! empty( $clarifications ) ) {
-			$first = $clarifications[0];
-
-			return $this->build_result(
-				$intake,
-				$applied,
-				$missing,
-				$contradictions,
-				$clarifications,
-				'clarify',
-				'ask_question',
-				(string) $first['message'],
-				$extraction['raw_confidence'],
-				false,
-				$completion_pct,
-				(string) $first['field']
-			);
-		}
-
-		if ( empty( $missing ) ) {
+		// --- Intake complete: transition to guidance (only when facts are consistent) ---
+		if ( empty( $missing ) && $has_workflow && empty( $contradictions ) ) {
 			$intake->set_pending_field( '' );
+
+			if ( '' === $reply ) {
+				$reply = $this->build_guidance_fallback( $workflow, $completion_pct );
+			}
 
 			return $this->build_result(
 				$intake,
@@ -282,39 +316,25 @@ final class AI_Intake_Interpreter {
 				$contradictions,
 				array(),
 				'intake_complete',
-				'complete_intake',
-				'',
+				$was_complete ? 'guidance' : 'complete_intake',
+				$reply,
 				1.0,
 				false,
 				100
 			);
 		}
 
-		while ( ! empty( $missing ) && isset( $applied[ (string) $missing[0]['field'] ] ) ) {
-			$missing = array_slice( $missing, 1 );
+		// --- Gathering: keep the conversation going naturally ---
+		if ( '' === $reply ) {
+			if ( ! empty( $contradictions ) ) {
+				$reply = (string) ( $contradictions[0]['message'] ?? '' );
+			}
+			if ( '' === $reply ) {
+				$reply = $this->build_gathering_fallback( $missing );
+			}
 		}
 
-		if ( empty( $missing ) ) {
-			$intake->set_pending_field( '' );
-
-			return $this->build_result(
-				$intake,
-				$applied,
-				array(),
-				$contradictions,
-				array(),
-				'intake_complete',
-				'complete_intake',
-				'',
-				$extraction['raw_confidence'],
-				false,
-				100
-			);
-		}
-
-		$target   = $missing[0];
-		$question = $this->extractor->phrase_question( $target, $intake, $this->provider );
-		$intake->set_pending_field( (string) $target['field'] );
+		$pending_hint = ! empty( $missing ) ? (string) $missing[0]['field'] : '';
 
 		return $this->build_result(
 			$intake,
@@ -322,14 +342,127 @@ final class AI_Intake_Interpreter {
 			$missing,
 			$contradictions,
 			array(),
-			$extraction['intent'],
+			'gathering',
 			'ask_question',
-			$question,
-			$extraction['raw_confidence'],
+			$reply,
+			$turn['raw_confidence'],
 			false,
 			$completion_pct,
-			(string) $target['field']
+			$pending_hint
 		);
+	}
+
+	/**
+	 * Build a compact workflow context object for the conversation engine.
+	 *
+	 * @param string|null $workflow   Workflow key.
+	 * @param int         $completion Completion percentage.
+	 * @return array<string, mixed>
+	 */
+	private function workflow_info( ?string $workflow, int $completion ): array {
+		if ( null === $workflow || '' === $workflow ) {
+			return array(
+				'resolved'   => false,
+				'completion' => $completion,
+			);
+		}
+
+		$definition = $this->workflows->by_key( $workflow );
+
+		if ( null === $definition ) {
+			return array(
+				'resolved'   => true,
+				'key'        => $workflow,
+				'completion' => $completion,
+			);
+		}
+
+		$forms = array();
+
+		foreach ( $this->workflows->required_form_codes( $definition ) as $code ) {
+			$forms[] = $code;
+		}
+
+		return array(
+			'resolved'             => true,
+			'key'                  => $workflow,
+			'title'                => (string) ( $definition['description'] ?? '' ),
+			'court'                => (string) ( $definition['court'] ?? '' ),
+			'stages'               => is_array( $definition['stages'] ?? null ) ? $definition['stages'] : array(),
+			'required_form_codes'  => $forms,
+			'supporting_documents' => is_array( $definition['supporting_documents'] ?? null ) ? $definition['supporting_documents'] : array(),
+			'completion'           => $completion,
+		);
+	}
+
+	/**
+	 * Build a lightweight package status object for the conversation engine.
+	 *
+	 * @param array<int, array<string, mixed>> $missing    Missing fields.
+	 * @param int                              $completion Completion percentage.
+	 * @param string|null                      $workflow   Workflow key.
+	 * @return array<string, mixed>
+	 */
+	private function package_context( array $missing, int $completion, ?string $workflow ): array {
+		return array(
+			'completion'     => $completion,
+			'ready'          => empty( $missing ) && null !== $workflow && '' !== $workflow,
+			'missing_count'  => count( $missing ),
+		);
+	}
+
+	/**
+	 * Deterministic guidance message when the model returns no reply.
+	 *
+	 * Picks one of several natural phrasings so a completed intake does not
+	 * repeat the exact same sentence every turn.
+	 *
+	 * @param string $workflow   Workflow key.
+	 * @param int    $completion Completion percentage.
+	 * @return string
+	 */
+	private function build_guidance_fallback( string $workflow, int $completion ): string {
+		$info  = $this->workflow_info( $workflow, $completion );
+		$title = (string) ( $info['title'] ?? '' );
+
+		if ( '' === $title ) {
+			$title = ucwords( str_replace( array( '_', '-' ), ' ', $workflow ) );
+		}
+
+		$templates = array(
+			/* translators: %s: matter description. */
+			__( 'Good news — I have everything I need for your %s. The next step is preparing your filing package, which you can review and download below. Ask me anything about the forms or what happens after you file.', 'prose-core' ),
+			/* translators: %s: matter description. */
+			__( 'That covers it for your %s. You can review and download your filing package below whenever you are ready. Want me to walk you through the forms or the next steps?', 'prose-core' ),
+			/* translators: %s: matter description. */
+			__( 'We are all set on your %s. Your forms are ready to review and download below. I am still here if you have questions about filing, deadlines, or anything on the forms.', 'prose-core' ),
+			/* translators: %s: matter description. */
+			__( 'I have enough to move forward with your %s. Take a look at the filing package below — and feel free to ask me how to file it or what to expect next.', 'prose-core' ),
+			/* translators: %s: matter description. */
+			__( 'Your %s intake is complete. The prepared forms are below for review and download. Let me know if you would like help understanding any form or the filing process.', 'prose-core' ),
+		);
+
+		$index = function_exists( 'wp_rand' ) ? wp_rand( 0, count( $templates ) - 1 ) : array_rand( $templates );
+
+		return sprintf( $templates[ $index ], $title );
+	}
+
+	/**
+	 * Deterministic gathering message when the model returns no reply.
+	 *
+	 * @param array<int, array<string, mixed>> $missing Missing fields.
+	 * @return string
+	 */
+	private function build_gathering_fallback( array $missing ): string {
+		foreach ( $missing as $field ) {
+			$question = trim( (string) ( $field['question'] ?? '' ) );
+
+			if ( '' !== $question ) {
+				return $question;
+			}
+		}
+
+		return __( 'Could you tell me a bit more about your legal matter so I can help you find the right path?', 'prose-core' );
 	}
 
 	/**
@@ -571,6 +704,92 @@ final class AI_Intake_Interpreter {
 			__( 'No problem — you do not need to answer the questions to get blank forms. Here is the blank packet for %s. Scroll down and click “Download all forms (PDF).”', 'prose-core' ),
 			$title
 		);
+	}
+
+	/**
+	 * Whether the user is correcting a prior answer.
+	 *
+	 * @param string $message User message.
+	 * @return bool
+	 */
+	private function is_correction_message( string $message ): bool {
+		$text = strtolower( trim( $message ) );
+
+		$phrases = array(
+			'sorry',
+			'actually',
+			'i meant',
+			'correction',
+			'wait',
+			'change that',
+			'i misspoke',
+			'oh no',
+		);
+
+		foreach ( $phrases as $phrase ) {
+			if ( str_contains( $text, $phrase ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Keep child-related boolean fields aligned with child_count.
+	 *
+	 * @param Intake_State $state Intake state.
+	 * @return void
+	 */
+	private function sync_child_facts( Intake_State $state ): void {
+		$plain = $state->plain_facts();
+		$count = null;
+
+		foreach ( array( 'child_count', 'children_count' ) as $key ) {
+			if ( isset( $plain[ $key ] ) && is_numeric( $plain[ $key ] ) ) {
+				$count = (int) $plain[ $key ];
+				break;
+			}
+		}
+
+		if ( null === $count ) {
+			return;
+		}
+
+		$has_children = $count > 0;
+		$updates      = array();
+
+		foreach ( array( 'has_minor_children', 'children', 'minor_children_involved' ) as $key ) {
+			$existing = $state->get_fact( $key );
+
+			if ( null !== $existing && $this->values_equal_fact( $existing['value'], $has_children ) ) {
+				continue;
+			}
+
+			$updates[ $key ] = array(
+				'value'      => $has_children,
+				'confidence' => 0.98,
+			);
+		}
+
+		if ( ! empty( $updates ) ) {
+			$state->merge_updates( $updates, true );
+		}
+	}
+
+	/**
+	 * Compare fact values for sync logic.
+	 *
+	 * @param mixed $a First value.
+	 * @param mixed $b Second value.
+	 * @return bool
+	 */
+	private function values_equal_fact( $a, $b ): bool {
+		if ( is_bool( $a ) || is_bool( $b ) ) {
+			return (bool) $a === (bool) $b;
+		}
+
+		return (string) $a === (string) $b;
 	}
 
 	/**

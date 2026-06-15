@@ -29,12 +29,21 @@ final class OpenAI_Client implements Ai_Provider_Interface {
 	private string $api_key;
 
 	/**
+	 * Usage logger.
+	 *
+	 * @var Usage_Logger
+	 */
+	private Usage_Logger $usage;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param string $api_key OpenAI API key.
+	 * @param string            $api_key OpenAI API key.
+	 * @param Usage_Logger|null $usage   Usage logger.
 	 */
-	public function __construct( string $api_key ) {
+	public function __construct( string $api_key, ?Usage_Logger $usage = null ) {
 		$this->api_key = $api_key;
+		$this->usage   = $usage ?? new Usage_Logger();
 	}
 
 	/**
@@ -94,8 +103,10 @@ final class OpenAI_Client implements Ai_Provider_Interface {
 		);
 
 		$latency_ms = (int) round( ( microtime( true ) - $start ) * 1000 );
+		$type       = (string) ( $options['mode'] ?? 'request' );
 
 		if ( is_wp_error( $response ) ) {
+			$this->log_usage( $type, $model, array(), $latency_ms, 'error', $response->get_error_message() );
 			throw new \RuntimeException( $response->get_error_message() );
 		}
 
@@ -103,20 +114,57 @@ final class OpenAI_Client implements Ai_Provider_Interface {
 		$raw  = json_decode( (string) wp_remote_retrieve_body( $response ), true );
 
 		if ( ! is_array( $raw ) ) {
+			$this->log_usage( $type, $model, array(), $latency_ms, 'error', 'Invalid OpenAI response.' );
 			throw new \RuntimeException( 'Invalid OpenAI response.' );
 		}
 
 		if ( $code < 200 || $code >= 300 ) {
 			$message = (string) ( $raw['error']['message'] ?? 'OpenAI request failed.' );
+			$this->log_usage( $type, $model, array(), $latency_ms, 'error', $message );
 			throw new \RuntimeException( $message );
 		}
 
 		$content = (string) ( $raw['choices'][0]['message']['content'] ?? '' );
+		$usage   = is_array( $raw['usage'] ?? null ) ? $raw['usage'] : array();
+
+		$this->log_usage( $type, $model, $usage, $latency_ms, 'ok', '' );
 
 		return array(
 			'content'    => $content,
 			'latency_ms' => $latency_ms,
+			'tokens'     => array(
+				'prompt_tokens'     => (int) ( $usage['prompt_tokens'] ?? 0 ),
+				'completion_tokens' => (int) ( $usage['completion_tokens'] ?? 0 ),
+				'total_tokens'      => (int) ( $usage['total_tokens'] ?? 0 ),
+			),
 			'raw'        => $raw,
+		);
+	}
+
+	/**
+	 * Record a usage log entry for one API call.
+	 *
+	 * @param string               $type       Request type/mode.
+	 * @param string               $model      Model id.
+	 * @param array<string, mixed> $usage      OpenAI usage payload.
+	 * @param int                  $latency_ms Latency in milliseconds.
+	 * @param string               $status     "ok" or "error".
+	 * @param string               $error      Error message.
+	 * @return void
+	 */
+	private function log_usage( string $type, string $model, array $usage, int $latency_ms, string $status, string $error ): void {
+		$this->usage->record(
+			array(
+				'type'              => $type,
+				'provider'         => $this->name(),
+				'model'            => $model,
+				'prompt_tokens'    => (int) ( $usage['prompt_tokens'] ?? 0 ),
+				'completion_tokens' => (int) ( $usage['completion_tokens'] ?? 0 ),
+				'total_tokens'     => (int) ( $usage['total_tokens'] ?? 0 ),
+				'latency_ms'       => $latency_ms,
+				'status'           => $status,
+				'error'            => $error,
+			)
 		);
 	}
 

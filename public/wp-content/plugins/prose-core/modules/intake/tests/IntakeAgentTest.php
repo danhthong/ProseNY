@@ -306,6 +306,39 @@ class IntakeAgentTest extends TestCase {
 	}
 
 	/**
+	 * Explicit new-matter request resets a completed divorce session.
+	 */
+	public function test_matter_switch_from_completed_divorce_to_custody(): void {
+		$profile = array(
+			'workflow'                  => 'uncontested_divorce_children_nyc',
+			'issue'                     => 'divorce',
+			'intake_complete_announced' => true,
+			'facts'                     => array(
+				'county'                    => 'Queens',
+				'active_divorce'            => true,
+				'marriage_date'             => '2010-01-01',
+				'separation_date'           => '2024-01-01',
+				'grounds_for_divorce'       => 'irretrievable breakdown',
+				'plaintiff_information'     => 'Jane Doe',
+				'defendant_information'     => 'John Doe',
+				'has_minor_children'        => true,
+				'child_count'               => 1,
+				'child_names'               => 'Sam Doe',
+				'child_birth_dates'         => '2018-01-01',
+				'custody_arrangement'       => 'joint',
+				'child_support_terms'       => 'agreed',
+				'marital_property_resolved' => true,
+			),
+		);
+
+		$result = $this->agent->process( 'Help me with child custody', $profile );
+
+		$this->assertSame( 'custody_nyc', $result['workflow'] );
+		$this->assertLessThan( 100, $result['completion'] );
+		$this->assertNotSame( 'intake_complete', $result['intent'] ?? '' );
+	}
+
+	/**
 	 * Every response carries a conversation id.
 	 */
 	public function test_every_response_has_conversation_id(): void {

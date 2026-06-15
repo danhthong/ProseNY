@@ -192,6 +192,41 @@ final class Fact_Extractor {
 	}
 
 	/**
+	 * Normalize, score, and deterministically supplement a raw fact-update map.
+	 *
+	 * Shared by the legacy extractor and the conversational engine so all
+	 * normalization (county/date/boolean/count) and deterministic hardening live
+	 * in one place.
+	 *
+	 * @param array<string, mixed>             $raw_updates   Raw model fact_updates.
+	 * @param float                            $confidence    Overall confidence.
+	 * @param string                           $intent        Detected intent.
+	 * @param string                           $message       User message.
+	 * @param array<int, array<string, mixed>> $required_defs Required field defs.
+	 * @param Intake_State                     $state         Intake state.
+	 * @return array{updates: array<string, array{value: mixed, confidence: float}>, raw_confidence: float, intent: string, low_confidence: array<string, array{value: mixed, confidence: float}>}
+	 */
+	public function process_raw(
+		array $raw_updates,
+		float $confidence,
+		string $intent,
+		string $message,
+		array $required_defs,
+		Intake_State $state
+	): array {
+		list( $updates, $low ) = $this->normalize_raw_updates( $raw_updates, $state->pending_field() );
+
+		$parsed = array(
+			'updates'        => $updates,
+			'low_confidence' => $low,
+			'raw_confidence' => $confidence,
+			'intent'         => $intent,
+		);
+
+		return $this->merge_deterministic( $message, $required_defs, $state, $parsed );
+	}
+
+	/**
 	 * Parse provider JSON response.
 	 *
 	 * @param string $content       Raw JSON content.
@@ -210,9 +245,27 @@ final class Fact_Extractor {
 			);
 		}
 
-		$raw_updates = is_array( $parsed['fact_updates'] ?? null ) ? $parsed['fact_updates'] : array();
-		$updates     = array();
-		$low         = array();
+		$raw_updates           = is_array( $parsed['fact_updates'] ?? null ) ? $parsed['fact_updates'] : array();
+		list( $updates, $low ) = $this->normalize_raw_updates( $raw_updates, $pending_field );
+
+		return array(
+			'updates'        => $updates,
+			'raw_confidence' => (float) ( $parsed['confidence'] ?? 0.0 ),
+			'intent'         => (string) ( $parsed['intent'] ?? 'answer_question' ),
+			'low_confidence' => $low,
+		);
+	}
+
+	/**
+	 * Normalize a raw fact-update map into confident/low-confidence buckets.
+	 *
+	 * @param array<string, mixed> $raw_updates   Raw fact_updates.
+	 * @param string               $pending_field Pending field hint.
+	 * @return array{0: array<string, array{value: mixed, confidence: float}>, 1: array<string, array{value: mixed, confidence: float}>}
+	 */
+	private function normalize_raw_updates( array $raw_updates, string $pending_field ): array {
+		$updates = array();
+		$low     = array();
 
 		foreach ( $raw_updates as $key => $update ) {
 			$normalized = $this->normalize_update_entry( (string) $key, $update, $pending_field );
@@ -242,12 +295,7 @@ final class Fact_Extractor {
 			$low['child_count'] = $low['children_count'];
 		}
 
-		return array(
-			'updates'        => $updates,
-			'raw_confidence' => (float) ( $parsed['confidence'] ?? 0.0 ),
-			'intent'         => (string) ( $parsed['intent'] ?? 'answer_question' ),
-			'low_confidence' => $low,
-		);
+		return array( $updates, $low );
 	}
 
 	/**

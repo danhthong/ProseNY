@@ -63,26 +63,36 @@ final class Intake_Agent {
 	private Question_Selector $selector;
 
 	/**
+	 * Matter switch detector.
+	 *
+	 * @var Matter_Switch
+	 */
+	private Matter_Switch $matter_switch;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Routing_Engine|null        $routing    Routing engine.
-	 * @param Workflow_Catalog|null      $catalog    Workflow catalog.
-	 * @param Fact_Extractor|null        $extractor  Fact extractor.
-	 * @param Completion_Calculator|null $completion Completion calculator.
-	 * @param Question_Selector|null     $selector   Question selector.
+	 * @param Routing_Engine|null        $routing        Routing engine.
+	 * @param Workflow_Catalog|null      $catalog        Workflow catalog.
+	 * @param Fact_Extractor|null        $extractor      Fact extractor.
+	 * @param Completion_Calculator|null $completion     Completion calculator.
+	 * @param Question_Selector|null     $selector       Question selector.
+	 * @param Matter_Switch|null         $matter_switch  Matter switch detector.
 	 */
 	public function __construct(
 		?Routing_Engine $routing = null,
 		?Workflow_Catalog $catalog = null,
 		?Fact_Extractor $extractor = null,
 		?Completion_Calculator $completion = null,
-		?Question_Selector $selector = null
+		?Question_Selector $selector = null,
+		?Matter_Switch $matter_switch = null
 	) {
-		$this->catalog    = $catalog ?? new Workflow_Catalog();
-		$this->routing    = $routing ?? new Routing_Engine( $this->catalog );
-		$this->extractor  = $extractor ?? new Fact_Extractor( $this->catalog );
-		$this->completion = $completion ?? new Completion_Calculator();
-		$this->selector   = $selector ?? new Question_Selector();
+		$this->catalog        = $catalog ?? new Workflow_Catalog();
+		$this->routing        = $routing ?? new Routing_Engine( $this->catalog );
+		$this->extractor      = $extractor ?? new Fact_Extractor( $this->catalog );
+		$this->completion     = $completion ?? new Completion_Calculator();
+		$this->selector       = $selector ?? new Question_Selector();
+		$this->matter_switch  = $matter_switch ?? new Matter_Switch( $this->catalog );
 	}
 
 	/**
@@ -99,6 +109,11 @@ final class Intake_Agent {
 
 		$profile = Case_Profile::from_array( $case_profile );
 
+		if ( $this->matter_switch->should_reset( $message, $profile->workflow() ) ) {
+			$profile      = $this->matter_switch->reset_profile( $profile );
+			$case_profile = $profile->to_array();
+		}
+
 		// Stable conversation identity for the life of the session.
 		if ( '' === $profile->conversation_id() ) {
 			$profile->set_conversation_id( $this->generate_conversation_id() );
@@ -112,11 +127,25 @@ final class Intake_Agent {
 		$prior_court               = $profile->court();
 		$prior_candidate_workflows = $profile->candidate_workflows();
 
-		// Resolve the pending answer before routing so discriminator answers
-		// (e.g. a bare "yes" to "Do you have children?") influence resolution.
-		if ( '' !== $pending_field ) {
-			$pre = $this->extractor->infer_pending_answer( $message, $pending_field, null );
-			$pre = $this->non_empty( $pre );
+		// 1) Workflow-agnostic content extraction FIRST, so a correction to a
+		//    discriminator fact (e.g. "no" -> "actually two kids") is captured
+		//    and can re-route this same turn.
+		$content = $this->non_empty(
+			$this->extractor->extract( $message, $this->required_fields_for( $prior_workflow ), $profile->facts()->all() )
+		);
+
+		if ( ! empty( $content ) ) {
+			$profile->facts()->merge( $content );
+			$extracted = array_merge( $extracted, $content );
+		}
+
+		$children_changed = $this->message_changes_children( $content );
+
+		// 2) Pending discriminator answer (bare "yes"/"no"/number) influences
+		//    routing. Only for discriminator questions, never for free-text or
+		//    date fields, so a correction is not forced into the wrong slot.
+		if ( '' !== $pending_field && $this->is_discriminator_field( $pending_field ) && ! $children_changed ) {
+			$pre = $this->non_empty( $this->extractor->infer_pending_answer( $message, $pending_field, null ) );
 
 			if ( ! empty( $pre ) ) {
 				$profile->facts()->merge( $pre );
@@ -124,7 +153,10 @@ final class Intake_Agent {
 			}
 		}
 
-		// Routing remains the source of truth (workflow resolution untouched).
+		// 3) Keep child discriminators consistent so routing follows the count.
+		$this->reconcile_child_facts( $profile->facts() );
+
+		// 4) Route with the corrected facts (re-resolves workflow on a change).
 		$result = $this->routing->route_profile( $message, $profile );
 
 		// Retain the last positive routing decision when this turn is
@@ -138,27 +170,33 @@ final class Intake_Agent {
 
 		$required_fields = $this->required_fields_for( $workflow );
 
-		// Content-signal extraction against the resolved workflow.
-		$content = $this->extractor->extract( $message, $required_fields, $profile->facts()->all() );
-		$content = $this->non_empty( $content );
+		// 5) Re-extract against the resolved workflow to capture workflow-specific keys.
+		$content2 = $this->non_empty(
+			$this->extractor->extract( $message, $required_fields, $profile->facts()->all() )
+		);
 
-		if ( ! empty( $content ) ) {
-			$profile->facts()->merge( $content );
-			$extracted = array_merge( $extracted, $content );
+		if ( ! empty( $content2 ) ) {
+			$profile->facts()->merge( $content2 );
+			$extracted = array_merge( $extracted, $content2 );
 		}
 
-		// Typed refinement of the pending answer once the field type is known.
-		if ( '' !== $pending_field ) {
-			$type  = $this->field_type( $required_fields, $pending_field );
-			$typed = $this->extractor->infer_pending_answer( $message, $pending_field, $type );
-			$typed = $this->non_empty( $typed );
+		// 6) Typed refinement of the pending answer — only when the message
+		//    genuinely answers that field (guards against capturing corrections
+		//    like "sorry i have two kids" as a date or a name).
+		if ( '' !== $pending_field && ! $children_changed ) {
+			$type = $this->field_type( $required_fields, $pending_field );
 
-			if ( ! empty( $typed ) ) {
-				$profile->facts()->merge( $typed );
-				$extracted = array_merge( $extracted, $typed );
+			if ( $this->message_answers_field( $message, $pending_field, $type ) ) {
+				$typed = $this->non_empty( $this->extractor->infer_pending_answer( $message, $pending_field, $type ) );
+
+				if ( ! empty( $typed ) ) {
+					$profile->facts()->merge( $typed );
+					$extracted = array_merge( $extracted, $typed );
+				}
 			}
 		}
 
+		$this->reconcile_child_facts( $profile->facts() );
 		$this->sync_routing_facts_to_workflow( $profile->facts(), $required_fields );
 
 		$missing     = $this->completion->missing_required( $required_fields, $profile->facts() );
@@ -171,7 +209,19 @@ final class Intake_Agent {
 
 		$next = $this->selector->select( $required_fields, $missing, $workflow, $routing_missing );
 
-		$profile_array = $profile->to_array();
+		$next_question = (string) $next['question'];
+		$next_action     = 'ask_question';
+		$profile_array   = $profile->to_array();
+		$is_complete     = empty( $missing ) && null !== $workflow && '' !== $workflow;
+
+		// At completion the selector has no further field to ask. Use contextual
+		// guidance instead of repeating the same long workflow summary every turn.
+		if ( '' === trim( $next_question ) && $is_complete ) {
+			$followup        = $this->complete_followup( $message, $workflow, $profile_array );
+			$next_question   = $followup['question'];
+			$next_action     = $followup['next_action'];
+			$profile_array   = $followup['case_profile'];
+		}
 
 		// Persist the retained decision into the serialized profile.
 		$profile_array['workflow'] = $workflow;
@@ -188,7 +238,7 @@ final class Intake_Agent {
 			$profile_array['candidate_workflows'] = $prior_candidate_workflows;
 		}
 
-		$profile_array['pending_field'] = $next['field'];
+		$profile_array['pending_field'] = $is_complete ? '' : (string) $next['field'];
 
 		$response = array(
 			'conversation_id' => $profile->conversation_id(),
@@ -196,8 +246,10 @@ final class Intake_Agent {
 			'facts_extracted' => $extracted,
 			'case_profile'    => $profile_array,
 			'missing_fields'  => $missing,
-			'next_question'   => $next['question'],
+			'next_question'   => $next_question,
+			'next_action'     => $next_action,
 			'completion'      => $completion,
+			'intent'          => $is_complete ? 'intake_complete' : 'gathering',
 		);
 
 		if ( $this->debug_enabled() ) {
@@ -224,6 +276,222 @@ final class Intake_Agent {
 		}
 
 		return $response;
+	}
+
+	/**
+	 * Build contextual guidance once intake is complete.
+	 *
+	 * @param string               $message       User message.
+	 * @param string               $workflow      Workflow key.
+	 * @param array<string, mixed> $case_profile  Case profile (mutated).
+	 * @return array{question: string, next_action: string, case_profile: array<string, mixed>}
+	 */
+	private function complete_followup( string $message, string $workflow, array $case_profile ): array {
+		$announced = ! empty( $case_profile['intake_complete_announced'] );
+
+		if ( $this->wants_documents( $message ) ) {
+			return array(
+				'question'      => __( 'Your filing package is ready. Use the “Download all forms (PDF)” button below — I’ll take you there.', 'prose-core' ),
+				'next_action'   => 'offer_package',
+				'case_profile'  => $this->mark_complete_announced( $case_profile ),
+			);
+		}
+
+		if ( $this->wants_filing_help( $message ) ) {
+			return array(
+				'question'     => $this->filing_help_message( $workflow ),
+				'next_action'  => 'guidance',
+				'case_profile' => $this->mark_complete_announced( $case_profile ),
+			);
+		}
+
+		if ( ! $announced ) {
+			$case_profile = $this->mark_complete_announced( $case_profile );
+
+			return array(
+				'question'     => $this->completion_message( $workflow ),
+				'next_action'  => 'complete_intake',
+				'case_profile' => $case_profile,
+			);
+		}
+
+		return array(
+			'question'     => $this->guidance_followup( $message ),
+			'next_action'  => 'guidance',
+			'case_profile' => $case_profile,
+		);
+	}
+
+	/**
+	 * Mark that the one-time completion announcement was shown.
+	 *
+	 * @param array<string, mixed> $case_profile Case profile.
+	 * @return array<string, mixed>
+	 */
+	private function mark_complete_announced( array $case_profile ): array {
+		$case_profile['intake_complete_announced'] = true;
+
+		return $case_profile;
+	}
+
+	/**
+	 * Whether the user is asking for documents or a download.
+	 *
+	 * @param string $message User message.
+	 * @return bool
+	 */
+	private function wants_documents( string $message ): bool {
+		$text = strtolower( trim( $message ) );
+
+		$phrases = array(
+			'document',
+			'documents',
+			'form',
+			'forms',
+			'pdf',
+			'download',
+			'paperwork',
+			'package',
+			'blank',
+			'print',
+			'give me',
+			'send me',
+			'get me',
+			'i need the',
+			'i want the',
+		);
+
+		foreach ( $phrases as $phrase ) {
+			if ( str_contains( $text, $phrase ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Whether the user is asking how to file or what happens next.
+	 *
+	 * @param string $message User message.
+	 * @return bool
+	 */
+	private function wants_filing_help( string $message ): bool {
+		$text = strtolower( trim( $message ) );
+
+		$phrases = array(
+			'how do i file',
+			'how to file',
+			'what happens next',
+			'what do i do next',
+			'next step',
+			'next steps',
+			'after i file',
+			'where do i file',
+			'where to file',
+			'serve',
+			'service',
+			'deadline',
+		);
+
+		foreach ( $phrases as $phrase ) {
+			if ( str_contains( $text, $phrase ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Short filing-process guidance (no legal advice).
+	 *
+	 * @param string $workflow Workflow key.
+	 * @return string
+	 */
+	private function filing_help_message( string $workflow ): string {
+		unset( $workflow );
+
+		$templates = array(
+			__( 'Generally, you’ll complete the forms, sign where indicated, file them with the court clerk, and serve copies on the other party as required. The exact steps depend on your matter — tell me which part you want explained (filing, service, or deadlines).', 'prose-core' ),
+			__( 'After your forms are ready, the usual path is: review everything, sign, file with the court, then serve the other side. Ask me about filing, service, or any form you’re unsure about.', 'prose-core' ),
+			__( 'Your package below lists the forms for this matter. Once they’re filled out, they’re typically filed with the court and served on the other party. What would you like help with — filing, service, or a specific form?', 'prose-core' ),
+		);
+
+		$index = function_exists( 'wp_rand' ) ? wp_rand( 0, count( $templates ) - 1 ) : array_rand( $templates );
+
+		return $templates[ $index ];
+	}
+
+	/**
+	 * Varied short replies after completion — avoids repeating the workflow title.
+	 *
+	 * @param string $message User message.
+	 * @return string
+	 */
+	private function guidance_followup( string $message ): string {
+		$text = strtolower( trim( $message ) );
+
+		if ( preg_match( '/\b(thanks|thank you|ok|okay|got it|great|perfect)\b/', $text ) ) {
+			$thanks = array(
+				__( 'You’re welcome. I’m here if anything else comes up about your forms or filing.', 'prose-core' ),
+				__( 'Glad to help. Ask anytime if you need something explained on the forms below.', 'prose-core' ),
+			);
+
+			$index = function_exists( 'wp_rand' ) ? wp_rand( 0, count( $thanks ) - 1 ) : array_rand( $thanks );
+
+			return $thanks[ $index ];
+		}
+
+		if ( preg_match( '/\b(hmm|huh|what|confused|unsure|not sure)\b/', $text ) ) {
+			return __( 'No rush — I’m here when you’re ready. You can ask about a specific form, how to file, or say “give me the documents” and I’ll point you to the download.', 'prose-core' );
+		}
+
+		$templates = array(
+			__( 'I’m still here. You can review your forms below, or ask me to explain any form or filing step.', 'prose-core' ),
+			__( 'Feel free to ask about deadlines, service, or what a specific form is for. If you want the PDFs, just say “download the forms.”', 'prose-core' ),
+			__( 'Your filing package is below. Tell me what you’d like help with — a form, filing, or getting the documents.', 'prose-core' ),
+			__( 'What would be most helpful right now — understanding a form, the filing steps, or downloading your package?', 'prose-core' ),
+		);
+
+		$index = function_exists( 'wp_rand' ) ? wp_rand( 0, count( $templates ) - 1 ) : array_rand( $templates );
+
+		return $templates[ $index ];
+	}
+
+	/**
+	 * Build a varied completion message once intake has all required fields.
+	 *
+	 * @param string $workflow Workflow key.
+	 * @return string
+	 */
+	private function completion_message( string $workflow ): string {
+		$title = $this->workflow_short_title( $workflow );
+
+		$templates = array(
+			/* translators: %s: short matter title. */
+			__( 'Good news — I have everything I need for your %s matter. You can review and download your filing package below whenever you are ready.', 'prose-core' ),
+			/* translators: %s: short matter title. */
+			__( 'That covers it for your %s matter. Your forms are ready to review and download below. Ask me anything about the forms or the filing process.', 'prose-core' ),
+			/* translators: %s: short matter title. */
+			__( 'We are all set on your %s matter. The prepared forms are below — let me know if you would like help understanding any of them or the next steps.', 'prose-core' ),
+		);
+
+		$index = function_exists( 'wp_rand' ) ? wp_rand( 0, count( $templates ) - 1 ) : array_rand( $templates );
+
+		return sprintf( $templates[ $index ], $title );
+	}
+
+	/**
+	 * Short human-readable workflow label (not the full catalog description).
+	 *
+	 * @param string $workflow Workflow key.
+	 * @return string
+	 */
+	private function workflow_short_title( string $workflow ): string {
+		$title = ucwords( str_replace( array( '_nyc', '_', '-' ), array( '', ' ', ' ' ), $workflow ) );
+
+		return rtrim( trim( $title ), '.' );
 	}
 
 	/**
@@ -263,6 +531,92 @@ final class Intake_Agent {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Whether a field is a routing discriminator (drives workflow selection).
+	 *
+	 * @param string $field Field key.
+	 * @return bool
+	 */
+	private function is_discriminator_field( string $field ): bool {
+		return in_array(
+			$field,
+			array( 'children', 'has_minor_children', 'child_count', 'spouse_agrees', 'spouse_responded', 'active_divorce', 'protection_needed', 'is_default' ),
+			true
+		);
+	}
+
+	/**
+	 * Whether this turn changed the children discriminator.
+	 *
+	 * @param array<string, mixed> $content Extracted content facts.
+	 * @return bool
+	 */
+	private function message_changes_children( array $content ): bool {
+		return array_key_exists( 'child_count', $content ) || array_key_exists( 'has_minor_children', $content );
+	}
+
+	/**
+	 * Keep child discriminators consistent with child_count so routing follows.
+	 *
+	 * @param \ProSe\Core\Routing\Fact_Store $facts Fact store.
+	 * @return void
+	 */
+	private function reconcile_child_facts( \ProSe\Core\Routing\Fact_Store $facts ): void {
+		if ( ! $facts->has( 'child_count' ) ) {
+			return;
+		}
+
+		$count = $facts->get( 'child_count' );
+
+		if ( ! is_numeric( $count ) ) {
+			return;
+		}
+
+		$has = (int) $count > 0;
+
+		$facts->set( 'children', $has );
+		$facts->set( 'has_minor_children', $has );
+	}
+
+	/**
+	 * Whether the message genuinely answers the pending field.
+	 *
+	 * Date/integer/boolean fields require a value of that type; free-text fields
+	 * accept anything that is not an explicit correction.
+	 *
+	 * @param string      $message Message.
+	 * @param string      $field   Pending field key.
+	 * @param string|null $type    Field type.
+	 * @return bool
+	 */
+	private function message_answers_field( string $message, string $field, ?string $type ): bool {
+		unset( $field );
+
+		if ( in_array( $type, array( 'date', 'integer', 'boolean' ), true ) ) {
+			return null !== $this->extractor->strict_value( $message, $type );
+		}
+
+		return ! $this->is_correction_message( $message );
+	}
+
+	/**
+	 * Whether the message is an explicit correction rather than a fresh answer.
+	 *
+	 * @param string $message Message.
+	 * @return bool
+	 */
+	private function is_correction_message( string $message ): bool {
+		$text = strtolower( trim( $message ) );
+
+		foreach ( array( 'sorry', 'actually', 'i meant', 'i mean', 'oops', 'my mistake', 'wrong', 'no wait', 'correction' ) as $phrase ) {
+			if ( str_contains( $text, $phrase ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
