@@ -1,0 +1,10 @@
+{
+    "id": "hearing",
+    "title": "Hearing",
+    "description": "Prepare for and attend a scheduled court hearing.",
+    "tips": ["Review all forms carefully before filing.", "Keep copies of everything you file or serve."],
+    "warnings": ["Missing signatures or incorrect service may delay your case."],
+    "related_forms": [],
+    "resources": [],
+    "estimated_time": null
+}

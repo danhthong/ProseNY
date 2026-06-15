@@ -1,0 +1,10 @@
+{
+    "id": "compliance_conference",
+    "title": "Compliance Conference",
+    "description": "Attend a compliance conference to review case progress and outstanding issues.",
+    "tips": ["Review all forms carefully before filing.", "Keep copies of everything you file or serve."],
+    "warnings": ["Missing signatures or incorrect service may delay your case."],
+    "related_forms": [],
+    "resources": [],
+    "estimated_time": null
+}

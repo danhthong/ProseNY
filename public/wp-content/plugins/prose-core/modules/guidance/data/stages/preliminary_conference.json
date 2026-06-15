@@ -1,0 +1,10 @@
+{
+    "id": "preliminary_conference",
+    "title": "Preliminary Conference",
+    "description": "Attend the preliminary conference to set the case schedule.",
+    "tips": ["Review all forms carefully before filing.", "Keep copies of everything you file or serve."],
+    "warnings": ["Missing signatures or incorrect service may delay your case."],
+    "related_forms": [],
+    "resources": [],
+    "estimated_time": null
+}

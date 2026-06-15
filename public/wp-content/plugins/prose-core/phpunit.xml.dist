@@ -9,6 +9,7 @@
 			<directory>modules/assembly/tests</directory>
 			<directory>modules/procedural/tests</directory>
 			<directory>modules/packet/tests</directory>
+			<directory>modules/guidance/tests</directory>
 		</testsuite>
 	</testsuites>
 </phpunit>

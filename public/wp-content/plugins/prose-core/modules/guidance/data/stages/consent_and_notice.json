@@ -1,0 +1,10 @@
+{
+    "id": "consent_and_notice",
+    "title": "Consent and Notice",
+    "description": "Obtain required consents and provide legally required notice to interested parties.",
+    "tips": ["Review all forms carefully before filing.", "Keep copies of everything you file or serve."],
+    "warnings": ["Missing signatures or incorrect service may delay your case."],
+    "related_forms": [],
+    "resources": [],
+    "estimated_time": null
+}

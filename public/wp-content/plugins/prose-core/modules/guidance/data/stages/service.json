@@ -1,0 +1,15 @@
+{
+    "id": "service",
+    "title": "Service",
+    "description": "Properly serve court papers on the other party according to court rules.",
+    "tips": [
+        "Review all forms carefully before filing.",
+        "Keep copies of everything you file or serve."
+    ],
+    "warnings": [
+        "Missing signatures or incorrect service may delay your case."
+    ],
+    "related_forms": [],
+    "resources": [],
+    "estimated_time": null
+}

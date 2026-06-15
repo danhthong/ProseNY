@@ -1,0 +1,10 @@
+{
+    "id": "settlement",
+    "title": "Settlement",
+    "description": "Negotiate and document a settlement agreement if the parties can agree.",
+    "tips": ["Review all forms carefully before filing.", "Keep copies of everything you file or serve."],
+    "warnings": ["Missing signatures or incorrect service may delay your case."],
+    "related_forms": [],
+    "resources": [],
+    "estimated_time": null
+}

@@ -1,0 +1,15 @@
+{
+    "id": "answer",
+    "title": "Answer",
+    "description": "Respond to the complaint or petition filed against you, or review the other party's answer.",
+    "tips": [
+        "Review all forms carefully before filing.",
+        "Keep copies of everything you file or serve."
+    ],
+    "warnings": [
+        "Missing signatures or incorrect service may delay your case."
+    ],
+    "related_forms": [],
+    "resources": [],
+    "estimated_time": null
+}

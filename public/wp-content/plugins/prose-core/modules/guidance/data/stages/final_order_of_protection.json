@@ -1,0 +1,10 @@
+{
+    "id": "final_order_of_protection",
+    "title": "Final Order of Protection",
+    "description": "Obtain or respond to a final order of protection after a hearing.",
+    "tips": ["Review all forms carefully before filing.", "Keep copies of everything you file or serve."],
+    "warnings": ["Missing signatures or incorrect service may delay your case."],
+    "related_forms": [],
+    "resources": [],
+    "estimated_time": null
+}

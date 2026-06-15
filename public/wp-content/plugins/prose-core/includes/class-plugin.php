@@ -23,6 +23,8 @@ use ProSe\Core\Forms\Package_Repository;
 use ProSe\Core\Assembly\Assembly_Module;
 use ProSe\Core\Intake\Intake_Module;
 use ProSe\Core\PackageBuilder\Package_Builder_Module;
+use ProSe\Core\Guidance\Guidance_Module;
+use ProSe\Core\Guidance\Guidance_Repository;
 use ProSe\Core\Packet\Packet_Module;
 use ProSe\Core\Procedural\Procedural_Module;
 
@@ -91,6 +93,9 @@ final class Plugin {
 
 		$file_manager = new Form_File_Manager();
 		$file_manager->ensure_upload_dir();
+
+		$guidance_repository = new Guidance_Repository();
+		$guidance_repository->ensure_seeded();
 
 		Database_Installer::install();
 		Courtflow_Seeder::install_and_seed();
@@ -169,6 +174,7 @@ final class Plugin {
 				Assembly_Module::class,
 				Procedural_Module::class,
 				Packet_Module::class,
+				Guidance_Module::class,
 			)
 		);
 

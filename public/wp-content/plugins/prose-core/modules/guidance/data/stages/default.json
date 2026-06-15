@@ -1,0 +1,10 @@
+{
+    "id": "default",
+    "title": "Default",
+    "description": "Request or respond to a default judgment when a party fails to appear or respond.",
+    "tips": ["Review all forms carefully before filing.", "Keep copies of everything you file or serve."],
+    "warnings": ["Missing signatures or incorrect service may delay your case."],
+    "related_forms": [],
+    "resources": [],
+    "estimated_time": null
+}

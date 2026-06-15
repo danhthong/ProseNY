@@ -1,0 +1,15 @@
+{
+    "id": "petition",
+    "title": "Petition",
+    "description": "File the petition that starts your family court case.",
+    "tips": [
+        "Review all forms carefully before filing.",
+        "Keep copies of everything you file or serve."
+    ],
+    "warnings": [
+        "Missing signatures or incorrect service may delay your case."
+    ],
+    "related_forms": [],
+    "resources": [],
+    "estimated_time": null
+}
