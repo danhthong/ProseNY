@@ -159,6 +159,89 @@ final class Merged_Blank_Pdf_Service {
 	}
 
 	/**
+	 * Build (or reuse) a merged PDF from an explicit list of form codes.
+	 *
+	 * Used by the "direct" intake path where a user asks for specific forms by
+	 * code rather than answering intake questions. The codes still come from the
+	 * user, not the AI — this service only resolves and concatenates the blank
+	 * source PDFs.
+	 *
+	 * @param array<int, string> $codes Requested form codes.
+	 * @return array<string, mixed>
+	 */
+	public function build_for_codes( array $codes ): array {
+		$codes = $this->normalize_codes( $codes );
+
+		if ( empty( $codes ) ) {
+			return $this->failure( __( 'No form codes were provided.', 'prose-core' ) );
+		}
+
+		$paths    = array();
+		$resolved = array();
+		$missing  = array();
+
+		foreach ( $codes as $code ) {
+			$path = $this->resolve_form_path( $code );
+
+			if ( '' !== $path ) {
+				$paths[]    = $path;
+				$resolved[] = $code;
+			} else {
+				$missing[] = $code;
+			}
+		}
+
+		if ( empty( $paths ) ) {
+			return $this->failure(
+				__( 'None of the requested forms have a blank PDF available yet.', 'prose-core' ),
+				$missing
+			);
+		}
+
+		$package_id = 'forms-' . substr( md5( implode( ',', $codes ) ), 0, 12 );
+
+		if ( ! $this->store->pdf_exists( $package_id ) ) {
+			$bytes = $this->merge_paths( $paths );
+
+			if ( null === $bytes || '' === $bytes ) {
+				return $this->failure( __( 'Could not merge the requested forms into a single PDF.', 'prose-core' ) );
+			}
+
+			if ( ! $this->store->write_pdf( $package_id, $bytes ) ) {
+				return $this->failure( __( 'Could not save the merged PDF.', 'prose-core' ) );
+			}
+		}
+
+		return array(
+			'success'      => true,
+			'download_url' => $this->store->pdf_url( $package_id ),
+			'requested'    => $codes,
+			'merged'       => $resolved,
+			'missing'      => $missing,
+		);
+	}
+
+	/**
+	 * Normalize and de-duplicate a list of form codes.
+	 *
+	 * @param array<int, string> $codes Raw codes.
+	 * @return array<int, string>
+	 */
+	private function normalize_codes( array $codes ): array {
+		$clean = array();
+
+		foreach ( $codes as $code ) {
+			$code = strtoupper( trim( (string) $code ) );
+
+			if ( '' !== $code && ! in_array( $code, $clean, true ) ) {
+				$clean[] = $code;
+			}
+		}
+
+		return $clean;
+	}
+
+	/**
 	 * Map of workflow key => pre-composed packet filename under uploads/prose/forms.
 	 *
 	 * @return array<string, string>

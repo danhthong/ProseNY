@@ -214,6 +214,12 @@
 							thinking.classList.add( 'prose-intake__bubble--error' );
 						}
 					}
+
+					// Direct path: user asked for specific forms — open the merged
+					// blank PDF immediately.
+					if ( result.next_action === 'offer_forms' && result.download && result.download.download_url ) {
+						window.open( result.download.download_url, '_blank' );
+					}
 				} )
 				.catch( function () {
 					thinking.textContent = STRINGS.error || 'Something went wrong. Please try again.';

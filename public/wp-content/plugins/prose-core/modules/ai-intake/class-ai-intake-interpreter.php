@@ -149,6 +149,51 @@ final class AI_Intake_Interpreter {
 			$intake->set_conversation_summary( $this->memory->fallback_summary( $intake ) );
 		}
 
+		// Direct path: the user wants blank forms and does not want to answer
+		// intake questions. Blank forms need no facts — only which packet/forms.
+		// The AI never decides forms here; routing and the forms catalog do.
+		$direct = $this->detect_direct_request( $message );
+
+		if ( ! empty( $direct['codes'] ) ) {
+			$download = $this->merge_forms( $direct['codes'] );
+
+			if ( ! empty( $download['success'] ) ) {
+				return $this->build_direct_forms_result( $intake, $download );
+			}
+
+			// Requested forms are not individually available — fall back to
+			// offering the full packet for the routed matter.
+			$direct['wants_forms'] = true;
+		}
+
+		if ( ! empty( $direct['wants_forms'] ) ) {
+			$resolved_direct = $this->fields_provider->resolve( $intake, $message );
+			$workflow_direct = $intake->workflow();
+
+			if ( null !== $workflow_direct && '' !== $workflow_direct ) {
+				$completion_direct = $this->completion->calculate(
+					$resolved_direct['required_field_defs'],
+					$intake->plain_facts()
+				);
+
+				return $this->build_result(
+					$intake,
+					array(),
+					array(),
+					array(),
+					array(),
+					'request_forms',
+					'offer_package',
+					$this->direct_package_message( $workflow_direct ),
+					1.0,
+					false,
+					$completion_direct
+				);
+			}
+			// Not routable yet: continue to the normal flow so we can ask the
+			// single routing question needed to identify the matter.
+		}
+
 		$memory_ctx = $this->memory->context( $intake, $conversation );
 
 		$resolved_pre = $this->fields_provider->resolve( $intake, $message );
@@ -349,6 +394,182 @@ final class AI_Intake_Interpreter {
 			'completion'           => $completion,
 			'workflow'             => $state->workflow(),
 			'conversation_id'      => $state->conversation_id(),
+		);
+	}
+
+	/**
+	 * Detect a "direct" request: the user wants blank forms without answering
+	 * intake questions, and/or names specific form codes.
+	 *
+	 * @param string $message User message.
+	 * @return array{wants_forms: bool, codes: array<int, string>}
+	 */
+	private function detect_direct_request( string $message ): array {
+		$text  = strtolower( $message );
+		$wants = false;
+
+		$phrases = array(
+			'just give me the form',
+			'just the form',
+			'just want the form',
+			'just need the form',
+			'give me the form',
+			'i want the form',
+			'i need the form',
+			'i just want the form',
+			'download the form',
+			'download form',
+			'get the form',
+			'show me the form',
+			'skip the question',
+			'skip question',
+			"don't want to answer",
+			'do not want to answer',
+			'dont want to answer',
+			'without answering',
+			'no questions',
+			'just forms',
+			'just the blank',
+			'blank form',
+		);
+
+		foreach ( $phrases as $phrase ) {
+			if ( false !== strpos( $text, $phrase ) ) {
+				$wants = true;
+				break;
+			}
+		}
+
+		return array(
+			'wants_forms' => $wants,
+			'codes'       => $this->extract_form_codes( $message ),
+		);
+	}
+
+	/**
+	 * Extract valid form codes mentioned in the message, validated against the
+	 * forms catalog so arbitrary numbers are not treated as codes.
+	 *
+	 * @param string $message User message.
+	 * @return array<int, string>
+	 */
+	private function extract_form_codes( string $message ): array {
+		if ( ! preg_match_all( '/\b([A-Za-z]{1,5})[-\s]?(\d{1,3}[A-Za-z]?(?:\(\d+\))?)\b/', $message, $matches, PREG_SET_ORDER ) ) {
+			return array();
+		}
+
+		$upper_map = array();
+
+		if ( class_exists( '\ProSe\Core\Forms\Forms_Catalog' ) ) {
+			$catalog = new \ProSe\Core\Forms\Forms_Catalog();
+
+			if ( method_exists( $catalog, 'all' ) ) {
+				foreach ( array_keys( (array) $catalog->all() ) as $key ) {
+					$upper_map[ strtoupper( (string) $key ) ] = (string) $key;
+				}
+			}
+		}
+
+		$codes = array();
+
+		foreach ( $matches as $set ) {
+			$candidate = strtoupper( $set[1] . '-' . $set[2] );
+
+			if ( empty( $upper_map ) ) {
+				continue;
+			}
+
+			if ( isset( $upper_map[ $candidate ] ) && ! in_array( $upper_map[ $candidate ], $codes, true ) ) {
+				$codes[] = $upper_map[ $candidate ];
+			}
+		}
+
+		return $codes;
+	}
+
+	/**
+	 * Merge explicit form codes into one blank PDF via the package builder.
+	 *
+	 * @param array<int, string> $codes Form codes.
+	 * @return array<string, mixed>
+	 */
+	private function merge_forms( array $codes ): array {
+		if ( ! class_exists( '\ProSe\Core\PackageBuilder\Merged_Blank_Pdf_Service' ) ) {
+			return array( 'success' => false );
+		}
+
+		try {
+			$service = new \ProSe\Core\PackageBuilder\Merged_Blank_Pdf_Service();
+
+			return $service->build_for_codes( $codes );
+		} catch ( \Throwable $e ) {
+			return array( 'success' => false );
+		}
+	}
+
+	/**
+	 * Build the interpreter result for an explicit-forms download.
+	 *
+	 * @param Intake_State          $intake   State.
+	 * @param array<string, mixed>  $download Merge result.
+	 * @return array<string, mixed>
+	 */
+	private function build_direct_forms_result( Intake_State $intake, array $download ): array {
+		$merged  = (array) ( $download['merged'] ?? array() );
+		$missing = (array) ( $download['missing'] ?? array() );
+
+		$message = sprintf(
+			/* translators: %s: comma-separated list of form codes. */
+			__( 'Here are the blank forms you asked for: %s. Your download will open in a new tab.', 'prose-core' ),
+			implode( ', ', $merged )
+		);
+
+		if ( ! empty( $missing ) ) {
+			$message .= ' ' . sprintf(
+				/* translators: %s: comma-separated list of form codes. */
+				__( 'These were not available individually: %s.', 'prose-core' ),
+				implode( ', ', $missing )
+			);
+		}
+
+		$result = $this->build_result(
+			$intake,
+			array(),
+			array(),
+			array(),
+			array(),
+			'request_forms',
+			'offer_forms',
+			$message,
+			1.0,
+			false,
+			0
+		);
+
+		$result['forms']    = $merged;
+		$result['download'] = array(
+			'download_url' => (string) ( $download['download_url'] ?? '' ),
+			'merged'       => $merged,
+			'missing'      => $missing,
+		);
+
+		return $result;
+	}
+
+	/**
+	 * Build the guidance message when offering the full blank packet.
+	 *
+	 * @param string $workflow Workflow key.
+	 * @return string
+	 */
+	private function direct_package_message( string $workflow ): string {
+		$title = ucwords( str_replace( array( '_', '-' ), ' ', $workflow ) );
+		$title = trim( str_ireplace( array( ' Nyc', ' Ny' ), '', $title ) );
+
+		return sprintf(
+			/* translators: %s: human-readable matter title. */
+			__( 'No problem — you do not need to answer the questions to get blank forms. Here is the blank packet for %s. Scroll down and click “Download all forms (PDF).”', 'prose-core' ),
+			$title
 		);
 	}
 
