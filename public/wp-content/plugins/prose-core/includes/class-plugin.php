@@ -183,9 +183,6 @@ final class Plugin {
 		$admin = new Admin( $this->loader );
 		$admin->register();
 
-		$layout_studio = new \ProSe\Core\Forms\Documents\Overlay\Layout_Studio();
-		$layout_studio->register( $this->loader );
-
 		foreach ( $module_classes as $module_class ) {
 			if ( ! class_exists( $module_class ) ) {
 				continue;

@@ -11,7 +11,6 @@
 use PHPUnit\Framework\TestCase;
 use ProSe\Core\Forms\Documents\Overlay\Coordinate_Map_Loader;
 use ProSe\Core\Forms\Documents\Overlay\Form_Layout_Registry;
-use ProSe\Core\Forms\Documents\Overlay\Layout_Repository;
 use ProSe\Core\Forms\Documents\Overlay\Layout_Validation_Service;
 use ProSe\Core\Forms\Documents\Overlay\Overlay_Pdf_Canvas;
 use ProSe\Core\Forms\Documents\Overlay\Overlay_Render_Result;
@@ -401,57 +400,6 @@ class OverlayRenderingTest extends TestCase {
 
 		$this->assertTrue( $report['composited'] );
 		$this->assertStringContainsString( '/DCTDecode', (string) $report['pdf'] );
-	}
-
-	/**
-	 * The layout repository round-trips reads and writes (Studio save path).
-	 */
-	public function test_layout_repository_round_trip(): void {
-		$dir = sys_get_temp_dir() . '/prose-layout-repo-' . bin2hex( random_bytes( 4 ) ) . '/';
-		mkdir( $dir, 0775, true );
-
-		$source = array(
-			'form_code' => 'ZZ-1',
-			'title'     => 'Test',
-			'template'  => 'zz-1.pdf',
-			'page_size' => array(
-				'width'  => 612,
-				'height' => 792,
-			),
-			'pages'     => 1,
-			'fields'    => array(
-				array(
-					'key' => 'name',
-					'x'   => 100,
-					'y'   => 100,
-				),
-			),
-		);
-
-		file_put_contents( $dir . 'ZZ-1.json', wp_json_encode( $source ) );
-
-		$repo = new Layout_Repository( $dir );
-
-		$this->assertTrue( $repo->has( 'ZZ-1' ) );
-		$this->assertContains( 'ZZ-1', $repo->codes() );
-
-		$read = $repo->read( 'ZZ-1' );
-		$this->assertSame( 'zz-1.pdf', $read['template'] );
-
-		$read['fields'][0]['x'] = 222;
-		$read['fields'][0]['y'] = 333;
-		$this->assertTrue( $repo->write( 'ZZ-1', $read ) );
-
-		$again = $repo->read( 'ZZ-1' );
-		$this->assertSame( 222, (int) $again['fields'][0]['x'] );
-		$this->assertSame( 333, (int) $again['fields'][0]['y'] );
-		$this->assertSame( 'zz-1.pdf', $again['template'] );
-
-		// Path traversal in the code is neutralized.
-		$this->assertStringNotContainsString( '..', basename( $repo->path( '../../evil' ) ) );
-
-		unlink( $dir . 'ZZ-1.json' );
-		rmdir( $dir );
 	}
 
 	/**

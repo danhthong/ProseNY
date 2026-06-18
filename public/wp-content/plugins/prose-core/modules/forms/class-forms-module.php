@@ -10,7 +10,6 @@
 
 namespace ProSe\Core\Forms;
 
-use ProSe\Core\Forms\Database\Import\Import_Command;
 use ProSe\Core\Loader;
 use ProSe\Core\Module_Interface;
 
@@ -143,13 +142,6 @@ final class Forms_Module implements Module_Interface {
 	private Form_Importer $importer;
 
 	/**
-	 * Catalog import command handler.
-	 *
-	 * @var Import_Command
-	 */
-	private Import_Command $import_command;
-
-	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -211,8 +203,7 @@ final class Forms_Module implements Module_Interface {
 		$this->rest_controller      = new Rest_Controller( $this->courtflow_serializer );
 		$this->classification_admin = new Form_Classification_Admin( $this->classification_engine );
 		$this->admin                = new Form_Admin( $this->repository, $this->classification_admin );
-		$this->importer             = new Form_Importer( $this->repository, $this->file_manager, $this->classification_engine );
-		$this->import_command       = new Import_Command();
+		$this->importer = new Form_Importer( $this->repository, $this->file_manager, $this->classification_engine );
 	}
 
 	/**
@@ -231,7 +222,6 @@ final class Forms_Module implements Module_Interface {
 		$this->county_rule_meta->register( $loader );
 		$this->admin->register( $loader );
 		$this->importer->register( $loader );
-		$this->import_command->register();
 		$this->rest_controller->register( $loader );
 
 		if ( $this->classification_admin ) {
