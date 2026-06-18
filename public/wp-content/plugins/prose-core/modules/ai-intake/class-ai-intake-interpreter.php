@@ -8,6 +8,7 @@
 namespace ProSe\Core\Ai_Intake;
 
 use ProSe\Core\Intake\Completion_Calculator;
+use ProSe\Core\Intake\Document_Request_Detector;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -103,6 +104,13 @@ final class AI_Intake_Interpreter {
 	private \ProSe\Core\Routing\Workflow_Catalog $workflows;
 
 	/**
+	 * Document request detector.
+	 *
+	 * @var Document_Request_Detector
+	 */
+	private Document_Request_Detector $documents;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Ai_Provider_Interface|null      $provider         Provider override.
@@ -128,7 +136,8 @@ final class AI_Intake_Interpreter {
 		?Escalation_Detector $escalation = null,
 		?AI_Settings $settings = null,
 		?AI_Logger $logger = null,
-		?Conversation_Engine $engine = null
+		?Conversation_Engine $engine = null,
+		?Document_Request_Detector $documents = null
 	) {
 		$this->settings        = $settings ?? new AI_Settings();
 		$this->logger          = $logger ?? new AI_Logger();
@@ -142,6 +151,7 @@ final class AI_Intake_Interpreter {
 		$this->escalation      = $escalation ?? new Escalation_Detector();
 		$this->engine          = $engine ?? new Conversation_Engine( $this->settings, $this->extractor );
 		$this->workflows       = new \ProSe\Core\Routing\Workflow_Catalog();
+		$this->documents       = $documents ?? new Document_Request_Detector();
 	}
 
 	/**
@@ -538,40 +548,7 @@ final class AI_Intake_Interpreter {
 	 * @return array{wants_forms: bool, codes: array<int, string>}
 	 */
 	private function detect_direct_request( string $message ): array {
-		$text  = strtolower( $message );
-		$wants = false;
-
-		$phrases = array(
-			'just give me the form',
-			'just the form',
-			'just want the form',
-			'just need the form',
-			'give me the form',
-			'i want the form',
-			'i need the form',
-			'i just want the form',
-			'download the form',
-			'download form',
-			'get the form',
-			'show me the form',
-			'skip the question',
-			'skip question',
-			"don't want to answer",
-			'do not want to answer',
-			'dont want to answer',
-			'without answering',
-			'no questions',
-			'just forms',
-			'just the blank',
-			'blank form',
-		);
-
-		foreach ( $phrases as $phrase ) {
-			if ( false !== strpos( $text, $phrase ) ) {
-				$wants = true;
-				break;
-			}
-		}
+		$wants = $this->documents->wants_documents( $message );
 
 		return array(
 			'wants_forms' => $wants,

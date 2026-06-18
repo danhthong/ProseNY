@@ -373,4 +373,33 @@ class AiIntakeInterpreterTest extends TestCase {
 		$this->assertArrayHasKey( 'marriage_date', $facts );
 		$this->assertNotSame( 'marriage_date', $interpreted['pending_field'] ?? '' );
 	}
+
+	/**
+	 * Mid-intake blank PDF request offers the package instead of more questions.
+	 */
+	public function test_blank_pdf_request_offers_package_mid_intake(): void {
+		$prior = $this->interpreter->interpret( 'Help me with child custody in Queens.' );
+
+		$this->assertSame( 'custody_nyc', $prior['workflow'] ?? '' );
+		$this->assertSame( 'ask_question', $prior['next_action'] );
+
+		$result = $this->interpreter->interpret(
+			'i need blank pdf',
+			$prior['state'] ?? array(),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Help me with child custody in Queens.',
+				),
+				array(
+					'role'    => 'assistant',
+					'content' => (string) ( $prior['question'] ?? '' ),
+				),
+			)
+		);
+
+		$this->assertSame( 'offer_package', $result['next_action'] );
+		$this->assertSame( 'custody_nyc', $result['workflow'] ?? '' );
+		$this->assertStringContainsString( 'blank', strtolower( (string) $result['question'] ) );
+	}
 }

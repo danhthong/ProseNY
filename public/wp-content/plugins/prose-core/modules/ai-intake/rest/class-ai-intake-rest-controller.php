@@ -135,6 +135,7 @@ final class AI_Intake_Rest_Controller {
 			$response['case_profile']    = $result['case_profile'] ?? array();
 			$response['completion']      = $result['completion'] ?? 0;
 			$response['next_question']   = $result['question'] ?? '';
+			$response['next_action']     = $result['next_action'] ?? '';
 			$response['workflow']        = $result['workflow'] ?? null;
 		}
 

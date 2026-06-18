@@ -90,7 +90,12 @@
 
 		if ( els.download ) {
 			var blank = data.blank_pdf || {};
-			els.download.hidden = ! blank.available;
+			var hasForms = ( data.stages || [] ).some( function ( stage ) {
+				return ( stage.forms || [] ).length > 0;
+			} );
+
+			// Keep the download visible whenever a workflow package is shown.
+			els.download.hidden = ! hasForms && ! blank.available;
 			els.download.disabled = false;
 			els.download.textContent = strings.download || 'Download all forms (PDF)';
 			// Cache a ready-made URL so the click can skip the build round-trip.

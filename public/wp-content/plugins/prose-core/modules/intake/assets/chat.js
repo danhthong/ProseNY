@@ -89,6 +89,7 @@
 		var session = loadSession();
 		var busy = false;
 		var lastWorkflow = ( session.case_profile && session.case_profile.workflow ) || '';
+		var packageShown = false;
 
 		/**
 		 * Show (or refresh) the package preview / PDF download for a workflow.
@@ -102,12 +103,45 @@
 				return;
 			}
 
+			packageShown = true;
+
 			document.dispatchEvent( new CustomEvent( 'prose:workflow-resolved', {
 				detail: {
 					conversation_id: session.conversation_id,
 					workflow: workflow
 				}
 			} ) );
+		}
+
+		/**
+		 * Ensure the package preview is visible, then scroll to and trigger the
+		 * merged blank PDF download.
+		 *
+		 * @param {string} workflow Workflow key.
+		 */
+		function offerPackageDownload( workflow ) {
+			if ( workflow ) {
+				announceWorkflow( workflow );
+			}
+
+			var attempts = 0;
+			var timer = window.setInterval( function () {
+				attempts++;
+				var dlBtn = document.querySelector( '[data-prose-package-download]' );
+
+				if ( dlBtn ) {
+					window.clearInterval( timer );
+					dlBtn.hidden = false;
+					dlBtn.scrollIntoView( { behavior: 'smooth', block: 'center' } );
+					dlBtn.classList.add( 'prose-package__download--highlight' );
+					window.setTimeout( function () {
+						dlBtn.classList.remove( 'prose-package__download--highlight' );
+						dlBtn.click();
+					}, 600 );
+				} else if ( attempts > 25 ) {
+					window.clearInterval( timer );
+				}
+			}, 200 );
 		}
 
 		/**
@@ -208,7 +242,7 @@
 					// We never clear it mid-conversation (a transient empty
 					// workflow on one turn must not hide an already-shown package).
 					var resolvedWorkflow = ( session.case_profile && session.case_profile.workflow ) || data.workflow || result.workflow || '';
-					if ( resolvedWorkflow && resolvedWorkflow !== lastWorkflow ) {
+					if ( resolvedWorkflow && ( ! packageShown || resolvedWorkflow !== lastWorkflow ) ) {
 						lastWorkflow = resolvedWorkflow;
 						announceWorkflow( resolvedWorkflow );
 					}
@@ -246,16 +280,7 @@
 
 					// Package path: scroll to the download button on the page.
 					if ( 'offer_package' === nextAction ) {
-						var dlBtn = document.querySelector( '[data-prose-package-download]:not([hidden])' );
-
-						if ( dlBtn ) {
-							dlBtn.scrollIntoView( { behavior: 'smooth', block: 'center' } );
-							dlBtn.classList.add( 'prose-package__download--highlight' );
-							window.setTimeout( function () {
-								dlBtn.classList.remove( 'prose-package__download--highlight' );
-								dlBtn.click();
-							}, 600 );
-						}
+						offerPackageDownload( resolvedWorkflow || lastWorkflow );
 					}
 				} )
 				.catch( function () {
@@ -298,6 +323,7 @@
 				clearSession();
 				session = { conversation_id: '', case_profile: {}, conversation: [], state: {} };
 				lastWorkflow = '';
+				packageShown = false;
 				document.dispatchEvent( new CustomEvent( 'prose:workflow-cleared', { detail: {} } ) );
 				transcript.innerHTML = '';
 				input.disabled = false;
@@ -340,6 +366,7 @@
 			if ( lastWorkflow ) {
 				var savedProgress = ( session.case_profile && session.case_profile.progress ) || 0;
 				setCompletion( savedProgress );
+				packageShown = true;
 				// Defer so the package-preview listener is registered regardless
 				// of script load order.
 				window.setTimeout( function () {

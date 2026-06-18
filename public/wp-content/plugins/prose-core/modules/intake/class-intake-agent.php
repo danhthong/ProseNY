@@ -70,14 +70,22 @@ final class Intake_Agent {
 	private Matter_Switch $matter_switch;
 
 	/**
+	 * Document request detector.
+	 *
+	 * @var Document_Request_Detector
+	 */
+	private Document_Request_Detector $documents;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Routing_Engine|null        $routing        Routing engine.
-	 * @param Workflow_Catalog|null      $catalog        Workflow catalog.
-	 * @param Fact_Extractor|null        $extractor      Fact extractor.
-	 * @param Completion_Calculator|null $completion     Completion calculator.
-	 * @param Question_Selector|null     $selector       Question selector.
-	 * @param Matter_Switch|null         $matter_switch  Matter switch detector.
+	 * @param Routing_Engine|null           $routing        Routing engine.
+	 * @param Workflow_Catalog|null         $catalog        Workflow catalog.
+	 * @param Fact_Extractor|null           $extractor      Fact extractor.
+	 * @param Completion_Calculator|null    $completion     Completion calculator.
+	 * @param Question_Selector|null        $selector       Question selector.
+	 * @param Matter_Switch|null            $matter_switch  Matter switch detector.
+	 * @param Document_Request_Detector|null $documents     Document request detector.
 	 */
 	public function __construct(
 		?Routing_Engine $routing = null,
@@ -85,7 +93,8 @@ final class Intake_Agent {
 		?Fact_Extractor $extractor = null,
 		?Completion_Calculator $completion = null,
 		?Question_Selector $selector = null,
-		?Matter_Switch $matter_switch = null
+		?Matter_Switch $matter_switch = null,
+		?Document_Request_Detector $documents = null
 	) {
 		$this->catalog        = $catalog ?? new Workflow_Catalog();
 		$this->routing        = $routing ?? new Routing_Engine( $this->catalog );
@@ -93,6 +102,7 @@ final class Intake_Agent {
 		$this->completion     = $completion ?? new Completion_Calculator();
 		$this->selector       = $selector ?? new Question_Selector();
 		$this->matter_switch  = $matter_switch ?? new Matter_Switch( $this->catalog );
+		$this->documents      = $documents ?? new Document_Request_Detector();
 	}
 
 	/**
@@ -223,6 +233,13 @@ final class Intake_Agent {
 			$profile_array   = $followup['case_profile'];
 		}
 
+		// Mid-intake: user asked for blank forms/PDF — offer the package without
+		// forcing them through every question first.
+		if ( 'ask_question' === $next_action && null !== $workflow && '' !== $workflow && $this->documents->wants_documents( $message ) ) {
+			$next_question = __( 'You can download blank forms anytime — use the “Download all forms (PDF)” button below. I will take you there now.', 'prose-core' );
+			$next_action   = 'offer_package';
+		}
+
 		// Persist the retained decision into the serialized profile.
 		$profile_array['workflow'] = $workflow;
 
@@ -341,33 +358,7 @@ final class Intake_Agent {
 	 * @return bool
 	 */
 	private function wants_documents( string $message ): bool {
-		$text = strtolower( trim( $message ) );
-
-		$phrases = array(
-			'document',
-			'documents',
-			'form',
-			'forms',
-			'pdf',
-			'download',
-			'paperwork',
-			'package',
-			'blank',
-			'print',
-			'give me',
-			'send me',
-			'get me',
-			'i need the',
-			'i want the',
-		);
-
-		foreach ( $phrases as $phrase ) {
-			if ( str_contains( $text, $phrase ) ) {
-				return true;
-			}
-		}
-
-		return false;
+		return $this->documents->wants_documents( $message );
 	}
 
 	/**
