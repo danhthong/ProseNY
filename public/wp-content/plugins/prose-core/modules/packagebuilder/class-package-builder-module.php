@@ -60,14 +60,22 @@ final class Package_Builder_Module implements Module_Interface {
 	private Merged_Blank_Pdf_Service $merged;
 
 	/**
+	 * Chat packet admin page.
+	 *
+	 * @var Admin\Chat_Packet_Admin_Page
+	 */
+	private Admin\Chat_Packet_Admin_Page $chat_packet_admin;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
-		$this->builder         = new Package_Builder();
-		$this->merged          = new Merged_Blank_Pdf_Service();
-		$this->preview         = new Package_Preview_Service( $this->builder, null, $this->merged );
-		$this->rest_controller = new Package_Builder_Rest_Controller( $this->builder, $this->preview, $this->merged );
-		$this->shortcode       = new Package_Preview_Shortcode();
+		$this->builder             = new Package_Builder();
+		$this->merged              = new Merged_Blank_Pdf_Service();
+		$this->preview             = new Package_Preview_Service( $this->builder, null, $this->merged );
+		$this->rest_controller     = new Package_Builder_Rest_Controller( $this->builder, $this->preview, $this->merged );
+		$this->shortcode           = new Package_Preview_Shortcode();
+		$this->chat_packet_admin   = new Admin\Chat_Packet_Admin_Page( $this->merged );
 	}
 
 	/**
@@ -79,6 +87,7 @@ final class Package_Builder_Module implements Module_Interface {
 	public function register( Loader $loader ): void {
 		$this->rest_controller->register( $loader );
 		$this->shortcode->register( $loader );
+		$this->chat_packet_admin->register( $loader );
 	}
 
 	/**

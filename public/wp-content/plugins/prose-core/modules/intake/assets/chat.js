@@ -332,44 +332,19 @@
 		}
 
 		/**
-		 * Trigger a browser download for the resolved packet or merged blanks.
+		 * Trigger a browser download for the workflow merged blank PDF packet.
 		 */
 		function downloadDocuments() {
 			var actions = session.actions || {};
 			var workflow = actions.workflow || ( session.case_profile && session.case_profile.workflow ) || '';
 
-			if ( ! workflow && 'packet' !== actions.download_mode ) {
+			if ( ! workflow ) {
 				return;
 			}
 
 			if ( getDocumentsBtn ) {
 				getDocumentsBtn.disabled = true;
 				getDocumentsBtn.textContent = STRINGS.downloading || 'Preparing download…';
-			}
-
-			if ( 'packet' === actions.download_mode && actions.package_id && CONFIG.packetDownload ) {
-				fetch( CONFIG.packetDownload + encodeURIComponent( actions.package_id ), {
-					method: 'GET',
-					headers: {
-						'X-WP-Nonce': CONFIG.nonce || ''
-					}
-				} )
-					.then( function ( res ) {
-						return res.json();
-					} )
-					.then( function ( data ) {
-						if ( data && data.success && data.download_url ) {
-							openDownload( data.download_url );
-						} else {
-							return downloadMergedPdf( workflow );
-						}
-					} )
-					.catch( function () {
-						return downloadMergedPdf( workflow );
-					} )
-					.finally( resetDownloadButton );
-
-				return;
 			}
 
 			downloadMergedPdf( workflow ).finally( resetDownloadButton );

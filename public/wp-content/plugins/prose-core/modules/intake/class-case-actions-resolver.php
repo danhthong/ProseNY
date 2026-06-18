@@ -9,7 +9,6 @@ namespace ProSe\Core\Intake;
 
 use ProSe\Core\Forms\Classification\Vocabulary;
 use ProSe\Core\PackageBuilder\Merged_Blank_Pdf_Service;
-use ProSe\Core\Packet\Packet_Service;
 use ProSe\Core\Procedural\Package_Resolver;
 use ProSe\Core\Routing\Case_Profile;
 use ProSe\Core\Routing\Routing_Engine;
@@ -32,20 +31,6 @@ final class Case_Actions_Resolver {
 	private Package_Resolver $packages;
 
 	/**
-	 * Packet service.
-	 *
-	 * @var Packet_Service
-	 */
-	private Packet_Service $packets;
-
-	/**
-	 * Workflow catalog.
-	 *
-	 * @var Workflow_Catalog
-	 */
-	private Workflow_Catalog $workflows;
-
-	/**
 	 * Merged blank PDF service.
 	 *
 	 * @var Merged_Blank_Pdf_Service
@@ -60,23 +45,27 @@ final class Case_Actions_Resolver {
 	private Routing_Engine $routing;
 
 	/**
+	 * Workflow catalog.
+	 *
+	 * @var Workflow_Catalog
+	 */
+	private Workflow_Catalog $workflows;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Package_Resolver|null         $packages  Package resolver.
-	 * @param Packet_Service|null           $packets   Packet service.
 	 * @param Workflow_Catalog|null         $workflows Workflow catalog.
 	 * @param Merged_Blank_Pdf_Service|null $merged    Merged blank PDF service.
 	 * @param Routing_Engine|null           $routing   Routing engine.
 	 */
 	public function __construct(
 		?Package_Resolver $packages = null,
-		?Packet_Service $packets = null,
 		?Workflow_Catalog $workflows = null,
 		?Merged_Blank_Pdf_Service $merged = null,
 		?Routing_Engine $routing = null
 	) {
 		$this->packages  = $packages ?? new Package_Resolver();
-		$this->packets   = $packets ?? new Packet_Service();
 		$this->workflows = $workflows ?? new Workflow_Catalog();
 		$this->merged    = $merged ?? new Merged_Blank_Pdf_Service();
 		$this->routing   = $routing ?? new Routing_Engine( $this->workflows );
@@ -104,11 +93,10 @@ final class Case_Actions_Resolver {
 
 		$package_id       = '';
 		$package_resolved = false;
-		$packet_available = false;
 		$package_label    = '';
 		$blank_pdf        = array(
 			'available'    => false,
-			'download_url'   => '',
+			'download_url' => '',
 		);
 
 		if ( $workflow_resolved ) {
@@ -119,12 +107,10 @@ final class Case_Actions_Resolver {
 			if ( is_array( $resolved ) && ! empty( $resolved['id'] ) ) {
 				$package_id       = (string) $resolved['id'];
 				$package_resolved = true;
-				$packet_available = $this->packets->is_available( $package_id );
 				$package_label    = $this->package_label( $package_id );
 			}
 		}
 
-		$download_mode  = $packet_available && '' !== $package_id ? 'packet' : 'merged';
 		$show_documents = $case_known;
 
 		return array(
@@ -133,10 +119,9 @@ final class Case_Actions_Resolver {
 			'workflow_resolved'   => $workflow_resolved,
 			'issue'               => $issue,
 			'package_resolved'    => $package_resolved,
-			'packet_available'    => $packet_available,
 			'blank_pdf_available' => ! empty( $blank_pdf['available'] ),
 			'show_documents'      => $show_documents,
-			'download_mode'       => $workflow_resolved ? $download_mode : '',
+			'download_mode'       => $workflow_resolved ? 'merged' : '',
 			'package_id'          => $package_id,
 			'package_label'       => $package_label,
 			'workflow'            => $workflow,

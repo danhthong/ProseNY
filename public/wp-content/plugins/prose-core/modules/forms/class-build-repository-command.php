@@ -76,9 +76,9 @@ final class Build_Repository_Command {
 
 		$repository     = new Form_Repository();
 		$file_manager   = new Form_File_Manager();
+		$enricher       = new Form_Record_Enricher();
 		$forms_catalog  = new Forms_Catalog( new Workflow_Catalog() );
 		$workflow_index = $forms_catalog->build_workflow_references_index();
-		$base_dir       = PROSE_CORE_PATH . 'docs/forms';
 		$records        = array();
 		$skipped        = 0;
 
@@ -109,7 +109,11 @@ final class Build_Repository_Command {
 				$post = $repository->get_by_title( (string) ( $record['title'] ?? '' ) );
 			}
 
-			$record = $this->enrich_from_post( $record, $post, $file_manager );
+			$record = $enricher->enrich_metadata_from_post( $record, $post );
+
+			if ( $post instanceof \WP_Post ) {
+				$record = $enricher->enrich_assets_from_post( $record, $post );
+			}
 
 			if ( $convert_wpd ) {
 				$record = $this->maybe_convert_wpd( $record, $file_manager, $form_code );
@@ -117,20 +121,9 @@ final class Build_Repository_Command {
 
 			$record['workflow_references'] = $workflow_index[ $form_code ] ?? array();
 
-			$existing_path = $this->record_path( $base_dir, (string) $record['court'], $form_code );
-			$record        = $this->preserve_field_mapping_status( $record, $existing_path );
-
-			$computed = Form_Source_Selector::compute( (array) ( $record['source_files'] ?? array() ) );
-
-			$record['preferred_source']  = $computed['preferred_source'];
-			$record['editable_source']   = $computed['editable_source'];
-			$record['fillable_strategy'] = $computed['fillable_strategy'];
-			$record['generation_ready']  = $computed['generation_ready'];
-			$record['import_status']     = $this->resolve_import_status( $record );
-
-			$record['docx_available']          = $this->slot_available( $record, 'docx' ) || $this->slot_available( $record, 'converted_docx' );
-			$record['fillable_pdf_available']  = $this->slot_available( $record, 'fillable_pdf' );
-			$record['wpd_available']           = $this->slot_available( $record, 'wpd' );
+			$existing_path = Form_Record_Paths::record_path( (string) $record['court'], $form_code );
+			$record        = $enricher->preserve_field_mapping_status( $record, $existing_path );
+			$record        = $enricher->apply_computed_fields( $record );
 
 			if ( $dry_run ) {
 				$this->cli_log( sprintf( '[dry-run] Would write %s (%s)', $form_code, $existing_path ) );
@@ -547,33 +540,7 @@ final class Build_Repository_Command {
 	 * @return string|null
 	 */
 	private function classify_slot( string $filename, string $extension ): ?string {
-		$lower_name = strtolower( $filename );
-
-		if ( 'docx' === $extension ) {
-			return 'docx';
-		}
-
-		if ( 'doc' === $extension ) {
-			return 'doc';
-		}
-
-		if ( 'wpd' === $extension ) {
-			return 'wpd';
-		}
-
-		if ( 'rtf' === $extension ) {
-			return 'rtf';
-		}
-
-		if ( 'pdf' === $extension ) {
-			if ( str_contains( $lower_name, 'fillable' ) ) {
-				return 'fillable_pdf';
-			}
-
-			return 'pdf';
-		}
-
-		return null;
+		return ( new Form_Record_Enricher() )->classify_slot( $filename, $extension );
 	}
 
 	/**
@@ -712,95 +679,6 @@ final class Build_Repository_Command {
 	}
 
 	/**
-	 * Enrich record from a prose_form post.
-	 *
-	 * @param array<string, mixed>  $record       Record.
-	 * @param \WP_Post|null       $post         Form post.
-	 * @param Form_File_Manager   $file_manager File manager.
-	 * @return array<string, mixed>
-	 */
-	private function enrich_from_post( array $record, ?\WP_Post $post, Form_File_Manager $file_manager ): array {
-		if ( ! $post instanceof \WP_Post ) {
-			return $record;
-		}
-
-		$stored_code = (string) get_post_meta( $post->ID, Form_Meta::META_FORM_CODE, true );
-
-		if ( '' !== $stored_code ) {
-			$record['internal_code'] = $stored_code;
-		}
-
-		$aliases = get_post_meta( $post->ID, Form_Meta::META_ALIASES, true );
-
-		if ( is_array( $aliases ) && ! empty( $aliases ) ) {
-			$record['aliases'] = array_values( array_map( 'strval', $aliases ) );
-		}
-
-		$official_url = (string) get_post_meta( $post->ID, Form_Meta::META_OFFICIAL_URL, true );
-
-		if ( '' !== $official_url ) {
-			$record['official_url'] = esc_url_raw( $official_url );
-		}
-
-		$source_files_meta = get_post_meta( $post->ID, Form_Meta::META_SOURCE_FILES, true );
-		$slots             = (array) ( $record['source_files'] ?? array() );
-
-		if ( is_array( $source_files_meta ) && ! empty( $source_files_meta['files'] ) ) {
-			foreach ( (array) $source_files_meta['files'] as $entry ) {
-				if ( ! is_array( $entry ) ) {
-					continue;
-				}
-
-				$filename  = (string) ( $entry['filename'] ?? '' );
-				$extension = strtolower( (string) ( $entry['extension'] ?? pathinfo( $filename, PATHINFO_EXTENSION ) ) );
-				$slot      = $this->classify_slot( $filename, $extension );
-
-				if ( null === $slot ) {
-					continue;
-				}
-
-				$local_path = (string) ( $entry['local_path'] ?? '' );
-				$status     = (string) ( $entry['download_status'] ?? 'unknown' );
-
-				$slots[ $slot ] = array(
-					'filename'        => $filename,
-					'path'            => $local_path,
-					'source_url'      => (string) ( $entry['source_url'] ?? '' ),
-					'download_status' => $status,
-				);
-			}
-		}
-
-		$is_fillable = (bool) get_post_meta( $post->ID, Form_Meta::META_PDF_FILLABLE, true );
-
-		if ( $is_fillable ) {
-			if ( isset( $slots['fillable_pdf'] ) ) {
-				$slots['fillable_pdf']['download_status'] = 'success';
-			} elseif ( isset( $slots['pdf'] ) ) {
-				$slots['fillable_pdf'] = $slots['pdf'];
-				unset( $slots['pdf'] );
-			}
-		}
-
-		$record['source_files'] = $slots;
-
-		if ( isset( $slots['wpd'] ) ) {
-			$record['wpd_conversion'] = array(
-				'original_wpd'   => (string) ( $slots['wpd']['path'] ?? '' ),
-				'converted_docx' => $record['wpd_conversion']['converted_docx'] ?? null,
-			);
-		}
-
-		if ( isset( $slots['converted_docx'] ) ) {
-			$record['wpd_conversion']['converted_docx'] = (string) ( $slots['converted_docx']['path'] ?? '' );
-		}
-
-		unset( $file_manager );
-
-		return $record;
-	}
-
-	/**
 	 * Attempt WPD to DOCX conversion when LibreOffice is available.
 	 *
 	 * @param array<string, mixed> $record       Record.
@@ -897,128 +775,5 @@ final class Build_Repository_Command {
 		}
 
 		return '';
-	}
-
-	/**
-	 * Preserve field_mapping_status from an existing record file.
-	 *
-	 * @param array<string, mixed> $record Record.
-	 * @param string               $path   Existing record path.
-	 * @return array<string, mixed>
-	 */
-	private function preserve_field_mapping_status( array $record, string $path ): array {
-		if ( ! is_readable( $path ) ) {
-			return $record;
-		}
-
-		$raw = file_get_contents( $path );
-
-		if ( false === $raw ) {
-			return $record;
-		}
-
-		$existing = json_decode( $raw, true );
-
-		if ( ! is_array( $existing ) ) {
-			return $record;
-		}
-
-		$status = (string) ( $existing['field_mapping_status'] ?? '' );
-
-		if ( in_array( $status, array( 'unmapped', 'partial', 'mapped', 'not_required' ), true ) ) {
-			$record['field_mapping_status'] = $status;
-		}
-
-		return $record;
-	}
-
-	/**
-	 * Resolve import status from record state.
-	 *
-	 * @param array<string, mixed> $record Record.
-	 * @return string
-	 */
-	private function resolve_import_status( array $record ): string {
-		$preferred = (string) ( $record['preferred_source'] ?? '' );
-		$files     = (array) ( $record['source_files'] ?? array() );
-
-		if ( '' === $preferred ) {
-			return empty( $files ) ? 'pending' : 'partial';
-		}
-
-		$slot = $files[ $preferred ] ?? null;
-
-		if ( is_array( $slot ) && '' !== (string) ( $slot['path'] ?? '' ) && is_readable( (string) $slot['path'] ) ) {
-			return 'complete';
-		}
-
-		$has_any_local = false;
-
-		foreach ( $files as $entry ) {
-			if ( is_array( $entry ) && '' !== (string) ( $entry['path'] ?? '' ) && is_readable( (string) $entry['path'] ) ) {
-				$has_any_local = true;
-				break;
-			}
-		}
-
-		return $has_any_local ? 'partial' : 'pending';
-	}
-
-	/**
-	 * Whether a source slot is available.
-	 *
-	 * @param array<string, mixed> $record Record.
-	 * @param string               $slot   Slot key.
-	 * @return bool
-	 */
-	private function slot_available( array $record, string $slot ): bool {
-		$files = (array) ( $record['source_files'] ?? array() );
-		$entry = $files[ $slot ] ?? null;
-
-		if ( ! is_array( $entry ) ) {
-			return false;
-		}
-
-		$status = (string) ( $entry['download_status'] ?? '' );
-
-		if ( in_array( $status, array( 'failed', 'unsupported' ), true ) ) {
-			return false;
-		}
-
-		$path = (string) ( $entry['path'] ?? '' );
-
-		if ( '' !== $path && is_readable( $path ) ) {
-			return true;
-		}
-
-		return '' !== (string) ( $entry['source_url'] ?? '' );
-	}
-
-	/**
-	 * Get output path for a form record.
-	 *
-	 * @param string $base_dir  Repository base directory.
-	 * @param string $court     Court key.
-	 * @param string $form_code Form code.
-	 * @return string
-	 */
-	private function record_path( string $base_dir, string $court, string $form_code ): string {
-		$court_dir = in_array( $court, array( 'supreme_court', 'family_court' ), true ) ? $court : 'family_court';
-
-		return trailingslashit( $base_dir ) . $court_dir . '/' . $this->form_filename( $form_code );
-	}
-
-	/**
-	 * Build a safe JSON filename for a form code.
-	 *
-	 * @param string $form_code Form code.
-	 * @return string
-	 */
-	private function form_filename( string $form_code ): string {
-		$slug = strtolower( $form_code );
-		$slug = preg_replace( '/[^a-z0-9]+/', '-', $slug );
-		$slug = trim( (string) $slug, '-' );
-
-		return ( '' !== $slug ? $slug : 'form' ) . '.json';
 	}
 }

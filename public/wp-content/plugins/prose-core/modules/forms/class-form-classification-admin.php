@@ -110,7 +110,6 @@ final class Form_Classification_Admin {
 		wp_nonce_field( self::NONCE_ACTION, 'prose_classification_nonce' );
 
 		$values = $this->get_classification_values( $post->ID );
-		$courts = array( 'Supreme Court', 'Family Court' );
 		?>
 		<div class="prose-classification-actions">
 			<button type="button" class="button prose-reclassify-btn" data-post-id="<?php echo esc_attr( (string) $post->ID ); ?>" data-force="0">
@@ -191,18 +190,6 @@ final class Form_Classification_Admin {
 		<p class="description"><?php esc_html_e( 'Override detected values. Saving sets Manual Override and preserves values across reclassification.', 'prose-core' ); ?></p>
 		<table class="form-table" role="presentation">
 			<tr>
-				<th scope="row"><label for="prose_override_court"><?php esc_html_e( 'Court', 'prose-core' ); ?></label></th>
-				<td>
-					<select id="prose_override_court" name="prose_override_court">
-						<option value=""><?php esc_html_e( '— Use detected —', 'prose-core' ); ?></option>
-						<?php foreach ( $courts as $court ) : ?>
-							<option value="<?php echo esc_attr( $court ); ?>" <?php selected( $values['override_court'], $court ); ?>><?php echo esc_html( $court ); ?></option>
-						<?php endforeach; ?>
-					</select>
-					<p class="description"><?php printf( esc_html__( 'Detected: %s', 'prose-core' ), esc_html( $values['detected_court'] ?: '—' ) ); ?></p>
-				</td>
-			</tr>
-			<tr>
 				<th scope="row"><label for="prose_override_county"><?php esc_html_e( 'County', 'prose-core' ); ?></label></th>
 				<td>
 					<input type="text" class="regular-text" id="prose_override_county" name="prose_override_county" value="<?php echo esc_attr( $values['override_county'] ); ?>" />
@@ -214,13 +201,6 @@ final class Form_Classification_Admin {
 				<td>
 					<input type="text" class="regular-text" id="prose_override_case_type" name="prose_override_case_type" value="<?php echo esc_attr( $values['override_case_type'] ); ?>" />
 					<p class="description"><?php printf( esc_html__( 'Detected: %s', 'prose-core' ), esc_html( $values['detected_case_type'] ?: '—' ) ); ?></p>
-				</td>
-			</tr>
-			<tr>
-				<th scope="row"><label for="prose_override_workflow_stage"><?php esc_html_e( 'Workflow Stage', 'prose-core' ); ?></label></th>
-				<td>
-					<input type="text" class="regular-text" id="prose_override_workflow_stage" name="prose_override_workflow_stage" value="<?php echo esc_attr( $values['override_workflow_stage'] ); ?>" />
-					<p class="description"><?php printf( esc_html__( 'Detected: %s', 'prose-core' ), esc_html( $values['detected_workflow_stage'] ?: '—' ) ); ?></p>
 				</td>
 			</tr>
 			<tr>
@@ -263,18 +243,6 @@ final class Form_Classification_Admin {
 		$has_override = false;
 		$taxonomy     = new Form_Taxonomy();
 
-		if ( ! empty( $_POST['prose_override_court'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			$court = sanitize_text_field( wp_unslash( $_POST['prose_override_court'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			update_post_meta( $post_id, Form_Meta::META_DETECTED_COURT, $court );
-			$term_ids = $taxonomy->ensure_terms( array( $court ), Form_Taxonomy::TAXONOMY_COURT );
-
-			if ( ! empty( $term_ids ) ) {
-				wp_set_object_terms( $post_id, $term_ids, Form_Taxonomy::TAXONOMY_COURT );
-			}
-
-			$has_override = true;
-		}
-
 		if ( ! empty( $_POST['prose_override_county'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			$county = sanitize_text_field( wp_unslash( $_POST['prose_override_county'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
 			update_post_meta( $post_id, Form_Meta::META_DETECTED_COUNTY, $county );
@@ -291,20 +259,6 @@ final class Form_Classification_Admin {
 
 			if ( $term_id ) {
 				wp_set_object_terms( $post_id, array( $term_id ), Form_Taxonomy::TAXONOMY_CASE_TYPE );
-			}
-
-			$has_override = true;
-		}
-
-		if ( ! empty( $_POST['prose_override_workflow_stage'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			$stage = sanitize_text_field( wp_unslash( $_POST['prose_override_workflow_stage'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Missing
-			update_post_meta( $post_id, Form_Meta::META_DETECTED_WORKFLOW_STAGE, $stage );
-			$court   = (string) get_post_meta( $post_id, Form_Meta::META_DETECTED_COURT, true );
-			$parent  = $taxonomy->workflow_parent_for_court( $court );
-			$term_id = $taxonomy->ensure_child_term( $stage, $parent, Form_Taxonomy::TAXONOMY_WORKFLOW_STAGE );
-
-			if ( $term_id ) {
-				wp_set_object_terms( $post_id, array( $term_id ), Form_Taxonomy::TAXONOMY_WORKFLOW_STAGE );
 			}
 
 			$has_override = true;

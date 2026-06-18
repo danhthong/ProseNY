@@ -709,6 +709,14 @@ class Form_Importer {
 			}
 		}
 
+		if ( apply_filters( 'prose_core_sync_form_assets_on_import', true, $post_id ) ) {
+			$sync = ( new Form_Asset_Sync() )->sync_post( $post_id );
+
+			if ( ! empty( $sync['success'] ) ) {
+				$message .= ' ' . __( 'Catalog assets synced.', 'prose-core' );
+			}
+		}
+
 		return array(
 			'form_id'    => $form_id,
 			'title'      => $title,

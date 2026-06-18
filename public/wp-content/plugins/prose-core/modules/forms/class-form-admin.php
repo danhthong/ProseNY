@@ -174,16 +174,8 @@ class Form_Admin {
 						<td><input type="text" class="regular-text" id="prose_form_code" name="prose_form_code" value="<?php echo esc_attr( $values['form_code'] ); ?>" /></td>
 					</tr>
 					<tr>
-						<th scope="row"><?php esc_html_e( 'Court', 'prose-core' ); ?></th>
-						<td><?php $this->render_taxonomy_summary( $post->ID, Form_Taxonomy::TAXONOMY_COURT ); ?></td>
-					</tr>
-					<tr>
 						<th scope="row"><?php esc_html_e( 'Case Type', 'prose-core' ); ?></th>
 						<td><?php $this->render_taxonomy_summary( $post->ID, Form_Taxonomy::TAXONOMY_CASE_TYPE ); ?></td>
-					</tr>
-					<tr>
-						<th scope="row"><?php esc_html_e( 'Workflow Stage', 'prose-core' ); ?></th>
-						<td><?php $this->render_taxonomy_summary( $post->ID, Form_Taxonomy::TAXONOMY_WORKFLOW_STAGE ); ?></td>
 					</tr>
 					<tr>
 						<th scope="row"><label for="prose_county"><?php esc_html_e( 'County', 'prose-core' ); ?></label></th>

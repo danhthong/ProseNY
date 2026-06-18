@@ -49,6 +49,10 @@ prose-core/
       class-form-importer.php   # Import Forms page + batched AJAX import
       class-form-file-manager.php  # Court file storage + cross-platform downloader
       class-form-repository.php # Data access layer
+      class-forms-catalog.php   # Runtime read: docs/forms JSON
+      class-form-asset-sync.php # Sync prose_form assets → JSON catalog
+      class-form-record-enricher.php
+      class-form-record-paths.php
       class-pdf-analyzer.php    # PDF text/field extraction + normalization
       pdf/                      # Hybrid PDF engine (PHP + optional Python)
       classification/           # Court, county, case type, workflow classifiers
@@ -58,9 +62,13 @@ prose-core/
   assets/
     css/admin.css
     js/admin.js
+  docs/
+    forms/                      # Forms Repository JSON (runtime catalog) — see docs/forms/README.md
   languages/
     prose-core.pot
 ```
+
+See also [docs/forms/README.md](docs/forms/README.md) for the Forms Repository (JSON catalog), asset sync, and runtime API.
 
 ## Installation
 
@@ -68,9 +76,28 @@ prose-core/
 2. Activate **ProSe Core** in **Plugins**.
 3. On activation the plugin registers the CPT and taxonomies, seeds default Court and Workflow Stage terms, flushes rewrite rules, and creates `wp-content/uploads/prose/forms/`.
 
+## Forms: JSON catalog + prose_form
+
+CourtFlow uses a **split model** (Option 2):
+
+| Layer | Role |
+|-------|------|
+| **`docs/forms/*.json`** (`Forms_Catalog`) | Runtime source of truth — workflow refs, `generation_ready`, `source_files` paths. Used by package builder, chat preview, and PDF download. |
+| **`prose_form` CPT** | WordPress admin + asset store — CSV import, file downloads, PDF analysis, classification. |
+
+When you import or save a form, **`Form_Asset_Sync`** copies asset metadata from the post into the matching JSON file and sets `generation_ready`. Runtime code does **not** read PDF paths from `prose_form` directly.
+
+Bulk backfill (all forms at once):
+
+```bash
+wp prose forms build-repository
+```
+
 ## Form schema
 
-`prose_form` is the central source of truth for court forms, workflow engine, questionnaire mapping, PDF analysis, auto-fill, packet generation, and AI assistance.
+`prose_form` stores **operational** form data: uploaded files, PDF analysis, classification, and admin-editable fields. **Procedural** catalog data (which workflows require which forms, readiness flags for package builder) lives in the JSON Forms Repository under `docs/forms/`.
+
+For workflow routing and chat document download, always treat **`Forms_Catalog`** as authoritative at runtime.
 
 ### Taxonomies
 
@@ -113,6 +140,7 @@ For each row the importer:
 4. Downloads **all** pipe-delimited court documents (PDF, DOC, DOCX, WPD, RTF, TXT) into `uploads/prose/forms/{form-slug}/original/`.
 5. Saves Form Code, Court, Case Type, legacy File Name / File URL / Source PDF URL (primary PDF), and the new `prose_source_files` JSON metadata.
 6. Runs the **Form Intelligence Engine** on the primary PDF (court, county, case type, workflow stage, fillable fields, questionnaire keys, dependencies, workflow package, AI summary).
+7. Syncs asset slots into the **Forms Repository JSON** via `Form_Asset_Sync` (updates `source_files` and `generation_ready` for package builder / chat download).
 
 See [docs/form-import-multi-file.md](docs/form-import-multi-file.md) for storage layout, metadata schema, and duplicate protection rules.
 
@@ -169,6 +197,8 @@ python3 wp-content/plugins/prose-core/bin/prose-pdf.py --check
 | Filter | Purpose |
 |---|---|
 | `prose_core_auto_classify_on_import` | Toggle auto-classification during CSV import (default `true`) |
+| `prose_core_sync_form_assets_on_save` | Sync JSON catalog when a `prose_form` post is saved (default `true`) |
+| `prose_core_sync_form_assets_on_import` | Sync JSON catalog after each import row (default `true`) |
 | `prose_core_pdf_engine` | Force `php` or `python` PDF engine |
 | `prose_core_python_binary` | Override Python binary path |
 | `prose_core_form_dependencies` | Customize form dependency map |
@@ -361,7 +391,15 @@ Planned future modules: **Cases**, **Questionnaires**, **Documents**, **AI**,
 
 ## Data access
 
-Use the repository instead of direct `WP_Query` calls:
+**Runtime catalog (package builder, PDF resolver, chat):**
+
+```php
+$catalog = new \ProSe\Core\Forms\Forms_Catalog();
+$form    = $catalog->by_code( 'UD-1' );
+$records = $catalog->get_form_records_for_workflow( 'uncontested_divorce_children_nyc' );
+```
+
+**WordPress posts (admin, import, analysis):**
 
 ```php
 $repo = ( new ProSe\Core\Forms\Forms_Module() )->get_repository();
@@ -388,6 +426,9 @@ $repo->update_pdf_metadata( $post_id, array(
     'fields_json'  => array(),
     'analyzed_at'  => gmdate( 'c' ),
 ) );
+
+// Push assets from a post into docs/forms/*.json
+( new \ProSe\Core\Forms\Form_Asset_Sync() )->sync_post( $post_id );
 ```
 
 ## PDF Analyzer

@@ -46,8 +46,6 @@ class Form_CPT {
 	public function register_taxonomy_submenus(): void {
 		$taxonomies = array(
 			Form_Taxonomy::TAXONOMY_CASE_TYPE,
-			Form_Taxonomy::TAXONOMY_COURT,
-			Form_Taxonomy::TAXONOMY_WORKFLOW_STAGE,
 		);
 
 		foreach ( $taxonomies as $taxonomy ) {
@@ -96,8 +94,6 @@ class Form_CPT {
 
 		$taxonomies = array(
 			Form_Taxonomy::TAXONOMY_CASE_TYPE,
-			Form_Taxonomy::TAXONOMY_COURT,
-			Form_Taxonomy::TAXONOMY_WORKFLOW_STAGE,
 		);
 
 		foreach ( $taxonomies as $taxonomy ) {
@@ -178,9 +174,7 @@ class Form_CPT {
 			if ( 'title' === $key ) {
 				$new_columns['title']                = $label;
 				$new_columns['prose_form_code']      = __( 'Form Code', 'prose-core' );
-				$new_columns['prose_court']          = __( 'Court', 'prose-core' );
 				$new_columns['prose_case_type']      = __( 'Case Type', 'prose-core' );
-				$new_columns['prose_workflow_stage'] = __( 'Workflow Stage', 'prose-core' );
 				$new_columns['prose_workflow_key']   = __( 'Workflow Key', 'prose-core' );
 				$new_columns['prose_packet_group']   = __( 'Packet Group', 'prose-core' );
 				$new_columns['prose_required']       = __( 'Required', 'prose-core' );
@@ -192,7 +186,7 @@ class Form_CPT {
 				continue;
 			}
 
-			if ( in_array( $key, array( 'taxonomy-prose_case_type', 'taxonomy-prose_court', 'taxonomy-prose_workflow_stage' ), true ) ) {
+			if ( in_array( $key, array( 'taxonomy-prose_case_type' ), true ) ) {
 				continue;
 			}
 
@@ -221,16 +215,8 @@ class Form_CPT {
 				echo esc_html( $code );
 				break;
 
-			case 'prose_court':
-				echo wp_kses_post( $this->format_terms( $post_id, Form_Taxonomy::TAXONOMY_COURT ) );
-				break;
-
 			case 'prose_case_type':
 				echo wp_kses_post( $this->format_terms( $post_id, Form_Taxonomy::TAXONOMY_CASE_TYPE ) );
-				break;
-
-			case 'prose_workflow_stage':
-				echo wp_kses_post( $this->format_terms( $post_id, Form_Taxonomy::TAXONOMY_WORKFLOW_STAGE ) );
 				break;
 
 			case 'prose_workflow_key':

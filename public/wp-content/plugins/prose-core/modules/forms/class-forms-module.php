@@ -142,6 +142,13 @@ final class Forms_Module implements Module_Interface {
 	private Form_Importer $importer;
 
 	/**
+	 * Catalog asset sync.
+	 *
+	 * @var Form_Asset_Sync
+	 */
+	private Form_Asset_Sync $asset_sync;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -203,7 +210,8 @@ final class Forms_Module implements Module_Interface {
 		$this->rest_controller      = new Rest_Controller( $this->courtflow_serializer );
 		$this->classification_admin = new Form_Classification_Admin( $this->classification_engine );
 		$this->admin                = new Form_Admin( $this->repository, $this->classification_admin );
-		$this->importer = new Form_Importer( $this->repository, $this->file_manager, $this->classification_engine );
+		$this->importer             = new Form_Importer( $this->repository, $this->file_manager, $this->classification_engine );
+		$this->asset_sync           = new Form_Asset_Sync();
 	}
 
 	/**
@@ -222,6 +230,7 @@ final class Forms_Module implements Module_Interface {
 		$this->county_rule_meta->register( $loader );
 		$this->admin->register( $loader );
 		$this->importer->register( $loader );
+		$this->asset_sync->register( $loader );
 		$this->rest_controller->register( $loader );
 
 		if ( $this->classification_admin ) {

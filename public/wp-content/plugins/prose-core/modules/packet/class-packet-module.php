@@ -9,7 +9,6 @@ namespace ProSe\Core\Packet;
 
 use ProSe\Core\Loader;
 use ProSe\Core\Module_Interface;
-use ProSe\Core\Packet\Admin\Packet_Admin_Page;
 use ProSe\Core\Packet\Rest\Packet_Rest_Controller;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -36,19 +35,11 @@ final class Packet_Module implements Module_Interface {
 	private Packet_Rest_Controller $rest_controller;
 
 	/**
-	 * Admin page.
-	 *
-	 * @var Packet_Admin_Page
-	 */
-	private Packet_Admin_Page $admin_page;
-
-	/**
 	 * Constructor.
 	 */
 	public function __construct() {
 		$this->service         = new Packet_Service();
 		$this->rest_controller = new Packet_Rest_Controller( $this->service );
-		$this->admin_page      = new Packet_Admin_Page( $this->service );
 	}
 
 	/**
@@ -59,7 +50,6 @@ final class Packet_Module implements Module_Interface {
 	 */
 	public function register( Loader $loader ): void {
 		$this->rest_controller->register( $loader );
-		$this->admin_page->register( $loader );
 	}
 
 	/**

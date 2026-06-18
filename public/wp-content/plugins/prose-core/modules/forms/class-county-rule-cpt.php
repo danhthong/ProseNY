@@ -58,8 +58,8 @@ class County_Rule_CPT {
 			array(
 				'labels'              => $labels,
 				'public'              => false,
-				'show_ui'             => true,
-				'show_in_menu'        => 'prose',
+				'show_ui'             => false,
+				'show_in_menu'        => false,
 				'show_in_rest'        => true,
 				'rest_base'           => 'prose-county-rules',
 				'capability_type'     => 'post',

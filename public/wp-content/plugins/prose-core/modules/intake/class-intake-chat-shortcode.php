@@ -13,7 +13,6 @@ namespace ProSe\Core\Intake;
 use ProSe\Core\Ai_Intake\Rest\AI_Intake_Rest_Controller;
 use ProSe\Core\Loader;
 use ProSe\Core\PackageBuilder\Rest\Package_Builder_Rest_Controller;
-use ProSe\Core\Packet\Rest\Packet_Rest_Controller;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -150,10 +149,9 @@ final class Intake_Chat_Shortcode {
 				self::HANDLE,
 				'ProseIntake',
 				array(
-					'restUrl'        => esc_url_raw( rest_url( $route ) ),
-					'actionsUrl'     => esc_url_raw( rest_url( Intake_Rest_Controller::NAMESPACE . Intake_Rest_Controller::ROUTE_ACTIONS ) ),
-					'packetDownload' => esc_url_raw( rest_url( Packet_Rest_Controller::NAMESPACE . '/packet/download/' ) ),
-					'mergedPdfUrl'   => esc_url_raw( rest_url( Package_Builder_Rest_Controller::NAMESPACE . Package_Builder_Rest_Controller::ROUTE_MERGED_PDF ) ),
+					'restUrl'      => esc_url_raw( rest_url( $route ) ),
+					'actionsUrl'   => esc_url_raw( rest_url( Intake_Rest_Controller::NAMESPACE . Intake_Rest_Controller::ROUTE_ACTIONS ) ),
+					'mergedPdfUrl' => esc_url_raw( rest_url( Package_Builder_Rest_Controller::NAMESPACE . Package_Builder_Rest_Controller::ROUTE_MERGED_PDF ) ),
 					'useAi'          => $use_ai,
 					'nonce'          => wp_create_nonce( 'wp_rest' ),
 					'storageKey'     => 'prose_intake_session',
