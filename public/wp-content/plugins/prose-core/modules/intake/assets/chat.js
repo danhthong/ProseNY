@@ -13,9 +13,9 @@
 	var STRINGS = CONFIG.strings || {};
 
 	/**
-	 * Read the persisted session ({ conversation_id, case_profile, conversation, state }).
+	 * Read the persisted session ({ conversation_id, case_profile, conversation, state, actions }).
 	 *
-	 * @return {{conversation_id: string, case_profile: Object, conversation: Array, state: Object}}
+	 * @return {{conversation_id: string, case_profile: Object, conversation: Array, state: Object, actions: Object}}
 	 */
 	function loadSession() {
 		try {
@@ -27,13 +27,14 @@
 						conversation_id: parsed.conversation_id || '',
 						case_profile: parsed.case_profile && typeof parsed.case_profile === 'object' ? parsed.case_profile : {},
 						conversation: Array.isArray( parsed.conversation ) ? parsed.conversation : [],
-						state: parsed.state && typeof parsed.state === 'object' ? parsed.state : {}
+						state: parsed.state && typeof parsed.state === 'object' ? parsed.state : {},
+						actions: parsed.actions && typeof parsed.actions === 'object' ? parsed.actions : {}
 					};
 				}
 			}
 		} catch ( e ) {}
 
-		return { conversation_id: '', case_profile: {}, conversation: [], state: {} };
+		return { conversation_id: '', case_profile: {}, conversation: [], state: {}, actions: {} };
 	}
 
 	/**
@@ -43,8 +44,9 @@
 	 * @param {Object} caseProfile    Case profile.
 	 * @param {Array}  conversation   Conversation history.
 	 * @param {Object} state          AI intake state.
+	 * @param {Object} actions        Case actions state.
 	 */
-	function saveSession( conversationId, caseProfile, conversation, state ) {
+	function saveSession( conversationId, caseProfile, conversation, state, actions ) {
 		try {
 			window.localStorage.setItem(
 				STORAGE_KEY,
@@ -52,7 +54,8 @@
 					conversation_id: conversationId,
 					case_profile: caseProfile,
 					conversation: conversation || [],
-					state: state || {}
+					state: state || {},
+					actions: actions || {}
 				} )
 			);
 		} catch ( e ) {}
@@ -81,6 +84,11 @@
 		var progress = root.querySelector( '[data-prose-intake-progress]' );
 		var completionText = root.querySelector( '[data-prose-intake-completion-text]' );
 		var completionBar = root.querySelector( '[data-prose-intake-completion-bar]' );
+		var actionsPanel = root.querySelector( '[data-prose-intake-actions]' );
+		var summaryPanel = root.querySelector( '[data-prose-intake-summary]' );
+		var summaryList = root.querySelector( '[data-prose-intake-summary-list]' );
+		var getDocumentsBtn = root.querySelector( '[data-prose-intake-get-documents]' );
+		var toggleSummaryBtn = root.querySelector( '[data-prose-intake-toggle-summary]' );
 
 		if ( ! transcript || ! form || ! input ) {
 			return;
@@ -88,60 +96,48 @@
 
 		var session = loadSession();
 		var busy = false;
-		var lastWorkflow = ( session.case_profile && session.case_profile.workflow ) || '';
-		var packageShown = false;
+		var summaryVisible = false;
+		var actionsPinned = false;
 
 		/**
-		 * Show (or refresh) the package preview / PDF download for a workflow.
-		 * Fires only for a real, non-empty workflow so the download stays visible
-		 * while chatting and is rebuilt only when the case actually changes.
+		 * Whether the session already identifies a legal matter.
+		 *
+		 * @return {boolean}
+		 */
+		function hasKnownCase() {
+			var cp = session.case_profile || {};
+			var facts = cp.facts || {};
+			var actions = session.actions || {};
+
+			return !!(
+				actions.case_known
+				|| actions.show_documents
+				|| actions.workflow
+				|| cp.workflow
+				|| cp.issue
+				|| facts.issue
+				|| ( session.state && session.state.workflow )
+			);
+		}
+
+		/**
+		 * Notify the package preview widget when intake is complete and a workflow
+		 * is resolved — for form list display only (not download).
 		 *
 		 * @param {string} workflow Workflow key.
 		 */
-		function announceWorkflow( workflow ) {
+		function announceWorkflowPreview( workflow ) {
 			if ( ! workflow ) {
 				return;
 			}
 
-			packageShown = true;
-
 			document.dispatchEvent( new CustomEvent( 'prose:workflow-resolved', {
 				detail: {
 					conversation_id: session.conversation_id,
-					workflow: workflow
+					workflow: workflow,
+					preview_only: true
 				}
 			} ) );
-		}
-
-		/**
-		 * Ensure the package preview is visible, then scroll to and trigger the
-		 * merged blank PDF download.
-		 *
-		 * @param {string} workflow Workflow key.
-		 */
-		function offerPackageDownload( workflow ) {
-			if ( workflow ) {
-				announceWorkflow( workflow );
-			}
-
-			var attempts = 0;
-			var timer = window.setInterval( function () {
-				attempts++;
-				var dlBtn = document.querySelector( '[data-prose-package-download]' );
-
-				if ( dlBtn ) {
-					window.clearInterval( timer );
-					dlBtn.hidden = false;
-					dlBtn.scrollIntoView( { behavior: 'smooth', block: 'center' } );
-					dlBtn.classList.add( 'prose-package__download--highlight' );
-					window.setTimeout( function () {
-						dlBtn.classList.remove( 'prose-package__download--highlight' );
-						dlBtn.click();
-					}, 600 );
-				} else if ( attempts > 25 ) {
-					window.clearInterval( timer );
-				}
-			}, 200 );
 		}
 
 		/**
@@ -175,6 +171,267 @@
 			}
 			if ( completionBar ) {
 				completionBar.style.width = value + '%';
+			}
+		}
+
+		/**
+		 * Render case summary rows.
+		 *
+		 * @param {Array} rows Summary rows from the server.
+		 */
+		function renderSummary( rows ) {
+			if ( ! summaryList ) {
+				return;
+			}
+
+			summaryList.innerHTML = '';
+
+			( rows || [] ).forEach( function ( row ) {
+				if ( ! row || ! row.label ) {
+					return;
+				}
+
+				var item = document.createElement( 'li' );
+				item.className = 'prose-intake__summary-item';
+				item.textContent = row.label + ': ' + ( row.value || '' );
+				summaryList.appendChild( item );
+			} );
+		}
+
+		/**
+		 * Update the persistent Case Actions panel.
+		 *
+		 * @param {Object} actions Action visibility from the server.
+		 */
+		function updateActionsPanel( actions ) {
+			if ( ! actions || typeof actions !== 'object' ) {
+				return;
+			}
+
+			session.actions = actions;
+
+			var showActions = !!( actions.case_known || actions.show_documents || actions.workflow );
+
+			if ( showActions ) {
+				actionsPinned = true;
+			}
+
+			var showPanel = actionsPinned || showActions;
+			var showDownload = showPanel;
+
+			if ( actionsPanel ) {
+				actionsPanel.hidden = ! showPanel;
+			}
+
+			if ( getDocumentsBtn ) {
+				getDocumentsBtn.hidden = ! showDownload;
+				getDocumentsBtn.disabled = false;
+				getDocumentsBtn.textContent = STRINGS.getDocuments || 'Get Documents';
+			}
+
+			if ( toggleSummaryBtn ) {
+				toggleSummaryBtn.hidden = ! showPanel || ! ( actions.summary && actions.summary.length );
+			}
+
+			if ( showPanel && actions.summary && actions.summary.length ) {
+				renderSummary( actions.summary );
+			}
+
+			if ( actions.workflow ) {
+				announceWorkflowPreview( actions.workflow );
+			}
+		}
+
+		/**
+		 * Sync workflow from an API response when case_profile lags behind.
+		 *
+		 * @param {Object} data   Top-level API payload.
+		 * @param {Object} result Interpreter or agent result.
+		 */
+		function syncWorkflowFromResponse( data, result ) {
+			var workflow = ( session.case_profile && session.case_profile.workflow )
+				|| ( session.state && session.state.workflow )
+				|| data.workflow
+				|| result.workflow
+				|| '';
+
+			var issue = ( session.case_profile && session.case_profile.issue )
+				|| ( session.state && session.state.issue )
+				|| ( result.case_profile && result.case_profile.issue )
+				|| ( data.case_profile && data.case_profile.issue )
+				|| '';
+
+			session.case_profile = session.case_profile || {};
+
+			if ( workflow ) {
+				session.case_profile.workflow = workflow;
+			}
+
+			if ( issue ) {
+				session.case_profile.issue = issue;
+			}
+		}
+
+		/**
+		 * Open a download URL in a new tab.
+		 *
+		 * @param {string} url Download URL.
+		 */
+		function openDownload( url ) {
+			if ( url ) {
+				window.open( url, '_blank' );
+			}
+		}
+
+		/**
+		 * Reset the Get Documents button label.
+		 */
+		function resetDownloadButton() {
+			if ( ! getDocumentsBtn ) {
+				return;
+			}
+
+			getDocumentsBtn.disabled = false;
+			if ( getDocumentsBtn.textContent === ( STRINGS.downloading || 'Preparing download…' ) ) {
+				getDocumentsBtn.textContent = STRINGS.getDocuments || 'Get Documents';
+			}
+		}
+
+		/**
+		 * Refresh action visibility for a restored session.
+		 */
+		function refreshActions() {
+			if ( ! CONFIG.actionsUrl ) {
+				return;
+			}
+
+			var profile = session.case_profile || {};
+
+			if ( ! profile.workflow && ! profile.issue && ! hasKnownCase() ) {
+				return;
+			}
+
+			fetch( CONFIG.actionsUrl, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-WP-Nonce': CONFIG.nonce || ''
+				},
+				body: JSON.stringify( { case_profile: session.case_profile } )
+			} )
+				.then( function ( res ) {
+					return res.json();
+				} )
+				.then( function ( data ) {
+					if ( data && data.actions ) {
+						updateActionsPanel( data.actions );
+						saveSession( session.conversation_id, session.case_profile, session.conversation, session.state, session.actions );
+					}
+				} )
+				.catch( function () {} );
+		}
+
+		/**
+		 * Trigger a browser download for the resolved packet or merged blanks.
+		 */
+		function downloadDocuments() {
+			var actions = session.actions || {};
+			var workflow = actions.workflow || ( session.case_profile && session.case_profile.workflow ) || '';
+
+			if ( ! workflow && 'packet' !== actions.download_mode ) {
+				return;
+			}
+
+			if ( getDocumentsBtn ) {
+				getDocumentsBtn.disabled = true;
+				getDocumentsBtn.textContent = STRINGS.downloading || 'Preparing download…';
+			}
+
+			if ( 'packet' === actions.download_mode && actions.package_id && CONFIG.packetDownload ) {
+				fetch( CONFIG.packetDownload + encodeURIComponent( actions.package_id ), {
+					method: 'GET',
+					headers: {
+						'X-WP-Nonce': CONFIG.nonce || ''
+					}
+				} )
+					.then( function ( res ) {
+						return res.json();
+					} )
+					.then( function ( data ) {
+						if ( data && data.success && data.download_url ) {
+							openDownload( data.download_url );
+						} else {
+							return downloadMergedPdf( workflow );
+						}
+					} )
+					.catch( function () {
+						return downloadMergedPdf( workflow );
+					} )
+					.finally( resetDownloadButton );
+
+				return;
+			}
+
+			downloadMergedPdf( workflow ).finally( resetDownloadButton );
+		}
+
+		/**
+		 * Build or return a merged blank PDF for the resolved workflow.
+		 *
+		 * @param {string} workflow Workflow key.
+		 * @return {Promise<void>}
+		 */
+		function downloadMergedPdf( workflow ) {
+			if ( ! workflow || ! CONFIG.mergedPdfUrl ) {
+				if ( getDocumentsBtn ) {
+					getDocumentsBtn.textContent = STRINGS.downloadError || 'Documents are not available for download yet.';
+				}
+				return Promise.resolve();
+			}
+
+			return fetch( CONFIG.mergedPdfUrl, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-WP-Nonce': CONFIG.nonce || ''
+				},
+				body: JSON.stringify( {
+					workflow: workflow,
+					conversation_id: session.conversation_id || '',
+					facts: ( session.case_profile && session.case_profile.facts ) || {}
+				} )
+			} )
+				.then( function ( res ) {
+					return res.json();
+				} )
+				.then( function ( data ) {
+					if ( data && data.success && data.download_url ) {
+						openDownload( data.download_url );
+					} else if ( getDocumentsBtn ) {
+						getDocumentsBtn.textContent = STRINGS.downloadError || 'Documents are not available for download yet.';
+					}
+				} )
+				.catch( function () {
+					if ( getDocumentsBtn ) {
+						getDocumentsBtn.textContent = STRINGS.downloadError || 'Documents are not available for download yet.';
+					}
+				} );
+		}
+
+		/**
+		 * Toggle case summary visibility.
+		 */
+		function toggleSummary() {
+			summaryVisible = ! summaryVisible;
+
+			if ( summaryPanel ) {
+				summaryPanel.hidden = ! summaryVisible;
+			}
+
+			if ( toggleSummaryBtn ) {
+				toggleSummaryBtn.textContent = summaryVisible
+					? ( STRINGS.hideSummary || 'Hide Case Summary' )
+					: ( STRINGS.viewSummary || 'View Case Summary' );
 			}
 		}
 
@@ -223,6 +480,10 @@
 					session.conversation_id = data.conversation_id || result.conversation_id || session.conversation_id;
 					session.case_profile = data.case_profile || result.case_profile || session.case_profile || {};
 					session.state = result.state || data.state || session.state || {};
+					syncWorkflowFromResponse( data, result );
+
+					var completion = data.completion != null ? data.completion : ( result.completion || 0 );
+					session.case_profile.progress = completion;
 
 					if ( CONFIG.useAi ) {
 						session.conversation = session.conversation || [];
@@ -233,28 +494,20 @@
 						}
 					}
 
-					saveSession( session.conversation_id, session.case_profile, session.conversation, session.state );
-
-					// Announce workflow changes so downstream widgets (e.g. the
-					// Package Builder preview) can react. The PDF download stays
-					// visible the entire time the user chats; it is only rebuilt
-					// when the resolved case actually changes to a new workflow.
-					// We never clear it mid-conversation (a transient empty
-					// workflow on one turn must not hide an already-shown package).
-					var resolvedWorkflow = ( session.case_profile && session.case_profile.workflow ) || data.workflow || result.workflow || '';
-					if ( resolvedWorkflow && ( ! packageShown || resolvedWorkflow !== lastWorkflow ) ) {
-						lastWorkflow = resolvedWorkflow;
-						announceWorkflow( resolvedWorkflow );
+					if ( data.actions ) {
+						updateActionsPanel( data.actions );
+					} else {
+						refreshActions();
 					}
 
-					var completion = data.completion != null ? data.completion : ( result.completion || 0 );
+					saveSession( session.conversation_id, session.case_profile, session.conversation, session.state, session.actions );
 					setCompletion( completion );
 
 					var question = ( data.next_question || result.question || '' ).trim();
 					var nextAction = ( data.next_action || result.next_action || '' ).trim();
 					var needsReview = result.needs_review === true || result.next_action === 'needs_review';
 					var justCompleted = 'intake_complete' === result.intent || 'intake_complete' === data.intent;
-					var isGuidance = 'guidance' === nextAction || 'complete_intake' === nextAction || 'offer_package' === nextAction;
+					var isGuidance = 'guidance' === nextAction || 'complete_intake' === nextAction;
 					var apiFailed = false === data.success || 'error' === result.next_action;
 					var isComplete = justCompleted || isGuidance || completion >= 100;
 
@@ -266,21 +519,16 @@
 						thinking.textContent = STRINGS.error || 'Something went wrong. Please try again.';
 						thinking.classList.add( 'prose-intake__bubble--error' );
 					} else if ( isComplete ) {
-						thinking.textContent = question || ( STRINGS.complete || 'I have everything I need for now. Your forms are ready to review and download below — ask me anything about the forms or filing.' );
+						thinking.textContent = question || ( STRINGS.complete || 'Based on the information you\'ve provided, I identified the appropriate filing package for your case. You can review the next steps below or download the required court forms.' );
 						thinking.classList.add( 'prose-intake__bubble--complete' );
 					} else {
 						thinking.textContent = question || ( STRINGS.greeting || 'How can I help with your legal matter today?' );
 					}
 
 					// Direct path: user asked for specific forms — open the merged
-					// blank PDF immediately.
+					// blank PDF immediately (explicit form request, not package action).
 					if ( result.next_action === 'offer_forms' && result.download && result.download.download_url ) {
 						window.open( result.download.download_url, '_blank' );
-					}
-
-					// Package path: scroll to the download button on the page.
-					if ( 'offer_package' === nextAction ) {
-						offerPackageDownload( resolvedWorkflow || lastWorkflow );
 					}
 				} )
 				.catch( function () {
@@ -318,12 +566,20 @@
 			}
 		} );
 
+		if ( getDocumentsBtn ) {
+			getDocumentsBtn.addEventListener( 'click', downloadDocuments );
+		}
+
+		if ( toggleSummaryBtn ) {
+			toggleSummaryBtn.addEventListener( 'click', toggleSummary );
+		}
+
 		if ( resetBtn ) {
 			resetBtn.addEventListener( 'click', function () {
 				clearSession();
-				session = { conversation_id: '', case_profile: {}, conversation: [], state: {} };
-				lastWorkflow = '';
-				packageShown = false;
+				session = { conversation_id: '', case_profile: {}, conversation: [], state: {}, actions: {} };
+				summaryVisible = false;
+				actionsPinned = false;
 				document.dispatchEvent( new CustomEvent( 'prose:workflow-cleared', { detail: {} } ) );
 				transcript.innerHTML = '';
 				input.disabled = false;
@@ -331,13 +587,23 @@
 				if ( progress ) {
 					progress.hidden = true;
 				}
+				if ( actionsPanel ) {
+					actionsPanel.hidden = true;
+				}
+				if ( summaryPanel ) {
+					summaryPanel.hidden = true;
+				}
+				if ( getDocumentsBtn ) {
+					getDocumentsBtn.hidden = true;
+				}
+				if ( toggleSummaryBtn ) {
+					toggleSummaryBtn.hidden = true;
+				}
 				addBubble( 'agent', STRINGS.greeting || 'How can I help with your legal matter today?' );
 				input.focus();
 			} );
 		}
 
-		// Suggested-prompt hooks (optional): elements with data-prose-intake-prompt
-		// prefill the input on click.
 		document.querySelectorAll( '[data-prose-intake-prompt]' ).forEach( function ( el ) {
 			el.addEventListener( 'click', function () {
 				input.value = el.getAttribute( 'data-prose-intake-prompt' ) || el.textContent.trim();
@@ -348,10 +614,6 @@
 
 		addBubble( 'agent', STRINGS.greeting || 'How can I help with your legal matter today?' );
 
-		// Replay prior conversation (if any) so a page refresh restores the chat
-		// AND its package together — never a stale package over an empty-looking
-		// chat. A true first visit has no history, so nothing is restored and no
-		// package/download is shown until the user states their matter.
 		var history = Array.isArray( session.conversation ) ? session.conversation : [];
 
 		if ( history.length ) {
@@ -363,20 +625,17 @@
 				addBubble( 'user' === turn.role ? 'user' : 'agent', turn.content );
 			} );
 
-			if ( lastWorkflow ) {
-				var savedProgress = ( session.case_profile && session.case_profile.progress ) || 0;
-				setCompletion( savedProgress );
-				packageShown = true;
-				// Defer so the package-preview listener is registered regardless
-				// of script load order.
-				window.setTimeout( function () {
-					announceWorkflow( lastWorkflow );
-				}, 0 );
+			var savedProgress = ( session.case_profile && session.case_profile.progress ) || 0;
+			setCompletion( savedProgress );
+
+			if ( session.actions && Object.keys( session.actions ).length ) {
+				if ( session.actions.case_known || session.actions.show_documents ) {
+					actionsPinned = true;
+				}
+				updateActionsPanel( session.actions );
+			} else {
+				refreshActions();
 			}
-		} else {
-			// No real interaction yet: treat as a clean first visit so the next
-			// resolved workflow still announces (and shows) the package.
-			lastWorkflow = '';
 		}
 	}
 

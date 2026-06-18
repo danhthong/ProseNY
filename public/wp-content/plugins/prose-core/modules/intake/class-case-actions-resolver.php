@@ -1,0 +1,499 @@
+<?php
+/**
+ * Case Actions Resolver — determines when document download actions are available.
+ *
+ * @package ProSeCore
+ */
+
+namespace ProSe\Core\Intake;
+
+use ProSe\Core\Forms\Classification\Vocabulary;
+use ProSe\Core\PackageBuilder\Merged_Blank_Pdf_Service;
+use ProSe\Core\Packet\Packet_Service;
+use ProSe\Core\Procedural\Package_Resolver;
+use ProSe\Core\Routing\Case_Profile;
+use ProSe\Core\Routing\Routing_Engine;
+use ProSe\Core\Routing\Workflow_Catalog;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * Class Case_Actions_Resolver
+ */
+final class Case_Actions_Resolver {
+
+	/**
+	 * Package resolver.
+	 *
+	 * @var Package_Resolver
+	 */
+	private Package_Resolver $packages;
+
+	/**
+	 * Packet service.
+	 *
+	 * @var Packet_Service
+	 */
+	private Packet_Service $packets;
+
+	/**
+	 * Workflow catalog.
+	 *
+	 * @var Workflow_Catalog
+	 */
+	private Workflow_Catalog $workflows;
+
+	/**
+	 * Merged blank PDF service.
+	 *
+	 * @var Merged_Blank_Pdf_Service
+	 */
+	private Merged_Blank_Pdf_Service $merged;
+
+	/**
+	 * Routing engine.
+	 *
+	 * @var Routing_Engine
+	 */
+	private Routing_Engine $routing;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param Package_Resolver|null         $packages  Package resolver.
+	 * @param Packet_Service|null           $packets   Packet service.
+	 * @param Workflow_Catalog|null         $workflows Workflow catalog.
+	 * @param Merged_Blank_Pdf_Service|null $merged    Merged blank PDF service.
+	 * @param Routing_Engine|null           $routing   Routing engine.
+	 */
+	public function __construct(
+		?Package_Resolver $packages = null,
+		?Packet_Service $packets = null,
+		?Workflow_Catalog $workflows = null,
+		?Merged_Blank_Pdf_Service $merged = null,
+		?Routing_Engine $routing = null
+	) {
+		$this->packages  = $packages ?? new Package_Resolver();
+		$this->packets   = $packets ?? new Packet_Service();
+		$this->workflows = $workflows ?? new Workflow_Catalog();
+		$this->merged    = $merged ?? new Merged_Blank_Pdf_Service();
+		$this->routing   = $routing ?? new Routing_Engine( $this->workflows );
+	}
+
+	/**
+	 * Resolve case action visibility and summary for the chat UI.
+	 *
+	 * @param array<string, mixed> $case_profile     Case profile.
+	 * @param array<string, mixed> $interpret_result Optional interpreter turn data.
+	 * @return array<string, mixed>
+	 */
+	public function resolve( array $case_profile, array $interpret_result = array() ): array {
+		$facts      = is_array( $case_profile['facts'] ?? null ) ? $case_profile['facts'] : array();
+		$completion = (int) ( $case_profile['progress'] ?? $interpret_result['completion'] ?? 0 );
+		$intent     = (string) ( $interpret_result['intent'] ?? '' );
+		$missing    = is_array( $interpret_result['missing_fields'] ?? null ) ? $interpret_result['missing_fields'] : null;
+
+		$workflow = $this->resolve_workflow_key( $case_profile, $interpret_result, $facts );
+		$issue    = $this->resolve_issue( $case_profile, $interpret_result, $facts );
+
+		$workflow_resolved = '' !== $workflow;
+		$case_known        = $workflow_resolved || '' !== $issue || $this->has_case_signals( $facts );
+		$intake_complete   = $this->is_intake_complete( $workflow_resolved, $completion, $intent, $missing );
+
+		$package_id       = '';
+		$package_resolved = false;
+		$packet_available = false;
+		$package_label    = '';
+		$blank_pdf        = array(
+			'available'    => false,
+			'download_url'   => '',
+		);
+
+		if ( $workflow_resolved ) {
+			$blank_pdf = $this->merged->status( $workflow );
+
+			$resolved = $this->packages->resolve( $workflow, $facts );
+
+			if ( is_array( $resolved ) && ! empty( $resolved['id'] ) ) {
+				$package_id       = (string) $resolved['id'];
+				$package_resolved = true;
+				$packet_available = $this->packets->is_available( $package_id );
+				$package_label    = $this->package_label( $package_id );
+			}
+		}
+
+		$download_mode  = $packet_available && '' !== $package_id ? 'packet' : 'merged';
+		$show_documents = $case_known;
+
+		return array(
+			'case_known'          => $case_known,
+			'intake_complete'     => $intake_complete,
+			'workflow_resolved'   => $workflow_resolved,
+			'issue'               => $issue,
+			'package_resolved'    => $package_resolved,
+			'packet_available'    => $packet_available,
+			'blank_pdf_available' => ! empty( $blank_pdf['available'] ),
+			'show_documents'      => $show_documents,
+			'download_mode'       => $workflow_resolved ? $download_mode : '',
+			'package_id'          => $package_id,
+			'package_label'       => $package_label,
+			'workflow'            => $workflow,
+			'workflow_title'      => $this->workflow_title( $workflow ),
+			'summary'             => $this->build_summary( $workflow, $facts, $package_id, $package_label, $issue ),
+		);
+	}
+
+	/**
+	 * Resolve the best workflow key for actions and downloads.
+	 *
+	 * @param array<string, mixed> $case_profile     Case profile.
+	 * @param array<string, mixed> $interpret_result Interpreter turn data.
+	 * @param array<string, mixed> $facts            Plain facts.
+	 * @return string
+	 */
+	private function resolve_workflow_key( array $case_profile, array $interpret_result, array $facts ): string {
+		$workflow = trim( (string) ( $case_profile['workflow'] ?? '' ) );
+
+		if ( '' === $workflow ) {
+			$workflow = trim( (string) ( $interpret_result['workflow'] ?? '' ) );
+		}
+
+		if ( '' === $workflow ) {
+			$state = is_array( $interpret_result['state'] ?? null ) ? $interpret_result['state'] : array();
+			$workflow = trim( (string) ( $state['workflow'] ?? '' ) );
+		}
+
+		if ( '' !== $workflow ) {
+			return $workflow;
+		}
+
+		$candidates = $this->candidate_workflows( $case_profile, $interpret_result );
+
+		if ( ! empty( $candidates ) ) {
+			return $this->pick_candidate_workflow( $candidates );
+		}
+
+		$profile = Case_Profile::from_array( $case_profile );
+		$routed  = $this->routing->route_profile( '', $profile );
+
+		if ( null !== $routed->workflow() && '' !== $routed->workflow() ) {
+			return (string) $routed->workflow();
+		}
+
+		$candidates = $routed->candidate_workflows();
+
+		if ( ! empty( $candidates ) ) {
+			return $this->pick_candidate_workflow( $candidates );
+		}
+
+		$issue = $this->resolve_issue( $case_profile, $interpret_result, $facts );
+
+		if ( '' !== $issue ) {
+			$by_issue = $this->workflows->by_issue( $this->base_issue( $issue ) );
+
+			if ( ! empty( $by_issue ) ) {
+				return $this->pick_candidate_workflow( array_keys( $by_issue ) );
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Resolve the current issue type.
+	 *
+	 * @param array<string, mixed> $case_profile     Case profile.
+	 * @param array<string, mixed> $interpret_result Interpreter turn data.
+	 * @param array<string, mixed> $facts            Plain facts.
+	 * @return string
+	 */
+	private function resolve_issue( array $case_profile, array $interpret_result, array $facts ): string {
+		foreach ( array(
+			(string) ( $case_profile['issue'] ?? '' ),
+			(string) ( $interpret_result['issue'] ?? '' ),
+			$this->fact_string( $facts, array( 'issue' ) ),
+		) as $candidate ) {
+			$candidate = trim( $candidate );
+
+			if ( '' !== $candidate ) {
+				return $candidate;
+			}
+		}
+
+		$profile = Case_Profile::from_array( $case_profile );
+		$routed  = $this->routing->route_profile( '', $profile );
+		$issue   = $routed->issue();
+
+		return null !== $issue ? trim( (string) $issue ) : '';
+	}
+
+	/**
+	 * Whether we have enough signal to treat the matter as identified.
+	 *
+	 * @param array<string, mixed> $facts Plain facts.
+	 * @return bool
+	 */
+	private function has_case_signals( array $facts ): bool {
+		if ( '' !== $this->fact_string( $facts, array( 'issue' ) ) ) {
+			return true;
+		}
+
+		foreach ( array( 'spouse_agrees', 'has_minor_children', 'children', 'child_count' ) as $key ) {
+			if ( array_key_exists( $key, $facts ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Candidate workflows from profile or interpreter state.
+	 *
+	 * @param array<string, mixed> $case_profile     Case profile.
+	 * @param array<string, mixed> $interpret_result Interpreter turn data.
+	 * @return string[]
+	 */
+	private function candidate_workflows( array $case_profile, array $interpret_result ): array {
+		$candidates = array();
+
+		if ( is_array( $case_profile['candidate_workflows'] ?? null ) ) {
+			$candidates = array_merge( $candidates, $case_profile['candidate_workflows'] );
+		}
+
+		$state = is_array( $interpret_result['state'] ?? null ) ? $interpret_result['state'] : array();
+
+		if ( is_array( $state['candidate_workflows'] ?? null ) ) {
+			$candidates = array_merge( $candidates, $state['candidate_workflows'] );
+		}
+
+		return array_values( array_unique( array_filter( array_map( 'strval', $candidates ) ) ) );
+	}
+
+	/**
+	 * Pick the best workflow from routing candidates.
+	 *
+	 * @param string[] $candidates Workflow keys.
+	 * @return string
+	 */
+	private function pick_candidate_workflow( array $candidates ): string {
+		$best      = '';
+		$best_prio = -1;
+
+		foreach ( $candidates as $key ) {
+			$key = trim( (string) $key );
+
+			if ( '' === $key ) {
+				continue;
+			}
+
+			$definition = $this->workflows->by_key( $key );
+			$priority   = is_array( $definition ) ? (int) ( $definition['intake_priority'] ?? 0 ) : 0;
+
+			if ( $priority > $best_prio ) {
+				$best_prio = $priority;
+				$best      = $key;
+			}
+		}
+
+		if ( '' !== $best ) {
+			return $best;
+		}
+
+		return trim( (string) ( $candidates[0] ?? '' ) );
+	}
+
+	/**
+	 * Base issue without refinements.
+	 *
+	 * @param string $issue Issue type.
+	 * @return string
+	 */
+	private function base_issue( string $issue ): string {
+		if ( str_starts_with( $issue, 'divorce' ) ) {
+			return 'divorce';
+		}
+
+		return $issue;
+	}
+
+	/**
+	 * Whether intake is complete for action purposes.
+	 *
+	 * @param bool                   $workflow_resolved Workflow is set.
+	 * @param int                    $completion        Completion percent.
+	 * @param string                 $intent            Turn intent.
+	 * @param array<int, mixed>|null $missing           Missing fields, if known.
+	 * @return bool
+	 */
+	private function is_intake_complete(
+		bool $workflow_resolved,
+		int $completion,
+		string $intent,
+		?array $missing
+	): bool {
+		if ( ! $workflow_resolved ) {
+			return false;
+		}
+
+		if ( 'intake_complete' === $intent ) {
+			return true;
+		}
+
+		if ( null !== $missing && empty( $missing ) ) {
+			return true;
+		}
+
+		return $completion >= 100;
+	}
+
+	/**
+	 * Build the case summary rows for the action panel.
+	 *
+	 * @param string               $workflow      Workflow key.
+	 * @param array<string, mixed> $facts         Plain facts.
+	 * @param string               $package_id    Package enum id.
+	 * @param string               $package_label Human package label.
+	 * @return array<int, array{label: string, value: string}>
+	 */
+	private function build_summary( string $workflow, array $facts, string $package_id, string $package_label, string $issue = '' ): array {
+		$rows = array();
+
+		$county = $this->fact_string( $facts, array( 'county' ) );
+
+		if ( '' !== $county ) {
+			$rows[] = array(
+				'label' => __( 'County', 'prose-core' ),
+				'value' => $county,
+			);
+		}
+
+		$matter = $this->workflow_title( $workflow );
+
+		if ( '' === $matter && '' !== $issue ) {
+			$matter = ucwords( str_replace( array( '_', '-' ), ' ', $issue ) );
+		}
+
+		if ( '' !== $matter ) {
+			$rows[] = array(
+				'label' => __( 'Matter', 'prose-core' ),
+				'value' => $matter,
+			);
+		}
+
+		$children = $this->children_summary( $facts );
+
+		if ( '' !== $children ) {
+			$rows[] = array(
+				'label' => __( 'Children', 'prose-core' ),
+				'value' => $children,
+			);
+		}
+
+		if ( '' !== $package_label ) {
+			$rows[] = array(
+				'label' => __( 'Package', 'prose-core' ),
+				'value' => $package_label,
+			);
+		} elseif ( '' !== $package_id ) {
+			$rows[] = array(
+				'label' => __( 'Package', 'prose-core' ),
+				'value' => $package_id,
+			);
+		}
+
+		return $rows;
+	}
+
+	/**
+	 * @param array<string, mixed> $facts Fact map.
+	 * @param string[]             $keys  Candidate keys.
+	 * @return string
+	 */
+	private function fact_string( array $facts, array $keys ): string {
+		foreach ( $keys as $key ) {
+			if ( ! isset( $facts[ $key ] ) ) {
+				continue;
+			}
+
+			$value = $facts[ $key ];
+
+			if ( is_scalar( $value ) && '' !== trim( (string) $value ) ) {
+				return trim( (string) $value );
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * @param array<string, mixed> $facts Plain facts.
+	 * @return string
+	 */
+	private function children_summary( array $facts ): string {
+		foreach ( array( 'child_count', 'children_count' ) as $key ) {
+			if ( isset( $facts[ $key ] ) && is_numeric( $facts[ $key ] ) ) {
+				return (string) (int) $facts[ $key ];
+			}
+		}
+
+		foreach ( array( 'has_minor_children', 'children', 'minor_children_involved' ) as $key ) {
+			if ( ! isset( $facts[ $key ] ) ) {
+				continue;
+			}
+
+			$value = $facts[ $key ];
+
+			if ( is_bool( $value ) ) {
+				return $value ? '1' : '0';
+			}
+
+			if ( is_numeric( $value ) ) {
+				return (string) (int) $value;
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * @param string $workflow Workflow key.
+	 * @return string
+	 */
+	private function workflow_title( string $workflow ): string {
+		if ( '' === $workflow ) {
+			return '';
+		}
+
+		$definition = $this->workflows->by_key( $workflow );
+
+		if ( is_array( $definition ) && ! empty( $definition['description'] ) ) {
+			return (string) $definition['description'];
+		}
+
+		return ucwords( str_replace( array( '_', '-' ), ' ', $workflow ) );
+	}
+
+	/**
+	 * @param string $package_id Package enum id.
+	 * @return string
+	 */
+	private function package_label( string $package_id ): string {
+		$row = $this->packages->package_row( $package_id );
+
+		if ( is_array( $row ) && ! empty( $row['package_name'] ) ) {
+			return (string) $row['package_name'];
+		}
+
+		$catalog = Vocabulary::package_catalog();
+		$entry   = $catalog[ $package_id ] ?? null;
+
+		if ( is_array( $entry ) && ! empty( $entry['package_name'] ) ) {
+			return (string) $entry['package_name'];
+		}
+
+		return $package_id;
+	}
+}

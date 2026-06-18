@@ -8,6 +8,7 @@
 namespace ProSe\Core\Ai_Intake\Rest;
 
 use ProSe\Core\Ai_Intake\AI_Intake_Service;
+use ProSe\Core\Intake\Case_Actions_Resolver;
 use ProSe\Core\Loader;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -42,12 +43,21 @@ final class AI_Intake_Rest_Controller {
 	private AI_Intake_Service $service;
 
 	/**
+	 * Case actions resolver.
+	 *
+	 * @var Case_Actions_Resolver
+	 */
+	private Case_Actions_Resolver $actions;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param AI_Intake_Service|null $service Service.
+	 * @param AI_Intake_Service|null      $service Service.
+	 * @param Case_Actions_Resolver|null  $actions Case actions resolver.
 	 */
-	public function __construct( ?AI_Intake_Service $service = null ) {
+	public function __construct( ?AI_Intake_Service $service = null, ?Case_Actions_Resolver $actions = null ) {
 		$this->service = $service ?? new AI_Intake_Service();
+		$this->actions = $actions ?? new Case_Actions_Resolver();
 	}
 
 	/**
@@ -128,6 +138,13 @@ final class AI_Intake_Rest_Controller {
 
 		$response = $this->service->interpret( $message, $state, $conversation );
 
+		if ( isset( $response['supported'] ) && false === $response['supported'] ) {
+			$response['next_question'] = $response['result']['question'] ?? ( $response['message'] ?? '' );
+			$response['next_action']   = $response['result']['next_action'] ?? 'domain_restricted';
+
+			return rest_ensure_response( $response );
+		}
+
 		if ( ! empty( $response['success'] ) && isset( $response['result'] ) && is_array( $response['result'] ) ) {
 			$result = $response['result'];
 
@@ -137,6 +154,19 @@ final class AI_Intake_Rest_Controller {
 			$response['next_question']   = $result['question'] ?? '';
 			$response['next_action']     = $result['next_action'] ?? '';
 			$response['workflow']        = $result['workflow'] ?? null;
+			$case_profile = is_array( $response['case_profile'] ) ? $response['case_profile'] : array();
+
+			if ( empty( $case_profile['workflow'] ) && ! empty( $result['workflow'] ) ) {
+				$case_profile['workflow'] = $result['workflow'];
+			}
+
+			$state = is_array( $result['state'] ?? null ) ? $result['state'] : array();
+
+			if ( empty( $case_profile['issue'] ) && ! empty( $state['issue'] ) ) {
+				$case_profile['issue'] = $state['issue'];
+			}
+
+			$response['actions'] = $this->actions->resolve( $case_profile, $result );
 		}
 
 		return rest_ensure_response( $response );

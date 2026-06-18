@@ -12,6 +12,8 @@ namespace ProSe\Core\Intake;
 
 use ProSe\Core\Ai_Intake\Rest\AI_Intake_Rest_Controller;
 use ProSe\Core\Loader;
+use ProSe\Core\PackageBuilder\Rest\Package_Builder_Rest_Controller;
+use ProSe\Core\Packet\Rest\Packet_Rest_Controller;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -148,18 +150,28 @@ final class Intake_Chat_Shortcode {
 				self::HANDLE,
 				'ProseIntake',
 				array(
-					'restUrl'    => esc_url_raw( rest_url( $route ) ),
-					'useAi'      => $use_ai,
-					'nonce'      => wp_create_nonce( 'wp_rest' ),
-					'storageKey' => 'prose_intake_session',
-					'strings'    => array(
-						'sending'   => __( 'Thinking…', 'prose-core' ),
-						'error'     => __( 'Something went wrong. Please try again.', 'prose-core' ),
-						'complete'  => __( 'Your intake is complete. Feel free to ask any questions about your forms or next steps.', 'prose-core' ),
-						'greeting'  => __( 'How can I help with your legal matter today?', 'prose-core' ),
-						'reset'     => __( 'Start over', 'prose-core' ),
-						'send'      => __( 'Send', 'prose-core' ),
-						'completion' => __( 'Intake completion', 'prose-core' ),
+					'restUrl'        => esc_url_raw( rest_url( $route ) ),
+					'actionsUrl'     => esc_url_raw( rest_url( Intake_Rest_Controller::NAMESPACE . Intake_Rest_Controller::ROUTE_ACTIONS ) ),
+					'packetDownload' => esc_url_raw( rest_url( Packet_Rest_Controller::NAMESPACE . '/packet/download/' ) ),
+					'mergedPdfUrl'   => esc_url_raw( rest_url( Package_Builder_Rest_Controller::NAMESPACE . Package_Builder_Rest_Controller::ROUTE_MERGED_PDF ) ),
+					'useAi'          => $use_ai,
+					'nonce'          => wp_create_nonce( 'wp_rest' ),
+					'storageKey'     => 'prose_intake_session',
+					'strings'        => array(
+						'sending'         => __( 'Thinking…', 'prose-core' ),
+						'error'           => __( 'Something went wrong. Please try again.', 'prose-core' ),
+						'complete'        => __( 'Based on the information you\'ve provided, I identified the appropriate filing package for your case. You can review the next steps below or download the required court forms.', 'prose-core' ),
+						'greeting'        => __( 'How can I help with your legal matter today?', 'prose-core' ),
+						'reset'           => __( 'Start over', 'prose-core' ),
+						'send'            => __( 'Send', 'prose-core' ),
+						'completion'      => __( 'Intake completion', 'prose-core' ),
+						'caseActions'     => __( 'Case Actions', 'prose-core' ),
+						'caseSummary'     => __( 'Case Summary', 'prose-core' ),
+						'getDocuments'    => __( 'Get Documents', 'prose-core' ),
+						'viewSummary'     => __( 'View Case Summary', 'prose-core' ),
+						'hideSummary'     => __( 'Hide Case Summary', 'prose-core' ),
+						'downloading'     => __( 'Preparing download…', 'prose-core' ),
+						'downloadError'   => __( 'Documents are not available for download yet.', 'prose-core' ),
 					),
 				)
 			);
@@ -191,6 +203,22 @@ final class Intake_Chat_Shortcode {
 			</div>
 
 			<div class="prose-intake__transcript" data-prose-intake-transcript></div>
+
+			<aside class="prose-intake__actions" data-prose-intake-actions hidden>
+				<h3 class="prose-intake__actions-title"><?php esc_html_e( 'Case Actions', 'prose-core' ); ?></h3>
+				<div class="prose-intake__summary" data-prose-intake-summary hidden>
+					<h4 class="prose-intake__summary-title"><?php esc_html_e( 'Case Summary', 'prose-core' ); ?></h4>
+					<ul class="prose-intake__summary-list" data-prose-intake-summary-list></ul>
+				</div>
+				<div class="prose-intake__action-buttons">
+					<button type="button" class="prose-intake__action prose-intake__action--primary" data-prose-intake-get-documents hidden>
+						<?php esc_html_e( 'Get Documents', 'prose-core' ); ?>
+					</button>
+					<button type="button" class="prose-intake__action prose-intake__action--secondary" data-prose-intake-toggle-summary hidden>
+						<?php esc_html_e( 'View Case Summary', 'prose-core' ); ?>
+					</button>
+				</div>
+			</aside>
 
 			<form class="prose-intake__form" data-prose-intake-form>
 				<label class="screen-reader-text" for="prose-intake-input"><?php esc_html_e( 'Your message', 'prose-core' ); ?></label>

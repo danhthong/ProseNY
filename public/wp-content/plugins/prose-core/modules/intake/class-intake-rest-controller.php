@@ -29,6 +29,11 @@ final class Intake_Rest_Controller {
 	public const ROUTE = '/intake';
 
 	/**
+	 * Case actions route.
+	 */
+	public const ROUTE_ACTIONS = '/case/actions';
+
+	/**
 	 * Intake agent.
 	 *
 	 * @var Intake_Agent
@@ -36,12 +41,21 @@ final class Intake_Rest_Controller {
 	private Intake_Agent $agent;
 
 	/**
+	 * Case actions resolver.
+	 *
+	 * @var Case_Actions_Resolver
+	 */
+	private Case_Actions_Resolver $actions;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Intake_Agent|null $agent Intake agent.
+	 * @param Intake_Agent|null             $agent   Intake agent.
+	 * @param Case_Actions_Resolver|null    $actions Case actions resolver.
 	 */
-	public function __construct( ?Intake_Agent $agent = null ) {
-		$this->agent = $agent ?? new Intake_Agent();
+	public function __construct( ?Intake_Agent $agent = null, ?Case_Actions_Resolver $actions = null ) {
+		$this->agent   = $agent ?? new Intake_Agent();
+		$this->actions = $actions ?? new Case_Actions_Resolver();
 	}
 
 	/**
@@ -84,6 +98,22 @@ final class Intake_Rest_Controller {
 				),
 			)
 		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			self::ROUTE_ACTIONS,
+			array(
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'handle_actions' ),
+				'permission_callback' => '__return_true',
+				'args'                => array(
+					'case_profile' => array(
+						'type'     => 'object',
+						'required' => true,
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -101,7 +131,32 @@ final class Intake_Rest_Controller {
 		}
 
 		$response = $this->agent->process( $message, $case_profile );
+		$response['actions'] = $this->actions->resolve(
+			is_array( $response['case_profile'] ?? null ) ? $response['case_profile'] : array(),
+			$response
+		);
 
 		return rest_ensure_response( $response );
+	}
+
+	/**
+	 * Handle POST /case/actions — refresh action visibility for a stored session.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response
+	 */
+	public function handle_actions( \WP_REST_Request $request ): \WP_REST_Response {
+		$case_profile = $request->get_param( 'case_profile' );
+
+		if ( ! is_array( $case_profile ) ) {
+			$case_profile = array();
+		}
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'actions' => $this->actions->resolve( $case_profile ),
+			)
+		);
 	}
 }

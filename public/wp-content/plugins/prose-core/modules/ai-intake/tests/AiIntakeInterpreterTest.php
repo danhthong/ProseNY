@@ -375,9 +375,9 @@ class AiIntakeInterpreterTest extends TestCase {
 	}
 
 	/**
-	 * Mid-intake blank PDF request offers the package instead of more questions.
+	 * Mid-intake blank PDF request keeps gathering facts (documents via Case Actions later).
 	 */
-	public function test_blank_pdf_request_offers_package_mid_intake(): void {
+	public function test_blank_pdf_request_keeps_gathering_mid_intake(): void {
 		$prior = $this->interpreter->interpret( 'Help me with child custody in Queens.' );
 
 		$this->assertSame( 'custody_nyc', $prior['workflow'] ?? '' );
@@ -398,8 +398,7 @@ class AiIntakeInterpreterTest extends TestCase {
 			)
 		);
 
-		$this->assertSame( 'offer_package', $result['next_action'] );
+		$this->assertSame( 'ask_question', $result['next_action'] );
 		$this->assertSame( 'custody_nyc', $result['workflow'] ?? '' );
-		$this->assertStringContainsString( 'blank', strtolower( (string) $result['question'] ) );
 	}
 }

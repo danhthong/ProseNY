@@ -89,17 +89,9 @@
 		} );
 
 		if ( els.download ) {
-			var blank = data.blank_pdf || {};
-			var hasForms = ( data.stages || [] ).some( function ( stage ) {
-				return ( stage.forms || [] ).length > 0;
-			} );
-
-			// Keep the download visible whenever a workflow package is shown.
-			els.download.hidden = ! hasForms && ! blank.available;
-			els.download.disabled = false;
-			els.download.textContent = strings.download || 'Download all forms (PDF)';
-			// Cache a ready-made URL so the click can skip the build round-trip.
-			els.download.dataset.url = blank.download_url || '';
+			// Document downloads are handled by the intake Case Actions panel.
+			els.download.hidden = true;
+			els.download.dataset.url = '';
 		}
 	}
 
@@ -132,30 +124,7 @@
 	}
 
 	if ( els.download ) {
-		els.download.addEventListener( 'click', function () {
-			// A merged PDF already on disk: download immediately.
-			if ( els.download.dataset.url ) {
-				window.open( els.download.dataset.url, '_blank' );
-				return;
-			}
-
-			if ( ! lastInput || ! cfg.mergedUrl ) {
-				return;
-			}
-
-			els.download.disabled = true;
-			els.download.textContent = strings.building || 'Preparing your PDF…';
-			request( cfg.mergedUrl, lastInput, function ( data ) {
-				els.download.disabled = false;
-				els.download.textContent = strings.download || 'Download all forms (PDF)';
-				if ( data && data.download_url ) {
-					els.download.dataset.url = data.download_url;
-					window.open( data.download_url, '_blank' );
-				} else {
-					els.summary.textContent = strings.noPdf || strings.error || 'No PDF available.';
-				}
-			} );
-		} );
+		els.download.hidden = true;
 	}
 
 	// Public hook for the intake widget to trigger a preview once a workflow resolves.

@@ -35,6 +35,11 @@ final class Packet_Rest_Controller {
 	public const ROUTE_LIST = '/packets';
 
 	/**
+	 * Download route.
+	 */
+	public const ROUTE_DOWNLOAD = '/packet/download/(?P<package_id>[A-Za-z0-9._-]+)';
+
+	/**
 	 * Packet service.
 	 *
 	 * @var Packet_Service
@@ -91,6 +96,22 @@ final class Packet_Rest_Controller {
 				'permission_callback' => '__return_true',
 			)
 		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			self::ROUTE_DOWNLOAD,
+			array(
+				'methods'             => \WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'handle_download' ),
+				'permission_callback' => '__return_true',
+				'args'                => array(
+					'package_id' => array(
+						'type'     => 'string',
+						'required' => true,
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -102,6 +123,19 @@ final class Packet_Rest_Controller {
 	public function handle_status( \WP_REST_Request $request ): \WP_REST_Response {
 		$package_id = (string) $request->get_param( 'package_id' );
 		$result     = $this->service->status( $package_id );
+
+		return rest_ensure_response( $result );
+	}
+
+	/**
+	 * Handle GET /packet/download/{package_id}.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response
+	 */
+	public function handle_download( \WP_REST_Request $request ): \WP_REST_Response {
+		$package_id = (string) $request->get_param( 'package_id' );
+		$result     = $this->service->download( $package_id );
 
 		return rest_ensure_response( $result );
 	}

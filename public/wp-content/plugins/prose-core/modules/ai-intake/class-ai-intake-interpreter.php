@@ -218,8 +218,9 @@ final class AI_Intake_Interpreter {
 		if ( ! empty( $direct['wants_forms'] ) ) {
 			$resolved_direct = $this->fields_provider->resolve( $intake, $message );
 			$workflow_direct = $intake->workflow();
+			$missing_direct  = $this->fields_provider->missing_prioritized( $resolved_direct['fields'], $intake );
 
-			if ( null !== $workflow_direct && '' !== $workflow_direct ) {
+			if ( null !== $workflow_direct && '' !== $workflow_direct && empty( $missing_direct ) ) {
 				$completion_direct = $this->completion->calculate(
 					$resolved_direct['required_field_defs'],
 					$intake->plain_facts()
@@ -232,15 +233,15 @@ final class AI_Intake_Interpreter {
 					array(),
 					array(),
 					'request_forms',
-					'offer_package',
+					'guidance',
 					$this->direct_package_message( $workflow_direct ),
 					1.0,
 					false,
 					$completion_direct
 				);
 			}
-			// Not routable yet: continue to the normal flow so we can ask the
-			// single routing question needed to identify the matter.
+			// Not routable yet, or intake still gathering: continue to the normal
+			// flow so we can ask the questions needed to identify the matter.
 		}
 
 		// --- Deterministic pre-resolve (ProSe owns routing & required fields) ---
@@ -256,6 +257,8 @@ final class AI_Intake_Interpreter {
 		);
 
 		// --- Single conversational OpenAI call: extract facts + write reply ---
+		$scope_note = isset( $state['scope_note'] ) && is_string( $state['scope_note'] ) ? trim( $state['scope_note'] ) : '';
+
 		$turn = $this->engine->converse(
 			$message,
 			$intake,
@@ -269,6 +272,7 @@ final class AI_Intake_Interpreter {
 				'contradictions'  => $this->consistency->check( $intake ),
 				'summary'         => $memory_ctx['summary'],
 				'recent'          => $memory_ctx['recent'],
+				'scope_note'      => $scope_note,
 			),
 			$this->provider,
 			$this->logger
@@ -441,15 +445,15 @@ final class AI_Intake_Interpreter {
 
 		$templates = array(
 			/* translators: %s: matter description. */
-			__( 'Good news — I have everything I need for your %s. The next step is preparing your filing package, which you can review and download below. Ask me anything about the forms or what happens after you file.', 'prose-core' ),
+			__( 'Good news — I have everything I need for your %s. Review the case summary in Case Actions and use Get Documents when you are ready. Ask me anything about the forms or what happens after you file.', 'prose-core' ),
 			/* translators: %s: matter description. */
-			__( 'That covers it for your %s. You can review and download your filing package below whenever you are ready. Want me to walk you through the forms or the next steps?', 'prose-core' ),
+			__( 'That covers it for your %s. Use Get Documents in Case Actions whenever you are ready. Want me to walk you through the forms or the next steps?', 'prose-core' ),
 			/* translators: %s: matter description. */
-			__( 'We are all set on your %s. Your forms are ready to review and download below. I am still here if you have questions about filing, deadlines, or anything on the forms.', 'prose-core' ),
+			__( 'We are all set on your %s. I am still here if you have questions about filing, deadlines, or anything on the forms.', 'prose-core' ),
 			/* translators: %s: matter description. */
-			__( 'I have enough to move forward with your %s. Take a look at the filing package below — and feel free to ask me how to file it or what to expect next.', 'prose-core' ),
+			__( 'I have enough to move forward with your %s. Feel free to ask me how to file or what to expect next.', 'prose-core' ),
 			/* translators: %s: matter description. */
-			__( 'Your %s intake is complete. The prepared forms are below for review and download. Let me know if you would like help understanding any form or the filing process.', 'prose-core' ),
+			__( 'Your %s intake is complete. Let me know if you would like help understanding any form or the filing process.', 'prose-core' ),
 		);
 
 		$index = function_exists( 'wp_rand' ) ? wp_rand( 0, count( $templates ) - 1 ) : array_rand( $templates );
@@ -678,7 +682,7 @@ final class AI_Intake_Interpreter {
 
 		return sprintf(
 			/* translators: %s: human-readable matter title. */
-			__( 'No problem — you do not need to answer the questions to get blank forms. Here is the blank packet for %s. Scroll down and click “Download all forms (PDF).”', 'prose-core' ),
+			__( 'No problem — you do not need to answer every question to get blank forms. Complete intake first, then use Get Documents in Case Actions for %s.', 'prose-core' ),
 			$title
 		);
 	}

@@ -236,8 +236,8 @@ final class Intake_Agent {
 		// Mid-intake: user asked for blank forms/PDF — offer the package without
 		// forcing them through every question first.
 		if ( 'ask_question' === $next_action && null !== $workflow && '' !== $workflow && $this->documents->wants_documents( $message ) ) {
-			$next_question = __( 'You can download blank forms anytime — use the “Download all forms (PDF)” button below. I will take you there now.', 'prose-core' );
-			$next_action   = 'offer_package';
+			$next_question = __( 'You can get your blank forms from Case Actions once intake is complete. For now, I just need a few more details about your matter.', 'prose-core' );
+			$next_action   = 'ask_question';
 		}
 
 		// Persist the retained decision into the serialized profile.
@@ -308,8 +308,8 @@ final class Intake_Agent {
 
 		if ( $this->wants_documents( $message ) ) {
 			return array(
-				'question'      => __( 'Your filing package is ready. Use the “Download all forms (PDF)” button below — I’ll take you there.', 'prose-core' ),
-				'next_action'   => 'offer_package',
+				'question'      => __( 'Your filing package is ready. Use the Get Documents button in Case Actions when you are ready to download your forms.', 'prose-core' ),
+				'next_action'   => 'guidance',
 				'case_profile'  => $this->mark_complete_announced( $case_profile ),
 			);
 		}
@@ -435,14 +435,14 @@ final class Intake_Agent {
 		}
 
 		if ( preg_match( '/\b(hmm|huh|what|confused|unsure|not sure)\b/', $text ) ) {
-			return __( 'No rush — I’m here when you’re ready. You can ask about a specific form, how to file, or say “give me the documents” and I’ll point you to the download.', 'prose-core' );
+			return __( 'No rush — I’m here when you’re ready. You can ask about a specific form, how to file, or use Get Documents in Case Actions when your forms are ready.', 'prose-core' );
 		}
 
 		$templates = array(
-			__( 'I’m still here. You can review your forms below, or ask me to explain any form or filing step.', 'prose-core' ),
-			__( 'Feel free to ask about deadlines, service, or what a specific form is for. If you want the PDFs, just say “download the forms.”', 'prose-core' ),
-			__( 'Your filing package is below. Tell me what you’d like help with — a form, filing, or getting the documents.', 'prose-core' ),
-			__( 'What would be most helpful right now — understanding a form, the filing steps, or downloading your package?', 'prose-core' ),
+			__( 'I’m still here. Ask me to explain any form or filing step, or use Get Documents in Case Actions when you are ready.', 'prose-core' ),
+			__( 'Feel free to ask about deadlines, service, or what a specific form is for.', 'prose-core' ),
+			__( 'Your filing package is identified. Tell me what you would like help with — a form, filing, or next steps.', 'prose-core' ),
+			__( 'What would be most helpful right now — understanding a form or the filing steps?', 'prose-core' ),
 		);
 
 		$index = function_exists( 'wp_rand' ) ? wp_rand( 0, count( $templates ) - 1 ) : array_rand( $templates );
@@ -461,11 +461,11 @@ final class Intake_Agent {
 
 		$templates = array(
 			/* translators: %s: short matter title. */
-			__( 'Good news — I have everything I need for your %s matter. You can review and download your filing package below whenever you are ready.', 'prose-core' ),
+			__( 'Good news — I have everything I need for your %s matter. You can review the case summary and use Get Documents in Case Actions when you are ready.', 'prose-core' ),
 			/* translators: %s: short matter title. */
-			__( 'That covers it for your %s matter. Your forms are ready to review and download below. Ask me anything about the forms or the filing process.', 'prose-core' ),
+			__( 'That covers it for your %s matter. Ask me anything about the forms or the filing process, or download your forms from Case Actions.', 'prose-core' ),
 			/* translators: %s: short matter title. */
-			__( 'We are all set on your %s matter. The prepared forms are below — let me know if you would like help understanding any of them or the next steps.', 'prose-core' ),
+			__( 'We are all set on your %s matter. Let me know if you would like help understanding any form or the next steps.', 'prose-core' ),
 		);
 
 		$index = function_exists( 'wp_rand' ) ? wp_rand( 0, count( $templates ) - 1 ) : array_rand( $templates );

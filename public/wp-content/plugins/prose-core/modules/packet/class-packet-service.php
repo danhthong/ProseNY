@@ -151,6 +151,67 @@ final class Packet_Service {
 	}
 
 	/**
+	 * Resolve a download URL for a cached packet (never generates).
+	 *
+	 * @param string $package_id Package enum id.
+	 * @return array{success: bool, download_url?: string, package_id?: string, filename?: string, error?: array{code: string, message: string}}
+	 */
+	public function download( string $package_id ): array {
+		$package_id = trim( $package_id );
+
+		if ( '' === $package_id ) {
+			return array(
+				'success' => false,
+				'error'   => array(
+					'code'    => Pdf_Validator::CODE_PACKAGE_NOT_FOUND,
+					'message' => __( 'Package id is required.', 'prose-core' ),
+				),
+			);
+		}
+
+		if ( ! $this->is_available( $package_id ) ) {
+			return array(
+				'success' => false,
+				'error'   => array(
+					'code'    => 'packet_unavailable',
+					'message' => __( 'The filing packet is not available for download yet.', 'prose-core' ),
+				),
+			);
+		}
+
+		$status = $this->status( $package_id );
+		$packet = is_array( $status['packet'] ?? null ) ? $status['packet'] : array();
+		$url    = (string) ( $packet['pdf_packet_url'] ?? '' );
+
+		if ( '' === $url ) {
+			$url = (string) ( $packet['zip_packet_url'] ?? '' );
+		}
+
+		if ( '' === $url ) {
+			return array(
+				'success' => false,
+				'error'   => array(
+					'code'    => 'packet_unavailable',
+					'message' => __( 'No download URL is available for this packet.', 'prose-core' ),
+				),
+			);
+		}
+
+		$filename = (string) ( $packet['filename'] ?? $package_id );
+
+		if ( ! str_ends_with( strtolower( $filename ), '.pdf' ) && ! str_ends_with( strtolower( $filename ), '.zip' ) ) {
+			$filename .= str_contains( $url, '.zip' ) ? '.zip' : '.pdf';
+		}
+
+		return array(
+			'success'      => true,
+			'download_url' => $url,
+			'package_id'   => $package_id,
+			'filename'     => $filename,
+		);
+	}
+
+	/**
 	 * Whether a valid cached packet exists (never generates).
 	 *
 	 * @param string $package_id Package enum id.

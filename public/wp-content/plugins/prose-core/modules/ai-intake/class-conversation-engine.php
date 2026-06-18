@@ -38,6 +38,7 @@ Rules:
 - If the user asks a question, answer it helpfully, then continue gathering what is still missing.
 - You must NEVER decide the court, workflow, package, forms, or whether intake is complete. Those are determined by the system and provided to you. Only collect facts and explain.
 - If missing_fields is empty and a workflow is resolved, do not ask more intake questions. Confirm you have enough information and briefly explain the next steps using the provided workflow and package details.
+- If scope_note is present, the user's message mixes in-scope and out-of-scope topics. Address the in-scope portion first and politely explain that the out-of-scope topic is not covered by ProSeNY.
 - Always reply in plain conversational English (no JSON, no markdown) inside conversation_reply.
 
 Return ONLY valid JSON of the form:
@@ -102,6 +103,12 @@ TXT;
 			'completion'           => (int) ( $context['completion'] ?? 0 ),
 			'contradictions'       => is_array( $context['contradictions'] ?? null ) ? $context['contradictions'] : array(),
 		);
+
+		$scope_note = trim( (string) ( $context['scope_note'] ?? '' ) );
+
+		if ( '' !== $scope_note ) {
+			$payload['scope_note'] = $scope_note;
+		}
 
 		$messages = array(
 			array(

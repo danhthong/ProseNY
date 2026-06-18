@@ -24,6 +24,13 @@ final class AI_Intake_Service {
 	private AI_Intake_Interpreter $interpreter;
 
 	/**
+	 * Domain scope guard.
+	 *
+	 * @var Domain_Scope_Guard
+	 */
+	private Domain_Scope_Guard $scope_guard;
+
+	/**
 	 * AI settings.
 	 *
 	 * @var AI_Settings
@@ -40,19 +47,22 @@ final class AI_Intake_Service {
 	/**
 	 * Constructor.
 	 *
-	 * @param Ai_Provider_Interface|null $provider   Provider override.
-	 * @param AI_Settings|null           $settings   Settings.
-	 * @param AI_Logger|null             $logger     Logger.
+	 * @param Ai_Provider_Interface|null $provider    Provider override.
+	 * @param AI_Settings|null           $settings    Settings.
+	 * @param AI_Logger|null             $logger      Logger.
 	 * @param AI_Intake_Interpreter|null $interpreter Interpreter.
+	 * @param Domain_Scope_Guard|null      $scope_guard Scope guard.
 	 */
 	public function __construct(
 		?Ai_Provider_Interface $provider = null,
 		?AI_Settings $settings = null,
 		?AI_Logger $logger = null,
-		?AI_Intake_Interpreter $interpreter = null
+		?AI_Intake_Interpreter $interpreter = null,
+		?Domain_Scope_Guard $scope_guard = null
 	) {
 		$this->settings    = $settings ?? new AI_Settings();
 		$this->logger      = $logger ?? new AI_Logger();
+		$this->scope_guard = $scope_guard ?? new Domain_Scope_Guard();
 		$this->interpreter = $interpreter ?? new AI_Intake_Interpreter( $provider, null, null, null, null, null, null, null, $this->settings, $this->logger );
 	}
 
@@ -66,6 +76,16 @@ final class AI_Intake_Service {
 	 */
 	public function interpret( string $message, array $state = array(), array $conversation = array() ): array {
 		try {
+			$scope = $this->scope_guard->assess( $message, $state, $conversation );
+
+			if ( ! $scope['supported'] ) {
+				return $this->build_scope_restriction_response( $scope );
+			}
+
+			if ( ! empty( $scope['hybrid'] ) && ! empty( $scope['out_of_scope_topics'] ) ) {
+				$state['scope_note'] = $this->scope_guard->hybrid_scope_note( $scope['out_of_scope_topics'] );
+			}
+
 			$result = $this->interpreter->interpret( $message, $state, $conversation );
 
 			return array(
@@ -136,6 +156,37 @@ final class AI_Intake_Service {
 				'message' => $e->getMessage(),
 			);
 		}
+	}
+
+	/**
+	 * Build the deterministic out-of-scope response (no OpenAI call).
+	 *
+	 * @param array<string, mixed> $scope Scope guard assessment.
+	 * @return array{success: bool, supported: false, message: string, result: array<string, mixed>}
+	 */
+	private function build_scope_restriction_response( array $scope ): array {
+		$message = (string) ( $scope['message'] ?? '' );
+
+		if ( '' === $message ) {
+			$message = ( new Supported_Issue_Catalog() )->restriction_message();
+		}
+
+		$result = array(
+			'supported'    => false,
+			'intent'       => 'out_of_scope',
+			'next_action'  => 'domain_restricted',
+			'question'     => $message,
+			'confidence'   => (float) ( $scope['confidence'] ?? 0.0 ),
+			'needs_review' => false,
+			'state'        => array(),
+		);
+
+		return array(
+			'success'   => true,
+			'supported' => false,
+			'message'   => ( new Supported_Issue_Catalog() )->restriction_summary(),
+			'result'    => $result,
+		);
 	}
 
 	/**
