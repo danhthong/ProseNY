@@ -214,9 +214,8 @@ class Admin {
 	 */
 	private function menu_item_icon( string $slug, string $title ): string {
 		$icons = array(
-			'edit.php?post_type=prose_form'     => 'dashicons-media-document',
-			'edit.php?post_type=prose_package' => 'dashicons-archive',
-			'prose-import-forms'                   => 'dashicons-upload',
+			'edit.php?post_type=prose_form' => 'dashicons-media-document',
+			'prose-import-forms'            => 'dashicons-upload',
 			'prose-chat-packets'                   => 'dashicons-pdf',
 			'prose-guidance'                       => 'dashicons-info',
 			'prose-ai-settings'                    => 'dashicons-admin-settings',
@@ -250,9 +249,8 @@ class Admin {
 	 */
 	private function menu_item_description( string $slug, string $title ): string {
 		$descriptions = array(
-			'edit.php?post_type=prose_form'     => __( 'Manage court form records and PDF assets.', 'prose-core' ),
-			'edit.php?post_type=prose_package' => __( 'Legacy package definitions.', 'prose-core' ),
-			'prose-import-forms'                   => __( 'Bulk import forms from CSV.', 'prose-core' ),
+			'edit.php?post_type=prose_form' => __( 'Manage court form records and PDF assets.', 'prose-core' ),
+			'prose-import-forms'            => __( 'Bulk import forms from CSV.', 'prose-core' ),
 			'prose-chat-packets'                   => __( 'Pre-build blank PDF packets for intake chat.', 'prose-core' ),
 			'prose-guidance'                       => __( 'Guidance coverage and validation tools.', 'prose-core' ),
 			'prose-ai-settings'                    => __( 'Configure AI intake provider and limits.', 'prose-core' ),
@@ -321,7 +319,7 @@ class Admin {
 
 		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
 
-		if ( $screen && in_array( $screen->post_type, array( 'prose_form', 'prose_package' ), true ) ) {
+		if ( $screen && 'prose_form' === $screen->post_type ) {
 			return true;
 		}
 
