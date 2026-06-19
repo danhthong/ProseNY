@@ -140,10 +140,12 @@ foreach ( $workflow_files as $file ) {
 		}
 	}
 
+	$internal = is_array( $data['internal'] ?? null ) ? $data['internal'] : array();
+	$stages   = is_array( $data['stages'] ?? null ) ? $data['stages'] : array();
+
 	if ( isset( $data['stages'] ) && is_array( $data['required_forms'] ) ) {
-		$stage_keys = $data['stages'];
 		foreach ( $data['required_forms'] as $mapping ) {
-			if ( isset( $mapping['stage'] ) && ! in_array( $mapping['stage'], $stage_keys, true ) ) {
+			if ( isset( $mapping['stage'] ) && ! in_array( $mapping['stage'], $stages, true ) ) {
 				$errors[] = basename( $file ) . ': required_forms references unknown stage ' . $mapping['stage'];
 			}
 			if ( isset( $mapping['forms'] ) ) {
@@ -152,6 +154,48 @@ foreach ( $workflow_files as $file ) {
 						$errors[] = basename( $file ) . ': form entry missing code';
 					}
 				}
+			}
+		}
+	}
+
+	$nodes    = is_array( $internal['node_sequence'] ?? null ) ? $internal['node_sequence'] : array();
+	$progress = is_array( $internal['progression'] ?? null ) ? $internal['progression'] : array();
+
+	if ( empty( $nodes ) ) {
+		$errors[] = basename( $file ) . ': internal.node_sequence must be a non-empty array';
+	} elseif ( count( $stages ) < count( $nodes ) ) {
+		$errors[] = basename( $file ) . ': stages count (' . count( $stages ) . ') must be at least node_sequence count (' . count( $nodes ) . ')';
+	}
+
+	foreach ( $nodes as $node_key ) {
+		if ( ! is_string( $node_key ) || ! preg_match( '/^NODE_[0-9]+_[A-Z0-9_]+$/', $node_key ) ) {
+			$errors[] = basename( $file ) . ': invalid node_sequence entry ' . (string) $node_key;
+		}
+	}
+
+	if ( empty( $progress ) ) {
+		$errors[] = basename( $file ) . ': internal.progression must be a non-empty array';
+	} else {
+		$first = $progress[0]['node'] ?? '';
+		if ( ! empty( $nodes ) && (string) $first !== (string) $nodes[0] ) {
+			$errors[] = basename( $file ) . ': progression entry node must match first node_sequence entry';
+		}
+	}
+
+	if ( isset( $internal['edges'] ) && is_array( $internal['edges'] ) ) {
+		foreach ( $internal['edges'] as $edge ) {
+			foreach ( array( 'from', 'to' ) as $edge_key ) {
+				if ( empty( $edge['condition']['kind'] ) || empty( $edge['condition']['value'] ) ) {
+					$errors[] = basename( $file ) . ': edge missing condition kind/value';
+				}
+			}
+		}
+	}
+
+	if ( isset( $data['optional_forms'] ) && is_array( $data['optional_forms'] ) && ! empty( $stages ) ) {
+		foreach ( $data['optional_forms'] as $mapping ) {
+			if ( isset( $mapping['stage'] ) && ! in_array( $mapping['stage'], $stages, true ) ) {
+				$errors[] = basename( $file ) . ': optional_forms references unknown stage ' . $mapping['stage'];
 			}
 		}
 	}

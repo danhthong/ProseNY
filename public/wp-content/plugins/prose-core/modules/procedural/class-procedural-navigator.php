@@ -129,6 +129,8 @@ final class Procedural_Navigator {
 		$definition   = (array) $resolved['definition'];
 		$court_id     = (string) $resolved['court'];
 		$court_label  = $this->court_label( $court_id );
+		$current_stage = isset( $intake['current_stage'] ) ? trim( (string) $intake['current_stage'] ) : null;
+		$current_node  = isset( $intake['current_node'] ) ? trim( (string) $intake['current_node'] ) : null;
 
 		$package = $this->packages->resolve( $workflow_key, $facts );
 		$package_check = $this->validator->validate_package( $package['id'] ?? null );
@@ -179,7 +181,8 @@ final class Procedural_Navigator {
 					'available'  => $this->packet_is_available( $package_id ),
 				),
 				'forms'        => $form_codes,
-				'next_steps'   => $this->guidance->next_steps( $definition ),
+				'next_steps'   => $this->guidance->next_steps( $definition, $current_stage, $current_node ),
+				'stages'       => $definition['stages'] ?? array(),
 				'instructions' => $this->guidance->instructions( $county, $court_label ),
 			),
 		);

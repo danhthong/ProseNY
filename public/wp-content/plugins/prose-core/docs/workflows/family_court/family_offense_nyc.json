@@ -76,6 +76,11 @@
       "NODE_4001_FAMILY_OFFENSE",
       "NODE_4002_TEMP_OP",
       "NODE_4003_FINAL_OP"
+    ],
+    "progression": [
+      { "node": "NODE_4001_FAMILY_OFFENSE" },
+      { "node": "NODE_4002_TEMP_OP", "condition": { "kind": "event", "value": "HEARING_SCHEDULED" } },
+      { "node": "NODE_4003_FINAL_OP", "condition": { "kind": "event", "value": "JUDGMENT_ENTERED" } }
     ]
   },
   "source_references": [

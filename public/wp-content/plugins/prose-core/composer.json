@@ -14,7 +14,8 @@
 		"test:ai-intake": "phpunit -c phpunit.xml.dist --testsuite ai-intake",
 		"test:intake": "phpunit -c phpunit.xml.dist --testsuite intake",
 		"test:routing": "phpunit -c phpunit.xml.dist --testsuite routing",
-		"test:unit": "phpunit -c phpunit.xml.dist --testsuite unit"
+		"test:unit": "phpunit -c phpunit.xml.dist --testsuite unit",
+		"test:procedural": "phpunit -c phpunit.xml.dist --testsuite procedural"
 	},
 	"config": {
 		"sort-packages": true,

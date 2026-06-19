@@ -144,6 +144,36 @@
       "NODE_1008_SETTLEMENT",
       "NODE_1009_TRIAL",
       "NODE_1010_JUDGMENT"
+    ],
+    "progression": [
+      { "node": "NODE_1001_DIVORCE_FILED" },
+      { "node": "NODE_1002_SERVICE_COMPLETE", "condition": { "kind": "event", "value": "SERVICE_COMPLETED" } },
+      { "node": "NODE_1003_ANSWER_FILED", "condition": { "kind": "event", "value": "ANSWER_RECEIVED" } },
+      { "node": "NODE_1005_PRELIMINARY_CONFERENCE", "condition": { "kind": "event", "value": "PRELIMINARY_CONFERENCE_HELD" } },
+      { "node": "NODE_1006_DISCOVERY", "condition": { "kind": "event", "value": "DISCOVERY_COMPLETE" } },
+      { "node": "NODE_1007_COMPLIANCE_CONFERENCE", "condition": { "kind": "event", "value": "COMPLIANCE_CONFERENCE_HELD" } }
+    ],
+    "edges": [
+      {
+        "from": "NODE_1007_COMPLIANCE_CONFERENCE",
+        "to": "NODE_1008_SETTLEMENT",
+        "condition": { "kind": "event", "value": "SETTLEMENT_REACHED" }
+      },
+      {
+        "from": "NODE_1007_COMPLIANCE_CONFERENCE",
+        "to": "NODE_1009_TRIAL",
+        "condition": { "kind": "event", "value": "HEARING_SCHEDULED" }
+      },
+      {
+        "from": "NODE_1008_SETTLEMENT",
+        "to": "NODE_1010_JUDGMENT",
+        "condition": { "kind": "event", "value": "JUDGMENT_ENTERED" }
+      },
+      {
+        "from": "NODE_1009_TRIAL",
+        "to": "NODE_1010_JUDGMENT",
+        "condition": { "kind": "event", "value": "JUDGMENT_ENTERED" }
+      }
     ]
   },
   "source_references": [

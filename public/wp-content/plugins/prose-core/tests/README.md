@@ -36,6 +36,7 @@ composer test:ai-intake
 composer test:intake
 composer test:routing
 composer test:unit
+composer test:procedural
 ```
 
 Equivalent PHPUnit commands:
@@ -44,6 +45,7 @@ Equivalent PHPUnit commands:
 php vendor/bin/phpunit -c phpunit.xml.dist --testsuite ai-intake
 php vendor/bin/phpunit -c phpunit.xml.dist --testsuite intake
 php vendor/bin/phpunit -c phpunit.xml.dist --testsuite routing
+php vendor/bin/phpunit -c phpunit.xml.dist --testsuite procedural
 ```
 
 ## Run one test class or method
@@ -65,7 +67,8 @@ Or use the helper script:
 
 ```powershell
 .\bin\run-tests.ps1
-.\bin\run-tests.ps1 -Suite ai-intake
+.\bin\run-tests.ps1 -Suite unit
+.\bin\run-tests.ps1 -Suite procedural
 .\bin\run-tests.ps1 -Filter test_allows_order_of_protection_message
 ```
 

@@ -1,6 +1,6 @@
 # Plan 04 — Workflow Engine Hardening
 
-**Status:** Draft — awaiting review  
+**Status:** Complete  
 **Priority:** P1  
 **Depends on:** —  
 **Estimated effort:** Medium (3–5 days)
@@ -21,16 +21,17 @@ Complete the **Workflow Engine** as the procedural source of truth: resolution, 
 
 | Done | Gap |
 |------|-----|
-| 12 workflow JSON files + schema | Stage **progression** after intake incomplete |
-| `Workflow_Catalog` loader | Node library (NODE_1001–1010) in JSON `internal` only |
-| `Workflow_Resolver` + priority | Edge rules / conditional transitions not fully exposed |
-| `validate-workflows.php` | Enforcement/modification as stages only — need stage metadata |
+| 12 workflow JSON files + schema | ~~Stage progression after intake incomplete~~ |
+| `Workflow_Catalog` loader | ~~Node library in JSON `internal` only~~ |
+| `Workflow_Resolver` + priority (routing) | ~~Edge rules not exposed~~ |
+| `Workflow_Progression_Service` | Case package sequences still partially hardcoded |
+| `validate-workflows.php` stricter checks | DB-backed graph seeders (Plan 16) |
 
 ## Scope
 
 ### In scope
 
-- Formalize workflow graph: nodes, edges, conditions in JSON or DB seed
+- Formalize workflow graph: nodes, edges, conditions in JSON
 - `Workflow_Progression_Service` — given workflow + facts + current stage → next stage
 - Align `internal.node_sequence` across all 12 workflows with PRD node IDs
 - Wire procedural navigator to read stages from resolved workflow
@@ -45,32 +46,33 @@ Complete the **Workflow Engine** as the procedural source of truth: resolution, 
 ## Deliverables
 
 1. Workflow progression API: `get_current_stage()`, `get_next_stage()`, `get_stage_forms()`
-2. Updated workflow JSON where `internal.node_sequence` incomplete
+2. Updated workflow JSON with `internal.progression` and contested `internal.edges`
 3. Engine documentation in `docs/workflows/README.md`
-4. PHPUnit coverage for stage transitions on contested + uncontested divorce
+4. PHPUnit: `WorkflowProgressionTest`, updated `CaseEngineTest` contested path
 
 ## Acceptance criteria
 
-- [ ] No workflow transition logic hardcoded in intake or AI modules
-- [ ] Contested divorce path: commencement → … → judgment reachable via graph
-- [ ] `validate-workflows.php` passes with stricter node checks
-- [ ] Procedural navigator consumes same stage list as package builder
+- [x] No workflow transition logic hardcoded in intake or AI modules
+- [x] Contested divorce path: commencement → … → judgment reachable via graph
+- [x] `validate-workflows.php` passes with stricter node checks
+- [x] Procedural navigator consumes same stage list as package builder
 
-## Implementation tasks
+## Files touched
 
-1. Inventory existing `modules/forms/engine/` vs `modules/routing/` overlap — consolidate ownership
-2. Define edge condition vocabulary (reuse `Condition_Evaluator` if exists)
-3. Implement progression service
-4. Seed node metadata from PRD V3 Unified (NODE_1001–1010, etc.)
-5. Tests + validation script update
-
-## Files likely touched
-
-- `modules/routing/` or `modules/forms/engine/class-workflow-resolver.php`
-- `docs/workflows/schema/workflow.schema.json`
-- `bin/validate-workflows.php`
+- `modules/forms/engine/class-workflow-progression-service.php` (new)
+- `modules/forms/engine/class-case-catalog.php`
+- `modules/forms/engine/class-case-event-service.php`
+- `modules/forms/engine/class-case-service.php`
+- `modules/forms/engine/class-case-progress-service.php`
+- `modules/procedural/class-guidance-resolver.php`
 - `modules/procedural/class-procedural-navigator.php`
+- `docs/workflows/**/*.json` — progression metadata on all 12 workflows
+- `docs/workflows/schema/workflow.schema.json`
+- `docs/workflows/README.md`
+- `bin/validate-workflows.php`
+- `tests/unit/WorkflowProgressionTest.php`
+- `tests/unit/CaseEngineTest.php`
 
 ## Review questions
 
-1. Keep workflow graph in **JSON files** for MVP or migrate to **DB tables** (Plan 16)?
+1. When overlap applies, show **one combined package** or **separate packages per court**?

@@ -148,7 +148,8 @@ final class Case_Service {
 			$state->workflow_key(),
 			$state->current_node(),
 			Case_Catalog::COND_PACKAGE,
-			$package_key
+			$package_key,
+			$state->answers()
 		);
 
 		if ( $advanced !== $state->current_node() ) {

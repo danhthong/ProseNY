@@ -422,5 +422,70 @@ if ( ! class_exists( 'WP_Error' ) ) {
 	}
 }
 
+if ( ! function_exists( 'prose_test_temp_dir' ) ) {
+	/**
+	 * Create a writable temp directory for unit tests (avoids Windows TEMP ACL issues).
+	 *
+	 * @param string $prefix Directory name prefix.
+	 * @return string Absolute path without trailing separator.
+	 */
+	function prose_test_temp_dir( string $prefix ): string {
+		$base = PROSE_CORE_PATH . 'tests' . DIRECTORY_SEPARATOR . 'tmp';
+
+		if ( ! is_dir( $base ) ) {
+			mkdir( $base, 0777, true );
+		}
+
+		$dir = $base . DIRECTORY_SEPARATOR . sanitize_file_name( $prefix ) . '-' . uniqid( '', true );
+		mkdir( $dir, 0777, true );
+
+		return $dir;
+	}
+}
+
+if ( ! function_exists( 'prose_test_remove_tree' ) ) {
+	/**
+	 * Recursively remove a directory tree. Never throws — teardown must not fail tests.
+	 *
+	 * @param string $dir Directory path.
+	 * @return void
+	 */
+	function prose_test_remove_tree( string $dir ): void {
+		if ( '' === $dir ) {
+			return;
+		}
+
+		$resolved = realpath( $dir );
+		$dir      = false !== $resolved ? $resolved : $dir;
+
+		if ( ! is_dir( $dir ) ) {
+			return;
+		}
+
+		$items = @scandir( $dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+
+		if ( false === $items ) {
+			return;
+		}
+
+		foreach ( $items as $item ) {
+			if ( '.' === $item || '..' === $item ) {
+				continue;
+			}
+
+			$path = $dir . DIRECTORY_SEPARATOR . $item;
+
+			if ( is_dir( $path ) ) {
+				prose_test_remove_tree( $path );
+				continue;
+			}
+
+			@unlink( $path ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+		}
+
+		@rmdir( $dir ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
+	}
+}
+
 require_once PROSE_CORE_PATH . 'includes/class-autoloader.php';
 ProSe\Core\Autoloader::register();

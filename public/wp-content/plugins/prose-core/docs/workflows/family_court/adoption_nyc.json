@@ -69,7 +69,20 @@
   "includes": [],
   "internal": {
     "workflow_enum": "ADOPTION",
-    "node_sequence": []
+    "node_sequence": [
+      "NODE_5001_ADOPTION_PETITION",
+      "NODE_5002_ADOPTION_CONSENT",
+      "NODE_5003_ADOPTION_INVESTIGATION",
+      "NODE_5004_ADOPTION_HEARING",
+      "NODE_5005_ADOPTION_ORDER"
+    ],
+    "progression": [
+      { "node": "NODE_5001_ADOPTION_PETITION" },
+      { "node": "NODE_5002_ADOPTION_CONSENT", "condition": { "kind": "event", "value": "SERVICE_COMPLETED" } },
+      { "node": "NODE_5003_ADOPTION_INVESTIGATION", "condition": { "kind": "event", "value": "DISCOVERY_COMPLETE" } },
+      { "node": "NODE_5004_ADOPTION_HEARING", "condition": { "kind": "event", "value": "HEARING_SCHEDULED" } },
+      { "node": "NODE_5005_ADOPTION_ORDER", "condition": { "kind": "event", "value": "JUDGMENT_ENTERED" } }
+    ]
   },
   "source_references": [
     "https://www.nycourts.gov/courthelp/Family/adoption.shtml",

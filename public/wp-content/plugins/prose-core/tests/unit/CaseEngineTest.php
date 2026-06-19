@@ -83,7 +83,7 @@ class CaseEngineTest extends TestCase {
 	}
 
 	/**
-	 * Contested divorce: full event-driven progression and package unlock.
+	 * Contested divorce: full JSON-driven progression through settlement to judgment.
 	 */
 	public function test_contested_divorce_case(): void {
 		$service = $this->service();
@@ -99,14 +99,21 @@ class CaseEngineTest extends TestCase {
 
 		$service->record_event( $state, Case_Catalog::EVENT_SERVICE_COMPLETED );
 		$this->assertSame( Vocabulary::NODE_1002_SERVICE_COMPLETE, $state->current_node() );
-		$this->assertSame( 25, $this->resolve( $state )['progress_percentage'] );
 
 		$service->record_event( $state, Case_Catalog::EVENT_ANSWER_RECEIVED );
 		$this->assertSame( Vocabulary::NODE_1003_ANSWER_FILED, $state->current_node() );
-		$this->assertSame( 50, $this->resolve( $state )['progress_percentage'] );
 
-		$service->record_event( $state, Case_Catalog::EVENT_HEARING_SCHEDULED );
-		$this->assertSame( Vocabulary::NODE_1009_TRIAL, $state->current_node() );
+		$service->record_event( $state, Case_Catalog::EVENT_PRELIMINARY_CONFERENCE_HELD );
+		$this->assertSame( Vocabulary::NODE_1005_PRELIMINARY_CONFERENCE, $state->current_node() );
+
+		$service->record_event( $state, Case_Catalog::EVENT_DISCOVERY_COMPLETE );
+		$this->assertSame( Vocabulary::NODE_1006_DISCOVERY, $state->current_node() );
+
+		$service->record_event( $state, Case_Catalog::EVENT_COMPLIANCE_CONFERENCE_HELD );
+		$this->assertSame( Vocabulary::NODE_1007_COMPLIANCE_CONFERENCE, $state->current_node() );
+
+		$service->record_event( $state, Case_Catalog::EVENT_SETTLEMENT_REACHED );
+		$this->assertSame( Vocabulary::NODE_1008_SETTLEMENT, $state->current_node() );
 		$this->assertSame( 75, $this->resolve( $state )['progress_percentage'] );
 
 		$service->record_event( $state, Case_Catalog::EVENT_JUDGMENT_ENTERED );

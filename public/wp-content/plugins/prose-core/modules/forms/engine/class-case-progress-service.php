@@ -30,8 +30,8 @@ final class Case_Progress_Service {
 		$workflow_key = $state->workflow_key();
 		$current_node = $state->current_node();
 
-		$progress    = Case_Catalog::progress_for_node( $workflow_key, $current_node );
-		$is_complete = Case_Catalog::is_terminal( $workflow_key, $current_node );
+		$progress    = Case_Catalog::progress_for_node( $workflow_key, $current_node, $state->answers() );
+		$is_complete = Case_Catalog::is_terminal( $workflow_key, $current_node, $state->answers() );
 
 		if ( $is_complete ) {
 			$progress = 100;
