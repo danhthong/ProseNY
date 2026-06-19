@@ -117,4 +117,120 @@ class DomainScopeGuardTest extends TestCase {
 		$this->assertArrayNotHasKey( 'supported', $response );
 		$this->assertSame( 'ask_question', $response['result']['next_action'] );
 	}
+
+	/**
+	 * Issue types are derived from all workflow repository entries.
+	 */
+	public function test_issue_types_include_all_workflow_repository_types(): void {
+		$catalog = new Supported_Issue_Catalog();
+		$types   = $catalog->issue_types();
+
+		$this->assertContains( 'divorce', $types );
+		$this->assertContains( 'custody', $types );
+		$this->assertContains( 'child_support', $types );
+		$this->assertContains( 'visitation', $types );
+		$this->assertContains( 'order_of_protection', $types );
+		$this->assertContains( 'family_offense', $types );
+		$this->assertContains( 'adoption', $types );
+		$this->assertContains( 'paternity', $types );
+		$this->assertContains( 'guardianship', $types );
+		$this->assertGreaterThanOrEqual( 9, count( $types ) );
+	}
+
+	/**
+	 * Order of protection entry is allowed on first message.
+	 */
+	public function test_allows_order_of_protection_message(): void {
+		$result = $this->guard->assess( 'I need an order of protection in Queens.' );
+
+		$this->assertTrue( $result['supported'] );
+		$this->assertGreaterThanOrEqual( Supported_Issue_Catalog::CONFIDENCE_THRESHOLD, $result['confidence'] );
+		$this->assertNotContains( 'orders of protection', $result['out_of_scope_topics'] );
+	}
+
+	/**
+	 * Family offense / abuse phrasing is allowed.
+	 */
+	public function test_allows_family_offense_abuse_message(): void {
+		$result = $this->guard->assess( 'My husband abused me.' );
+
+		$this->assertTrue( $result['supported'] );
+	}
+
+	/**
+	 * Received court papers / OSC starters are allowed.
+	 */
+	public function test_allows_received_osc_message(): void {
+		$result = $this->guard->assess( 'I received an OSC from the court.' );
+
+		$this->assertTrue( $result['supported'] );
+	}
+
+	/**
+	 * Got court papers phrasing is allowed.
+	 */
+	public function test_allows_got_court_papers_message(): void {
+		$result = $this->guard->assess( 'I got court papers in the mail.' );
+
+		$this->assertTrue( $result['supported'] );
+	}
+
+	/**
+	 * Ambiguous "not sure which forms" starters are allowed.
+	 */
+	public function test_allows_not_sure_forms_message(): void {
+		$result = $this->guard->assess( 'I am not sure which court forms I need.' );
+
+		$this->assertTrue( $result['supported'] );
+	}
+
+	/**
+	 * Adoption entry is allowed.
+	 */
+	public function test_allows_adoption_message(): void {
+		$result = $this->guard->assess( 'I want to adopt a child.' );
+
+		$this->assertTrue( $result['supported'] );
+	}
+
+	/**
+	 * Mid-intake county answer bypasses guard without keywords.
+	 */
+	public function test_bypasses_borough_name_without_keywords(): void {
+		$result = $this->guard->assess(
+			'Brooklyn',
+			array( 'pending_field' => 'county' )
+		);
+
+		$this->assertTrue( $result['supported'] );
+		$this->assertTrue( $result['bypassed'] );
+	}
+
+	/**
+	 * Service invokes interpreter for order of protection topics.
+	 */
+	public function test_service_calls_interpreter_for_order_of_protection(): void {
+		$provider = new Stub_Ai_Provider();
+		$service  = new AI_Intake_Service( $provider );
+
+		$response = $service->interpret( 'I need an order of protection in Queens.' );
+
+		$this->assertTrue( $response['success'] );
+		$this->assertArrayNotHasKey( 'supported', $response );
+		$this->assertSame( 'ask_question', $response['result']['next_action'] );
+	}
+
+	/**
+	 * Service invokes interpreter for ambiguous form starters.
+	 */
+	public function test_service_calls_interpreter_for_not_sure_forms(): void {
+		$provider = new Stub_Ai_Provider();
+		$service  = new AI_Intake_Service( $provider );
+
+		$response = $service->interpret( 'I am not sure which court forms I need.' );
+
+		$this->assertTrue( $response['success'] );
+		$this->assertArrayNotHasKey( 'supported', $response );
+		$this->assertSame( 'ask_question', $response['result']['next_action'] );
+	}
 }

@@ -100,9 +100,17 @@ final class Domain_Scope_Guard {
 			$phrase = $this->normalize( (string) ( $entry['phrase'] ?? '' ) );
 			$label  = trim( (string) ( $entry['label'] ?? $phrase ) );
 
-			if ( '' !== $phrase && str_contains( $text, $phrase ) && ! in_array( $label, $out_of_scope, true ) ) {
-				$out_of_scope[] = $label;
+			if ( '' === $phrase || ! str_contains( $text, $phrase ) || in_array( $label, $out_of_scope, true ) ) {
+				continue;
 			}
+
+			// Do not flag a topic as out-of-scope when the message already matched
+			// an in-scope keyword or workflow trigger (e.g. hybrid divorce + taxes).
+			if ( $this->phrase_is_supported( $text, $phrase ) ) {
+				continue;
+			}
+
+			$out_of_scope[] = $label;
 		}
 
 		$hybrid    = ! empty( $out_of_scope ) && $supported_score >= Supported_Issue_Catalog::CONFIDENCE_THRESHOLD;
@@ -183,9 +191,36 @@ final class Domain_Scope_Guard {
 
 		return sprintf(
 			/* translators: %s: comma-separated list of out-of-scope topic labels. */
-			__( 'Note: %s matters are outside ProSeNY\'s current scope. Focus on the divorce-related portion of the user\'s message and politely explain that limitation.', 'prose-core' ),
+			__( 'Note: %s matters are outside ProSeNY\'s current scope. Focus on the in-scope family court portion of the user\'s message and politely explain that limitation.', 'prose-core' ),
 			$joined
 		);
+	}
+
+	/**
+	 * Whether a phrase is already covered by supported keywords or workflow triggers.
+	 *
+	 * @param string $text   Normalized message text.
+	 * @param string $phrase Normalized phrase to check (may equal or be contained in a supported phrase).
+	 * @return bool
+	 */
+	private function phrase_is_supported( string $text, string $phrase ): bool {
+		foreach ( $this->catalog->keywords() as $entry ) {
+			$supported = $this->normalize( (string) ( $entry['phrase'] ?? '' ) );
+
+			if ( '' !== $supported && ( str_contains( $text, $supported ) || str_contains( $supported, $phrase ) ) ) {
+				return true;
+			}
+		}
+
+		foreach ( $this->catalog->workflow_triggers( $this->workflows ) as $entry ) {
+			$supported = $this->normalize( (string) ( $entry['phrase'] ?? '' ) );
+
+			if ( '' !== $supported && ( str_contains( $text, $supported ) || str_contains( $supported, $phrase ) ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**

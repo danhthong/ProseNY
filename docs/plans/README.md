@@ -18,7 +18,7 @@ Review this index first. Each plan is a self-contained file you can approve, rev
 
 | # | Plan | Priority | Depends on | Est. effort |
 |---|------|----------|------------|-------------|
-| 01 | [Intake domain scope & entry points](./01-intake-domain-scope-and-entry-points.md) | **P0 — blocker** | — | Small |
+| 01 | [Intake domain scope & entry points](./01-intake-domain-scope-and-entry-points.md) | **P0 — done** | — | Small |
 | 02 | [Workspace chat API unification](./02-workspace-chat-api-unification.md) | **P0 — blocker** | 01 | Medium |
 | 03 | [Court routing & overlap UX](./03-court-routing-and-overlap-ux.md) | P1 | 01 | Medium |
 | 04 | [Workflow engine hardening](./04-workflow-engine-hardening.md) | P1 | — | Medium |

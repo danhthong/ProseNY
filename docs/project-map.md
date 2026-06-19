@@ -72,7 +72,7 @@ CourtFlow AI is a **procedural navigation platform** for NYC Divorce and Family 
 |-----------|--------|
 | Workflow JSON repository | ✅ Complete |
 | Routing engine | 🟡 Functional; overlap UX incomplete |
-| AI intake interpreter | 🟡 Works; domain guard too narrow |
+| AI intake interpreter | 🟡 Works; domain guard aligned with 12 workflows (Plan 01) |
 | Homepage intake chat | 🟡 Works via `/intake/interpret` |
 | Workspace intake chat | 🔴 Broken (missing API) |
 | Forms catalog | 🟡 Large catalog; mapping incomplete |

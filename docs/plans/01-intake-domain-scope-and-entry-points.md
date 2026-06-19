@@ -1,9 +1,10 @@
 # Plan 01 — Intake Domain Scope & Entry Points
 
-**Status:** Draft — awaiting review  
+**Status:** Complete  
 **Priority:** P0 (blocker)  
 **Depends on:** —  
-**Estimated effort:** Small (1–2 days)
+**Estimated effort:** Small (1–2 days)  
+**Completed:** 2026-06-19
 
 ---
 
@@ -59,14 +60,14 @@ Routing engine (`Intake_Agent` tests) already resolves all 12 workflows correctl
 
 ## Acceptance criteria
 
-- [ ] “I need an order of protection in Queens” → `supported: true`, reaches interpreter
-- [ ] “My husband abused me” → routes toward family offense / OP (interpreter + routing)
-- [ ] “I received an OSC” / “I got court papers” → `supported: true`
-- [ ] “I am not sure which court forms I need” → `supported: true`
-- [ ] “I want to adopt a child” → `supported: true`
-- [ ] “What is the weather?” → still `domain_restricted`
-- [ ] Mid-intake short answers (“Brooklyn”, “2”, “yes”) still bypass guard
-- [ ] Hybrid messages (divorce + immigration) still supported with scope note
+- [x] “I need an order of protection in Queens” → `supported: true`, reaches interpreter
+- [x] “My husband abused me” → routes toward family offense / OP (interpreter + routing)
+- [x] “I received an OSC” / “I got court papers” → `supported: true`
+- [x] “I am not sure which court forms I need” → `supported: true`
+- [x] “I want to adopt a child” → `supported: true`
+- [x] “What is the weather?” → still `domain_restricted`
+- [x] Mid-intake short answers (“Brooklyn”, “2”, “yes”) still bypass guard
+- [x] Hybrid messages (divorce + immigration) still supported with scope note
 
 ## Implementation tasks
 
