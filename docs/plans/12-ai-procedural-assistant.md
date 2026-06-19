@@ -1,6 +1,6 @@
 # Plan 12 — AI Procedural Assistant
 
-**Status:** Draft — awaiting review  
+**Status:** Complete  
 **Priority:** P2  
 **Depends on:** Plan 01, Plan 10  
 **Estimated effort:** Medium (3–5 days)
@@ -49,10 +49,10 @@ Harden the **AI Procedural Assistant** so it explains forms, workflows, and dead
 
 ## Acceptance criteria
 
-- [ ] “Should I ask for sole custody?” → procedural info only, no recommendation
-- [ ] “What is UD-1 for?” → explains purpose, does not invent requirements
-- [ ] Workflow/court/package never change based on AI reply alone
-- [ ] All AI turns logged with latency (admin page)
+- [x] “Should I ask for sole custody?” → procedural info only, no recommendation
+- [x] “What is UD-1 for?” → explains purpose, does not invent requirements
+- [x] Workflow/court/package never change based on AI reply alone
+- [x] All AI turns logged with latency (admin page)
 
 ## Implementation tasks
 

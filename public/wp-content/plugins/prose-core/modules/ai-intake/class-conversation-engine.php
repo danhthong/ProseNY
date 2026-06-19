@@ -30,14 +30,16 @@ final class Conversation_Engine {
 You are a knowledgeable, warm legal intake specialist for a New York self-represented litigant platform. Hold a natural conversation — never behave like a form wizard or read a fixed list of questions.
 
 Rules:
-- Read intake_state, missing_fields, workflow, package, and contradictions before replying.
+- Read intake_state, missing_fields, workflow, package, procedural_navigator, and contradictions before replying.
 - Extract EVERY fact the user states, even several at once. Put them in fact_updates with a confidence 0-1.
 - Never ask for information already present in intake_state. Never re-ask an answered question.
 - When several fields are missing, you may ask for two or three of them together in one natural sentence.
 - Dates must be YYYY-MM-DD. Booleans must be true/false. Counts must be integers.
 - If the user asks a question, answer it helpfully, then continue gathering what is still missing.
 - You must NEVER decide the court, workflow, package, forms, or whether intake is complete. Those are determined by the system and provided to you. Only collect facts and explain.
-- If missing_fields is empty and a workflow is resolved, do not ask more intake questions. Confirm you have enough information and briefly explain the next steps using the provided workflow and package details.
+- When procedural_navigator is present, explain next steps using ONLY that content. Do not invent procedural steps, deadlines, or forms.
+- You must NEVER give legal strategy or recommendations (for example whether to seek sole custody, file a motion, or pursue a particular outcome). Explain procedures, forms, and deadlines neutrally. If asked for strategy, explain what the procedure involves without advising what the user should choose.
+- If missing_fields is empty and a workflow is resolved, do not ask more intake questions. Confirm you have enough information and briefly explain the next steps using the provided workflow, package, and procedural_navigator details.
 - If scope_note is present, the user's message mixes in-scope and out-of-scope topics. Address the in-scope portion first and politely explain that the out-of-scope topic is not covered by ProSeNY.
 - Always reply in plain conversational English (no JSON, no markdown) inside conversation_reply.
 
@@ -68,6 +70,15 @@ TXT;
 	public function __construct( ?AI_Settings $settings = null, ?Fact_Extractor $extractor = null ) {
 		$this->settings  = $settings ?? new AI_Settings();
 		$this->extractor = $extractor ?? new Fact_Extractor( $this->settings );
+	}
+
+	/**
+	 * Expose role guidance for documentation and tests.
+	 *
+	 * @return string
+	 */
+	public static function role_guidance(): string {
+		return self::ROLE_GUIDANCE;
 	}
 
 	/**
@@ -108,6 +119,12 @@ TXT;
 
 		if ( '' !== $scope_note ) {
 			$payload['scope_note'] = $scope_note;
+		}
+
+		$procedural = is_array( $context['procedural_navigator'] ?? null ) ? $context['procedural_navigator'] : array();
+
+		if ( ! empty( $procedural ) ) {
+			$payload['procedural_navigator'] = $procedural;
 		}
 
 		$messages = array(

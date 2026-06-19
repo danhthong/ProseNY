@@ -218,6 +218,17 @@ final class Stub_Ai_Provider implements Ai_Provider_Interface {
 			);
 		}
 
+		if ( $this->is_strategy_question( $message ) ) {
+			return wp_json_encode(
+				array(
+					'fact_updates'       => array(),
+					'intent'             => 'procedural_explain',
+					'confidence'         => 0.95,
+					'conversation_reply' => $this->strategy_refusal_reply( $message ),
+				)
+			);
+		}
+
 		return wp_json_encode(
 			array(
 				'fact_updates'       => $updates,
@@ -272,6 +283,31 @@ final class Stub_Ai_Provider implements Ai_Provider_Interface {
 		}
 
 		return 'Could you tell me a little more about your legal matter so I can point you in the right direction?';
+	}
+
+	/**
+	 * Whether the user is asking for legal strategy rather than procedure.
+	 *
+	 * @param string $message User message.
+	 * @return bool
+	 */
+	private function is_strategy_question( string $message ): bool {
+		return (bool) preg_match(
+			'/\b(should i|would i|is it better|recommend|advise|sole custody|full custody|fight for|ask for sole|file a motion|move for)\b/i',
+			$message
+		);
+	}
+
+	/**
+	 * Neutral procedural reply when strategy is requested.
+	 *
+	 * @param string $message User message.
+	 * @return string
+	 */
+	private function strategy_refusal_reply( string $message ): string {
+		unset( $message );
+
+		return 'I cannot recommend whether you should pursue a particular outcome, but I can explain how custody is addressed in Family Court, what forms are typically involved, and what the general procedure looks like. Tell me which part you would like explained.';
 	}
 
 	/**
