@@ -179,8 +179,27 @@
 		return map[slug] !== undefined ? map[slug] : 0;
 	}
 
+	function intakeReady(req) {
+		req = req || state.requirements || {};
+		return !!(req.ready_to_generate || Number(req.completeness || 0) >= 100);
+	}
+
+	function effectiveCurrentStepIndex() {
+		var idx = state.currentStepIndex;
+		if (!intakeReady()) {
+			return idx;
+		}
+		if (idx < 1) {
+			return 1;
+		}
+		if ((state.requiredForms || []).length && idx < 2) {
+			return 2;
+		}
+		return idx;
+	}
+
 	function computeStepStates() {
-		var currentIdx = state.currentStepIndex;
+		var currentIdx = effectiveCurrentStepIndex();
 		var result = [];
 
 		STEP_CATALOG.forEach(function (step, index) {
@@ -227,7 +246,7 @@
 
 		var stepStates = computeStepStates();
 		var percent = progressPercent(stepStates);
-		var currentNum = state.currentStepIndex + 1;
+		var currentNum = effectiveCurrentStepIndex() + 1;
 
 		stepper.innerHTML = '';
 		stepStates.forEach(function (item) {
@@ -554,11 +573,26 @@
 		if (emptyEl) emptyEl.hidden = hasAny;
 
 		var county = (state.facts.case && state.facts.case.county) || '';
+		var wfTitle = (state.facts.case && state.facts.case.workflow_title) || '';
 		var caseType = (state.facts.case && state.facts.case.workflow) || '';
 		var badgeCounty = document.getElementById('cf-badge-county');
 		var badgeType = document.getElementById('cf-badge-case-type');
+		var badgeForms = document.getElementById('cf-badge-forms-count');
 		if (badgeCounty) badgeCounty.textContent = county || 'County pending';
-		if (badgeType) badgeType.textContent = caseType ? String(caseType).replace(/_/g, ' ') : 'Case type pending';
+		if (badgeType) {
+			badgeType.textContent = wfTitle || (caseType ? String(caseType).replace(/_/g, ' ') : 'Case type pending');
+		}
+		if (badgeForms) {
+			var ready = intakeReady();
+			var formCount = (state.requiredForms || []).length;
+			if (ready && formCount) {
+				badgeForms.hidden = false;
+				badgeForms.textContent = formCount + ' form' + (formCount === 1 ? '' : 's') + ' required';
+			} else {
+				badgeForms.hidden = true;
+				badgeForms.textContent = '';
+			}
+		}
 	}
 
 	function renderValidation() {
@@ -729,10 +763,13 @@
 			}
 		}
 		if (eyebrow && step) {
-			eyebrow.textContent = 'Step ' + (state.currentStepIndex + 1) + ' · ' + (step.label || '');
+			var stepIdx = effectiveCurrentStepIndex();
+			var activeStep = STEP_CATALOG[stepIdx] || step;
+			eyebrow.textContent = 'Step ' + (stepIdx + 1) + ' · ' + (activeStep.label || step.label || '');
 		}
-		if (wfTitle && state.facts.case && state.facts.case.workflow) {
-			wfTitle.textContent = String(state.facts.case.workflow).replace(/_/g, ' ');
+		if (wfTitle && state.facts.case) {
+			var title = state.facts.case.workflow_title || state.facts.case.workflow || '';
+			wfTitle.textContent = title ? String(title).replace(/_/g, ' ') : '';
 		}
 	}
 
@@ -776,6 +813,7 @@
 			state.currentStepIndex = stepIndexForNode(data.current_node.slug || data.current_node.id);
 		}
 		if (data.missing_fields) state.missingFields = data.missing_fields;
+		if (data.required_forms) state.requiredForms = data.required_forms;
 		if (data.court_routing) state.courtRouting = data.court_routing;
 		else if (data.actions && data.actions.court_routing) state.courtRouting = data.actions.court_routing;
 
@@ -957,7 +995,7 @@
 	function updateGenerateButton(req) {
 		var btn = document.getElementById('courtflow-generate-package');
 		if (!btn) return;
-		var ready = !!(req && req.ready_to_generate);
+		var ready = intakeReady(req);
 		btn.disabled = !ready;
 		btn.title = ready ? '' : ((req && req.completeness != null ? req.completeness : 0) + '% complete — finish intake to enable.');
 	}

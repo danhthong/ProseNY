@@ -1,9 +1,10 @@
 # Plan 08 — User Dashboard & Case Summary
 
-**Status:** Draft — awaiting review  
+**Status:** Complete  
 **Priority:** P1  
 **Depends on:** Plan 02, Plan 06  
-**Estimated effort:** Medium (4–6 days)
+**Estimated effort:** Medium (4–6 days)  
+**Completed:** 2026-06-19
 
 ---
 
