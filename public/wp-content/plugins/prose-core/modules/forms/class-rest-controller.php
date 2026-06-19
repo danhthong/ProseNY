@@ -8,6 +8,7 @@
 namespace ProSe\Core\Forms;
 
 use ProSe\Core\Loader;
+use ProSe\Core\Routing\Workflow_Catalog;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -31,12 +32,21 @@ final class Rest_Controller {
 	private Courtflow_Serializer $serializer;
 
 	/**
+	 * Forms catalog.
+	 *
+	 * @var Forms_Catalog
+	 */
+	private Forms_Catalog $catalog;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Courtflow_Serializer $serializer Serializer.
+	 * @param Forms_Catalog|null   $catalog    Forms catalog.
 	 */
-	public function __construct( Courtflow_Serializer $serializer ) {
+	public function __construct( Courtflow_Serializer $serializer, ?Forms_Catalog $catalog = null ) {
 		$this->serializer = $serializer;
+		$this->catalog    = $catalog ?? new Forms_Catalog();
 	}
 
 	/**
@@ -55,6 +65,48 @@ final class Rest_Controller {
 	 * @return void
 	 */
 	public function register_routes(): void {
+		register_rest_route(
+			self::NAMESPACE,
+			'/forms/search',
+			array(
+				'methods'             => \WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'search_forms' ),
+				'permission_callback' => '__return_true',
+				'args'                => array(
+					'q'        => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'court'    => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'workflow' => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'stage'    => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'county'   => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'issue'    => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'limit'    => array(
+						'type'              => 'integer',
+						'default'           => 25,
+						'minimum'           => 1,
+						'maximum'           => 100,
+					),
+				),
+			)
+		);
+
 		register_rest_route(
 			self::NAMESPACE,
 			'/forms/(?P<id>\d+)/courtflow',
@@ -86,6 +138,37 @@ final class Rest_Controller {
 						},
 					),
 				),
+			)
+		);
+	}
+
+	/**
+	 * GET /forms/search
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response
+	 */
+	public function search_forms( \WP_REST_Request $request ): \WP_REST_Response {
+		Forms_Catalog::reset_cache();
+		Workflow_Catalog::reset_cache();
+
+		$results = $this->catalog->search(
+			array(
+				'q'        => (string) $request->get_param( 'q' ),
+				'court'    => (string) $request->get_param( 'court' ),
+				'workflow' => (string) $request->get_param( 'workflow' ),
+				'stage'    => (string) $request->get_param( 'stage' ),
+				'county'   => (string) $request->get_param( 'county' ),
+				'issue'    => (string) $request->get_param( 'issue' ),
+			),
+			(int) $request->get_param( 'limit' )
+		);
+
+		return rest_ensure_response(
+			array(
+				'query'   => (string) $request->get_param( 'q' ),
+				'count'   => count( $results ),
+				'results' => $results,
 			)
 		);
 	}

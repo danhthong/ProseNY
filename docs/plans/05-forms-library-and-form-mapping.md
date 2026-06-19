@@ -1,6 +1,6 @@
 # Plan 05 — Forms Library & Form Mapping
 
-**Status:** Draft — awaiting review  
+**Status:** Complete  
 **Priority:** P1  
 **Depends on:** Plan 04  
 **Estimated effort:** Large (1–2 weeks)

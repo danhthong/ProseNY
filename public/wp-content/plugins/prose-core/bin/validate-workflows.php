@@ -261,6 +261,50 @@ if ( count( $workflow_files ) !== $expected_count ) {
 	$errors[] = 'Expected ' . $expected_count . ' workflows, found ' . count( $workflow_files );
 }
 
+$form_codes = array();
+$form_files = array_merge(
+	glob( dirname( __DIR__ ) . '/docs/forms/supreme_court/*.json' ) ?: array(),
+	glob( dirname( __DIR__ ) . '/docs/forms/family_court/*.json' ) ?: array()
+);
+
+foreach ( $form_files as $file ) {
+	$raw = file_get_contents( $file );
+
+	if ( false === $raw ) {
+		continue;
+	}
+
+	$data = json_decode( $raw, true );
+
+	if ( is_array( $data ) && ! empty( $data['form_code'] ) ) {
+		$form_codes[ (string) $data['form_code'] ] = true;
+	}
+}
+
+foreach ( $workflow_files as $file ) {
+	$raw = file_get_contents( $file );
+
+	if ( false === $raw ) {
+		continue;
+	}
+
+	$data = json_decode( $raw, true );
+
+	if ( ! is_array( $data ) ) {
+		continue;
+	}
+
+	foreach ( (array) ( $data['required_forms'] ?? array() ) as $stage_block ) {
+		foreach ( (array) ( $stage_block['forms'] ?? array() ) as $form ) {
+			$code = (string) ( $form['code'] ?? '' );
+
+			if ( '' !== $code && ! isset( $form_codes[ $code ] ) ) {
+				$errors[] = basename( $file ) . ": required form '$code' not found in forms catalog";
+			}
+		}
+	}
+}
+
 if ( ! empty( $errors ) ) {
 	fwrite( STDERR, "Validation failed:\n" );
 	foreach ( $errors as $error ) {

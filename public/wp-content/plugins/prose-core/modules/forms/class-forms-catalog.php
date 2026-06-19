@@ -129,8 +129,8 @@ final class Forms_Catalog {
 		foreach ( $this->workflow_catalog->all() as $key => $workflow ) {
 			unset( $workflow );
 
-			$codes   = $this->workflow_catalog->required_form_codes( $this->workflow_catalog->by_key( $key ) ?? array() );
-			$gaps    = array();
+			$codes = $this->workflow_catalog->required_form_codes( $this->workflow_catalog->by_key( $key ) ?? array() );
+			$gaps  = array();
 
 			foreach ( $codes as $code ) {
 				if ( null === $this->by_code( $code ) ) {
@@ -144,6 +144,110 @@ final class Forms_Catalog {
 		}
 
 		return $missing;
+	}
+
+	/**
+	 * Search forms by code, title, court, workflow, stage, county, or issue.
+	 *
+	 * @param array<string, mixed> $filters Optional filters: q, court, workflow, stage, county, issue.
+	 * @param int                  $limit   Max results.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function search( array $filters = array(), int $limit = 25 ): array {
+		$query    = strtolower( trim( (string) ( $filters['q'] ?? '' ) ) );
+		$court    = sanitize_key( (string) ( $filters['court'] ?? '' ) );
+		$workflow = sanitize_key( (string) ( $filters['workflow'] ?? '' ) );
+		$stage    = sanitize_key( (string) ( $filters['stage'] ?? '' ) );
+		$county   = sanitize_key( (string) ( $filters['county'] ?? '' ) );
+		$issue    = sanitize_key( (string) ( $filters['issue'] ?? '' ) );
+
+		$refs_index = $this->build_workflow_references_index();
+		$results    = array();
+
+		foreach ( $this->all() as $code => $form ) {
+			if ( $court && (string) ( $form['court'] ?? '' ) !== $court ) {
+				continue;
+			}
+
+			if ( $county ) {
+				$counties = (array) ( $form['counties_supported'] ?? array() );
+
+				if ( ! empty( $counties ) && ! in_array( $county, $counties, true ) ) {
+					continue;
+				}
+			}
+
+			$refs = $refs_index[ $code ] ?? array();
+
+			if ( $workflow || $stage || $issue ) {
+				$matched_ref = false;
+
+				foreach ( $refs as $ref ) {
+					$wf_def = $this->workflow_catalog->by_key( (string) $ref['workflow'] );
+
+					if ( $workflow && (string) $ref['workflow'] !== $workflow ) {
+						continue;
+					}
+
+					if ( $stage && (string) $ref['stage'] !== $stage ) {
+						continue;
+					}
+
+					if ( $issue && sanitize_key( (string) ( $wf_def['issue_type'] ?? '' ) ) !== $issue ) {
+						continue;
+					}
+
+					$matched_ref = true;
+					break;
+				}
+
+				if ( ! $matched_ref ) {
+					continue;
+				}
+			}
+
+			if ( '' !== $query ) {
+				$haystack = strtolower(
+					$code . ' ' . (string) ( $form['title'] ?? '' ) . ' ' . (string) ( $form['internal_code'] ?? '' )
+				);
+
+				if ( strtoupper( $query ) !== strtoupper( $code ) && false === strpos( $haystack, $query ) ) {
+					continue;
+				}
+			}
+
+			$results[] = array(
+				'code'             => $code,
+				'title'            => (string) ( $form['title'] ?? '' ),
+				'court'            => (string) ( $form['court'] ?? '' ),
+				'category'         => (string) ( $form['category'] ?? '' ),
+				'workflows'        => $refs,
+				'official_url'     => $this->official_url_for_form( $form ),
+				'generation_ready' => ! empty( $form['generation_ready'] ),
+			);
+		}
+
+		usort(
+			$results,
+			static function ( array $a, array $b ) use ( $query ): int {
+				if ( '' !== $query ) {
+					$exact_a = strtoupper( $query ) === strtoupper( (string) $a['code'] ) ? 0 : 1;
+					$exact_b = strtoupper( $query ) === strtoupper( (string) $b['code'] ) ? 0 : 1;
+
+					if ( $exact_a !== $exact_b ) {
+						return $exact_a <=> $exact_b;
+					}
+				}
+
+				return strcmp( (string) $a['code'], (string) $b['code'] );
+			}
+		);
+
+		if ( $limit > 0 ) {
+			$results = array_slice( $results, 0, $limit );
+		}
+
+		return $results;
 	}
 
 	/**
@@ -181,6 +285,29 @@ final class Forms_Catalog {
 		}
 
 		return $index;
+	}
+
+	/**
+	 * Resolve the official download URL from a form record.
+	 *
+	 * @param array<string, mixed> $form Form record.
+	 * @return string
+	 */
+	private function official_url_for_form( array $form ): string {
+		$preferred = (string) ( $form['preferred_source'] ?? '' );
+		$sources   = (array) ( $form['source_files'] ?? array() );
+
+		if ( '' !== $preferred && isset( $sources[ $preferred ]['url'] ) ) {
+			return (string) $sources[ $preferred ]['url'];
+		}
+
+		foreach ( $sources as $entry ) {
+			if ( is_array( $entry ) && ! empty( $entry['url'] ) ) {
+				return (string) $entry['url'];
+			}
+		}
+
+		return '';
 	}
 
 	/**
