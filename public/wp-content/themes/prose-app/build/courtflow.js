@@ -181,7 +181,9 @@
 
 	function intakeReady(req) {
 		req = req || state.requirements || {};
-		return !!(req.ready_to_generate || Number(req.completeness || 0) >= 100);
+		var workflow = (state.facts && state.facts.case && state.facts.case.workflow) || '';
+		var hasForms = (state.requiredForms || []).length > 0;
+		return !!(workflow || hasForms || req.ready_to_generate || Number(req.completeness || 0) >= 100);
 	}
 
 	function effectiveCurrentStepIndex() {
@@ -732,7 +734,7 @@
 				if (emptyP) {
 					emptyP.textContent = ready
 						? 'Required forms: ' + required.join(', ') + '. Click Generate Filing Package to create downloads.'
-						: 'Required forms for your case: ' + required.join(', ') + '. Finish intake, then generate.';
+						: 'Required forms for your case: ' + required.join(', ') + '. Click Generate Filing Package to download blank forms.';
 				}
 			} else {
 				empty.hidden = false;
@@ -997,7 +999,7 @@
 		if (!btn) return;
 		var ready = intakeReady(req);
 		btn.disabled = !ready;
-		btn.title = ready ? '' : ((req && req.completeness != null ? req.completeness : 0) + '% complete — finish intake to enable.');
+		btn.title = ready ? '' : 'Tell us about your case to enable blank form download.';
 	}
 
 	function ensureSession() {

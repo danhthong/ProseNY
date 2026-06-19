@@ -35,6 +35,20 @@ final class Forms_Catalog {
 	private Workflow_Catalog $workflow_catalog;
 
 	/**
+	 * Form repository for runtime asset overlay.
+	 *
+	 * @var Form_Repository|null
+	 */
+	private ?Form_Repository $forms = null;
+
+	/**
+	 * Record enricher for runtime asset overlay.
+	 *
+	 * @var Form_Record_Enricher|null
+	 */
+	private ?Form_Record_Enricher $enricher = null;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Workflow_Catalog|null $workflow_catalog Optional workflow catalog.
@@ -59,9 +73,54 @@ final class Forms_Catalog {
 	 * @return array<string, mixed>|null
 	 */
 	public function by_code( string $form_code ): ?array {
+		$form_code = trim( $form_code );
+
+		if ( '' === $form_code ) {
+			return null;
+		}
+
 		$all = $this->load();
 
-		return $all[ $form_code ] ?? null;
+		if ( isset( $all[ $form_code ] ) ) {
+			return $this->overlay_prose_form_assets( $form_code, $all[ $form_code ] );
+		}
+
+		$needle = strtoupper( $form_code );
+
+		foreach ( $all as $code => $record ) {
+			if ( strtoupper( (string) $code ) === $needle ) {
+				return $this->overlay_prose_form_assets( (string) $code, $record );
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Merge prose_form PDF metadata into a catalog record when JSON paths are empty.
+	 *
+	 * @param string               $form_code Form code.
+	 * @param array<string, mixed> $record    Catalog record.
+	 * @return array<string, mixed>
+	 */
+	private function overlay_prose_form_assets( string $form_code, array $record ): array {
+		if ( null === $this->forms ) {
+			$this->forms = new Form_Repository();
+		}
+
+		if ( null === $this->enricher ) {
+			$this->enricher = new Form_Record_Enricher();
+		}
+
+		$post = $this->forms->get_by_form_code( $form_code );
+
+		if ( ! $post instanceof \WP_Post ) {
+			return $record;
+		}
+
+		$record = $this->enricher->enrich_assets_from_post( $record, $post );
+
+		return $this->enricher->apply_computed_fields( $record );
 	}
 
 	/**

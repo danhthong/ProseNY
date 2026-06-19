@@ -10,6 +10,7 @@
 
 namespace ProSe\Core\Packet;
 
+use ProSe\Core\Forms\Form_Pdf_Path_Resolver;
 use ProSe\Core\Forms\Form_Source_Selector;
 use ProSe\Core\Forms\Forms_Catalog;
 
@@ -69,14 +70,20 @@ class Pdf_Resolver {
 		}
 
 		if ( ! is_array( $record ) ) {
+			$pdf_path = ( new Form_Pdf_Path_Resolver() )->resolve_for_code( $form_id );
+
 			return array(
 				'form_id'  => $form_id,
-				'pdf_path' => '',
+				'pdf_path' => $pdf_path,
 			);
 		}
 
 		$source_files = is_array( $record['source_files'] ?? null ) ? $record['source_files'] : array();
 		$pdf_path     = $this->resolve_pdf_path_from_source_files( $source_files );
+
+		if ( '' === $pdf_path ) {
+			$pdf_path = ( new Form_Pdf_Path_Resolver() )->resolve_for_code( $form_id );
+		}
 
 		return array(
 			'form_id'  => $form_id,

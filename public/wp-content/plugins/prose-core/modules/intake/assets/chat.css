@@ -172,6 +172,29 @@
 	color: #94a3b8;
 }
 
+.prose-intake__upload {
+	appearance: none;
+	border: 1px solid #e2e8f0;
+	background: #f8fafc;
+	color: #475569;
+	font-size: 13px;
+	font-weight: 600;
+	padding: 9px 12px;
+	border-radius: 9px;
+	cursor: pointer;
+	flex-shrink: 0;
+}
+
+.prose-intake__upload:hover {
+	background: #f1f5f9;
+	color: #0f172a;
+}
+
+.prose-intake__upload:disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+}
+
 .prose-intake__send {
 	appearance: none;
 	border: 0;

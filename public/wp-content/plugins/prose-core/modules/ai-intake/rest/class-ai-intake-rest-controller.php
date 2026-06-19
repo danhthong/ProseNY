@@ -176,7 +176,11 @@ final class AI_Intake_Rest_Controller {
 				$case_profile['issue'] = $state['issue'];
 			}
 
-			$response['actions'] = $this->actions->resolve( $case_profile, $result );
+			try {
+				$response['actions'] = $this->actions->resolve( $case_profile, $result );
+			} catch ( \Throwable $e ) {
+				$response['actions'] = array();
+			}
 		}
 
 		return rest_ensure_response( $response );

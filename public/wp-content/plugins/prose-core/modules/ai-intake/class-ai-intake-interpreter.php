@@ -445,7 +445,7 @@ final class AI_Intake_Interpreter {
 		$facts = $intake->plain_facts();
 		$issue = trim( (string) ( $facts['issue'] ?? 'divorce' ) );
 
-		$result = prose_get_procedural_navigator()->navigate(
+		$result = \ProSe\Core\Procedural\prose_get_procedural_navigator()->navigate(
 			array(
 				'issue'    => $issue,
 				'facts'    => $facts,

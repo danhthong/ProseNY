@@ -112,8 +112,14 @@ final class Case_Actions_Resolver {
 			}
 		}
 
-		$show_documents  = $case_known;
-		$download_enabled = $intake_complete && $workflow_resolved;
+		$forms_matched    = $this->count_workflow_forms( $workflow );
+		$show_documents   = $case_known;
+		$download_enabled = $workflow_resolved && (
+			$package_resolved
+			|| $forms_matched > 0
+			|| ! empty( $blank_pdf['available'] )
+			|| (int) ( $blank_pdf['form_count'] ?? 0 ) > 0
+		);
 		$court_routing   = $this->build_court_routing( $case_profile, $interpret_result );
 
 		return array(
@@ -123,6 +129,7 @@ final class Case_Actions_Resolver {
 			'issue'               => $issue,
 			'package_resolved'    => $package_resolved,
 			'blank_pdf_available' => ! empty( $blank_pdf['available'] ),
+			'forms_matched'       => $forms_matched,
 			'show_documents'      => $show_documents,
 			'download_enabled'    => $download_enabled,
 			'download_mode'       => $workflow_resolved ? 'merged' : '',
@@ -307,6 +314,36 @@ final class Case_Actions_Resolver {
 		}
 
 		return $issue;
+	}
+
+	/**
+	 * Count required and optional forms defined for a workflow.
+	 *
+	 * @param string $workflow Workflow key.
+	 * @return int
+	 */
+	private function count_workflow_forms( string $workflow ): int {
+		if ( '' === $workflow ) {
+			return 0;
+		}
+
+		$definition = $this->workflows->by_key( $workflow );
+
+		if ( ! is_array( $definition ) ) {
+			return 0;
+		}
+
+		$count = count( $this->workflows->required_form_codes( $definition ) );
+
+		foreach ( (array) ( $definition['optional_forms'] ?? array() ) as $stage ) {
+			foreach ( (array) ( $stage['forms'] ?? array() ) as $form ) {
+				if ( ! empty( $form['code'] ) ) {
+					++$count;
+				}
+			}
+		}
+
+		return $count;
 	}
 
 	/**

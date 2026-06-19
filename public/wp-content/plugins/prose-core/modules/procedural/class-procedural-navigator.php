@@ -224,7 +224,7 @@ final class Procedural_Navigator {
 			return false;
 		}
 
-		return prose_get_packet_service()->is_available( $package_id );
+		return \ProSe\Core\Packet\prose_get_packet_service()->is_available( $package_id );
 	}
 
 	/**
