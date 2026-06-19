@@ -8,6 +8,7 @@
 use PHPUnit\Framework\TestCase;
 use ProSe\Core\Ai_Intake\AI_Intake_Interpreter;
 use ProSe\Core\Ai_Intake\AI_Settings;
+use ProSe\Core\Ai_Intake\Ai_Provider_Interface;
 use ProSe\Core\Ai_Intake\Conversation_Engine;
 use ProSe\Core\Ai_Intake\Stub_Ai_Provider;
 use ProSe\Core\Routing\Workflow_Catalog;
@@ -108,7 +109,7 @@ class StrategyRefusalTest extends TestCase {
 /**
  * Stub provider that captures the latest user payload for assertions.
  */
-final class Capturing_Stub_Provider extends Stub_Ai_Provider {
+final class Capturing_Stub_Provider implements Ai_Provider_Interface {
 
 	/**
 	 * Latest user message content sent to the provider.
@@ -116,6 +117,27 @@ final class Capturing_Stub_Provider extends Stub_Ai_Provider {
 	 * @var string
 	 */
 	public string $last_user_payload = '';
+
+	/**
+	 * Wrapped stub provider.
+	 *
+	 * @var Stub_Ai_Provider
+	 */
+	private Stub_Ai_Provider $inner;
+
+	/**
+	 * Constructor.
+	 */
+	public function __construct() {
+		$this->inner = new Stub_Ai_Provider();
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	public function name(): string {
+		return $this->inner->name();
+	}
 
 	/**
 	 * {@inheritDoc}
@@ -128,6 +150,6 @@ final class Capturing_Stub_Provider extends Stub_Ai_Provider {
 			}
 		}
 
-		return parent::complete( $messages, $options );
+		return $this->inner->complete( $messages, $options );
 	}
 }
