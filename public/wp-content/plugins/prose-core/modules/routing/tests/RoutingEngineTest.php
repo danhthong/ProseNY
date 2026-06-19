@@ -30,6 +30,19 @@ class RoutingEngineTest extends TestCase {
 	}
 
 	/**
+	 * Divorce with two kids resolves to uncontested divorce children workflow.
+	 */
+	public function test_divorce_with_two_children(): void {
+		$result = $this->engine->route( 'I want a divorce with two kids.' );
+
+		$this->assertSame( 'divorce_with_children', $result->issue() );
+		$this->assertSame( 'supreme_court', $result->court() );
+		$this->assertSame( 'uncontested_divorce_children_nyc', $result->workflow() );
+		$this->assertContains( 'supreme_court', $result->courts() );
+		$this->assertFalse( $result->overlap() );
+	}
+
+	/**
 	 * Divorce with children resolves to uncontested divorce children workflow.
 	 */
 	public function test_divorce_with_children(): void {
@@ -208,5 +221,46 @@ class RoutingEngineTest extends TestCase {
 		$this->assertSame( 'divorce', $result->issue() );
 		$this->assertSame( 'supreme_court', $result->court() );
 		$this->assertSame( 'uncontested_divorce_no_children_nyc', $result->workflow() );
+	}
+
+	/**
+	 * Active divorce redirects standalone custody to Supreme Court divorce workflow.
+	 */
+	public function test_active_divorce_custody_routes_to_supreme(): void {
+		$result = $this->engine->route(
+			'I need custody, we are already in a divorce',
+			array( 'active_divorce' => true )
+		);
+
+		$this->assertSame( 'supreme_court', $result->court() );
+		$this->assertSame( 'uncontested_divorce_children_nyc', $result->workflow() );
+		$this->assertSame( array( 'supreme_court' ), $result->courts() );
+		$this->assertFalse( $result->overlap() );
+		$this->assertNotEmpty( $result->routing_note() );
+	}
+
+	/**
+	 * Child support without divorce stays in Family Court.
+	 */
+	public function test_child_support_no_divorce(): void {
+		$result = $this->engine->route( 'I need child support, no divorce' );
+
+		$this->assertSame( 'child_support', $result->issue() );
+		$this->assertSame( 'family_court', $result->court() );
+		$this->assertSame( 'child_support_nyc', $result->workflow() );
+		$this->assertFalse( $result->overlap() );
+	}
+
+	/**
+	 * Divorce plus order of protection flags overlap across both courts.
+	 */
+	public function test_divorce_and_order_of_protection_overlap(): void {
+		$result = $this->engine->route( 'I want a divorce and I need an order of protection' );
+
+		$this->assertTrue( $result->overlap() );
+		$this->assertContains( 'supreme_court', $result->courts() );
+		$this->assertContains( 'family_court', $result->courts() );
+		$this->assertSame( 'divorce_and_order_of_protection', $result->overlap_reason() );
+		$this->assertNotEmpty( $result->routing_explanation() );
 	}
 }

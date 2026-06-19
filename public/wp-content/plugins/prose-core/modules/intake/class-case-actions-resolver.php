@@ -11,6 +11,7 @@ use ProSe\Core\Forms\Classification\Vocabulary;
 use ProSe\Core\PackageBuilder\Merged_Blank_Pdf_Service;
 use ProSe\Core\Procedural\Package_Resolver;
 use ProSe\Core\Routing\Case_Profile;
+use ProSe\Core\Routing\Court_Routing_Explainer;
 use ProSe\Core\Routing\Routing_Engine;
 use ProSe\Core\Routing\Workflow_Catalog;
 
@@ -112,6 +113,7 @@ final class Case_Actions_Resolver {
 		}
 
 		$show_documents = $case_known;
+		$court_routing  = $this->build_court_routing( $case_profile, $interpret_result );
 
 		return array(
 			'case_known'          => $case_known,
@@ -126,7 +128,8 @@ final class Case_Actions_Resolver {
 			'package_label'       => $package_label,
 			'workflow'            => $workflow,
 			'workflow_title'      => $this->workflow_title( $workflow ),
-			'summary'             => $this->build_summary( $workflow, $facts, $package_id, $package_label, $issue ),
+			'court_routing'       => $court_routing,
+			'summary'             => $this->build_summary( $workflow, $facts, $package_id, $package_label, $issue, $court_routing ),
 		);
 	}
 
@@ -335,16 +338,84 @@ final class Case_Actions_Resolver {
 	}
 
 	/**
+	 * Build court routing metadata from the stored profile or routing engine.
+	 *
+	 * @param array<string, mixed> $case_profile     Case profile.
+	 * @param array<string, mixed> $interpret_result Interpreter turn data.
+	 * @return array<string, mixed>
+	 */
+	private function build_court_routing( array $case_profile, array $interpret_result ): array {
+		$courts = is_array( $case_profile['courts'] ?? null ) ? array_values( $case_profile['courts'] ) : array();
+		$court  = trim( (string) ( $case_profile['court'] ?? '' ) );
+
+		if ( ! empty( $courts ) || '' !== $court || ! empty( $case_profile['overlap'] ) || ! empty( $case_profile['routing_explanation'] ) || ! empty( $case_profile['routing_note'] ) ) {
+			return array(
+				'court'               => '' !== $court ? $court : ( $courts[0] ?? '' ),
+				'courts'              => $courts,
+				'overlap'             => ! empty( $case_profile['overlap'] ),
+				'overlap_reason'      => isset( $case_profile['overlap_reason'] ) ? (string) $case_profile['overlap_reason'] : '',
+				'routing_explanation' => (string) ( $case_profile['routing_explanation'] ?? '' ),
+				'routing_note'        => (string) ( $case_profile['routing_note'] ?? '' ),
+			);
+		}
+
+		$profile = Case_Profile::from_array( $case_profile );
+		$routed  = $this->routing->route_profile( '', $profile );
+
+		return array(
+			'court'               => (string) ( $routed->court() ?? '' ),
+			'courts'              => $routed->courts(),
+			'overlap'             => $routed->overlap(),
+			'overlap_reason'      => (string) ( $routed->overlap_reason() ?? '' ),
+			'routing_explanation' => $routed->routing_explanation(),
+			'routing_note'        => $routed->routing_note(),
+		);
+	}
+
+	/**
 	 * Build the case summary rows for the action panel.
 	 *
 	 * @param string               $workflow      Workflow key.
 	 * @param array<string, mixed> $facts         Plain facts.
 	 * @param string               $package_id    Package enum id.
 	 * @param string               $package_label Human package label.
+	 * @param string               $issue         Issue type.
+	 * @param array<string, mixed> $court_routing Court routing metadata.
 	 * @return array<int, array{label: string, value: string}>
 	 */
-	private function build_summary( string $workflow, array $facts, string $package_id, string $package_label, string $issue = '' ): array {
+	private function build_summary( string $workflow, array $facts, string $package_id, string $package_label, string $issue = '', array $court_routing = array() ): array {
 		$rows = array();
+
+		$courts = is_array( $court_routing['courts'] ?? null ) ? $court_routing['courts'] : array();
+		$court_label = Court_Routing_Explainer::courts_summary( $courts );
+
+		if ( '' === $court_label && ! empty( $court_routing['court'] ) ) {
+			$court_label = Court_Routing_Explainer::court_label( (string) $court_routing['court'] );
+		}
+
+		if ( '' !== $court_label ) {
+			$rows[] = array(
+				'label' => ! empty( $court_routing['overlap'] )
+					? __( 'Courts involved', 'prose-core' )
+					: __( 'Court', 'prose-core' ),
+				'value' => $court_label,
+			);
+		}
+
+		$explanation = trim( (string) ( $court_routing['routing_explanation'] ?? '' ) );
+		$note        = trim( (string) ( $court_routing['routing_note'] ?? '' ) );
+
+		if ( '' !== $explanation ) {
+			$rows[] = array(
+				'label' => __( 'Court routing', 'prose-core' ),
+				'value' => $explanation,
+			);
+		} elseif ( '' !== $note ) {
+			$rows[] = array(
+				'label' => __( 'Court routing', 'prose-core' ),
+				'value' => $note,
+			);
+		}
 
 		$county = $this->fact_string( $facts, array( 'county' ) );
 

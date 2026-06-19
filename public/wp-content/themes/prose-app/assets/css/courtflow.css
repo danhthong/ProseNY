@@ -1127,6 +1127,48 @@ body.courtflow-workspace-page > footer {
 	gap: 0.375rem;
 }
 
+.cf-courts-involved {
+	margin-top: 0.75rem;
+	padding-top: 0.75rem;
+	border-top: 1px solid var(--cf-border, rgba(0, 0, 0, 0.08));
+}
+
+.cf-courts-involved__label {
+	margin: 0 0 0.375rem;
+	font-size: 0.6875rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--cf-ink-muted);
+}
+
+.cf-courts-involved__list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.375rem;
+}
+
+.cf-courts-involved__item {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.25rem 0.5rem;
+	border-radius: 999px;
+	font-size: 0.8125rem;
+	font-weight: 500;
+	background: var(--cf-surface-muted, #f3f4f6);
+	color: var(--cf-ink);
+}
+
+.cf-courts-involved__note {
+	margin: 0.5rem 0 0;
+	font-size: 0.8125rem;
+	line-height: 1.45;
+	color: var(--cf-ink-muted);
+}
+
 /* Completeness block (context panel) */
 .cf-completeness {
 	margin-bottom: 0.75rem;

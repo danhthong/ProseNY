@@ -170,6 +170,7 @@ final class Courtflow_Response_Mapper {
 			'required_forms' => $required_forms,
 			'current_node'   => $current_node,
 			'actions'        => $actions,
+			'court_routing'  => is_array( $actions['court_routing'] ?? null ) ? $actions['court_routing'] : array(),
 		);
 	}
 

@@ -31,6 +31,13 @@
 			blockers: [],
 			summary: { collected_count: 0, required_count: 0, missing_count: 0 },
 		},
+		courtRouting: {
+			court: '',
+			courts: [],
+			overlap: false,
+			routing_explanation: '',
+			routing_note: '',
+		},
 	};
 
 	var STEP_CATALOG = courtflowConfig.steps || [];
@@ -467,6 +474,55 @@
 		return groups;
 	}
 
+	var COURT_LABELS = {
+		supreme_court: 'Supreme Court',
+		family_court: 'Family Court',
+	};
+
+	function courtLabel(slug) {
+		if (!slug) return '';
+		return COURT_LABELS[slug] || String(slug).replace(/_/g, ' ');
+	}
+
+	function renderCourtsInvolved() {
+		var block = document.getElementById('cf-courts-involved');
+		var list = document.getElementById('cf-courts-list');
+		var note = document.getElementById('cf-courts-note');
+		if (!block || !list) return;
+
+		var routing = state.courtRouting || {};
+		var courts = Array.isArray(routing.courts) ? routing.courts.slice() : [];
+		if (!courts.length && routing.court) {
+			courts = [routing.court];
+		}
+
+		list.innerHTML = '';
+		if (!courts.length) {
+			block.hidden = true;
+			if (note) note.hidden = true;
+			return;
+		}
+
+		block.hidden = false;
+		courts.forEach(function (court) {
+			var li = document.createElement('li');
+			li.className = 'cf-courts-involved__item';
+			li.textContent = courtLabel(court);
+			list.appendChild(li);
+		});
+
+		var message = routing.routing_explanation || routing.routing_note || '';
+		if (note) {
+			if (message) {
+				note.hidden = false;
+				note.textContent = message;
+			} else {
+				note.hidden = true;
+				note.textContent = '';
+			}
+		}
+	}
+
 	function renderFacts() {
 		var el = document.getElementById('courtflow-facts-display');
 		var emptyEl = document.getElementById('cf-facts-empty');
@@ -720,9 +776,12 @@
 			state.currentStepIndex = stepIndexForNode(data.current_node.slug || data.current_node.id);
 		}
 		if (data.missing_fields) state.missingFields = data.missing_fields;
+		if (data.court_routing) state.courtRouting = data.court_routing;
+		else if (data.actions && data.actions.court_routing) state.courtRouting = data.actions.court_routing;
 
 		renderStepper();
 		renderFacts();
+		renderCourtsInvolved();
 		renderValidation();
 		renderRequirements();
 		renderMissing();

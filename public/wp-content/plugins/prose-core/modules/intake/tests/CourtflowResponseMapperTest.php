@@ -97,4 +97,29 @@ class CourtflowResponseMapperTest extends TestCase {
 		$this->assertSame( 40, $response['requirements']['completeness'] );
 		$this->assertNotEmpty( $response['required_forms'] );
 	}
+
+	/**
+	 * Overlap routing is exposed to the workspace context panel.
+	 */
+	public function test_overlap_court_routing_in_context(): void {
+		$session = array(
+			'session_id'   => 'test-session',
+			'case_profile' => array(
+				'facts'               => array(),
+				'workflow'            => 'uncontested_divorce_no_children_nyc',
+				'court'               => 'supreme_court',
+				'courts'              => array( 'supreme_court', 'family_court' ),
+				'overlap'             => true,
+				'overlap_reason'      => 'divorce_and_order_of_protection',
+				'routing_explanation' => 'Both courts may apply.',
+				'progress'            => 20,
+			),
+		);
+
+		$state = $this->mapper->map_session_state( $session );
+
+		$this->assertArrayHasKey( 'court_routing', $state );
+		$this->assertTrue( $state['court_routing']['overlap'] );
+		$this->assertContains( 'family_court', $state['court_routing']['courts'] );
+	}
 }

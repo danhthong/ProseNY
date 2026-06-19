@@ -27,6 +27,7 @@ final class Signal_Lexicon {
 		'we have children'        => array( 'fact' => 'children', 'value' => true ),
 		'have children'           => array( 'fact' => 'children', 'value' => true ),
 		'two children'            => array( 'fact' => 'children', 'value' => true ),
+		'two kids'                => array( 'fact' => 'children', 'value' => true ),
 		'one child'               => array( 'fact' => 'children', 'value' => true ),
 		'minor children'          => array( 'fact' => 'children', 'value' => true ),
 		'no children'             => array( 'fact' => 'children', 'value' => false ),
@@ -47,6 +48,8 @@ final class Signal_Lexicon {
 		'getting a divorce'       => array( 'fact' => 'active_divorce', 'value' => true ),
 		'active divorce'          => array( 'fact' => 'active_divorce', 'value' => true ),
 		'divorce case'            => array( 'fact' => 'active_divorce', 'value' => true ),
+		'already in a divorce'  => array( 'fact' => 'active_divorce', 'value' => true ),
+		'in a divorce'            => array( 'fact' => 'active_divorce', 'value' => true ),
 	);
 
 	/**
