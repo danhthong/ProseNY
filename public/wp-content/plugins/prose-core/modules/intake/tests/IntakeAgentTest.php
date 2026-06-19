@@ -214,7 +214,9 @@ class IntakeAgentTest extends TestCase {
 
 		$this->assertGreaterThan( $first['completion'], $second['completion'] );
 		$this->assertSame( 100, $second['completion'] );
-		$this->assertSame( '', $second['next_question'], 'No question when intake complete.' );
+		$this->assertSame( 'complete_intake', $second['next_action'] );
+		$this->assertNotEmpty( $second['next_question'], 'Completion guidance when intake complete.' );
+		$this->assertStringContainsString( 'Uncontested Divorce Children', $second['next_question'] );
 		$this->assertSame( array(), $second['missing_fields'] );
 	}
 

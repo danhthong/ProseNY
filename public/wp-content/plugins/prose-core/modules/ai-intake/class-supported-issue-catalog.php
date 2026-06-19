@@ -132,6 +132,7 @@ final class Supported_Issue_Catalog {
 			array( 'phrase' => 'verified answer', 'weight' => 0.35 ),
 			// Ambiguous intake starters.
 			array( 'phrase' => 'not sure which forms', 'weight' => 0.35 ),
+			array( 'phrase' => 'not sure which court forms', 'weight' => 0.35 ),
 			array( 'phrase' => 'not sure which court', 'weight' => 0.35 ),
 			array( 'phrase' => 'not sure where to start', 'weight' => 0.35 ),
 			array( 'phrase' => 'help me figure out', 'weight' => 0.35 ),

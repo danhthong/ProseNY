@@ -9,6 +9,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	define( 'ABSPATH', '/tmp/wordpress/' );
 }
 
+if ( ! defined( 'HOUR_IN_SECONDS' ) ) {
+	define( 'HOUR_IN_SECONDS', 3600 );
+}
+
 if ( ! defined( 'PROSE_CORE_PATH' ) ) {
 	define( 'PROSE_CORE_PATH', dirname( __DIR__ ) . '/' );
 }
@@ -203,7 +207,7 @@ if ( ! function_exists( 'current_user_can' ) ) {
 
 if ( ! function_exists( 'wp_upload_dir' ) ) {
 	/**
-	 * @return array<string, string>
+	 * @return array<string, string|bool>
 	 */
 	function wp_upload_dir() {
 		$base = sys_get_temp_dir() . '/prose-uploads-test';
@@ -212,11 +216,73 @@ if ( ! function_exists( 'wp_upload_dir' ) ) {
 			mkdir( $base, 0777, true );
 		}
 
+		$subdir = gmdate( 'Y/m' );
+		$path   = trailingslashit( $base ) . $subdir;
+
+		if ( ! is_dir( $path ) ) {
+			mkdir( $path, 0777, true );
+		}
+
 		return array(
 			'basedir' => $base,
 			'baseurl' => 'http://example.test/uploads',
+			'path'    => trailingslashit( $path ),
+			'url'     => 'http://example.test/uploads/' . $subdir . '/',
 			'error'   => false,
 		);
+	}
+}
+
+if ( ! function_exists( 'wp_generate_password' ) ) {
+	/**
+	 * @param int  $length              Password length.
+	 * @param bool $special_chars       Include special characters.
+	 * @param bool $extra_special_chars Extra special characters.
+	 * @return string
+	 */
+	function wp_generate_password( $length = 12, $special_chars = true, $extra_special_chars = false ) {
+		unset( $special_chars, $extra_special_chars );
+
+		return substr( bin2hex( random_bytes( (int) max( 1, ceil( $length / 2 ) ) ) ), 0, (int) $length );
+	}
+}
+
+$GLOBALS['prose_test_transients'] = array();
+
+if ( ! function_exists( 'get_transient' ) ) {
+	/**
+	 * @param string $transient Transient name.
+	 * @return mixed
+	 */
+	function get_transient( $transient ) {
+		return $GLOBALS['prose_test_transients'][ $transient ] ?? false;
+	}
+}
+
+if ( ! function_exists( 'set_transient' ) ) {
+	/**
+	 * @param string $transient  Transient name.
+	 * @param mixed  $value      Value.
+	 * @param int    $expiration Expiration seconds.
+	 * @return bool
+	 */
+	function set_transient( $transient, $value, $expiration = 0 ) {
+		unset( $expiration );
+		$GLOBALS['prose_test_transients'][ $transient ] = $value;
+
+		return true;
+	}
+}
+
+if ( ! function_exists( 'delete_transient' ) ) {
+	/**
+	 * @param string $transient Transient name.
+	 * @return bool
+	 */
+	function delete_transient( $transient ) {
+		unset( $GLOBALS['prose_test_transients'][ $transient ] );
+
+		return true;
 	}
 }
 

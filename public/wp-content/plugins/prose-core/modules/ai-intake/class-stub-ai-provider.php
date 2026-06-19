@@ -91,10 +91,12 @@ final class Stub_Ai_Provider implements Ai_Provider_Interface {
 	 * @return string
 	 */
 	private function infer_response( string $message, array $messages, array $options ): string {
-		$context     = is_array( $options['context'] ?? null ) ? $options['context'] : array();
-		$pending     = (string) ( $context['pending_field'] ?? '' );
-		$mode        = (string) ( $options['mode'] ?? 'extract' );
-		$normalized  = strtolower( trim( $message ) );
+		$context = is_array( $options['context'] ?? null ) ? $options['context'] : array();
+		$pending = (string) ( $context['pending_field'] ?? '' );
+		$mode    = (string) ( $options['mode'] ?? 'extract' );
+
+		list( $message, $pending ) = $this->resolve_message_context( $message, $pending );
+		$normalized                = strtolower( trim( $message ) );
 
 		if ( 'summarize' === $mode ) {
 			$facts = is_array( $context['facts'] ?? null ) ? $context['facts'] : array();
@@ -154,7 +156,7 @@ final class Stub_Ai_Provider implements Ai_Provider_Interface {
 			);
 		}
 
-		if ( preg_match( '/\b(spouse agrees|wife agrees|husband agrees|uncontested)\b/i', $message ) ) {
+		if ( preg_match( '/\b(?:spouse|wife|husband)\s+agrees?\b|\b(?:we\s+)?both\s+agree\b|\buncontested\b/i', $message ) ) {
 			$updates['spouse_agrees'] = array(
 				'value'      => true,
 				'confidence' => 0.95,
@@ -224,6 +226,37 @@ final class Stub_Ai_Provider implements Ai_Provider_Interface {
 				'conversation_reply' => $this->stub_reply( $updates, $context ),
 			)
 		);
+	}
+
+	/**
+	 * Resolve the plain user message from converse/extract JSON payloads.
+	 *
+	 * @param string $message Raw provider input (plain text or JSON task payload).
+	 * @param string $pending Pending field from provider context.
+	 * @return array{0: string, 1: string}
+	 */
+	private function resolve_message_context( string $message, string $pending ): array {
+		$trimmed = trim( $message );
+
+		if ( ! str_starts_with( $trimmed, '{' ) ) {
+			return array( $message, $pending );
+		}
+
+		$decoded = json_decode( $trimmed, true );
+
+		if ( ! is_array( $decoded ) ) {
+			return array( $message, $pending );
+		}
+
+		if ( isset( $decoded['latest_user_message'] ) && is_string( $decoded['latest_user_message'] ) ) {
+			$message = $decoded['latest_user_message'];
+		}
+
+		if ( '' === $pending && ! empty( $decoded['pending_field'] ) && is_string( $decoded['pending_field'] ) ) {
+			$pending = $decoded['pending_field'];
+		}
+
+		return array( $message, $pending );
 	}
 
 	/**
