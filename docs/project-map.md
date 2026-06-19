@@ -38,6 +38,7 @@ CourtFlow AI is a **procedural navigation platform** for NYC Divorce and Family 
 | Workflows (12 NYC) | `prose-core/docs/workflows/` |
 | Forms catalog | `prose-core/docs/forms/` |
 | Validation | `prose-core/bin/validate-workflows.php` |
+| PHPUnit tests | `prose-core/tests/README.md` |
 
 ### Theme: `public/wp-content/themes/prose-app`
 

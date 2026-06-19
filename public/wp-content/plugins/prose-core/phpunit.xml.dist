@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit bootstrap="tests/bootstrap.php" colors="true">
+<phpunit
+	bootstrap="tests/bootstrap.php"
+	colors="true"
+	beStrictAboutTestsThatDoNotTestAnything="false"
+>
 	<testsuites>
 		<testsuite name="prose-core">
 			<directory>tests/unit</directory>
@@ -11,6 +15,33 @@
 			<directory>modules/packet/tests</directory>
 			<directory>modules/guidance/tests</directory>
 			<directory>modules/ai-intake/tests</directory>
+		</testsuite>
+		<testsuite name="unit">
+			<directory>tests/unit</directory>
+		</testsuite>
+		<testsuite name="ai-intake">
+			<directory>modules/ai-intake/tests</directory>
+		</testsuite>
+		<testsuite name="intake">
+			<directory>modules/intake/tests</directory>
+		</testsuite>
+		<testsuite name="routing">
+			<directory>modules/routing/tests</directory>
+		</testsuite>
+		<testsuite name="packagebuilder">
+			<directory>modules/packagebuilder/tests</directory>
+		</testsuite>
+		<testsuite name="assembly">
+			<directory>modules/assembly/tests</directory>
+		</testsuite>
+		<testsuite name="procedural">
+			<directory>modules/procedural/tests</directory>
+		</testsuite>
+		<testsuite name="packet">
+			<directory>modules/packet/tests</directory>
+		</testsuite>
+		<testsuite name="guidance">
+			<directory>modules/guidance/tests</directory>
 		</testsuite>
 	</testsuites>
 </phpunit>

@@ -104,12 +104,6 @@ final class Domain_Scope_Guard {
 				continue;
 			}
 
-			// Do not flag a topic as out-of-scope when the message already matched
-			// an in-scope keyword or workflow trigger (e.g. hybrid divorce + taxes).
-			if ( $this->phrase_is_supported( $text, $phrase ) ) {
-				continue;
-			}
-
 			$out_of_scope[] = $label;
 		}
 
@@ -194,33 +188,6 @@ final class Domain_Scope_Guard {
 			__( 'Note: %s matters are outside ProSeNY\'s current scope. Focus on the in-scope family court portion of the user\'s message and politely explain that limitation.', 'prose-core' ),
 			$joined
 		);
-	}
-
-	/**
-	 * Whether a phrase is already covered by supported keywords or workflow triggers.
-	 *
-	 * @param string $text   Normalized message text.
-	 * @param string $phrase Normalized phrase to check (may equal or be contained in a supported phrase).
-	 * @return bool
-	 */
-	private function phrase_is_supported( string $text, string $phrase ): bool {
-		foreach ( $this->catalog->keywords() as $entry ) {
-			$supported = $this->normalize( (string) ( $entry['phrase'] ?? '' ) );
-
-			if ( '' !== $supported && ( str_contains( $text, $supported ) || str_contains( $supported, $phrase ) ) ) {
-				return true;
-			}
-		}
-
-		foreach ( $this->catalog->workflow_triggers( $this->workflows ) as $entry ) {
-			$supported = $this->normalize( (string) ( $entry['phrase'] ?? '' ) );
-
-			if ( '' !== $supported && ( str_contains( $text, $supported ) || str_contains( $supported, $phrase ) ) ) {
-				return true;
-			}
-		}
-
-		return false;
 	}
 
 	/**

@@ -13,6 +13,12 @@ if ( ! defined( 'PROSE_CORE_PATH' ) ) {
 	define( 'PROSE_CORE_PATH', dirname( __DIR__ ) . '/' );
 }
 
+$composer_autoload = PROSE_CORE_PATH . 'vendor/autoload.php';
+
+if ( is_readable( $composer_autoload ) ) {
+	require_once $composer_autoload;
+}
+
 if ( ! function_exists( 'wp_json_encode' ) ) {
 	/**
 	 * @param mixed $data Data.
@@ -157,6 +163,41 @@ if ( ! function_exists( 'current_time' ) ) {
 	function current_time( $type ) {
 		unset( $type );
 		return gmdate( 'Y-m-d H:i:s' );
+	}
+}
+
+if ( ! function_exists( 'wp_rand' ) ) {
+	/**
+	 * @param int $min Minimum.
+	 * @param int $max Maximum.
+	 * @return int
+	 */
+	function wp_rand( $min = 0, $max = 0 ) {
+		return random_int( (int) $min, (int) $max );
+	}
+}
+
+if ( ! function_exists( 'wp_generate_uuid4' ) ) {
+	/**
+	 * @return string
+	 */
+	function wp_generate_uuid4() {
+		$data = random_bytes( 16 );
+		$data[6] = chr( ( ord( $data[6] ) & 0x0f ) | 0x40 );
+		$data[8] = chr( ( ord( $data[8] ) & 0x3f ) | 0x80 );
+
+		return vsprintf( '%s%s-%s-%s-%s-%s%s%s', str_split( bin2hex( $data ), 4 ) );
+	}
+}
+
+if ( ! function_exists( 'current_user_can' ) ) {
+	/**
+	 * @param string $capability Capability.
+	 * @return bool
+	 */
+	function current_user_can( $capability ) {
+		unset( $capability );
+		return false;
 	}
 }
 

@@ -166,9 +166,15 @@ The engine evaluates these rules before selecting a standalone Family Court work
 
 ## Testing
 
+See [tests/README.md](../../tests/README.md) for setup and commands.
+
 ```bash
-cd app/public/wp-content/plugins/prose-core
-./vendor/bin/phpunit
+cd public/wp-content/plugins/prose-core
+composer install
+composer test
+composer test:ai-intake   # domain scope guard, AI intake only
+composer test:intake      # deterministic intake agent
+composer test:routing
 ```
 
 Routing tests live in `modules/routing/tests/` and cover all 11 issue types, divorce ambiguity, NYC override, Case Profile, and Fact Store behavior.
