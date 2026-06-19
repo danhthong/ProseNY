@@ -1,6 +1,6 @@
 # Plan 16 — Database Schema & Case Persistence
 
-**Status:** Draft — awaiting review  
+**Status:** Complete  
 **Priority:** P2  
 **Depends on:** Plan 02  
 **Estimated effort:** Large (1–2 weeks)

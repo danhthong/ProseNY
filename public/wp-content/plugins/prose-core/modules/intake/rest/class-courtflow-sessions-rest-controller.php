@@ -8,8 +8,10 @@
 namespace ProSe\Core\Intake\Rest;
 
 use ProSe\Core\Ai_Intake\AI_Intake_Service;
+use ProSe\Core\Intake\Case_Actions_Resolver;
 use ProSe\Core\Loader;
 use ProSe\Core\PackageBuilder\Merged_Blank_Pdf_Service;
+use ProSe\Core\Security\Rate_Limiter;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -54,23 +56,53 @@ final class Courtflow_Sessions_Rest_Controller {
 	private Merged_Blank_Pdf_Service $merged_pdfs;
 
 	/**
+	 * Optional case persistence.
+	 *
+	 * @var Courtflow_Case_Persistence
+	 */
+	private Courtflow_Case_Persistence $persistence;
+
+	/**
+	 * Case actions resolver.
+	 *
+	 * @var Case_Actions_Resolver
+	 */
+	private Case_Actions_Resolver $actions;
+
+	/**
+	 * Rate limiter.
+	 *
+	 * @var Rate_Limiter
+	 */
+	private Rate_Limiter $rate_limiter;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param AI_Intake_Service|null           $service     AI intake service.
 	 * @param Courtflow_Session_Store|null     $store       Session store.
 	 * @param Courtflow_Response_Mapper|null   $mapper      Response mapper.
 	 * @param Merged_Blank_Pdf_Service|null    $merged_pdfs Merged PDF service.
+	 * @param Courtflow_Case_Persistence|null  $persistence Case persistence.
+	 * @param Case_Actions_Resolver|null       $actions     Case actions resolver.
+	 * @param Rate_Limiter|null                $rate_limiter Rate limiter.
 	 */
 	public function __construct(
 		?AI_Intake_Service $service = null,
 		?Courtflow_Session_Store $store = null,
 		?Courtflow_Response_Mapper $mapper = null,
-		?Merged_Blank_Pdf_Service $merged_pdfs = null
+		?Merged_Blank_Pdf_Service $merged_pdfs = null,
+		?Courtflow_Case_Persistence $persistence = null,
+		?Case_Actions_Resolver $actions = null,
+		?Rate_Limiter $rate_limiter = null
 	) {
 		$this->service     = $service ?? new AI_Intake_Service();
 		$this->store       = $store ?? new Courtflow_Session_Store();
 		$this->mapper      = $mapper ?? new Courtflow_Response_Mapper();
 		$this->merged_pdfs = $merged_pdfs ?? new Merged_Blank_Pdf_Service();
+		$this->persistence = $persistence ?? new Courtflow_Case_Persistence();
+		$this->actions     = $actions ?? new Case_Actions_Resolver();
+		$this->rate_limiter = $rate_limiter ?? new Rate_Limiter();
 	}
 
 	/**
@@ -325,10 +357,12 @@ final class Courtflow_Sessions_Rest_Controller {
 
 		$session['last_interpret'] = $result;
 
+		$this->maybe_persist_intake_complete( $session, $result );
+
 		$this->store->save( (string) $session['session_id'], $session );
 
 		return rest_ensure_response(
-			$this->mapper->map_message_response( $session, $response, $applied )
+			$this->mapper->map_message_response( $session, $response, $applied, $text )
 		);
 	}
 
@@ -418,6 +452,15 @@ final class Courtflow_Sessions_Rest_Controller {
 		$session['documents'] = $documents;
 		$this->store->save( (string) $session['session_id'], $session );
 
+		do_action(
+			'prose_package_downloaded',
+			(string) $session['session_id'],
+			array(
+				'workflow' => $workflow,
+				'case_id'  => (int) ( $session['case_id'] ?? 0 ),
+			)
+		);
+
 		return rest_ensure_response(
 			array(
 				'message'   => __( 'Your blank filing package is ready to download.', 'prose-core' ),
@@ -430,10 +473,14 @@ final class Courtflow_Sessions_Rest_Controller {
 	/**
 	 * Same-origin REST access for the account-free MVP workspace.
 	 *
-	 * @return bool
+	 * @return bool|\WP_Error
 	 */
-	public function can_access(): bool {
-		return true;
+	public function can_access() {
+		return $this->rate_limiter->rest_permission(
+			$this->rate_limiter->bucket_for_route( 'courtflow_sessions' ),
+			90,
+			60
+		);
 	}
 
 	/**
@@ -472,5 +519,42 @@ final class Courtflow_Sessions_Rest_Controller {
 		}
 
 		return $state;
+	}
+
+	/**
+	 * Persist completed intake to prose_cases when enabled.
+	 *
+	 * @param array<string, mixed> $session Stored session (mutated).
+	 * @param array<string, mixed> $result  Interpreter result.
+	 * @return void
+	 */
+	private function maybe_persist_intake_complete( array &$session, array $result ): void {
+		$case_profile = is_array( $session['case_profile'] ?? null ) ? $session['case_profile'] : array();
+		$actions      = $this->actions->resolve( $case_profile, $result );
+
+		if ( empty( $actions['intake_complete'] ) ) {
+			return;
+		}
+
+		if ( ! empty( $session['case_id'] ) ) {
+			return;
+		}
+
+		$case_id = $this->persistence->persist_intake_complete( $session );
+
+		if ( $case_id <= 0 ) {
+			return;
+		}
+
+		$session['case_id'] = $case_id;
+
+		do_action(
+			'prose_intake_complete',
+			(string) $session['session_id'],
+			array(
+				'case_id'  => $case_id,
+				'workflow' => (string) ( $result['workflow'] ?? $case_profile['workflow'] ?? '' ),
+			)
+		);
 	}
 }
