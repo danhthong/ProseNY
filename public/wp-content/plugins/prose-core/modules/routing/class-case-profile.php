@@ -75,6 +75,41 @@ final class Case_Profile {
 	private array $candidate_workflows = array();
 
 	/**
+	 * All courts involved.
+	 *
+	 * @var string[]
+	 */
+	private array $courts = array();
+
+	/**
+	 * Whether multiple courts apply.
+	 *
+	 * @var bool
+	 */
+	private bool $overlap = false;
+
+	/**
+	 * Overlap reason key.
+	 *
+	 * @var string|null
+	 */
+	private ?string $overlap_reason = null;
+
+	/**
+	 * User-facing overlap explanation.
+	 *
+	 * @var string
+	 */
+	private string $routing_explanation = '';
+
+	/**
+	 * User-facing routing redirect note.
+	 *
+	 * @var string
+	 */
+	private string $routing_note = '';
+
+	/**
 	 * Progress placeholder for future workflow tracking.
 	 *
 	 * @var int
@@ -108,6 +143,13 @@ final class Case_Profile {
 		$profile->missing_fields       = array_values( array_map( 'strval', (array) ( $data['missing_fields'] ?? array() ) ) );
 		$profile->candidate_workflows  = array_values( array_map( 'strval', (array) ( $data['candidate_workflows'] ?? array() ) ) );
 		$profile->progress             = isset( $data['progress'] ) ? (int) $data['progress'] : 0;
+		$profile->courts               = array_values( array_map( 'strval', (array) ( $data['courts'] ?? array() ) ) );
+		$profile->overlap              = ! empty( $data['overlap'] );
+		$profile->overlap_reason       = isset( $data['overlap_reason'] ) && is_string( $data['overlap_reason'] ) && '' !== $data['overlap_reason']
+			? $data['overlap_reason']
+			: null;
+		$profile->routing_explanation  = isset( $data['routing_explanation'] ) && is_string( $data['routing_explanation'] ) ? $data['routing_explanation'] : '';
+		$profile->routing_note         = isset( $data['routing_note'] ) && is_string( $data['routing_note'] ) ? $data['routing_note'] : '';
 
 		return $profile;
 	}
@@ -195,6 +237,51 @@ final class Case_Profile {
 	}
 
 	/**
+	 * Courts involved.
+	 *
+	 * @return string[]
+	 */
+	public function courts(): array {
+		return $this->courts;
+	}
+
+	/**
+	 * Whether multiple courts apply.
+	 *
+	 * @return bool
+	 */
+	public function overlap(): bool {
+		return $this->overlap;
+	}
+
+	/**
+	 * Overlap reason key.
+	 *
+	 * @return string|null
+	 */
+	public function overlap_reason(): ?string {
+		return $this->overlap_reason;
+	}
+
+	/**
+	 * Overlap explanation.
+	 *
+	 * @return string
+	 */
+	public function routing_explanation(): string {
+		return $this->routing_explanation;
+	}
+
+	/**
+	 * Routing redirect note.
+	 *
+	 * @return string
+	 */
+	public function routing_note(): string {
+		return $this->routing_note;
+	}
+
+	/**
 	 * Progress value.
 	 *
 	 * @return int
@@ -216,6 +303,11 @@ final class Case_Profile {
 		$this->workflow_confidence = $result->confidence();
 		$this->missing_fields      = $result->missing_fields();
 		$this->candidate_workflows = $result->candidate_workflows();
+		$this->courts              = $result->courts();
+		$this->overlap             = $result->overlap();
+		$this->overlap_reason      = $result->overlap_reason();
+		$this->routing_explanation = $result->routing_explanation();
+		$this->routing_note        = $result->routing_note();
 	}
 
 	/**
@@ -234,6 +326,11 @@ final class Case_Profile {
 			'missing_fields'       => $this->missing_fields,
 			'candidate_workflows'  => $this->candidate_workflows,
 			'progress'             => $this->progress,
+			'courts'               => $this->courts,
+			'overlap'              => $this->overlap,
+			'overlap_reason'       => $this->overlap_reason,
+			'routing_explanation'  => $this->routing_explanation,
+			'routing_note'         => $this->routing_note,
 		);
 	}
 }

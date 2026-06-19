@@ -93,6 +93,11 @@
       "NODE_2001_CUSTODY_PETITION",
       "NODE_2002_CUSTODY_HEARING",
       "NODE_2003_CUSTODY_ORDER"
+    ],
+    "progression": [
+      { "node": "NODE_2001_CUSTODY_PETITION" },
+      { "node": "NODE_2002_CUSTODY_HEARING", "condition": { "kind": "event", "value": "HEARING_SCHEDULED" } },
+      { "node": "NODE_2003_CUSTODY_ORDER", "condition": { "kind": "event", "value": "JUDGMENT_ENTERED" } }
     ]
   },
   "source_references": [

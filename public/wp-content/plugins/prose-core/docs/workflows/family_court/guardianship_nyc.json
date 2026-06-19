@@ -69,7 +69,20 @@
   "includes": [],
   "internal": {
     "workflow_enum": "GUARDIANSHIP",
-    "node_sequence": []
+    "node_sequence": [
+      "NODE_5101_GUARDIANSHIP_PETITION",
+      "NODE_5102_GUARDIANSHIP_SERVICE",
+      "NODE_5103_GUARDIANSHIP_INVESTIGATION",
+      "NODE_5104_GUARDIANSHIP_HEARING",
+      "NODE_5105_GUARDIANSHIP_ORDER"
+    ],
+    "progression": [
+      { "node": "NODE_5101_GUARDIANSHIP_PETITION" },
+      { "node": "NODE_5102_GUARDIANSHIP_SERVICE", "condition": { "kind": "event", "value": "SERVICE_COMPLETED" } },
+      { "node": "NODE_5103_GUARDIANSHIP_INVESTIGATION", "condition": { "kind": "event", "value": "DISCOVERY_COMPLETE" } },
+      { "node": "NODE_5104_GUARDIANSHIP_HEARING", "condition": { "kind": "event", "value": "HEARING_SCHEDULED" } },
+      { "node": "NODE_5105_GUARDIANSHIP_ORDER", "condition": { "kind": "event", "value": "JUDGMENT_ENTERED" } }
+    ]
   },
   "source_references": [
     "https://www.nycourts.gov/family-forms",

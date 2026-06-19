@@ -9,6 +9,7 @@ namespace ProSe\Core\Ai_Intake;
 
 use ProSe\Core\Intake\Completion_Calculator;
 use ProSe\Core\Intake\Document_Request_Detector;
+use ProSe\Core\Procedural\Procedural_Navigator;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -263,16 +264,17 @@ final class AI_Intake_Interpreter {
 			$message,
 			$intake,
 			array(
-				'extraction_defs' => $resolved_pre['extraction_defs'] ?? $resolved_pre['required_field_defs'],
-				'missing'         => $missing_pre,
-				'workflow'        => $workflow_pre,
-				'workflow_info'   => $this->workflow_info( $workflow_pre, $completion_pre ),
-				'package'         => $this->package_context( $missing_pre, $completion_pre, $workflow_pre ),
-				'completion'      => $completion_pre,
-				'contradictions'  => $this->consistency->check( $intake ),
-				'summary'         => $memory_ctx['summary'],
-				'recent'          => $memory_ctx['recent'],
-				'scope_note'      => $scope_note,
+				'extraction_defs'      => $resolved_pre['extraction_defs'] ?? $resolved_pre['required_field_defs'],
+				'missing'              => $missing_pre,
+				'workflow'             => $workflow_pre,
+				'workflow_info'        => $this->workflow_info( $workflow_pre, $completion_pre ),
+				'package'              => $this->package_context( $missing_pre, $completion_pre, $workflow_pre ),
+				'completion'           => $completion_pre,
+				'contradictions'       => $this->consistency->check( $intake ),
+				'summary'              => $memory_ctx['summary'],
+				'recent'               => $memory_ctx['recent'],
+				'scope_note'           => $scope_note,
+				'procedural_navigator' => $this->procedural_navigator_context( $intake, $workflow_pre ),
 			),
 			$this->provider,
 			$this->logger
@@ -422,6 +424,46 @@ final class AI_Intake_Interpreter {
 			'completion'     => $completion,
 			'ready'          => empty( $missing ) && null !== $workflow && '' !== $workflow,
 			'missing_count'  => count( $missing ),
+		);
+	}
+
+	/**
+	 * Read-only procedural navigator summary for the conversation engine.
+	 *
+	 * @param Intake_State    $intake   Intake state.
+	 * @param string|null     $workflow Workflow key.
+	 * @return array<string, mixed>
+	 */
+	private function procedural_navigator_context( Intake_State $intake, ?string $workflow ): array {
+		if ( null === $workflow || '' === $workflow ) {
+			return array();
+		}
+
+		$facts = $intake->plain_facts();
+		$issue = trim( (string) ( $facts['issue'] ?? 'divorce' ) );
+
+		$result = ( new Procedural_Navigator() )->navigate(
+			array(
+				'issue'    => $issue,
+				'facts'    => $facts,
+				'workflow' => $workflow,
+				'county'   => trim( (string) ( $facts['county'] ?? '' ) ),
+			)
+		);
+
+		if ( empty( $result['success'] ) ) {
+			return array();
+		}
+
+		$navigation = is_array( $result['navigation'] ?? null ) ? $result['navigation'] : array();
+
+		return array(
+			'court'        => is_array( $navigation['court'] ?? null ) ? $navigation['court'] : array(),
+			'workflow'     => is_array( $navigation['workflow'] ?? null ) ? $navigation['workflow'] : array(),
+			'forms'        => is_array( $navigation['forms'] ?? null ) ? $navigation['forms'] : array(),
+			'next_steps'   => is_array( $navigation['next_steps'] ?? null ) ? $navigation['next_steps'] : array(),
+			'stages'       => is_array( $navigation['stages'] ?? null ) ? $navigation['stages'] : array(),
+			'instructions' => is_array( $navigation['instructions'] ?? null ) ? $navigation['instructions'] : array(),
 		);
 	}
 

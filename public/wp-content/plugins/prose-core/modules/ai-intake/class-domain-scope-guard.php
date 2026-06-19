@@ -100,9 +100,11 @@ final class Domain_Scope_Guard {
 			$phrase = $this->normalize( (string) ( $entry['phrase'] ?? '' ) );
 			$label  = trim( (string) ( $entry['label'] ?? $phrase ) );
 
-			if ( '' !== $phrase && str_contains( $text, $phrase ) && ! in_array( $label, $out_of_scope, true ) ) {
-				$out_of_scope[] = $label;
+			if ( '' === $phrase || ! str_contains( $text, $phrase ) || in_array( $label, $out_of_scope, true ) ) {
+				continue;
 			}
+
+			$out_of_scope[] = $label;
 		}
 
 		$hybrid    = ! empty( $out_of_scope ) && $supported_score >= Supported_Issue_Catalog::CONFIDENCE_THRESHOLD;
@@ -183,7 +185,7 @@ final class Domain_Scope_Guard {
 
 		return sprintf(
 			/* translators: %s: comma-separated list of out-of-scope topic labels. */
-			__( 'Note: %s matters are outside ProSeNY\'s current scope. Focus on the divorce-related portion of the user\'s message and politely explain that limitation.', 'prose-core' ),
+			__( 'Note: %s matters are outside ProSeNY\'s current scope. Focus on the in-scope family court portion of the user\'s message and politely explain that limitation.', 'prose-core' ),
 			$joined
 		);
 	}

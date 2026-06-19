@@ -11,6 +11,7 @@
 namespace ProSe\Core\Intake;
 
 use ProSe\Core\Ai_Intake\Rest\AI_Intake_Rest_Controller;
+use ProSe\Core\Documents\Rest\Documents_Rest_Controller;
 use ProSe\Core\Loader;
 use ProSe\Core\PackageBuilder\Rest\Package_Builder_Rest_Controller;
 
@@ -152,6 +153,8 @@ final class Intake_Chat_Shortcode {
 					'restUrl'      => esc_url_raw( rest_url( $route ) ),
 					'actionsUrl'   => esc_url_raw( rest_url( Intake_Rest_Controller::NAMESPACE . Intake_Rest_Controller::ROUTE_ACTIONS ) ),
 					'mergedPdfUrl' => esc_url_raw( rest_url( Package_Builder_Rest_Controller::NAMESPACE . Package_Builder_Rest_Controller::ROUTE_MERGED_PDF ) ),
+					'documentsUploadUrl' => esc_url_raw( rest_url( Documents_Rest_Controller::NAMESPACE . Documents_Rest_Controller::ROUTE_UPLOAD ) ),
+					'maxUploadBytes' => Documents_Rest_Controller::MAX_UPLOAD_BYTES,
 					'useAi'          => $use_ai,
 					'nonce'          => wp_create_nonce( 'wp_rest' ),
 					'storageKey'     => 'prose_intake_session',
@@ -170,6 +173,15 @@ final class Intake_Chat_Shortcode {
 						'hideSummary'     => __( 'Hide Case Summary', 'prose-core' ),
 						'downloading'     => __( 'Preparing download…', 'prose-core' ),
 						'downloadError'   => __( 'Documents are not available for download yet.', 'prose-core' ),
+						'finishIntake'    => __( 'Tell us about your case to enable blank form download.', 'prose-core' ),
+						'uploadDocument'  => __( 'Upload court document', 'prose-core' ),
+						'uploadingDocument' => __( 'Reviewing your document…', 'prose-core' ),
+						'uploadError'     => __( 'Could not process that document. Please try a PDF under 10 MB.', 'prose-core' ),
+						'uploadTypeError' => __( 'Only PDF court documents are supported right now.', 'prose-core' ),
+						'uploadSizeError' => __( 'PDF must be 10 MB or smaller.', 'prose-core' ),
+						'uploadedFile'    => __( 'Uploaded document:', 'prose-core' ),
+						'documentIdentifiedPrefix' => __( 'This looks like a', 'prose-core' ),
+						'documentUnknown' => __( 'I could not automatically identify this document from the PDF. I will ask a few questions to figure out what kind of papers you received.', 'prose-core' ),
 					),
 				)
 			);
@@ -219,6 +231,21 @@ final class Intake_Chat_Shortcode {
 			</aside>
 
 			<form class="prose-intake__form" data-prose-intake-form>
+				<input
+					type="file"
+					class="screen-reader-text"
+					accept="application/pdf,.pdf"
+					data-prose-intake-file
+				/>
+				<button
+					type="button"
+					class="prose-intake__upload"
+					data-prose-intake-upload
+					title="<?php esc_attr_e( 'Upload a court PDF', 'prose-core' ); ?>"
+					aria-label="<?php esc_attr_e( 'Upload court document', 'prose-core' ); ?>"
+				>
+					<?php esc_html_e( 'Upload', 'prose-core' ); ?>
+				</button>
 				<label class="screen-reader-text" for="prose-intake-input"><?php esc_html_e( 'Your message', 'prose-core' ); ?></label>
 				<textarea
 					id="prose-intake-input"

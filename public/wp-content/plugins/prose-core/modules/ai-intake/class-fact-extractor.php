@@ -396,7 +396,15 @@ final class Fact_Extractor {
 			);
 		}
 
-		if ( preg_match( '/\b(?:wife|husband|spouse)\s+agrees?\b/i', $message ) && ! isset( $updates['spouse_agrees'] ) && ! $state->is_filled( 'spouse_agrees' ) ) {
+		if (
+			(
+				preg_match( '/\b(?:wife|husband|spouse)\s+agrees?\b/i', $message )
+				|| preg_match( '/\b(?:we\s+)?both\s+agree\b/i', $message )
+				|| preg_match( '/\buncontested\b/i', $message )
+			)
+			&& ! isset( $updates['spouse_agrees'] )
+			&& ! $state->is_filled( 'spouse_agrees' )
+		) {
 			$updates['spouse_agrees'] = array(
 				'value'      => true,
 				'confidence' => 0.95,

@@ -401,4 +401,15 @@ class AiIntakeInterpreterTest extends TestCase {
 		$this->assertSame( 'ask_question', $result['next_action'] );
 		$this->assertSame( 'custody_nyc', $result['workflow'] ?? '' );
 	}
+
+	/**
+	 * Visitation intake must not fatal when procedural navigator context is injected.
+	 */
+	public function test_visitation_intake_with_procedural_navigator(): void {
+		$result = $this->interpreter->interpret( 'I need help with visitation or parenting time' );
+
+		$this->assertSame( 'ask_question', $result['next_action'] ?? '' );
+		$this->assertNotSame( 'error', $result['next_action'] ?? '' );
+		$this->assertNotEmpty( $result['question'] ?? '' );
+	}
 }

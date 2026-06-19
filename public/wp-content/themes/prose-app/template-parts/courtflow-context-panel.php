@@ -28,6 +28,12 @@
 				<div class="cf-case-summary__badges">
 					<span class="cf-badge cf-badge--muted" id="cf-badge-county">—</span>
 					<span class="cf-badge cf-badge--muted" id="cf-badge-case-type">—</span>
+					<span class="cf-badge cf-badge--muted" id="cf-badge-forms-count" hidden></span>
+				</div>
+				<div class="cf-courts-involved" id="cf-courts-involved" hidden>
+					<p class="cf-courts-involved__label"><?php esc_html_e( 'Courts involved', 'prose-app' ); ?></p>
+					<ul class="cf-courts-involved__list" id="cf-courts-list"></ul>
+					<p class="cf-courts-involved__note" id="cf-courts-note" hidden></p>
 				</div>
 			</div>
 		</details>

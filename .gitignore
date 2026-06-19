@@ -67,3 +67,5 @@ public/wp-content/debug.log
 
 # Don't track the download_pdfs folder
 collect_forms/crawl4ai_forms/download_pdfs
+
+docs/requires/

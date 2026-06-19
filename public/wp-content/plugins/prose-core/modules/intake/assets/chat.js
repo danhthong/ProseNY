@@ -89,6 +89,8 @@
 		var summaryList = root.querySelector( '[data-prose-intake-summary-list]' );
 		var getDocumentsBtn = root.querySelector( '[data-prose-intake-get-documents]' );
 		var toggleSummaryBtn = root.querySelector( '[data-prose-intake-toggle-summary]' );
+		var fileInput = root.querySelector( '[data-prose-intake-file]' );
+		var uploadBtn = root.querySelector( '[data-prose-intake-upload]' );
 
 		if ( ! transcript || ! form || ! input ) {
 			return;
@@ -199,6 +201,32 @@
 		}
 
 		/**
+		 * Whether blank court forms can be downloaded for the current workflow.
+		 *
+		 * @param {Object} actions Action visibility from the server.
+		 * @return {boolean}
+		 */
+		function canDownloadDocuments( actions ) {
+			if ( ! actions || typeof actions !== 'object' ) {
+				return false;
+			}
+
+			if ( actions.download_enabled === true ) {
+				return true;
+			}
+
+			if ( ! actions.workflow_resolved ) {
+				return false;
+			}
+
+			return !!(
+				actions.forms_matched > 0
+				|| actions.package_resolved
+				|| actions.blank_pdf_available
+			);
+		}
+
+		/**
 		 * Update the persistent Case Actions panel.
 		 *
 		 * @param {Object} actions Action visibility from the server.
@@ -210,6 +238,11 @@
 
 			session.actions = actions;
 
+			if ( actions.workflow ) {
+				session.case_profile = session.case_profile || {};
+				session.case_profile.workflow = actions.workflow;
+			}
+
 			var showActions = !!( actions.case_known || actions.show_documents || actions.workflow );
 
 			if ( showActions ) {
@@ -218,6 +251,7 @@
 
 			var showPanel = actionsPinned || showActions;
 			var showDownload = showPanel;
+			var downloadReady = canDownloadDocuments( actions );
 
 			if ( actionsPanel ) {
 				actionsPanel.hidden = ! showPanel;
@@ -225,7 +259,10 @@
 
 			if ( getDocumentsBtn ) {
 				getDocumentsBtn.hidden = ! showDownload;
-				getDocumentsBtn.disabled = false;
+				getDocumentsBtn.disabled = ! downloadReady;
+				getDocumentsBtn.title = downloadReady
+					? ''
+					: ( STRINGS.finishIntake || 'Tell us about your case to enable blank form download.' );
 				getDocumentsBtn.textContent = STRINGS.getDocuments || 'Get Documents';
 			}
 
@@ -291,7 +328,11 @@
 				return;
 			}
 
-			getDocumentsBtn.disabled = false;
+			var downloadReady = canDownloadDocuments( session.actions || {} );
+			getDocumentsBtn.disabled = ! downloadReady;
+			getDocumentsBtn.title = downloadReady
+				? ''
+				: ( STRINGS.finishIntake || 'Tell us about your case to enable blank form download.' );
 			if ( getDocumentsBtn.textContent === ( STRINGS.downloading || 'Preparing download…' ) ) {
 				getDocumentsBtn.textContent = STRINGS.getDocuments || 'Get Documents';
 			}
@@ -338,7 +379,7 @@
 			var actions = session.actions || {};
 			var workflow = actions.workflow || ( session.case_profile && session.case_profile.workflow ) || '';
 
-			if ( ! workflow ) {
+			if ( ! workflow || ! canDownloadDocuments( actions ) ) {
 				return;
 			}
 
@@ -414,15 +455,23 @@
 		 * Send a message to the intake endpoint.
 		 *
 		 * @param {string} message User message.
+		 * @param {{skipUserBubble?: boolean}} options Optional send flags.
 		 */
-		function send( message ) {
+		function send( message, options ) {
+			options = options || {};
+
 			if ( busy || ! message ) {
 				return;
 			}
 			busy = true;
 			sendBtn.disabled = true;
+			if ( uploadBtn ) {
+				uploadBtn.disabled = true;
+			}
 
-			addBubble( 'user', message );
+			if ( ! options.skipUserBubble ) {
+				addBubble( 'user', message );
+			}
 			var thinking = addBubble( 'agent', STRINGS.sending || 'Thinking…' );
 
 			var payload = {
@@ -491,7 +540,8 @@
 						thinking.classList.add( 'prose-intake__bubble--complete' );
 						input.disabled = true;
 					} else if ( apiFailed ) {
-						thinking.textContent = STRINGS.error || 'Something went wrong. Please try again.';
+						var serverError = ( result && result.error ) ? String( result.error ) : '';
+						thinking.textContent = serverError || STRINGS.error || 'Something went wrong. Please try again.';
 						thinking.classList.add( 'prose-intake__bubble--error' );
 					} else if ( isComplete ) {
 						thinking.textContent = question || ( STRINGS.complete || 'Based on the information you\'ve provided, I identified the appropriate filing package for your case. You can review the next steps below or download the required court forms.' );
@@ -513,9 +563,120 @@
 				.finally( function () {
 					busy = false;
 					sendBtn.disabled = false;
+					if ( uploadBtn ) {
+						uploadBtn.disabled = false;
+					}
 					input.value = '';
 					autoGrow();
 					input.focus();
+				} );
+		}
+
+		/**
+		 * Build the intake follow-up message after document classification.
+		 *
+		 * @param {Object} classification Classifier payload.
+		 * @param {string} filename       Original filename.
+		 * @return {string}
+		 */
+		function buildDocumentFollowUp( classification, filename ) {
+			classification = classification || {};
+			var label = classification.label || 'court document';
+			var nextStep = classification.next_step || '';
+
+			if ( classification.type && 'unknown' !== classification.type ) {
+				return 'I uploaded court papers (' + filename + '). They appear to be: ' + label + '. '
+					+ ( nextStep ? nextStep + ' ' : '' )
+					+ 'Please help me with the next intake steps for this situation.';
+			}
+
+			return 'I uploaded court papers (' + filename + ') but they could not be automatically identified. '
+				+ 'Please help me figure out what kind of papers they are and what I should do next.';
+		}
+
+		/**
+		 * Format the classification summary shown after upload.
+		 *
+		 * @param {Object} classification Classifier payload.
+		 * @return {string}
+		 */
+		function formatClassificationMessage( classification ) {
+			classification = classification || {};
+
+			if ( classification.type && 'unknown' !== classification.type ) {
+				var label = classification.label || 'court document';
+				var nextStep = classification.next_step || '';
+				return ( STRINGS.documentIdentifiedPrefix || 'This looks like a' ) + ' ' + label + '. ' + nextStep;
+			}
+
+			return STRINGS.documentUnknown || 'I could not automatically identify this document from the PDF. I will ask a few questions to figure out what kind of papers you received.';
+		}
+
+		/**
+		 * Upload a court PDF, classify it, then continue intake.
+		 *
+		 * @param {File} file Selected PDF file.
+		 */
+		function uploadDocument( file ) {
+			if ( busy || ! file || ! CONFIG.documentsUploadUrl ) {
+				return;
+			}
+
+			var maxBytes = Number( CONFIG.maxUploadBytes || 10485760 );
+			var isPdf = 'application/pdf' === file.type || /\.pdf$/i.test( file.name || '' );
+
+			if ( ! isPdf ) {
+				addBubble( 'agent', STRINGS.uploadTypeError || 'Only PDF court documents are supported right now.' );
+				return;
+			}
+
+			if ( file.size > maxBytes ) {
+				addBubble( 'agent', STRINGS.uploadSizeError || 'PDF must be 10 MB or smaller.' );
+				return;
+			}
+
+			busy = true;
+			sendBtn.disabled = true;
+			if ( uploadBtn ) {
+				uploadBtn.disabled = true;
+			}
+
+			addBubble( 'user', ( STRINGS.uploadedFile || 'Uploaded document:' ) + ' ' + file.name );
+			var thinking = addBubble( 'agent', STRINGS.uploadingDocument || 'Reviewing your document…' );
+
+			var formData = new FormData();
+			formData.append( 'document', file, file.name );
+
+			fetch( CONFIG.documentsUploadUrl, {
+				method: 'POST',
+				headers: {
+					'X-WP-Nonce': CONFIG.nonce || ''
+				},
+				body: formData
+			} )
+				.then( function ( res ) {
+					return res.json().then( function ( data ) {
+						if ( ! res.ok ) {
+							var message = ( data && data.message ) ? String( data.message ) : '';
+							throw new Error( message || 'upload_failed' );
+						}
+						return data;
+					} );
+				} )
+				.then( function ( data ) {
+					var classification = data.classification || {};
+					thinking.textContent = formatClassificationMessage( classification );
+					busy = false;
+					send( buildDocumentFollowUp( classification, file.name ), { skipUserBubble: true } );
+				} )
+				.catch( function () {
+					thinking.textContent = STRINGS.uploadError || 'Could not process that document. Please try a PDF under 10 MB.';
+					thinking.classList.add( 'prose-intake__bubble--error' );
+					busy = false;
+					sendBtn.disabled = false;
+					if ( uploadBtn ) {
+						uploadBtn.disabled = false;
+					}
 				} );
 		}
 
@@ -547,6 +708,22 @@
 
 		if ( toggleSummaryBtn ) {
 			toggleSummaryBtn.addEventListener( 'click', toggleSummary );
+		}
+
+		if ( uploadBtn && fileInput ) {
+			uploadBtn.addEventListener( 'click', function () {
+				fileInput.click();
+			} );
+
+			fileInput.addEventListener( 'change', function () {
+				var file = fileInput.files && fileInput.files[0];
+
+				if ( file ) {
+					uploadDocument( file );
+				}
+
+				fileInput.value = '';
+			} );
 		}
 
 		if ( resetBtn ) {
@@ -608,6 +785,10 @@
 					actionsPinned = true;
 				}
 				updateActionsPanel( session.actions );
+
+				if ( ! canDownloadDocuments( session.actions ) && ( session.actions.workflow || ( session.case_profile && session.case_profile.workflow ) ) ) {
+					refreshActions();
+				}
 			} else {
 				refreshActions();
 			}

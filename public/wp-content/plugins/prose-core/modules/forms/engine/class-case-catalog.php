@@ -26,14 +26,36 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Case_Catalog {
 
 	// Case lifecycle events that drive node progression.
-	public const EVENT_SERVICE_COMPLETED = 'SERVICE_COMPLETED';
-	public const EVENT_ANSWER_RECEIVED   = 'ANSWER_RECEIVED';
-	public const EVENT_HEARING_SCHEDULED = 'HEARING_SCHEDULED';
-	public const EVENT_JUDGMENT_ENTERED  = 'JUDGMENT_ENTERED';
+	public const EVENT_SERVICE_COMPLETED           = 'SERVICE_COMPLETED';
+	public const EVENT_ANSWER_RECEIVED             = 'ANSWER_RECEIVED';
+	public const EVENT_HEARING_SCHEDULED           = 'HEARING_SCHEDULED';
+	public const EVENT_JUDGMENT_ENTERED            = 'JUDGMENT_ENTERED';
+	public const EVENT_PRELIMINARY_CONFERENCE_HELD = 'PRELIMINARY_CONFERENCE_HELD';
+	public const EVENT_DISCOVERY_COMPLETE          = 'DISCOVERY_COMPLETE';
+	public const EVENT_COMPLIANCE_CONFERENCE_HELD  = 'COMPLIANCE_CONFERENCE_HELD';
+	public const EVENT_SETTLEMENT_REACHED          = 'SETTLEMENT_REACHED';
 
 	// Condition kinds for entering a node.
 	public const COND_EVENT   = 'event';
 	public const COND_PACKAGE = 'package';
+
+	/**
+	 * JSON-driven progression service.
+	 *
+	 * @var Workflow_Progression_Service|null
+	 */
+	private static ?Workflow_Progression_Service $progression_service = null;
+
+	/**
+	 * @return Workflow_Progression_Service
+	 */
+	private static function progression(): Workflow_Progression_Service {
+		if ( null === self::$progression_service ) {
+			self::$progression_service = new Workflow_Progression_Service();
+		}
+
+		return self::$progression_service;
+	}
 
 	/**
 	 * Supported lifecycle event types.
@@ -41,11 +63,22 @@ final class Case_Catalog {
 	 * @return string[]
 	 */
 	public static function events(): array {
-		return array(
-			self::EVENT_SERVICE_COMPLETED,
-			self::EVENT_ANSWER_RECEIVED,
-			self::EVENT_HEARING_SCHEDULED,
-			self::EVENT_JUDGMENT_ENTERED,
+		return array_values(
+			array_unique(
+				array_merge(
+					array(
+						self::EVENT_SERVICE_COMPLETED,
+						self::EVENT_ANSWER_RECEIVED,
+						self::EVENT_HEARING_SCHEDULED,
+						self::EVENT_JUDGMENT_ENTERED,
+						self::EVENT_PRELIMINARY_CONFERENCE_HELD,
+						self::EVENT_DISCOVERY_COMPLETE,
+						self::EVENT_COMPLIANCE_CONFERENCE_HELD,
+						self::EVENT_SETTLEMENT_REACHED,
+					),
+					self::progression()->registered_events()
+				)
+			)
 		);
 	}
 
@@ -70,7 +103,23 @@ final class Case_Catalog {
 	 * @param string $workflow_key Workflow key.
 	 * @return array<int, array{node: string, condition: array{kind: string, value: string}|null}>
 	 */
-	public static function steps( string $workflow_key ): array {
+	public static function steps( string $workflow_key, array $context = array() ): array {
+		$json_steps = self::progression()->progression_steps( $workflow_key, $context );
+
+		if ( ! empty( $json_steps ) ) {
+			return $json_steps;
+		}
+
+		return self::legacy_steps( $workflow_key );
+	}
+
+	/**
+	 * Legacy hardcoded steps retained only when JSON progression is absent.
+	 *
+	 * @param string $workflow_key Workflow key.
+	 * @return array<int, array{node: string, condition: array{kind: string, value: string}|null}>
+	 */
+	private static function legacy_steps( string $workflow_key ): array {
 		switch ( $workflow_key ) {
 			case Vocabulary::WF_UNCONTESTED_DIVORCE:
 				return array(
@@ -126,34 +175,42 @@ final class Case_Catalog {
 	 * @param string $workflow_key Workflow key.
 	 * @return string
 	 */
-	public static function entry_node( string $workflow_key ): string {
-		$steps = self::steps( $workflow_key );
+	public static function entry_node( string $workflow_key, array $context = array() ): string {
+		$sequence = self::node_sequence( $workflow_key, $context );
 
-		return $steps[0]['node'] ?? '';
+		return $sequence[0] ?? '';
 	}
 
 	/**
 	 * Ordered node keys for a workflow.
 	 *
-	 * @param string $workflow_key Workflow key.
+	 * @param string               $workflow_key Workflow key.
+	 * @param array<string, mixed> $context      Intake context.
 	 * @return string[]
 	 */
-	public static function node_sequence( string $workflow_key ): array {
+	public static function node_sequence( string $workflow_key, array $context = array() ): array {
+		$from_json = self::progression()->get_node_sequence( $workflow_key, $context );
+
+		if ( ! empty( $from_json ) ) {
+			return $from_json;
+		}
+
 		return array_map(
 			static fn( array $step ): string => $step['node'],
-			self::steps( $workflow_key )
+			self::legacy_steps( $workflow_key )
 		);
 	}
 
 	/**
 	 * Whether a node is the terminal node of its workflow.
 	 *
-	 * @param string $workflow_key Workflow key.
-	 * @param string $node_key     Node key.
+	 * @param string               $workflow_key Workflow key.
+	 * @param string               $node_key     Node key.
+	 * @param array<string, mixed> $context      Intake context.
 	 * @return bool
 	 */
-	public static function is_terminal( string $workflow_key, string $node_key ): bool {
-		$sequence = self::node_sequence( $workflow_key );
+	public static function is_terminal( string $workflow_key, string $node_key, array $context = array() ): bool {
+		$sequence = self::node_sequence( $workflow_key, $context );
 
 		return ! empty( $sequence ) && end( $sequence ) === $node_key;
 	}
@@ -161,19 +218,78 @@ final class Case_Catalog {
 	/**
 	 * Resolve the node a case advances to given its current node and a trigger.
 	 *
-	 * Progression is strict and forward-only: the case can only enter the
-	 * immediate next node, and only when that node's condition matches the
-	 * trigger. Returns the current node unchanged when the trigger does not
-	 * satisfy the next step.
-	 *
-	 * @param string $workflow_key  Workflow key.
-	 * @param string $current_node  Current node key.
-	 * @param string $trigger_kind  Trigger kind (event|package).
-	 * @param string $trigger_value Trigger value (event name or package key).
+	 * @param string               $workflow_key  Workflow key.
+	 * @param string               $current_node  Current node key.
+	 * @param string               $trigger_kind  Trigger kind (event|package).
+	 * @param string               $trigger_value Trigger value (event name or package key).
+	 * @param array<string, mixed> $context       Intake context.
 	 * @return string Resolved node key.
 	 */
-	public static function advance( string $workflow_key, string $current_node, string $trigger_kind, string $trigger_value ): string {
-		$steps = self::steps( $workflow_key );
+	public static function advance(
+		string $workflow_key,
+		string $current_node,
+		string $trigger_kind,
+		string $trigger_value,
+		array $context = array()
+	): string {
+		if ( ! empty( self::progression()->progression_steps( $workflow_key, $context ) )
+			|| ! empty( self::progression()->get_node_sequence( $workflow_key, $context ) ) ) {
+			return self::progression()->advance( $workflow_key, $current_node, $trigger_kind, $trigger_value, $context );
+		}
+
+		return self::legacy_advance( $workflow_key, $current_node, $trigger_kind, $trigger_value );
+	}
+
+	/**
+	 * Progress percentage for a node within its workflow (0-100).
+	 *
+	 * @param string               $workflow_key Workflow key.
+	 * @param string               $node_key     Node key.
+	 * @param array<string, mixed> $context      Intake context.
+	 * @return int
+	 */
+	public static function progress_for_node( string $workflow_key, string $node_key, array $context = array() ): int {
+		if ( ! empty( self::progression()->get_stages( $workflow_key, $context ) ) ) {
+			return self::progression()->progress_for_node( $workflow_key, $node_key, $context );
+		}
+
+		return self::legacy_progress_for_node( $workflow_key, $node_key );
+	}
+
+	/**
+	 * @param string $workflow_key Workflow key.
+	 * @param string $node_key     Node key.
+	 * @return int
+	 */
+	private static function legacy_progress_for_node( string $workflow_key, string $node_key ): int {
+		$sequence = array_map(
+			static fn( array $step ): string => $step['node'],
+			self::legacy_steps( $workflow_key )
+		);
+		$total    = count( $sequence );
+
+		if ( $total <= 1 ) {
+			return '' !== $node_key ? 100 : 0;
+		}
+
+		$index = array_search( $node_key, $sequence, true );
+
+		if ( false === $index ) {
+			return 0;
+		}
+
+		return (int) round( ( (int) $index / ( $total - 1 ) ) * 100 );
+	}
+
+	/**
+	 * @param string $workflow_key  Workflow key.
+	 * @param string $current_node  Current node.
+	 * @param string $trigger_kind  Trigger kind.
+	 * @param string $trigger_value Trigger value.
+	 * @return string
+	 */
+	private static function legacy_advance( string $workflow_key, string $current_node, string $trigger_kind, string $trigger_value ): string {
+		$steps = self::legacy_steps( $workflow_key );
 
 		foreach ( $steps as $index => $step ) {
 			if ( $step['node'] !== $current_node ) {
@@ -194,30 +310,6 @@ final class Case_Catalog {
 		}
 
 		return $current_node;
-	}
-
-	/**
-	 * Progress percentage for a node within its workflow (0-100).
-	 *
-	 * @param string $workflow_key Workflow key.
-	 * @param string $node_key     Node key.
-	 * @return int
-	 */
-	public static function progress_for_node( string $workflow_key, string $node_key ): int {
-		$sequence = self::node_sequence( $workflow_key );
-		$total    = count( $sequence );
-
-		if ( $total <= 1 ) {
-			return '' !== $node_key ? 100 : 0;
-		}
-
-		$index = array_search( $node_key, $sequence, true );
-
-		if ( false === $index ) {
-			return 0;
-		}
-
-		return (int) round( ( (int) $index / ( $total - 1 ) ) * 100 );
 	}
 
 	/**

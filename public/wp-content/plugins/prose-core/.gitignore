@@ -1,1 +1,3 @@
-bin/.venv-curl-impersonate/
+/vendor/
+composer.lock
+/tests/tmp/

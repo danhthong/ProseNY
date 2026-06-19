@@ -8,7 +8,9 @@
 		return;
 	}
 
-	var sessionId = 0;
+	var SESSION_STORAGE_KEY = 'courtflow_session_id';
+
+	var sessionId = loadStoredSessionId();
 	var state = {
 		facts: { case: {}, user: {} },
 		validation: { errors: [], warnings: [], valid: true },
@@ -28,6 +30,13 @@
 			ready_to_generate: false,
 			blockers: [],
 			summary: { collected_count: 0, required_count: 0, missing_count: 0 },
+		},
+		courtRouting: {
+			court: '',
+			courts: [],
+			overlap: false,
+			routing_explanation: '',
+			routing_note: '',
 		},
 	};
 
@@ -77,6 +86,41 @@
 			}
 			throw e;
 		}
+	}
+
+	function loadStoredSessionId() {
+		try {
+			var stored = window.localStorage.getItem( SESSION_STORAGE_KEY );
+			if ( stored) {
+				return stored;
+			}
+		} catch (e) {}
+
+		var root = document.getElementById( 'courtflow-intake-chat' );
+		if ( root ) {
+			var fromDom = root.getAttribute( 'data-session-id' );
+			if ( fromDom && fromDom !== '0' ) {
+				return fromDom;
+			}
+		}
+
+		return 0;
+	}
+
+	function saveSessionId( id ) {
+		if ( ! id ) {
+			return;
+		}
+
+		try {
+			window.localStorage.setItem( SESSION_STORAGE_KEY, String( id ) );
+		} catch (e) {}
+	}
+
+	function clearStoredSessionId() {
+		try {
+			window.localStorage.removeItem( SESSION_STORAGE_KEY );
+		} catch (e) {}
 	}
 
 	function api(path, options) {
@@ -135,8 +179,29 @@
 		return map[slug] !== undefined ? map[slug] : 0;
 	}
 
+	function intakeReady(req) {
+		req = req || state.requirements || {};
+		var workflow = (state.facts && state.facts.case && state.facts.case.workflow) || '';
+		var hasForms = (state.requiredForms || []).length > 0;
+		return !!(workflow || hasForms || req.ready_to_generate || Number(req.completeness || 0) >= 100);
+	}
+
+	function effectiveCurrentStepIndex() {
+		var idx = state.currentStepIndex;
+		if (!intakeReady()) {
+			return idx;
+		}
+		if (idx < 1) {
+			return 1;
+		}
+		if ((state.requiredForms || []).length && idx < 2) {
+			return 2;
+		}
+		return idx;
+	}
+
 	function computeStepStates() {
-		var currentIdx = state.currentStepIndex;
+		var currentIdx = effectiveCurrentStepIndex();
 		var result = [];
 
 		STEP_CATALOG.forEach(function (step, index) {
@@ -183,7 +248,7 @@
 
 		var stepStates = computeStepStates();
 		var percent = progressPercent(stepStates);
-		var currentNum = state.currentStepIndex + 1;
+		var currentNum = effectiveCurrentStepIndex() + 1;
 
 		stepper.innerHTML = '';
 		stepStates.forEach(function (item) {
@@ -430,6 +495,55 @@
 		return groups;
 	}
 
+	var COURT_LABELS = {
+		supreme_court: 'Supreme Court',
+		family_court: 'Family Court',
+	};
+
+	function courtLabel(slug) {
+		if (!slug) return '';
+		return COURT_LABELS[slug] || String(slug).replace(/_/g, ' ');
+	}
+
+	function renderCourtsInvolved() {
+		var block = document.getElementById('cf-courts-involved');
+		var list = document.getElementById('cf-courts-list');
+		var note = document.getElementById('cf-courts-note');
+		if (!block || !list) return;
+
+		var routing = state.courtRouting || {};
+		var courts = Array.isArray(routing.courts) ? routing.courts.slice() : [];
+		if (!courts.length && routing.court) {
+			courts = [routing.court];
+		}
+
+		list.innerHTML = '';
+		if (!courts.length) {
+			block.hidden = true;
+			if (note) note.hidden = true;
+			return;
+		}
+
+		block.hidden = false;
+		courts.forEach(function (court) {
+			var li = document.createElement('li');
+			li.className = 'cf-courts-involved__item';
+			li.textContent = courtLabel(court);
+			list.appendChild(li);
+		});
+
+		var message = routing.routing_explanation || routing.routing_note || '';
+		if (note) {
+			if (message) {
+				note.hidden = false;
+				note.textContent = message;
+			} else {
+				note.hidden = true;
+				note.textContent = '';
+			}
+		}
+	}
+
 	function renderFacts() {
 		var el = document.getElementById('courtflow-facts-display');
 		var emptyEl = document.getElementById('cf-facts-empty');
@@ -461,11 +575,26 @@
 		if (emptyEl) emptyEl.hidden = hasAny;
 
 		var county = (state.facts.case && state.facts.case.county) || '';
+		var wfTitle = (state.facts.case && state.facts.case.workflow_title) || '';
 		var caseType = (state.facts.case && state.facts.case.workflow) || '';
 		var badgeCounty = document.getElementById('cf-badge-county');
 		var badgeType = document.getElementById('cf-badge-case-type');
+		var badgeForms = document.getElementById('cf-badge-forms-count');
 		if (badgeCounty) badgeCounty.textContent = county || 'County pending';
-		if (badgeType) badgeType.textContent = caseType ? String(caseType).replace(/_/g, ' ') : 'Case type pending';
+		if (badgeType) {
+			badgeType.textContent = wfTitle || (caseType ? String(caseType).replace(/_/g, ' ') : 'Case type pending');
+		}
+		if (badgeForms) {
+			var ready = intakeReady();
+			var formCount = (state.requiredForms || []).length;
+			if (ready && formCount) {
+				badgeForms.hidden = false;
+				badgeForms.textContent = formCount + ' form' + (formCount === 1 ? '' : 's') + ' required';
+			} else {
+				badgeForms.hidden = true;
+				badgeForms.textContent = '';
+			}
+		}
 	}
 
 	function renderValidation() {
@@ -605,7 +734,7 @@
 				if (emptyP) {
 					emptyP.textContent = ready
 						? 'Required forms: ' + required.join(', ') + '. Click Generate Filing Package to create downloads.'
-						: 'Required forms for your case: ' + required.join(', ') + '. Finish intake, then generate.';
+						: 'Required forms for your case: ' + required.join(', ') + '. Click Generate Filing Package to download blank forms.';
 				}
 			} else {
 				empty.hidden = false;
@@ -636,10 +765,13 @@
 			}
 		}
 		if (eyebrow && step) {
-			eyebrow.textContent = 'Step ' + (state.currentStepIndex + 1) + ' · ' + (step.label || '');
+			var stepIdx = effectiveCurrentStepIndex();
+			var activeStep = STEP_CATALOG[stepIdx] || step;
+			eyebrow.textContent = 'Step ' + (stepIdx + 1) + ' · ' + (activeStep.label || step.label || '');
 		}
-		if (wfTitle && state.facts.case && state.facts.case.workflow) {
-			wfTitle.textContent = String(state.facts.case.workflow).replace(/_/g, ' ');
+		if (wfTitle && state.facts.case) {
+			var title = state.facts.case.workflow_title || state.facts.case.workflow || '';
+			wfTitle.textContent = title ? String(title).replace(/_/g, ' ') : '';
 		}
 	}
 
@@ -683,9 +815,13 @@
 			state.currentStepIndex = stepIndexForNode(data.current_node.slug || data.current_node.id);
 		}
 		if (data.missing_fields) state.missingFields = data.missing_fields;
+		if (data.required_forms) state.requiredForms = data.required_forms;
+		if (data.court_routing) state.courtRouting = data.court_routing;
+		else if (data.actions && data.actions.court_routing) state.courtRouting = data.actions.court_routing;
 
 		renderStepper();
 		renderFacts();
+		renderCourtsInvolved();
 		renderValidation();
 		renderRequirements();
 		renderMissing();
@@ -861,15 +997,16 @@
 	function updateGenerateButton(req) {
 		var btn = document.getElementById('courtflow-generate-package');
 		if (!btn) return;
-		var ready = !!(req && req.ready_to_generate);
+		var ready = intakeReady(req);
 		btn.disabled = !ready;
-		btn.title = ready ? '' : ((req && req.completeness != null ? req.completeness : 0) + '% complete — finish intake to enable.');
+		btn.title = ready ? '' : 'Tell us about your case to enable blank form download.';
 	}
 
 	function ensureSession() {
 		if (sessionId) return Promise.resolve(sessionId);
 		return api('sessions', { method: 'POST', body: JSON.stringify({ case_type: 'divorce' }) }).then(function (res) {
 			sessionId = res.session_id;
+			saveSessionId(sessionId);
 			return sessionId;
 		});
 	}
@@ -1170,6 +1307,34 @@
 			})
 			.catch(function (err) {
 				hideSkeleton();
+				if (err && err.status === 404 && sessionId) {
+					clearStoredSessionId();
+					sessionId = 0;
+					return ensureSession()
+						.then(function () {
+							return Promise.all([
+								api('sessions/' + sessionId + '/state'),
+								loadMessages(),
+							]);
+						})
+						.then(function (results) {
+							hideSkeleton();
+							var data = results[0];
+							if (data.current_node) {
+								state.currentNode = data.current_node;
+								state.currentStepIndex = stepIndexForNode(data.current_node.slug || data.current_node.id);
+							}
+							updateState({
+								facts: data.facts,
+								workflow_state: data,
+								validation: data.validation || { valid: true, errors: [], warnings: [] },
+								requirements: data.requirements || (data.workflow_state && data.workflow_state.requirements),
+							});
+							seedWelcomeIfNeeded();
+							loadDocuments();
+							scrollManager.scrollToBottom(true);
+						});
+				}
 				var msg = err && err.message ? err.message : 'Could not start session.';
 				if (err && err.status === 401) {
 					msg = 'You need to be logged in to start a case. Please log in and reload this page.';

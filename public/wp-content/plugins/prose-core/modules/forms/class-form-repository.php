@@ -146,6 +146,7 @@ class Form_Repository {
 			'county'         => Form_Meta::META_COUNTY,
 			'workflow_key'   => Form_Meta::META_WORKFLOW_KEY,
 			'packet_group'   => Form_Meta::META_PACKET_GROUP,
+			'pdf'            => Form_Meta::META_PDF,
 			'file_name'      => Form_Meta::META_FILE_NAME,
 			'file_url'       => Form_Meta::META_FILE_URL,
 			'source_pdf_url' => Form_Meta::META_SOURCE_PDF_URL,
@@ -160,7 +161,7 @@ class Form_Repository {
 
 			if ( in_array( $data_key, array( 'file_url', 'source_pdf_url' ), true ) ) {
 				update_post_meta( $post_id, $meta_key, esc_url_raw( $value ) );
-			} elseif ( 'file_name' === $data_key ) {
+			} elseif ( in_array( $data_key, array( 'file_name', 'pdf' ), true ) ) {
 				update_post_meta( $post_id, $meta_key, sanitize_file_name( $value ) );
 			} else {
 				update_post_meta( $post_id, $meta_key, sanitize_text_field( $value ) );

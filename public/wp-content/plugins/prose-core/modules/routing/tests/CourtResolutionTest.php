@@ -47,4 +47,24 @@ class CourtResolutionTest extends TestCase {
 
 		$this->assertSame( $court, $result );
 	}
+
+	/**
+	 * Active divorce signal routes family-court issues to Supreme Court context.
+	 */
+	public function test_active_divorce_signal_routes_custody_to_supreme(): void {
+		$resolver = new Court_Resolver();
+		$result   = $resolver->resolve( 'custody', array( 'active_divorce' ) );
+
+		$this->assertSame( 'supreme_court', $result );
+	}
+
+	/**
+	 * Order of protection stays in Family Court even when divorce is also mentioned.
+	 */
+	public function test_order_of_protection_stays_family_with_divorce_signals(): void {
+		$resolver = new Court_Resolver();
+		$result   = $resolver->resolve( 'order_of_protection', array( 'divorce', 'order of protection' ) );
+
+		$this->assertSame( 'family_court', $result );
+	}
 }

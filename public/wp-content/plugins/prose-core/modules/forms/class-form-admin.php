@@ -222,6 +222,13 @@ class Form_Admin {
 			<div class="prose-form-tabs__panel" data-panel="pdf" role="tabpanel" hidden>
 				<table class="form-table" role="presentation">
 					<tr>
+						<th scope="row"><label for="prose_pdf"><?php esc_html_e( 'PDF Filename', 'prose-core' ); ?></label></th>
+						<td>
+							<input type="text" class="regular-text" id="prose_pdf" name="prose_pdf" value="<?php echo esc_attr( $values['pdf'] ); ?>" />
+							<p class="description"><?php esc_html_e( 'Blank PDF filename used for downloads (e.g. adop1-a.pdf). Synced to the Forms Repository when saved.', 'prose-core' ); ?></p>
+						</td>
+					</tr>
+					<tr>
 						<th scope="row"><label for="prose_file_name"><?php esc_html_e( 'File Name', 'prose-core' ); ?></label></th>
 						<td><input type="text" class="regular-text" id="prose_file_name" name="prose_file_name" value="<?php echo esc_attr( $values['file_name'] ); ?>" /></td>
 					</tr>
@@ -430,6 +437,7 @@ class Form_Admin {
 			'prose_county'         => Form_Meta::META_COUNTY,
 			'prose_workflow_key'   => Form_Meta::META_WORKFLOW_KEY,
 			'prose_packet_group'   => Form_Meta::META_PACKET_GROUP,
+			'prose_pdf'            => Form_Meta::META_PDF,
 			'prose_file_name'      => Form_Meta::META_FILE_NAME,
 			'prose_file_url'       => Form_Meta::META_FILE_URL,
 			'prose_source_pdf_url' => Form_Meta::META_SOURCE_PDF_URL,
@@ -446,7 +454,7 @@ class Form_Admin {
 
 			if ( in_array( $meta_key, array( Form_Meta::META_FILE_URL, Form_Meta::META_SOURCE_PDF_URL ), true ) ) {
 				update_post_meta( $post_id, $meta_key, esc_url_raw( $value ) );
-			} elseif ( Form_Meta::META_FILE_NAME === $meta_key ) {
+			} elseif ( in_array( $meta_key, array( Form_Meta::META_FILE_NAME, Form_Meta::META_PDF ), true ) ) {
 				update_post_meta( $post_id, $meta_key, sanitize_file_name( $value ) );
 			} elseif ( in_array( $meta_key, Form_Meta::textarea_keys(), true ) ) {
 				update_post_meta( $post_id, $meta_key, sanitize_textarea_field( $value ) );
@@ -477,6 +485,41 @@ class Form_Admin {
 			$value = wp_unslash( $_POST[ $post_key ] ); // phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			update_post_meta( $post_id, $meta_key, Form_Meta::sanitize_json( $value ) );
 		}
+
+		$this->sync_pdf_meta( $post_id );
+	}
+
+	/**
+	 * Keep prose_pdf and legacy prose_file_name aligned.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return void
+	 */
+	private function sync_pdf_meta( int $post_id ): void {
+		$pdf       = sanitize_file_name( (string) get_post_meta( $post_id, Form_Meta::META_PDF, true ) );
+		$file_name = sanitize_file_name( (string) get_post_meta( $post_id, Form_Meta::META_FILE_NAME, true ) );
+
+		if ( '' === $pdf && '' !== $file_name ) {
+			update_post_meta( $post_id, Form_Meta::META_PDF, $file_name );
+		} elseif ( '' === $file_name && '' !== $pdf ) {
+			update_post_meta( $post_id, Form_Meta::META_FILE_NAME, $pdf );
+		}
+	}
+
+	/**
+	 * Resolve the PDF filename shown in admin.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return string
+	 */
+	private function pdf_filename_for_admin( int $post_id ): string {
+		$post = get_post( $post_id );
+
+		if ( ! $post instanceof \WP_Post ) {
+			return '';
+		}
+
+		return ( new Form_Pdf_Path_Resolver() )->pdf_filename_for_post( $post );
 	}
 
 	/**
@@ -501,6 +544,7 @@ class Form_Admin {
 			'required'                   => (bool) get_post_meta( $post_id, Form_Meta::META_REQUIRED, true ),
 			'dependencies'               => $this->format_json_for_display( (string) get_post_meta( $post_id, Form_Meta::META_DEPENDENCIES, true ) ),
 			'conditions'                 => $this->format_json_for_display( (string) get_post_meta( $post_id, Form_Meta::META_CONDITIONS, true ) ),
+			'pdf'                        => $this->pdf_filename_for_admin( $post_id ),
 			'file_name'                  => (string) get_post_meta( $post_id, Form_Meta::META_FILE_NAME, true ),
 			'file_url'                   => (string) get_post_meta( $post_id, Form_Meta::META_FILE_URL, true ),
 			'source_pdf_url'             => (string) get_post_meta( $post_id, Form_Meta::META_SOURCE_PDF_URL, true ),

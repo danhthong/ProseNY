@@ -10,6 +10,7 @@ namespace ProSe\Core\Ai_Intake\Rest;
 use ProSe\Core\Ai_Intake\AI_Intake_Service;
 use ProSe\Core\Intake\Case_Actions_Resolver;
 use ProSe\Core\Loader;
+use ProSe\Core\Security\Rate_Limiter;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -50,14 +51,23 @@ final class AI_Intake_Rest_Controller {
 	private Case_Actions_Resolver $actions;
 
 	/**
+	 * Rate limiter.
+	 *
+	 * @var Rate_Limiter
+	 */
+	private Rate_Limiter $rate_limiter;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param AI_Intake_Service|null      $service Service.
 	 * @param Case_Actions_Resolver|null  $actions Case actions resolver.
+	 * @param Rate_Limiter|null           $rate_limiter Rate limiter.
 	 */
-	public function __construct( ?AI_Intake_Service $service = null, ?Case_Actions_Resolver $actions = null ) {
+	public function __construct( ?AI_Intake_Service $service = null, ?Case_Actions_Resolver $actions = null, ?Rate_Limiter $rate_limiter = null ) {
 		$this->service = $service ?? new AI_Intake_Service();
 		$this->actions = $actions ?? new Case_Actions_Resolver();
+		$this->rate_limiter = $rate_limiter ?? new Rate_Limiter();
 	}
 
 	/**
@@ -82,7 +92,7 @@ final class AI_Intake_Rest_Controller {
 			array(
 				'methods'             => \WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'handle_interpret' ),
-				'permission_callback' => '__return_true',
+				'permission_callback' => array( $this, 'can_interpret' ),
 				'args'                => array(
 					'message'      => array(
 						'type'              => 'string',
@@ -166,7 +176,11 @@ final class AI_Intake_Rest_Controller {
 				$case_profile['issue'] = $state['issue'];
 			}
 
-			$response['actions'] = $this->actions->resolve( $case_profile, $result );
+			try {
+				$response['actions'] = $this->actions->resolve( $case_profile, $result );
+			} catch ( \Throwable $e ) {
+				$response['actions'] = array();
+			}
 		}
 
 		return rest_ensure_response( $response );
@@ -182,6 +196,19 @@ final class AI_Intake_Rest_Controller {
 		unset( $request );
 
 		return rest_ensure_response( $this->service->test_connection() );
+	}
+
+	/**
+	 * Rate-limited public interpret access.
+	 *
+	 * @return bool|\WP_Error
+	 */
+	public function can_interpret() {
+		return $this->rate_limiter->rest_permission(
+			$this->rate_limiter->bucket_for_route( 'prose_intake_interpret' ),
+			60,
+			60
+		);
 	}
 
 	/**

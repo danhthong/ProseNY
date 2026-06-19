@@ -140,10 +140,12 @@ foreach ( $workflow_files as $file ) {
 		}
 	}
 
+	$internal = is_array( $data['internal'] ?? null ) ? $data['internal'] : array();
+	$stages   = is_array( $data['stages'] ?? null ) ? $data['stages'] : array();
+
 	if ( isset( $data['stages'] ) && is_array( $data['required_forms'] ) ) {
-		$stage_keys = $data['stages'];
 		foreach ( $data['required_forms'] as $mapping ) {
-			if ( isset( $mapping['stage'] ) && ! in_array( $mapping['stage'], $stage_keys, true ) ) {
+			if ( isset( $mapping['stage'] ) && ! in_array( $mapping['stage'], $stages, true ) ) {
 				$errors[] = basename( $file ) . ': required_forms references unknown stage ' . $mapping['stage'];
 			}
 			if ( isset( $mapping['forms'] ) ) {
@@ -152,6 +154,48 @@ foreach ( $workflow_files as $file ) {
 						$errors[] = basename( $file ) . ': form entry missing code';
 					}
 				}
+			}
+		}
+	}
+
+	$nodes    = is_array( $internal['node_sequence'] ?? null ) ? $internal['node_sequence'] : array();
+	$progress = is_array( $internal['progression'] ?? null ) ? $internal['progression'] : array();
+
+	if ( empty( $nodes ) ) {
+		$errors[] = basename( $file ) . ': internal.node_sequence must be a non-empty array';
+	} elseif ( count( $stages ) < count( $nodes ) ) {
+		$errors[] = basename( $file ) . ': stages count (' . count( $stages ) . ') must be at least node_sequence count (' . count( $nodes ) . ')';
+	}
+
+	foreach ( $nodes as $node_key ) {
+		if ( ! is_string( $node_key ) || ! preg_match( '/^NODE_[0-9]+_[A-Z0-9_]+$/', $node_key ) ) {
+			$errors[] = basename( $file ) . ': invalid node_sequence entry ' . (string) $node_key;
+		}
+	}
+
+	if ( empty( $progress ) ) {
+		$errors[] = basename( $file ) . ': internal.progression must be a non-empty array';
+	} else {
+		$first = $progress[0]['node'] ?? '';
+		if ( ! empty( $nodes ) && (string) $first !== (string) $nodes[0] ) {
+			$errors[] = basename( $file ) . ': progression entry node must match first node_sequence entry';
+		}
+	}
+
+	if ( isset( $internal['edges'] ) && is_array( $internal['edges'] ) ) {
+		foreach ( $internal['edges'] as $edge ) {
+			foreach ( array( 'from', 'to' ) as $edge_key ) {
+				if ( empty( $edge['condition']['kind'] ) || empty( $edge['condition']['value'] ) ) {
+					$errors[] = basename( $file ) . ': edge missing condition kind/value';
+				}
+			}
+		}
+	}
+
+	if ( isset( $data['optional_forms'] ) && is_array( $data['optional_forms'] ) && ! empty( $stages ) ) {
+		foreach ( $data['optional_forms'] as $mapping ) {
+			if ( isset( $mapping['stage'] ) && ! in_array( $mapping['stage'], $stages, true ) ) {
+				$errors[] = basename( $file ) . ': optional_forms references unknown stage ' . $mapping['stage'];
 			}
 		}
 	}
@@ -215,6 +259,50 @@ foreach ( $routing_refs as $ref ) {
 $expected_count = 12;
 if ( count( $workflow_files ) !== $expected_count ) {
 	$errors[] = 'Expected ' . $expected_count . ' workflows, found ' . count( $workflow_files );
+}
+
+$form_codes = array();
+$form_files = array_merge(
+	glob( dirname( __DIR__ ) . '/docs/forms/supreme_court/*.json' ) ?: array(),
+	glob( dirname( __DIR__ ) . '/docs/forms/family_court/*.json' ) ?: array()
+);
+
+foreach ( $form_files as $file ) {
+	$raw = file_get_contents( $file );
+
+	if ( false === $raw ) {
+		continue;
+	}
+
+	$data = json_decode( $raw, true );
+
+	if ( is_array( $data ) && ! empty( $data['form_code'] ) ) {
+		$form_codes[ (string) $data['form_code'] ] = true;
+	}
+}
+
+foreach ( $workflow_files as $file ) {
+	$raw = file_get_contents( $file );
+
+	if ( false === $raw ) {
+		continue;
+	}
+
+	$data = json_decode( $raw, true );
+
+	if ( ! is_array( $data ) ) {
+		continue;
+	}
+
+	foreach ( (array) ( $data['required_forms'] ?? array() ) as $stage_block ) {
+		foreach ( (array) ( $stage_block['forms'] ?? array() ) as $form ) {
+			$code = (string) ( $form['code'] ?? '' );
+
+			if ( '' !== $code && ! isset( $form_codes[ $code ] ) ) {
+				$errors[] = basename( $file ) . ": required form '$code' not found in forms catalog";
+			}
+		}
+	}
 }
 
 if ( ! empty( $errors ) ) {

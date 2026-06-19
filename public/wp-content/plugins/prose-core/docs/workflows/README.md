@@ -111,6 +111,9 @@ Each workflow file conforms to `schema/workflow.schema.json`. Key fields:
 | `intake_priority` | Intake Agent matching priority; safety-sensitive workflows rank highest |
 | `required_fields` | Structured data requirements `{ key, type, required, question }` — the Intake Agent generates questions directly from these |
 | `stages` | Ordered procedural stages |
+| `internal.node_sequence` | PRD node IDs (`NODE_1001`–`NODE_1010`, etc.) aligned 1:1 with `stages[]` |
+| `internal.progression` | Entry conditions for each node (`event` or `package` triggers) |
+| `internal.edges` | Optional branching transitions (e.g. settlement vs trial) |
 | `workflow_outcomes` | Expected procedural outcomes for the Procedural Navigator / Timeline Engine |
 | `required_forms` | Stage → official form mappings |
 | `supporting_documents` | Non-form documents commonly required |
@@ -157,6 +160,23 @@ All workflows support the five NYC counties:
 - Bronx
 - Richmond (Staten Island)
 
+## Stage model
+
+Each workflow defines an ordered procedural graph in JSON:
+
+1. **`stages[]`** — human-facing stage slugs (`commencement`, `discovery`, `judgment`, …)
+2. **`internal.node_sequence[]`** — engine node IDs; the first N entries align 1:1 with the first N `stages[]` entry-path stages
+3. **`internal.progression[]`** — linear advance rules into each node after the entry node
+4. **`internal.edges[]`** — optional branch rules (e.g. compliance conference → settlement **or** trial)
+
+The **`Workflow_Progression_Service`** (`modules/forms/engine/class-workflow-progression-service.php`) is the runtime reader for this graph. It powers:
+
+- `Case_Catalog` node advancement (case engine)
+- `Guidance_Resolver` / Procedural Navigator stage lists
+- Package Builder stage form lookup via `get_stage_forms()`
+
+Court and workflow **selection** remains in `modules/routing/`. Case **progression** reads only from workflow JSON.
+
 ## Validation
 
 Run the validation script:
@@ -170,9 +190,14 @@ This checks JSON syntax, required schema fields, stage/form consistency, and reg
 - `workflow_category`, `workflow_outcomes`, `entry_questions`, and `intake_priority` exist
 - every required field defines a `question`
 - `internal.workflow_enum` is present and unique across all workflows
+- `internal.node_sequence` length must be ≤ `stages[]` length (first N stages align with nodes)
+- `internal.progression` is present and starts at the first node
+- node IDs match `NODE_<digits>_<NAME>` format
 - `routing_rules` reference valid workflow names
 - no procedural phase (discovery, settlement, trial, judgment, motion_practice, maintenance, property_division) is modeled as a standalone workflow
 
 ## Phase status
 
-**Phase 1 — Workflow Repository: complete.** 12 workflows (4 divorce, 8 Family Court), full schema, validated metadata, inventory, and outcomes. Next: Phase 2 — Court Routing Engine Builder.
+**Phase 1 — Workflow Repository: complete.** 12 workflows (4 divorce, 8 Family Court), full schema, validated metadata, inventory, and outcomes.
+
+**Phase 2 — Workflow progression engine: complete.** JSON-driven `Workflow_Progression_Service`, case engine delegation, procedural navigator stage parity. Next: Phase 3 — Timeline deadlines (Plan 09).

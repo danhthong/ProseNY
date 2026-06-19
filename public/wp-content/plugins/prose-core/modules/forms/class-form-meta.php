@@ -30,6 +30,7 @@ class Form_Meta {
 	public const META_CONDITIONS       = 'prose_conditions';
 
 	// PDF storage.
+	public const META_PDF             = 'prose_pdf';
 	public const META_FILE_NAME        = 'prose_file_name';
 	public const META_FILE_URL         = 'prose_file_url';
 	public const META_SOURCE_PDF_URL   = 'prose_source_pdf_url';
@@ -122,6 +123,7 @@ class Form_Meta {
 			self::META_COUNTY,
 			self::META_WORKFLOW_KEY,
 			self::META_PACKET_GROUP,
+			self::META_PDF,
 			self::META_FILE_NAME,
 			self::META_FILE_URL,
 			self::META_SOURCE_PDF_URL,

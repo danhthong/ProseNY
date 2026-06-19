@@ -26,8 +26,11 @@ use ProSe\Core\PackageBuilder\Package_Builder_Module;
 use ProSe\Core\Guidance\Guidance_Module;
 use ProSe\Core\Guidance\Guidance_Repository;
 use ProSe\Core\Ai_Intake\AI_Intake_Module;
+use ProSe\Core\Documents\Documents_Module;
 use ProSe\Core\Packet\Packet_Module;
 use ProSe\Core\Procedural\Procedural_Module;
+use ProSe\Core\Search\Search_Module;
+use ProSe\Core\Security\Security_Module;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -176,7 +179,10 @@ final class Plugin {
 				Procedural_Module::class,
 				Packet_Module::class,
 				Guidance_Module::class,
+				Documents_Module::class,
 				AI_Intake_Module::class,
+				Search_Module::class,
+				Security_Module::class,
 			)
 		);
 

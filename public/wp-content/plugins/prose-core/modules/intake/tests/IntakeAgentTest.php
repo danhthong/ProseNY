@@ -59,6 +59,11 @@ class IntakeAgentTest extends TestCase {
 				'contested_divorce_nyc',
 				array( 'facts' => array( 'children' => true ) ),
 			),
+			'default_divorce' => array(
+				'My spouse did not respond to the divorce papers.',
+				'default_divorce_nyc',
+				array( 'facts' => array( 'spouse_responded' => false ) ),
+			),
 			'custody' => array(
 				'I want custody of my son.',
 				'custody_nyc',
@@ -214,7 +219,9 @@ class IntakeAgentTest extends TestCase {
 
 		$this->assertGreaterThan( $first['completion'], $second['completion'] );
 		$this->assertSame( 100, $second['completion'] );
-		$this->assertSame( '', $second['next_question'], 'No question when intake complete.' );
+		$this->assertSame( 'complete_intake', $second['next_action'] );
+		$this->assertNotEmpty( $second['next_question'], 'Completion guidance when intake complete.' );
+		$this->assertStringContainsString( 'Uncontested Divorce Children', $second['next_question'] );
 		$this->assertSame( array(), $second['missing_fields'] );
 	}
 

@@ -89,6 +89,18 @@ final class Court_Resolver {
 			return true;
 		}
 
+		// Only custody-type matters are absorbed into Supreme Court divorce cases.
+		// Orders of protection and family offense stay in Family Court even when divorce is also mentioned.
+		$absorbed_by_divorce = array(
+			'custody',
+			'visitation',
+			'child_support',
+		);
+
+		if ( ! in_array( $base_issue, $absorbed_by_divorce, true ) ) {
+			return false;
+		}
+
 		$divorce_signals = array(
 			'divorce',
 			'getting divorced',
@@ -99,6 +111,10 @@ final class Court_Resolver {
 		);
 
 		foreach ( $signals as $signal ) {
+			if ( 'active_divorce' === $signal ) {
+				return true;
+			}
+
 			foreach ( $divorce_signals as $divorce_signal ) {
 				if ( str_contains( $signal, $divorce_signal ) ) {
 					return true;

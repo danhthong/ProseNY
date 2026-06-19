@@ -203,6 +203,10 @@ class PacketBuilderTest extends TestCase {
 
 		$this->assertTrue( $result['success'] );
 
+		if ( ! class_exists( '\ZipArchive' ) ) {
+			$this->markTestSkipped( 'ZipArchive not available.' );
+		}
+
 		$zip = new ZipArchive();
 		$this->assertTrue( $zip->open( $this->temp_dir . '/zip/' . self::PACKAGE_ID . '.zip' ) );
 		$this->assertNotFalse( $zip->locateName( 'UD-1.pdf' ) );

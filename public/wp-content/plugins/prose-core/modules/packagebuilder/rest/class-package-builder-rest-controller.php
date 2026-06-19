@@ -172,7 +172,7 @@ final class Package_Builder_Rest_Controller {
 				'type'              => 'string',
 				'required'          => true,
 				'sanitize_callback' => static function ( $value ): string {
-					return sanitize_key( (string) $value );
+					return \sanitize_key( (string) $value );
 				},
 			),
 			'facts'           => array(
@@ -185,7 +185,7 @@ final class Package_Builder_Rest_Controller {
 				'required'          => false,
 				'default'           => Package_Type::BLANK,
 				'sanitize_callback' => static function ( $value ): string {
-					return sanitize_key( (string) $value );
+					return \sanitize_key( (string) $value );
 				},
 			),
 		);

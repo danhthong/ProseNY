@@ -122,6 +122,11 @@
       "NODE_1001_DIVORCE_FILED",
       "NODE_1002_SERVICE_COMPLETE",
       "NODE_1010_JUDGMENT"
+    ],
+    "progression": [
+      { "node": "NODE_1001_DIVORCE_FILED" },
+      { "node": "NODE_1002_SERVICE_COMPLETE", "condition": { "kind": "event", "value": "SERVICE_COMPLETED" } },
+      { "node": "NODE_1010_JUDGMENT", "condition": { "kind": "package", "value": "PKG_JUDGMENT" } }
     ]
   },
   "source_references": [

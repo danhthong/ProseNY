@@ -42,7 +42,8 @@ final class Case_Event_Service {
 				$state->workflow_key(),
 				$from_node,
 				Case_Catalog::COND_EVENT,
-				$event_type
+				$event_type,
+				$state->answers()
 			);
 
 			if ( $to_node !== $from_node ) {

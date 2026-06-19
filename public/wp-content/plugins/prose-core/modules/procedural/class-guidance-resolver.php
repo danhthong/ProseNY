@@ -7,6 +7,8 @@
 
 namespace ProSe\Core\Procedural;
 
+use ProSe\Core\Forms\Engine\Workflow_Progression_Service;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -17,15 +19,45 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Guidance_Resolver {
 
 	/**
+	 * Progression service.
+	 *
+	 * @var Workflow_Progression_Service
+	 */
+	private Workflow_Progression_Service $progression;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param Workflow_Progression_Service|null $progression Progression service.
+	 */
+	public function __construct( ?Workflow_Progression_Service $progression = null ) {
+		$this->progression = $progression ?? new Workflow_Progression_Service();
+	}
+
+	/**
 	 * Resolve ordered next steps from a workflow definition.
 	 *
-	 * @param array<string, mixed> $definition Workflow definition.
-	 * @return array<int, array{order: int, id: string, title: string}>
+	 * @param array<string, mixed>      $definition     Workflow definition.
+	 * @param string|null               $current_stage  Optional current stage slug.
+	 * @param string|null               $current_node   Optional current node key.
+	 * @return array<int, array{order: int, id: string, title: string, current: bool, forms: array<int, array{code: string, title: string, required: bool}>}>
 	 */
-	public function next_steps( array $definition ): array {
-		$stages = is_array( $definition['stages'] ?? null ) ? $definition['stages'] : array();
-		$steps  = array();
-		$order  = 1;
+	public function next_steps( array $definition, ?string $current_stage = null, ?string $current_node = null ): array {
+		$workflow_key = (string) ( $definition['workflow'] ?? '' );
+		$stages       = $this->progression->get_stages( $workflow_key );
+
+		if ( empty( $stages ) ) {
+			$stages = is_array( $definition['stages'] ?? null ) ? $definition['stages'] : array();
+		}
+
+		if ( null === $current_stage || '' === $current_stage ) {
+			if ( null !== $current_node && '' !== $current_node && '' !== $workflow_key ) {
+				$current_stage = $this->progression->get_current_stage( $workflow_key, $current_node );
+			}
+		}
+
+		$steps = array();
+		$order = 1;
 
 		foreach ( $stages as $stage ) {
 			$stage_id = trim( (string) $stage );
@@ -35,9 +67,13 @@ final class Guidance_Resolver {
 			}
 
 			$steps[] = array(
-				'order' => $order,
-				'id'    => $stage_id,
-				'title' => $this->stage_title( $stage_id ),
+				'order'   => $order,
+				'id'      => $stage_id,
+				'title'   => $this->stage_title( $stage_id ),
+				'current' => null !== $current_stage && $current_stage === $stage_id,
+				'forms'   => '' !== $workflow_key
+					? $this->progression->get_stage_forms( $workflow_key, $stage_id )
+					: array(),
 			);
 
 			++$order;

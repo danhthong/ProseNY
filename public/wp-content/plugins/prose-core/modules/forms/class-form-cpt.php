@@ -233,8 +233,9 @@ class Form_CPT {
 				break;
 
 			case 'prose_pdf':
+				$resolver  = new Form_Pdf_Path_Resolver();
+				$file_name = $resolver->pdf_filename_for_post( get_post( $post_id ) );
 				$file_url  = (string) get_post_meta( $post_id, Form_Meta::META_FILE_URL, true );
-				$file_name = (string) get_post_meta( $post_id, Form_Meta::META_FILE_NAME, true );
 
 				if ( '' !== $file_url ) {
 					printf(

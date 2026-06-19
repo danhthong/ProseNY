@@ -124,7 +124,30 @@ final class Form_Record_Enricher {
 	 * @return array<string, mixed>
 	 */
 	public function apply_computed_fields( array $record ): array {
-		$computed = Form_Source_Selector::compute( (array) ( $record['source_files'] ?? array() ) );
+		$source_files = (array) ( $record['source_files'] ?? array() );
+		$computed     = Form_Source_Selector::compute( $source_files );
+
+		if ( ! $computed['generation_ready'] ) {
+			foreach ( array( 'pdf', 'fillable_pdf' ) as $slot ) {
+				$entry = $source_files[ $slot ] ?? null;
+
+				if ( ! is_array( $entry ) ) {
+					continue;
+				}
+
+				$path = (string) ( $entry['path'] ?? '' );
+
+				if ( '' === $path || ! is_readable( $path ) ) {
+					continue;
+				}
+
+				$computed['preferred_source']  = $slot;
+				$computed['editable_source']   = $slot;
+				$computed['fillable_strategy'] = 'fillable_pdf' === $slot ? 'pdf_acroform' : 'pdf_overlay';
+				$computed['generation_ready']  = true;
+				break;
+			}
+		}
 
 		$record['preferred_source']  = $computed['preferred_source'];
 		$record['editable_source']   = $computed['editable_source'];
@@ -216,32 +239,27 @@ final class Form_Record_Enricher {
 	 * @return array<string, array<string, mixed>>
 	 */
 	private function merge_legacy_file_meta( \WP_Post $post, array $slots ): array {
-		if ( isset( $slots['pdf'] ) || isset( $slots['fillable_pdf'] ) ) {
+		if ( isset( $slots['fillable_pdf'] ) ) {
 			return $slots;
 		}
 
-		$form_code = (string) get_post_meta( $post->ID, Form_Meta::META_FORM_CODE, true );
-
-		if ( '' === $form_code ) {
-			$form_code = (string) get_post_meta( $post->ID, Form_Meta::META_FORM_ID, true );
-		}
-
-		$file_name = (string) get_post_meta( $post->ID, Form_Meta::META_FILE_NAME, true );
-		$path      = '';
-
-		if ( '' !== $file_name && '' !== $form_code ) {
-			$file_manager = new Form_File_Manager();
-			$path         = $file_manager->resolve_local_path( sanitize_title( $form_code ), $file_name );
-		}
-
-		if ( ( '' === $path || ! is_readable( $path ) ) && function_exists( 'get_post_meta' ) ) {
-			$file_url = (string) get_post_meta( $post->ID, Form_Meta::META_FILE_URL, true );
-			$path     = $this->map_file_url_to_path( $file_url );
-		}
+		$resolver = new Form_Pdf_Path_Resolver();
+		$path     = $resolver->resolve_for_post( $post );
 
 		if ( '' === $path || ! is_readable( $path ) ) {
 			return $slots;
 		}
+
+		if ( isset( $slots['pdf'] ) && is_array( $slots['pdf'] ) ) {
+			$existing_path   = (string) ( $slots['pdf']['path'] ?? '' );
+			$existing_status = (string) ( $slots['pdf']['download_status'] ?? '' );
+
+			if ( '' !== $existing_path && is_readable( $existing_path ) && ! in_array( $existing_status, array( 'failed', 'unsupported' ), true ) ) {
+				return $slots;
+			}
+		}
+
+		$file_name = $resolver->pdf_filename_for_post( $post );
 
 		$slots['pdf'] = array(
 			'filename'        => '' !== $file_name ? $file_name : basename( $path ),
@@ -260,43 +278,7 @@ final class Form_Record_Enricher {
 	 * @return string
 	 */
 	private function map_file_url_to_path( string $file_url ): string {
-		$file_url = trim( $file_url );
-
-		if ( '' === $file_url ) {
-			return '';
-		}
-
-		if ( function_exists( 'wp_upload_dir' ) ) {
-			$uploads = wp_upload_dir();
-
-			if ( is_array( $uploads ) && ! empty( $uploads['baseurl'] ) && ! empty( $uploads['basedir'] ) ) {
-				$baseurl = trailingslashit( $uploads['baseurl'] );
-				$basedir = trailingslashit( $uploads['basedir'] );
-
-				if ( 0 === strpos( $file_url, $baseurl ) ) {
-					$path = $basedir . substr( $file_url, strlen( $baseurl ) );
-
-					if ( is_readable( $path ) ) {
-						return $path;
-					}
-				}
-			}
-		}
-
-		if ( function_exists( 'wp_parse_url' ) ) {
-			$path = (string) wp_parse_url( $file_url, PHP_URL_PATH );
-			$pos  = strpos( $path, '/wp-content/uploads/' );
-
-			if ( false !== $path && false !== $pos && defined( 'WP_CONTENT_DIR' ) ) {
-				$mapped = WP_CONTENT_DIR . substr( $path, strlen( '/wp-content' ) );
-
-				if ( is_readable( $mapped ) ) {
-					return $mapped;
-				}
-			}
-		}
-
-		return '';
+		return Form_Pdf_Path_Resolver::map_url_to_path( $file_url );
 	}
 
 	/**

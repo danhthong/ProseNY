@@ -2,9 +2,8 @@
 /**
  * Supported Issue Catalog — configurable scope for the domain guard.
  *
- * Future modules may register additional issue types (adoption, paternity,
- * family offense, guardianship) via the prose_supported_issue_catalog filter
- * without rewriting the guard.
+ * Issue types and workflow triggers are aligned with the NYC workflow repository
+ * (12 entry workflows). Additional types may be registered via filters.
  *
  * @package ProSeCore
  */
@@ -28,24 +27,40 @@ final class Supported_Issue_Catalog {
 	public const CONFIDENCE_THRESHOLD = 0.30;
 
 	/**
-	 * Issue types currently in scope for ProSeNY intake.
+	 * Issue types in scope for ProSeNY intake (derived from workflow repository).
 	 *
+	 * @param Workflow_Catalog|null $catalog Workflow catalog.
 	 * @return string[]
 	 */
-	public function issue_types(): array {
-		$types = array(
-			'divorce',
-			'custody',
-			'child_support',
-			'visitation',
-		);
+	public function issue_types( ?Workflow_Catalog $catalog = null ): array {
+		$catalog = $catalog ?? new Workflow_Catalog();
+		$types   = array();
+
+		foreach ( $catalog->all() as $workflow ) {
+			$issue_type = trim( (string) ( $workflow['issue_type'] ?? '' ) );
+
+			if ( '' !== $issue_type ) {
+				$types[ $issue_type ] = true;
+			}
+		}
+
+		$types = array_keys( $types );
+		sort( $types );
 
 		/**
 		 * Filter supported issue types for the domain scope guard.
 		 *
-		 * @param string[] $types Issue type keys matching workflow issue_type values.
+		 * @param string[]         $types   Issue type keys matching workflow issue_type values.
+		 * @param Workflow_Catalog $catalog Workflow catalog.
 		 */
-		return array_values( array_unique( array_map( 'strval', (array) apply_filters( 'prose_supported_issue_types', $types ) ) ) );
+		return array_values(
+			array_unique(
+				array_map(
+					'strval',
+					(array) apply_filters( 'prose_supported_issue_types', $types, $catalog )
+				)
+			)
+		);
 	}
 
 	/**
@@ -55,6 +70,7 @@ final class Supported_Issue_Catalog {
 	 */
 	public function keywords(): array {
 		$keywords = array(
+			// Divorce / matrimonial.
 			array( 'phrase' => 'divorce', 'weight' => 0.40 ),
 			array( 'phrase' => 'uncontested divorce', 'weight' => 0.45 ),
 			array( 'phrase' => 'contested divorce', 'weight' => 0.45 ),
@@ -63,20 +79,72 @@ final class Supported_Issue_Catalog {
 			array( 'phrase' => 'matrimonial', 'weight' => 0.35 ),
 			array( 'phrase' => 'separation', 'weight' => 0.35 ),
 			array( 'phrase' => 'legal separation', 'weight' => 0.35 ),
+			array( 'phrase' => 'judgment of divorce', 'weight' => 0.40 ),
+			array( 'phrase' => 'file for divorce', 'weight' => 0.40 ),
+			array( 'phrase' => 'filing for divorce', 'weight' => 0.40 ),
+			array( 'phrase' => 'supreme court divorce', 'weight' => 0.40 ),
+			array( 'phrase' => 'divorce forms', 'weight' => 0.35 ),
+			array( 'phrase' => 'divorce form', 'weight' => 0.35 ),
+			array( 'phrase' => 'divorce procedure', 'weight' => 0.35 ),
+			array( 'phrase' => 'spousal maintenance', 'weight' => 0.35 ),
+			array( 'phrase' => 'spousal support', 'weight' => 0.35 ),
+			array( 'phrase' => 'maintenance', 'weight' => 0.30 ),
+			array( 'phrase' => 'ud-1', 'weight' => 0.35 ),
+			array( 'phrase' => 'ud-4', 'weight' => 0.30 ),
+			// Custody / visitation.
 			array( 'phrase' => 'child custody', 'weight' => 0.40 ),
 			array( 'phrase' => 'custody', 'weight' => 0.30 ),
 			array( 'phrase' => 'visitation', 'weight' => 0.35 ),
 			array( 'phrase' => 'parenting time', 'weight' => 0.35 ),
+			// Child support.
 			array( 'phrase' => 'child support', 'weight' => 0.40 ),
-			array( 'phrase' => 'support order', 'weight' => 0.25 ),
-			array( 'phrase' => 'divorce forms', 'weight' => 0.35 ),
-			array( 'phrase' => 'divorce form', 'weight' => 0.35 ),
-			array( 'phrase' => 'divorce procedure', 'weight' => 0.35 ),
-			array( 'phrase' => 'file for divorce', 'weight' => 0.40 ),
-			array( 'phrase' => 'filing for divorce', 'weight' => 0.40 ),
-			array( 'phrase' => 'supreme court divorce', 'weight' => 0.40 ),
+			array( 'phrase' => 'support order', 'weight' => 0.30 ),
+			// Orders of protection / family offense.
+			array( 'phrase' => 'order of protection', 'weight' => 0.45 ),
+			array( 'phrase' => 'restraining order', 'weight' => 0.40 ),
+			array( 'phrase' => 'stay away order', 'weight' => 0.40 ),
+			array( 'phrase' => 'protection order', 'weight' => 0.35 ),
+			array( 'phrase' => 'family offense', 'weight' => 0.40 ),
+			array( 'phrase' => 'domestic violence', 'weight' => 0.40 ),
+			array( 'phrase' => 'abused', 'weight' => 0.35 ),
+			array( 'phrase' => 'abuse', 'weight' => 0.30 ),
+			// Adoption / paternity / guardianship.
+			array( 'phrase' => 'adoption', 'weight' => 0.40 ),
+			array( 'phrase' => 'adopt a child', 'weight' => 0.40 ),
+			array( 'phrase' => 'paternity', 'weight' => 0.40 ),
+			array( 'phrase' => 'guardianship', 'weight' => 0.40 ),
+			array( 'phrase' => 'legal guardian', 'weight' => 0.35 ),
+			// Enforcement / modification.
+			array( 'phrase' => 'enforcement', 'weight' => 0.35 ),
+			array( 'phrase' => 'violation petition', 'weight' => 0.35 ),
+			array( 'phrase' => 'violate custody', 'weight' => 0.35 ),
+			array( 'phrase' => 'modification', 'weight' => 0.35 ),
+			array( 'phrase' => 'modify support', 'weight' => 0.35 ),
+			// Received court papers / motions.
+			array( 'phrase' => 'received court papers', 'weight' => 0.40 ),
+			array( 'phrase' => 'got court papers', 'weight' => 0.40 ),
+			array( 'phrase' => 'court papers', 'weight' => 0.35 ),
+			array( 'phrase' => 'order to show cause', 'weight' => 0.40 ),
+			array( 'phrase' => 'show cause', 'weight' => 0.35 ),
+			array( 'phrase' => 'received an osc', 'weight' => 0.40 ),
+			array( 'phrase' => 'got an osc', 'weight' => 0.40 ),
+			array( 'phrase' => 'summons and complaint', 'weight' => 0.35 ),
+			array( 'phrase' => 'verified answer', 'weight' => 0.35 ),
+			// Ambiguous intake starters.
+			array( 'phrase' => 'not sure which forms', 'weight' => 0.35 ),
+			array( 'phrase' => 'not sure which court forms', 'weight' => 0.35 ),
+			array( 'phrase' => 'not sure which court', 'weight' => 0.35 ),
+			array( 'phrase' => 'not sure where to start', 'weight' => 0.35 ),
+			array( 'phrase' => 'help me figure out', 'weight' => 0.35 ),
+			array( 'phrase' => 'which forms do i need', 'weight' => 0.35 ),
+			array( 'phrase' => 'which court should i file', 'weight' => 0.35 ),
+			array( 'phrase' => 'what forms do i need', 'weight' => 0.35 ),
+			// General family court context.
+			array( 'phrase' => 'family court', 'weight' => 0.25 ),
 			array( 'phrase' => 'family court custody', 'weight' => 0.35 ),
 			array( 'phrase' => 'family court support', 'weight' => 0.35 ),
+			array( 'phrase' => 'supreme court', 'weight' => 0.25 ),
+			array( 'phrase' => 'court forms', 'weight' => 0.30 ),
 			array( 'phrase' => 'spouse', 'weight' => 0.20 ),
 			array( 'phrase' => 'ex-spouse', 'weight' => 0.20 ),
 			array( 'phrase' => 'ex spouse', 'weight' => 0.20 ),
@@ -84,11 +152,6 @@ final class Supported_Issue_Catalog {
 			array( 'phrase' => 'wife', 'weight' => 0.15 ),
 			array( 'phrase' => 'married', 'weight' => 0.15 ),
 			array( 'phrase' => 'marriage', 'weight' => 0.15 ),
-			array( 'phrase' => 'judgment of divorce', 'weight' => 0.40 ),
-			array( 'phrase' => 'ud-1', 'weight' => 0.35 ),
-			array( 'phrase' => 'ud-4', 'weight' => 0.30 ),
-			array( 'phrase' => 'family court', 'weight' => 0.20 ),
-			array( 'phrase' => 'supreme court', 'weight' => 0.20 ),
 		);
 
 		/**
@@ -101,6 +164,8 @@ final class Supported_Issue_Catalog {
 
 	/**
 	 * Keyword signals for clearly out-of-scope topics.
+	 *
+	 * Must not include phrases that match in-scope workflow entry points.
 	 *
 	 * @return array<int, array{phrase: string, label: string}>
 	 */
@@ -137,14 +202,8 @@ final class Supported_Issue_Catalog {
 			array( 'phrase' => 'wrongful termination', 'label' => 'employment law' ),
 			array( 'phrase' => 'landlord tenant', 'label' => 'housing law' ),
 			array( 'phrase' => 'eviction', 'label' => 'housing law' ),
-			array( 'phrase' => 'real estate', 'label' => 'real estate' ),
 			array( 'phrase' => 'wills and trusts', 'label' => 'estate planning' ),
 			array( 'phrase' => 'estate planning', 'label' => 'estate planning' ),
-			array( 'phrase' => 'adoption', 'label' => 'adoption' ),
-			array( 'phrase' => 'paternity', 'label' => 'paternity' ),
-			array( 'phrase' => 'guardianship', 'label' => 'guardianship' ),
-			array( 'phrase' => 'order of protection', 'label' => 'orders of protection' ),
-			array( 'phrase' => 'restraining order', 'label' => 'orders of protection' ),
 		);
 
 		/**
@@ -156,15 +215,16 @@ final class Supported_Issue_Catalog {
 	}
 
 	/**
-	 * Routing triggers from workflows whose issue_type is currently supported.
+	 * Routing triggers from all in-scope workflows in the repository.
 	 *
 	 * @param Workflow_Catalog|null $catalog Workflow catalog.
 	 * @return array<int, array{phrase: string, weight: float}>
 	 */
 	public function workflow_triggers( ?Workflow_Catalog $catalog = null ): array {
 		$catalog       = $catalog ?? new Workflow_Catalog();
-		$allowed_types = array_flip( $this->issue_types() );
+		$allowed_types = array_flip( $this->issue_types( $catalog ) );
 		$triggers      = array();
+		$seen          = array();
 
 		foreach ( $catalog->all() as $workflow ) {
 			$issue_type = (string) ( $workflow['issue_type'] ?? '' );
@@ -173,16 +233,23 @@ final class Supported_Issue_Catalog {
 				continue;
 			}
 
+			$weight = 0.35;
+
+			if ( in_array( $issue_type, array( 'order_of_protection', 'family_offense' ), true ) ) {
+				$weight = 0.40;
+			}
+
 			foreach ( (array) ( $workflow['triggers'] ?? array() ) as $trigger ) {
 				$phrase = strtolower( trim( (string) $trigger ) );
 
-				if ( '' === $phrase ) {
+				if ( '' === $phrase || isset( $seen[ $phrase ] ) ) {
 					continue;
 				}
 
-				$triggers[] = array(
+				$seen[ $phrase ] = true;
+				$triggers[]      = array(
 					'phrase' => $phrase,
-					'weight' => 0.35,
+					'weight' => $weight,
 				);
 			}
 		}
@@ -196,13 +263,14 @@ final class Supported_Issue_Catalog {
 	 * @return string
 	 */
 	public function restriction_message(): string {
-		$message = __( 'ProSeNY currently focuses on divorce and related family law matters in New York.', 'prose-core' ) . "\n\n"
+		$message = __( 'ProSeNY helps with divorce and Family Court matters in New York City.', 'prose-core' ) . "\n\n"
 			. __( 'You can ask questions such as:', 'prose-core' ) . "\n\n"
-			. "• " . __( 'How do I file for divorce?', 'prose-core' ) . "\n"
-			. "• " . __( 'What forms do I need?', 'prose-core' ) . "\n"
-			. "• " . __( 'How does child custody work?', 'prose-core' ) . "\n"
-			. "• " . __( 'How do I request child support?', 'prose-core' ) . "\n"
-			. "• " . __( 'Which court should I file in?', 'prose-core' );
+			. '• ' . __( 'How do I file for divorce?', 'prose-core' ) . "\n"
+			. '• ' . __( 'What forms do I need?', 'prose-core' ) . "\n"
+			. '• ' . __( 'How does child custody or support work?', 'prose-core' ) . "\n"
+			. '• ' . __( 'How do I request an order of protection?', 'prose-core' ) . "\n"
+			. '• ' . __( 'I received court papers — what do I do?', 'prose-core' ) . "\n"
+			. '• ' . __( 'Which court should I file in?', 'prose-core' );
 
 		/**
 		 * Filter the out-of-scope redirect message shown by the domain guard.
@@ -218,6 +286,9 @@ final class Supported_Issue_Catalog {
 	 * @return string
 	 */
 	public function restriction_summary(): string {
-		return __( 'ProSeNY currently provides guidance only for divorce and related family law matters in New York. Please ask a question about divorce, child custody, child support, visitation, or related court forms.', 'prose-core' );
+		return __(
+			'ProSeNY provides procedural guidance for NYC divorce and Family Court matters — including custody, child support, visitation, orders of protection, adoption, paternity, and guardianship. Please ask about your court matter or the forms you need.',
+			'prose-core'
+		);
 	}
 }

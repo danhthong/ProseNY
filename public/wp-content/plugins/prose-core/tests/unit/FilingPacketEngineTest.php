@@ -39,33 +39,11 @@ class FilingPacketEngineTest extends TestCase {
 	 */
 	protected function tearDown(): void {
 		foreach ( $this->temp_dirs as $dir ) {
-			$this->remove_tree( $dir );
+			prose_test_remove_tree( $dir );
 		}
 
 		$this->temp_dirs = array();
 		parent::tearDown();
-	}
-
-	/**
-	 * Recursively remove a directory tree.
-	 *
-	 * @param string $dir Directory.
-	 * @return void
-	 */
-	private function remove_tree( string $dir ): void {
-		if ( ! is_dir( $dir ) ) {
-			return;
-		}
-
-		foreach ( (array) glob( $dir . '/*' ) as $path ) {
-			if ( is_dir( $path ) ) {
-				$this->remove_tree( $path );
-			} else {
-				unlink( $path );
-			}
-		}
-
-		rmdir( $dir );
 	}
 
 	/**
@@ -74,7 +52,7 @@ class FilingPacketEngineTest extends TestCase {
 	 * @return Pdf_Storage_Service
 	 */
 	private function temp_storage(): Pdf_Storage_Service {
-		$dir               = sys_get_temp_dir() . '/prose-packet-' . uniqid( '', true );
+		$dir               = prose_test_temp_dir( 'prose-packet' );
 		$this->temp_dirs[] = $dir;
 
 		return new Pdf_Storage_Service( $dir, 'https://example.test/docs' );

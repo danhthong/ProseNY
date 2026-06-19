@@ -35,6 +35,20 @@ final class Forms_Catalog {
 	private Workflow_Catalog $workflow_catalog;
 
 	/**
+	 * Form repository for runtime asset overlay.
+	 *
+	 * @var Form_Repository|null
+	 */
+	private ?Form_Repository $forms = null;
+
+	/**
+	 * Record enricher for runtime asset overlay.
+	 *
+	 * @var Form_Record_Enricher|null
+	 */
+	private ?Form_Record_Enricher $enricher = null;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Workflow_Catalog|null $workflow_catalog Optional workflow catalog.
@@ -59,9 +73,105 @@ final class Forms_Catalog {
 	 * @return array<string, mixed>|null
 	 */
 	public function by_code( string $form_code ): ?array {
+		$form_code = trim( $form_code );
+
+		if ( '' === $form_code ) {
+			return null;
+		}
+
 		$all = $this->load();
 
-		return $all[ $form_code ] ?? null;
+		if ( isset( $all[ $form_code ] ) ) {
+			return $this->overlay_prose_form_assets( $form_code, $all[ $form_code ] );
+		}
+
+		$needle = strtoupper( $form_code );
+
+		foreach ( $all as $code => $record ) {
+			if ( strtoupper( (string) $code ) === $needle ) {
+				return $this->overlay_prose_form_assets( (string) $code, $record );
+			}
+		}
+
+		return $this->record_from_prose_form_only( $form_code );
+	}
+
+	/**
+	 * Build a catalog record from prose_form when JSON is missing or incomplete.
+	 *
+	 * @param string $form_code Form code.
+	 * @return array<string, mixed>|null
+	 */
+	private function record_from_prose_form_only( string $form_code ): ?array {
+		if ( null === $this->forms ) {
+			$this->forms = new Form_Repository();
+		}
+
+		$post = $this->forms->get_by_form_code( $form_code );
+
+		if ( ! $post instanceof \WP_Post ) {
+			return null;
+		}
+
+		$court = $this->infer_court_from_post( $post );
+		$stub  = Form_Repository_Seeder::stub_record(
+			$form_code,
+			$form_code,
+			$post->post_title ?: $form_code,
+			$court,
+			'general'
+		);
+
+		return $this->overlay_prose_form_assets( $form_code, $stub );
+	}
+
+	/**
+	 * Infer court key from a prose_form post.
+	 *
+	 * @param \WP_Post $post Form post.
+	 * @return string
+	 */
+	private function infer_court_from_post( \WP_Post $post ): string {
+		$court_terms = wp_get_post_terms( $post->ID, Form_Taxonomy::TAXONOMY_COURT, array( 'fields' => 'slugs' ) );
+
+		if ( ! is_wp_error( $court_terms ) && ! empty( $court_terms ) ) {
+			$slug = (string) $court_terms[0];
+
+			if ( in_array( $slug, array( 'supreme_court', 'family_court' ), true ) ) {
+				return $slug;
+			}
+		}
+
+		$detected = strtolower( (string) get_post_meta( $post->ID, Form_Meta::META_DETECTED_COURT, true ) );
+
+		return str_contains( $detected, 'supreme' ) ? 'supreme_court' : 'family_court';
+	}
+
+	/**
+	 * Merge prose_form PDF metadata into a catalog record when JSON paths are empty.
+	 *
+	 * @param string               $form_code Form code.
+	 * @param array<string, mixed> $record    Catalog record.
+	 * @return array<string, mixed>
+	 */
+	private function overlay_prose_form_assets( string $form_code, array $record ): array {
+		if ( null === $this->forms ) {
+			$this->forms = new Form_Repository();
+		}
+
+		if ( null === $this->enricher ) {
+			$this->enricher = new Form_Record_Enricher();
+		}
+
+		$post = $this->forms->get_by_form_code( $form_code );
+
+		if ( ! $post instanceof \WP_Post ) {
+			return $record;
+		}
+
+		$record = $this->enricher->enrich_assets_from_post( $record, $post );
+
+		return $this->enricher->apply_computed_fields( $record );
 	}
 
 	/**
@@ -129,8 +239,8 @@ final class Forms_Catalog {
 		foreach ( $this->workflow_catalog->all() as $key => $workflow ) {
 			unset( $workflow );
 
-			$codes   = $this->workflow_catalog->required_form_codes( $this->workflow_catalog->by_key( $key ) ?? array() );
-			$gaps    = array();
+			$codes = $this->workflow_catalog->required_form_codes( $this->workflow_catalog->by_key( $key ) ?? array() );
+			$gaps  = array();
 
 			foreach ( $codes as $code ) {
 				if ( null === $this->by_code( $code ) ) {
@@ -144,6 +254,110 @@ final class Forms_Catalog {
 		}
 
 		return $missing;
+	}
+
+	/**
+	 * Search forms by code, title, court, workflow, stage, county, or issue.
+	 *
+	 * @param array<string, mixed> $filters Optional filters: q, court, workflow, stage, county, issue.
+	 * @param int                  $limit   Max results.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function search( array $filters = array(), int $limit = 25 ): array {
+		$query    = strtolower( trim( (string) ( $filters['q'] ?? '' ) ) );
+		$court    = \sanitize_key( (string) ( $filters['court'] ?? '' ) );
+		$workflow = \sanitize_key( (string) ( $filters['workflow'] ?? '' ) );
+		$stage    = \sanitize_key( (string) ( $filters['stage'] ?? '' ) );
+		$county   = \sanitize_key( (string) ( $filters['county'] ?? '' ) );
+		$issue    = \sanitize_key( (string) ( $filters['issue'] ?? '' ) );
+
+		$refs_index = $this->build_workflow_references_index();
+		$results    = array();
+
+		foreach ( $this->all() as $code => $form ) {
+			if ( $court && (string) ( $form['court'] ?? '' ) !== $court ) {
+				continue;
+			}
+
+			if ( $county ) {
+				$counties = (array) ( $form['counties_supported'] ?? array() );
+
+				if ( ! empty( $counties ) && ! in_array( $county, $counties, true ) ) {
+					continue;
+				}
+			}
+
+			$refs = $refs_index[ $code ] ?? array();
+
+			if ( $workflow || $stage || $issue ) {
+				$matched_ref = false;
+
+				foreach ( $refs as $ref ) {
+					$wf_def = $this->workflow_catalog->by_key( (string) $ref['workflow'] );
+
+					if ( $workflow && (string) $ref['workflow'] !== $workflow ) {
+						continue;
+					}
+
+					if ( $stage && (string) $ref['stage'] !== $stage ) {
+						continue;
+					}
+
+					if ( $issue && \sanitize_key( (string) ( $wf_def['issue_type'] ?? '' ) ) !== $issue ) {
+						continue;
+					}
+
+					$matched_ref = true;
+					break;
+				}
+
+				if ( ! $matched_ref ) {
+					continue;
+				}
+			}
+
+			if ( '' !== $query ) {
+				$haystack = strtolower(
+					$code . ' ' . (string) ( $form['title'] ?? '' ) . ' ' . (string) ( $form['internal_code'] ?? '' )
+				);
+
+				if ( strtoupper( $query ) !== strtoupper( $code ) && false === strpos( $haystack, $query ) ) {
+					continue;
+				}
+			}
+
+			$results[] = array(
+				'code'             => $code,
+				'title'            => (string) ( $form['title'] ?? '' ),
+				'court'            => (string) ( $form['court'] ?? '' ),
+				'category'         => (string) ( $form['category'] ?? '' ),
+				'workflows'        => $refs,
+				'official_url'     => $this->official_url_for_form( $form ),
+				'generation_ready' => ! empty( $form['generation_ready'] ),
+			);
+		}
+
+		usort(
+			$results,
+			static function ( array $a, array $b ) use ( $query ): int {
+				if ( '' !== $query ) {
+					$exact_a = strtoupper( $query ) === strtoupper( (string) $a['code'] ) ? 0 : 1;
+					$exact_b = strtoupper( $query ) === strtoupper( (string) $b['code'] ) ? 0 : 1;
+
+					if ( $exact_a !== $exact_b ) {
+						return $exact_a <=> $exact_b;
+					}
+				}
+
+				return strcmp( (string) $a['code'], (string) $b['code'] );
+			}
+		);
+
+		if ( $limit > 0 ) {
+			$results = array_slice( $results, 0, $limit );
+		}
+
+		return $results;
 	}
 
 	/**
@@ -181,6 +395,29 @@ final class Forms_Catalog {
 		}
 
 		return $index;
+	}
+
+	/**
+	 * Resolve the official download URL from a form record.
+	 *
+	 * @param array<string, mixed> $form Form record.
+	 * @return string
+	 */
+	private function official_url_for_form( array $form ): string {
+		$preferred = (string) ( $form['preferred_source'] ?? '' );
+		$sources   = (array) ( $form['source_files'] ?? array() );
+
+		if ( '' !== $preferred && isset( $sources[ $preferred ]['url'] ) ) {
+			return (string) $sources[ $preferred ]['url'];
+		}
+
+		foreach ( $sources as $entry ) {
+			if ( is_array( $entry ) && ! empty( $entry['url'] ) ) {
+				return (string) $entry['url'];
+			}
+		}
+
+		return '';
 	}
 
 	/**
