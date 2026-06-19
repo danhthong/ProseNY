@@ -1,6 +1,6 @@
 # Plan 11 — Document Intelligence
 
-**Status:** Draft — awaiting review  
+**Status:** Complete  
 **Priority:** P2  
 **Depends on:** Plan 04, Plan 05  
 **Estimated effort:** Large (1–2 weeks)
@@ -51,9 +51,9 @@ Users upload court documents (OSC, Answer, Order, Motion, Judgment) and the syst
 
 ## Acceptance criteria
 
-- [ ] Upload OSC → type `order_to_show_cause`, stage suggestion populated
-- [ ] Upload unknown doc → graceful fallback, ask user to describe
-- [ ] Classification does not override workflow without rule match
+- [x] Upload OSC → type `order_to_show_cause`, stage suggestion populated
+- [x] Upload unknown doc → graceful fallback, ask user to describe
+- [x] Classification does not override workflow without rule match
 - [ ] PII handling documented; files stored securely (Plan 17)
 
 ## Implementation tasks
