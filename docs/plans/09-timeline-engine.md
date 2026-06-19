@@ -1,6 +1,6 @@
 # Plan 09 — Timeline Engine
 
-**Status:** Draft — awaiting review  
+**Status:** Complete  
 **Priority:** P2  
 **Depends on:** Plan 04, Plan 08  
 **Estimated effort:** Medium (4–6 days)
@@ -49,10 +49,10 @@ Track **current stage**, completed/pending tasks, deadlines, and upcoming hearin
 
 ## Acceptance criteria
 
-- [ ] Contested divorce timeline shows commencement through judgment stages
-- [ ] Current stage highlighted; prior stages marked complete when criteria met
-- [ ] Deadlines display with plain-language explanation
-- [ ] Timeline updates when workflow stage advances (Plan 04)
+- [x] Contested divorce timeline shows commencement through judgment stages
+- [x] Current stage highlighted; prior stages marked complete when criteria met
+- [x] Deadlines display with plain-language explanation
+- [x] Timeline updates when workflow stage advances (Plan 04)
 
 ## Implementation tasks
 
