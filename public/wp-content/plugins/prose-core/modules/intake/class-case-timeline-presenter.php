@@ -99,7 +99,8 @@ final class Case_Timeline_Presenter {
 			return $this->empty_timeline();
 		}
 
-		$state = $this->case_service->create_case( $workflow, $facts );
+		$engine_key = $this->progression->resolve_engine_enum( $workflow, $facts );
+		$state      = $this->case_service->create_case( $engine_key, $facts );
 		$this->replay_events( $state, $events );
 
 		$now      = time();
@@ -309,7 +310,7 @@ final class Case_Timeline_Presenter {
 			}
 
 			$tasks[] = array(
-				'id'          => sanitize_key( $action ),
+				'id'          => \sanitize_key( $action ),
 				'label'       => $action,
 				'due_date'    => '',
 				'status'      => 'pending',

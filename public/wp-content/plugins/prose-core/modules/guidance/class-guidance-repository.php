@@ -432,8 +432,8 @@ final class Guidance_Repository {
 
 			$matched[] = array(
 				'county'         => $canonical,
-				'court'          => sanitize_key( (string) ( $rule['court'] ?? '' ) ),
-				'topic'          => sanitize_key( (string) ( $rule['topic'] ?? '' ) ),
+				'court'          => \sanitize_key( (string) ( $rule['court'] ?? '' ) ),
+				'topic'          => \sanitize_key( (string) ( $rule['topic'] ?? '' ) ),
 				'instruction'    => sanitize_textarea_field( (string) ( $rule['instruction'] ?? '' ) ),
 				'source_url'     => esc_url_raw( (string) ( $rule['source_url'] ?? '' ) ),
 				'effective_date' => sanitize_text_field( (string) ( $rule['effective_date'] ?? '' ) ),

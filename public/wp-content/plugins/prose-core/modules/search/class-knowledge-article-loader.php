@@ -96,7 +96,7 @@ final class Knowledge_Article_Loader {
 					}
 
 					list( $key, $value ) = array_map( 'trim', explode( ':', $line, 2 ) );
-					$meta[ sanitize_key( $key ) ] = trim( $value, " \t\"'" );
+					$meta[ \sanitize_key( $key ) ] = trim( $value, " \t\"'" );
 				}
 
 				$content = $parts[1];

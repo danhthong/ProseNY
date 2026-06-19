@@ -265,11 +265,11 @@ final class Forms_Catalog {
 	 */
 	public function search( array $filters = array(), int $limit = 25 ): array {
 		$query    = strtolower( trim( (string) ( $filters['q'] ?? '' ) ) );
-		$court    = sanitize_key( (string) ( $filters['court'] ?? '' ) );
-		$workflow = sanitize_key( (string) ( $filters['workflow'] ?? '' ) );
-		$stage    = sanitize_key( (string) ( $filters['stage'] ?? '' ) );
-		$county   = sanitize_key( (string) ( $filters['county'] ?? '' ) );
-		$issue    = sanitize_key( (string) ( $filters['issue'] ?? '' ) );
+		$court    = \sanitize_key( (string) ( $filters['court'] ?? '' ) );
+		$workflow = \sanitize_key( (string) ( $filters['workflow'] ?? '' ) );
+		$stage    = \sanitize_key( (string) ( $filters['stage'] ?? '' ) );
+		$county   = \sanitize_key( (string) ( $filters['county'] ?? '' ) );
+		$issue    = \sanitize_key( (string) ( $filters['issue'] ?? '' ) );
 
 		$refs_index = $this->build_workflow_references_index();
 		$results    = array();
@@ -303,7 +303,7 @@ final class Forms_Catalog {
 						continue;
 					}
 
-					if ( $issue && sanitize_key( (string) ( $wf_def['issue_type'] ?? '' ) ) !== $issue ) {
+					if ( $issue && \sanitize_key( (string) ( $wf_def['issue_type'] ?? '' ) ) !== $issue ) {
 						continue;
 					}
 

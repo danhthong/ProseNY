@@ -40,7 +40,7 @@ final class Courtflow_Session_Store {
 			'session_id'      => $session_id,
 			'created_at'      => $now,
 			'updated_at'      => $now,
-			'case_type'       => sanitize_key( (string) ( $meta['case_type'] ?? 'general' ) ),
+			'case_type'       => \sanitize_key( (string) ( $meta['case_type'] ?? 'general' ) ),
 			'conversation_id' => '',
 			'conversation'    => array(),
 			'intake_state'    => array(),

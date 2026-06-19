@@ -93,7 +93,7 @@ final class Rate_Limiter {
 			$ip = sanitize_text_field( wp_unslash( (string) $_SERVER['REMOTE_ADDR'] ) );
 		}
 
-		return sanitize_key( $route . '_' . $ip );
+		return \sanitize_key( $route . '_' . $ip );
 	}
 
 	/**

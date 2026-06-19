@@ -81,7 +81,7 @@ final class Merged_Blank_Pdf_Service {
 	 * @return array<string, mixed>
 	 */
 	public function status( string $workflow ): array {
-		$workflow = sanitize_key( $workflow );
+		$workflow = \sanitize_key( $workflow );
 
 		if ( '' === $workflow ) {
 			return array(
@@ -112,7 +112,7 @@ final class Merged_Blank_Pdf_Service {
 	 * @return array<string, mixed>
 	 */
 	public function build( string $workflow, bool $force = false ): array {
-		$workflow = sanitize_key( $workflow );
+		$workflow = \sanitize_key( $workflow );
 
 		if ( '' === $workflow ) {
 			return $this->failure( __( 'A resolved workflow is required.', 'prose-core' ) );
@@ -356,7 +356,7 @@ final class Merged_Blank_Pdf_Service {
 		);
 
 		if ( function_exists( 'sanitize_title' ) ) {
-			$names[] = sanitize_title( $code ) . '.pdf';
+			$names[] = \sanitize_title( $code ) . '.pdf';
 		}
 
 		$names = array_values( array_unique( array_filter( $names, static fn( $name ) => '.pdf' !== $name ) ) );
@@ -404,7 +404,7 @@ final class Merged_Blank_Pdf_Service {
 			return '';
 		}
 
-		return trailingslashit( $uploads['basedir'] ) . 'prose/forms/';
+		return \trailingslashit( $uploads['basedir'] ) . 'prose/forms/';
 	}
 
 	/**

@@ -40,7 +40,7 @@ final class Audit_Log {
 	 */
 	public function log( string $event, array $context = array() ): void {
 		$entry = array(
-			'event'      => sanitize_key( $event ),
+			'event'      => \sanitize_key( $event ),
 			'timestamp'  => gmdate( 'c' ),
 			'user_id'    => get_current_user_id(),
 			'context'    => $this->sanitize_context( $context ),
@@ -143,7 +143,7 @@ final class Audit_Log {
 		$clean = array();
 
 		foreach ( $context as $key => $value ) {
-			$key = sanitize_key( (string) $key );
+			$key = \sanitize_key( (string) $key );
 
 			if ( is_scalar( $value ) ) {
 				$clean[ $key ] = sanitize_text_field( (string) $value );

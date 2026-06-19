@@ -110,14 +110,14 @@ final class Courtflow_Case_Persistence {
 	public function session_to_case_state( array $session ): Case_State {
 		$profile  = is_array( $session['case_profile'] ?? null ) ? $session['case_profile'] : array();
 		$facts    = is_array( $profile['facts'] ?? null ) ? $profile['facts'] : array();
-		$workflow = sanitize_key( (string) ( $profile['workflow'] ?? '' ) );
+		$workflow = \sanitize_key( (string) ( $profile['workflow'] ?? '' ) );
 		$def      = $workflow ? ( $this->catalog->by_key( $workflow ) ?? array() ) : array();
 
 		$state = Case_State::from_array(
 			array(
 				'case_id'      => (int) ( $session['case_id'] ?? 0 ),
 				'workflow_key' => $workflow,
-				'court_routing'=> sanitize_key( (string) ( $def['court'] ?? '' ) ),
+				'court_routing'=> \sanitize_key( (string) ( $def['court'] ?? '' ) ),
 				'county'       => sanitize_text_field( (string) ( $facts['county'] ?? '' ) ),
 				'current_node' => 'commencement',
 				'status'       => 'active',

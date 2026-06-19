@@ -9,6 +9,7 @@ namespace ProSe\Core\Ai_Intake;
 
 use ProSe\Core\Intake\Completion_Calculator;
 use ProSe\Core\Intake\Document_Request_Detector;
+use ProSe\Core\Procedural\Procedural_Navigator;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -438,14 +439,10 @@ final class AI_Intake_Interpreter {
 			return array();
 		}
 
-		if ( ! function_exists( 'ProSe\\Core\\Procedural\\prose_get_procedural_navigator' ) ) {
-			return array();
-		}
-
 		$facts = $intake->plain_facts();
 		$issue = trim( (string) ( $facts['issue'] ?? 'divorce' ) );
 
-		$result = \ProSe\Core\Procedural\prose_get_procedural_navigator()->navigate(
+		$result = ( new Procedural_Navigator() )->navigate(
 			array(
 				'issue'    => $issue,
 				'facts'    => $facts,

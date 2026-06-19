@@ -87,6 +87,33 @@ final class Workflow_Progression_Service {
 	}
 
 	/**
+	 * Resolve the engine workflow enum for timeline/deadline services.
+	 *
+	 * @param string               $workflow_enum_or_key Enum or repository key.
+	 * @param array<string, mixed> $context              Context for enum resolution.
+	 * @return string
+	 */
+	public function resolve_engine_enum( string $workflow_enum_or_key, array $context = array() ): string {
+		$definition = $this->definition( $workflow_enum_or_key, $context );
+
+		if ( null === $definition ) {
+			return strtoupper( trim( $workflow_enum_or_key ) );
+		}
+
+		$internal = is_array( $definition['internal'] ?? null ) ? $definition['internal'] : array();
+
+		if ( ! empty( $internal['workflow_enum_base'] ) ) {
+			return strtoupper( (string) $internal['workflow_enum_base'] );
+		}
+
+		if ( ! empty( $internal['workflow_enum'] ) ) {
+			return strtoupper( (string) $internal['workflow_enum'] );
+		}
+
+		return strtoupper( trim( $workflow_enum_or_key ) );
+	}
+
+	/**
 	 * Load a workflow definition by enum or repository key.
 	 *
 	 * @param string               $workflow_enum_or_key Enum or workflow key.
