@@ -10,6 +10,8 @@
 
 namespace ProSe\Core;
 
+use ProSe\Core\Routing\Workflow_Catalog;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -44,6 +46,7 @@ class Admin {
 		$this->loader->add_action( 'admin_menu', $this, 'register_menus', 9 );
 		$this->loader->add_action( 'admin_menu', $this, 'rename_dashboard_submenu', 999 );
 		$this->loader->add_action( 'admin_enqueue_scripts', $this, 'enqueue_assets' );
+		$this->loader->add_action( 'admin_post_prose_validate_workflows', $this, 'handle_validate_workflows' );
 	}
 
 	/**
@@ -122,6 +125,8 @@ class Admin {
 			<?php if ( empty( $items ) ) : ?>
 				<p><?php esc_html_e( 'No ProSe admin pages are available for your account.', 'prose-core' ); ?></p>
 			<?php else : ?>
+				<?php $this->render_courtflow_hub(); ?>
+
 				<div class="prose-dashboard-grid" role="navigation" aria-label="<?php esc_attr_e( 'ProSe admin sections', 'prose-core' ); ?>">
 					<?php foreach ( $items as $item ) : ?>
 						<a class="prose-dashboard-card" href="<?php echo esc_url( $item['url'] ); ?>">
@@ -325,5 +330,104 @@ class Admin {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Render the CourtFlow hub section on the dashboard.
+	 *
+	 * @return void
+	 */
+	private function render_courtflow_hub(): void {
+		$catalog   = new Workflow_Catalog();
+		$workflows = $catalog->all();
+		$notice = isset( $_GET['prose_notice'] ) ? sanitize_key( wp_unslash( (string) $_GET['prose_notice'] ) ) : '';
+
+		?>
+		<div class="prose-courtflow-hub">
+			<h2><?php esc_html_e( 'CourtFlow Hub', 'prose-core' ); ?></h2>
+			<p><?php esc_html_e( 'Operational tools for workflows, validation, and inventory review.', 'prose-core' ); ?></p>
+
+			<?php if ( 'workflows_validated' === $notice ) : ?>
+				<div class="notice notice-success inline"><p><?php esc_html_e( 'Workflow validation completed successfully.', 'prose-core' ); ?></p></div>
+			<?php elseif ( 'workflows_failed' === $notice ) : ?>
+				<div class="notice notice-error inline"><p><?php esc_html_e( 'Workflow validation reported errors. Check server logs or run bin/validate-workflows.php manually.', 'prose-core' ); ?></p></div>
+			<?php endif; ?>
+
+			<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" class="prose-courtflow-hub__actions">
+				<?php wp_nonce_field( 'prose_validate_workflows' ); ?>
+				<input type="hidden" name="action" value="prose_validate_workflows" />
+				<?php submit_button( __( 'Validate Workflows', 'prose-core' ), 'secondary', 'submit', false ); ?>
+			</form>
+
+			<h3><?php esc_html_e( 'Workflow Inventory', 'prose-core' ); ?></h3>
+			<table class="widefat striped prose-workflow-inventory">
+				<thead>
+					<tr>
+						<th scope="col"><?php esc_html_e( 'Workflow', 'prose-core' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Court', 'prose-core' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Issue', 'prose-core' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Required Forms', 'prose-core' ); ?></th>
+						<th scope="col"><?php esc_html_e( 'Counties', 'prose-core' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ( $workflows as $key => $workflow ) : ?>
+						<tr>
+							<td><code><?php echo esc_html( $key ); ?></code></td>
+							<td><?php echo esc_html( (string) ( $workflow['court'] ?? '' ) ); ?></td>
+							<td><?php echo esc_html( (string) ( $workflow['issue_type'] ?? '' ) ); ?></td>
+							<td><?php echo esc_html( (string) count( (array) ( $workflow['required_forms'] ?? array() ) ) ); ?></td>
+							<td><?php echo esc_html( implode( ', ', (array) ( $workflow['counties_supported'] ?? array() ) ) ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Run validate-workflows.php and redirect with output summary.
+	 *
+	 * @return void
+	 */
+	public function handle_validate_workflows(): void {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to run workflow validation.', 'prose-core' ) );
+		}
+
+		check_admin_referer( 'prose_validate_workflows' );
+
+		$script = PROSE_CORE_PATH . 'bin/validate-workflows.php';
+
+		if ( ! is_readable( $script ) ) {
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'page'          => 'prose',
+						'prose_notice'  => 'workflows_failed',
+						'prose_message' => rawurlencode( __( 'Validation script not found.', 'prose-core' ) ),
+					),
+					admin_url( 'admin.php' )
+				)
+			);
+			exit;
+		}
+
+		$php_bin = defined( 'PHP_BINARY' ) && PHP_BINARY ? PHP_BINARY : 'php';
+		$cmd     = escapeshellarg( $php_bin ) . ' ' . escapeshellarg( $script ) . ' 2>&1';
+		$output  = shell_exec( $cmd ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_shell_exec
+		$success = is_string( $output ) && false !== strpos( $output, 'Validated' );
+
+		wp_safe_redirect(
+			add_query_arg(
+				array(
+					'page'         => 'prose',
+					'prose_notice' => $success ? 'workflows_validated' : 'workflows_failed',
+				),
+				admin_url( 'admin.php' )
+			)
+		);
+		exit;
 	}
 }

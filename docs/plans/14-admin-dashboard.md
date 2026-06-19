@@ -1,6 +1,6 @@
 # Plan 14 — Admin Dashboard
 
-**Status:** Draft — awaiting review  
+**Status:** Complete  
 **Priority:** P3  
 **Depends on:** Plan 04, Plan 05, Plan 13  
 **Estimated effort:** Large (1–2 weeks)
