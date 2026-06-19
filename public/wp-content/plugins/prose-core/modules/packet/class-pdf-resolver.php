@@ -1,9 +1,10 @@
 <?php
 /**
- * PDF Resolver — maps form_id to a blank source PDF path via the Forms Catalog.
+ * PDF Resolver — maps form_id to a blank source PDF path.
  *
- * Runtime reads asset paths from the Forms Repository JSON only. prose_form posts
- * contribute files through Form_Asset_Sync before download.
+ * Resolution order:
+ *  1. Forms Repository JSON (docs/forms) with prose_form overlay
+ *  2. Direct prose_form lookup when JSON is missing or paths are empty
  *
  * @package ProSeCore
  */
@@ -66,10 +67,6 @@ class Pdf_Resolver {
 		$record = $this->catalog->by_code( $form_id );
 
 		if ( ! is_array( $record ) ) {
-			$record = $this->lookup_case_insensitive( $form_id );
-		}
-
-		if ( ! is_array( $record ) ) {
 			$pdf_path = ( new Form_Pdf_Path_Resolver() )->resolve_for_code( $form_id );
 
 			return array(
@@ -105,24 +102,6 @@ class Pdf_Resolver {
 		}
 
 		return $resolved;
-	}
-
-	/**
-	 * Case-insensitive catalog lookup.
-	 *
-	 * @param string $form_id Form code.
-	 * @return array<string, mixed>|null
-	 */
-	private function lookup_case_insensitive( string $form_id ): ?array {
-		$needle = strtoupper( trim( $form_id ) );
-
-		foreach ( $this->catalog->all() as $code => $record ) {
-			if ( strtoupper( (string) $code ) === $needle ) {
-				return $record;
-			}
-		}
-
-		return null;
 	}
 
 	/**

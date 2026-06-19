@@ -250,14 +250,13 @@ final class Form_Record_Enricher {
 			return $slots;
 		}
 
-		$existing_path = '';
-
 		if ( isset( $slots['pdf'] ) && is_array( $slots['pdf'] ) ) {
-			$existing_path = (string) ( $slots['pdf']['path'] ?? '' );
-		}
+			$existing_path   = (string) ( $slots['pdf']['path'] ?? '' );
+			$existing_status = (string) ( $slots['pdf']['download_status'] ?? '' );
 
-		if ( '' !== $existing_path && is_readable( $existing_path ) ) {
-			return $slots;
+			if ( '' !== $existing_path && is_readable( $existing_path ) && ! in_array( $existing_status, array( 'failed', 'unsupported' ), true ) ) {
+				return $slots;
+			}
 		}
 
 		$file_name = $resolver->pdf_filename_for_post( $post );

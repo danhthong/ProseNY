@@ -93,7 +93,58 @@ final class Forms_Catalog {
 			}
 		}
 
-		return null;
+		return $this->record_from_prose_form_only( $form_code );
+	}
+
+	/**
+	 * Build a catalog record from prose_form when JSON is missing or incomplete.
+	 *
+	 * @param string $form_code Form code.
+	 * @return array<string, mixed>|null
+	 */
+	private function record_from_prose_form_only( string $form_code ): ?array {
+		if ( null === $this->forms ) {
+			$this->forms = new Form_Repository();
+		}
+
+		$post = $this->forms->get_by_form_code( $form_code );
+
+		if ( ! $post instanceof \WP_Post ) {
+			return null;
+		}
+
+		$court = $this->infer_court_from_post( $post );
+		$stub  = Form_Repository_Seeder::stub_record(
+			$form_code,
+			$form_code,
+			$post->post_title ?: $form_code,
+			$court,
+			'general'
+		);
+
+		return $this->overlay_prose_form_assets( $form_code, $stub );
+	}
+
+	/**
+	 * Infer court key from a prose_form post.
+	 *
+	 * @param \WP_Post $post Form post.
+	 * @return string
+	 */
+	private function infer_court_from_post( \WP_Post $post ): string {
+		$court_terms = wp_get_post_terms( $post->ID, Form_Taxonomy::TAXONOMY_COURT, array( 'fields' => 'slugs' ) );
+
+		if ( ! is_wp_error( $court_terms ) && ! empty( $court_terms ) ) {
+			$slug = (string) $court_terms[0];
+
+			if ( in_array( $slug, array( 'supreme_court', 'family_court' ), true ) ) {
+				return $slug;
+			}
+		}
+
+		$detected = strtolower( (string) get_post_meta( $post->ID, Form_Meta::META_DETECTED_COURT, true ) );
+
+		return str_contains( $detected, 'supreme' ) ? 'supreme_court' : 'family_court';
 	}
 
 	/**

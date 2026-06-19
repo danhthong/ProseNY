@@ -62,15 +62,38 @@ final class Blank_Asset_Source implements Asset_Source {
 			$asset_path = (string) ( $source_files[ $asset_type ]['path'] ?? '' );
 		}
 
+		if ( ( '' === $asset_path || ! is_readable( $asset_path ) ) && isset( $source_files['pdf'] ) && is_array( $source_files['pdf'] ) ) {
+			$pdf_path = (string) ( $source_files['pdf']['path'] ?? '' );
+
+			if ( '' !== $pdf_path && is_readable( $pdf_path ) ) {
+				$asset_path = $pdf_path;
+				$asset_type = 'pdf';
+			}
+		}
+
+		if ( ( '' === $asset_path || ! is_readable( $asset_path ) ) && ! empty( $form_record['generation_ready'] ) ) {
+			$pdf_path = ( new \ProSe\Core\Forms\Form_Pdf_Path_Resolver() )->resolve_for_code( $code );
+
+			if ( '' !== $pdf_path && is_readable( $pdf_path ) ) {
+				$asset_path = $pdf_path;
+				$asset_type = 'pdf';
+			}
+		}
+
 		$fillable_strategy = (string) ( $form_record['fillable_strategy'] ?? '' );
 
 		if ( '' === $fillable_strategy ) {
 			$fillable_strategy = Form_Source_Selector::fillable_strategy( $asset_type, $source_files );
 		}
 
-		// Trust the record flag, but require an actually readable asset on disk.
+		// Trust overlay/enricher readiness; require a readable asset on disk.
 		$generation_ready = ! empty( $form_record['generation_ready'] )
-			&& Form_Source_Selector::generation_ready( $fillable_strategy, $asset_type, $source_files );
+			&& '' !== $asset_path
+			&& is_readable( $asset_path );
+
+		if ( ! $generation_ready ) {
+			$generation_ready = Form_Source_Selector::generation_ready( $fillable_strategy, $asset_type, $source_files );
+		}
 
 		return array(
 			'code'              => (string) ( $form_record['form_code'] ?? $code ),
