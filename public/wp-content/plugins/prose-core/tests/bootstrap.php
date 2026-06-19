@@ -422,6 +422,110 @@ if ( ! class_exists( 'WP_Error' ) ) {
 	}
 }
 
+if ( ! class_exists( 'WP_Post' ) ) {
+	/**
+	 * Minimal WP_Post stub for unit tests.
+	 */
+	class WP_Post {
+		/**
+		 * @var int
+		 */
+		public $ID = 0;
+
+		/**
+		 * @var string
+		 */
+		public $post_title = '';
+
+		/**
+		 * @var string
+		 */
+		public $post_type = '';
+
+		/**
+		 * @var string
+		 */
+		public $post_status = 'publish';
+	}
+}
+
+if ( ! class_exists( 'WP_Query' ) ) {
+	/**
+	 * Minimal WP_Query stub for unit tests (returns no posts).
+	 */
+	class WP_Query {
+		/**
+		 * @var array<int, WP_Post|int>
+		 */
+		public $posts = array();
+
+		/**
+		 * @var int
+		 */
+		public $post_count = 0;
+
+		/**
+		 * @var int
+		 */
+		public $found_posts = 0;
+
+		/**
+		 * @param array<string, mixed> $query Query args.
+		 */
+		public function __construct( $query = array() ) {
+			unset( $query );
+			$this->post_count  = count( $this->posts );
+			$this->found_posts = $this->post_count;
+		}
+
+		/**
+		 * @return bool
+		 */
+		public function have_posts() {
+			return $this->post_count > 0;
+		}
+	}
+}
+
+if ( ! function_exists( 'get_post_meta' ) ) {
+	/**
+	 * @param int    $post_id Post ID.
+	 * @param string $key     Meta key.
+	 * @param bool   $single  Return single value.
+	 * @return mixed
+	 */
+	function get_post_meta( $post_id, $key = '', $single = false ) {
+		unset( $post_id, $key, $single );
+		return $single ? '' : array();
+	}
+}
+
+if ( ! function_exists( 'wp_get_post_terms' ) ) {
+	/**
+	 * @param int                  $post_id  Post ID.
+	 * @param string               $taxonomy Taxonomy.
+	 * @param array<string, mixed> $args     Args.
+	 * @return array<int, string>|WP_Error
+	 */
+	function wp_get_post_terms( $post_id, $taxonomy = '', $args = array() ) {
+		unset( $post_id, $taxonomy, $args );
+		return array();
+	}
+}
+
+if ( ! function_exists( 'get_term_by' ) ) {
+	/**
+	 * @param string $field    Field.
+	 * @param string $value    Value.
+	 * @param string $taxonomy Taxonomy.
+	 * @return null
+	 */
+	function get_term_by( $field, $value, $taxonomy ) {
+		unset( $field, $value, $taxonomy );
+		return null;
+	}
+}
+
 if ( ! function_exists( 'prose_test_temp_dir' ) ) {
 	/**
 	 * Create a writable temp directory for unit tests (avoids Windows TEMP ACL issues).
