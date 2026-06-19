@@ -122,6 +122,17 @@ if ( ! function_exists( 'sanitize_title' ) ) {
 	}
 }
 
+if ( ! function_exists( 'sanitize_key' ) ) {
+	/**
+	 * @param string $key String key.
+	 * @return string
+	 */
+	function sanitize_key( $key ) {
+		$key = strtolower( (string) $key );
+		return preg_replace( '/[^a-z0-9_\-]/', '', $key );
+	}
+}
+
 if ( ! function_exists( 'wp_normalize_path' ) ) {
 	/**
 	 * @param string $path Path.

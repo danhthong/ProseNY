@@ -57,7 +57,7 @@ CourtFlow AI is a **procedural navigation platform** for NYC Divorce and Family 
 | `POST /prose/v1/intake/interpret` | ✅ | Homepage chat widget |
 | `POST /prose/v1/intake` | ✅ | Deterministic fallback |
 | `POST /prose/v1/case/actions` | ✅ | Case summary panel |
-| `POST courtflow/v1/sessions/*/messages` | ❌ Not implemented | Workspace chat |
+| `POST courtflow/v1/sessions/*/messages` | ✅ Adapter → `AI_Intake_Service` | Workspace chat |
 
 ## Plan execution order (summary)
 

@@ -8,7 +8,9 @@
 		return;
 	}
 
-	var sessionId = 0;
+	var SESSION_STORAGE_KEY = 'courtflow_session_id';
+
+	var sessionId = loadStoredSessionId();
 	var state = {
 		facts: { case: {}, user: {} },
 		validation: { errors: [], warnings: [], valid: true },
@@ -77,6 +79,41 @@
 			}
 			throw e;
 		}
+	}
+
+	function loadStoredSessionId() {
+		try {
+			var stored = window.localStorage.getItem( SESSION_STORAGE_KEY );
+			if ( stored) {
+				return stored;
+			}
+		} catch (e) {}
+
+		var root = document.getElementById( 'courtflow-intake-chat' );
+		if ( root ) {
+			var fromDom = root.getAttribute( 'data-session-id' );
+			if ( fromDom && fromDom !== '0' ) {
+				return fromDom;
+			}
+		}
+
+		return 0;
+	}
+
+	function saveSessionId( id ) {
+		if ( ! id ) {
+			return;
+		}
+
+		try {
+			window.localStorage.setItem( SESSION_STORAGE_KEY, String( id ) );
+		} catch (e) {}
+	}
+
+	function clearStoredSessionId() {
+		try {
+			window.localStorage.removeItem( SESSION_STORAGE_KEY );
+		} catch (e) {}
 	}
 
 	function api(path, options) {
@@ -870,6 +907,7 @@
 		if (sessionId) return Promise.resolve(sessionId);
 		return api('sessions', { method: 'POST', body: JSON.stringify({ case_type: 'divorce' }) }).then(function (res) {
 			sessionId = res.session_id;
+			saveSessionId(sessionId);
 			return sessionId;
 		});
 	}
@@ -1170,6 +1208,34 @@
 			})
 			.catch(function (err) {
 				hideSkeleton();
+				if (err && err.status === 404 && sessionId) {
+					clearStoredSessionId();
+					sessionId = 0;
+					return ensureSession()
+						.then(function () {
+							return Promise.all([
+								api('sessions/' + sessionId + '/state'),
+								loadMessages(),
+							]);
+						})
+						.then(function (results) {
+							hideSkeleton();
+							var data = results[0];
+							if (data.current_node) {
+								state.currentNode = data.current_node;
+								state.currentStepIndex = stepIndexForNode(data.current_node.slug || data.current_node.id);
+							}
+							updateState({
+								facts: data.facts,
+								workflow_state: data,
+								validation: data.validation || { valid: true, errors: [], warnings: [] },
+								requirements: data.requirements || (data.workflow_state && data.workflow_state.requirements),
+							});
+							seedWelcomeIfNeeded();
+							loadDocuments();
+							scrollManager.scrollToBottom(true);
+						});
+				}
 				var msg = err && err.message ? err.message : 'Could not start session.';
 				if (err && err.status === 401) {
 					msg = 'You need to be logged in to start a case. Please log in and reload this page.';

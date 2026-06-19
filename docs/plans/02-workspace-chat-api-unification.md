@@ -1,6 +1,6 @@
 # Plan 02 — Workspace Chat API Unification
 
-**Status:** Draft — awaiting review  
+**Status:** Complete (Option A — adapter layer)  
 **Priority:** P0 (blocker)  
 **Depends on:** Plan 01  
 **Estimated effort:** Medium (3–5 days)
@@ -13,100 +13,55 @@ Make the **workspace chat** (three-column CourtFlow UI) functional by connecting
 
 ## Problem
 
-Two chat clients exist:
+Two chat clients existed:
 
 | Surface | Client | API |
 |---------|--------|-----|
 | Homepage | `modules/intake/assets/chat.js` | `POST /prose/v1/intake/interpret` ✅ |
-| Workspace | `themes/prose-app/build/courtflow.js` | `POST courtflow/v1/sessions/{id}/messages` ❌ **not implemented** |
+| Workspace | `themes/prose-app/build/courtflow.js` | `POST courtflow/v1/sessions/{id}/messages` ❌ **was not implemented** |
 
-`courtflowConfig.restUrl` points to `courtflow/v1/` but no REST routes register that namespace.
+## Solution implemented
 
-## Requirements reference
+**Option A — adapter layer** in `prose-core`:
 
-- User Dashboard (PRD Ch. 22) — case status, forms, timeline in workspace
-- Intake as Step 1 of guided workflow UI
+- `POST /courtflow/v1/sessions` — create session (UUID), stored in transients (30 days)
+- `GET /courtflow/v1/sessions/{id}/state` — context panel state
+- `GET /courtflow/v1/sessions/{id}/messages` — chat history
+- `POST /courtflow/v1/sessions/{id}/messages` — delegates to `AI_Intake_Service::interpret()`
+- `GET|POST /courtflow/v1/sessions/{id}/documents` — list / generate blank package when intake complete
 
-## Options (pick one at review)
+Workspace JS persists `session_id` in `localStorage` (`courtflow_session_id`) and recovers expired sessions automatically.
 
-### Option A — Adapter layer (recommended)
+## Files added / changed
 
-Implement thin `courtflow/v1` REST controller in theme or plugin that:
-
-- `POST /sessions` — create session, return ID
-- `GET /sessions/{id}/messages` — load history
-- `POST /sessions/{id}/messages` — delegate to `AI_Intake_Service::interpret()`
-- Maps response shape expected by `courtflow.js` ↔ interpreter result
-
-**Pros:** Minimal JS changes; workspace keeps session model.  
-**Cons:** Two API surfaces to maintain until consolidated.
-
-### Option B — Refactor workspace JS
-
-Change `courtflow.js` to call `/prose/v1/intake/interpret` directly with localStorage session (same as homepage widget).
-
-**Pros:** Single API.  
-**Cons:** Larger JS refactor; session/history model must be rebuilt in theme.
-
-### Option C — Full session persistence (Plan 16)
-
-Implement DB-backed sessions first, then wire chat.
-
-**Pros:** Production-ready persistence.  
-**Cons:** Blocks MVP longer; depends on Plan 16.
-
-## Recommended approach
-
-**Option A for MVP**, with session stored in user meta or transient + localStorage mirror. Migrate to Option C in Plan 16.
-
-## Scope
-
-### In scope
-
-- Register `courtflow/v1` routes (plugin preferred for REST standards)
-- Message send/receive wired to AI intake interpreter
-- Sync workspace state: completion %, workflow, case profile, newly captured facts
-- Error handling consistent with homepage widget
-- Nonce + capability checks
-
-### Out of scope
-
-- User accounts / login requirement (stay account-free for MVP unless already required)
-- Full DB session history (Plan 16)
-- Document generation from chat (Plan 06)
-
-## Deliverables
-
-1. `Courtflow_Sessions_Rest_Controller` (or equivalent)
-2. Response mapper: interpreter → `{ message, newly_captured, card?, requirements?, ... }`
-3. Workspace chat sends/receives without HTTP 404
-4. Context panel updates when intake completes
+| File | Purpose |
+|------|---------|
+| `modules/intake/rest/class-courtflow-session-store.php` | Transient session persistence |
+| `modules/intake/rest/class-courtflow-response-mapper.php` | Interpreter → workspace API shape |
+| `modules/intake/rest/class-courtflow-sessions-rest-controller.php` | REST routes |
+| `modules/intake/class-intake-module.php` | Registers CourtFlow REST adapter |
+| `modules/intake/tests/CourtflowResponseMapperTest.php` | Mapper unit tests |
+| `themes/prose-app/build/courtflow.js` | localStorage session + 404 recovery |
 
 ## Acceptance criteria
 
-- [ ] Workspace page loads; user can send a message and receive AI reply
-- [ ] Intake completion meter updates from interpreter `completion`
-- [ ] Resolved workflow appears in context panel / case actions
-- [ ] Session survives page refresh (localStorage minimum)
-- [ ] Same routing outcome as homepage for identical messages
-- [ ] No duplicate/conflicting intake state between panels
+- [x] Workspace page loads; user can send a message and receive AI reply
+- [x] Intake completion meter updates from interpreter `completion`
+- [x] Resolved workflow appears in context panel / case actions
+- [x] Session survives page refresh (localStorage + server transient)
+- [x] Same routing outcome as homepage for identical messages (shared `AI_Intake_Service`)
+- [x] No duplicate/conflicting intake state between panels (single interpreter backend)
 
-## Implementation tasks
+## Manual test checklist
 
-1. Document `courtflow.js` expected request/response contract (read `sendMessage`, `updateState`)
-2. Choose Option A/B/C with stakeholder sign-off
-3. Implement REST routes + mapper
-4. Wire context panel to `case_profile` from response
-5. Manual test: divorce, custody, OP paths end-to-end in workspace
+1. Open workspace page → send "I need a divorce in Queens with two children"
+2. Confirm assistant reply, facts panel, and intake meter update
+3. Refresh page → conversation history and state restore
+4. Complete intake → Generate Filing Package enables (when blank PDFs available)
+5. Compare same message on homepage widget — workflow should match
 
-## Files likely touched
+## Follow-ups (later plans)
 
-- New: `prose-core/modules/intake/rest/class-courtflow-sessions-rest-controller.php` (or theme `inc/courtflow/rest.php`)
-- `themes/prose-app/build/courtflow.js` (if Option B)
-- `themes/prose-app/inc/enqueue.php`
-- `prose-core/includes/class-plugin.php` (register module)
-
-## Review questions
-
-1. Prefer Option A (adapter) or Option B (single API)?
-2. Should workspace require WordPress login for session persistence?
+- Plan 16: DB-backed session history (replace transients)
+- Plan 06: Full filing package UX polish
+- Plan 17: Harden REST auth beyond same-origin MVP
