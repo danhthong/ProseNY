@@ -1,6 +1,6 @@
 # Plan 13 — County Rules Layer
 
-**Status:** Draft — awaiting review  
+**Status:** Complete  
 **Priority:** P2  
 **Depends on:** Plan 05  
 **Estimated effort:** Medium (4–6 days)

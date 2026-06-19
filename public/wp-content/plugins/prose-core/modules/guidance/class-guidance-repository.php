@@ -43,6 +43,13 @@ final class Guidance_Repository {
 	private ?array $index = null;
 
 	/**
+	 * Cached NYC county rules seed.
+	 *
+	 * @var array<string, mixed>|null
+	 */
+	private ?array $county_rules_seed = null;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string $base_dir  Optional base directory override.
@@ -266,24 +273,32 @@ final class Guidance_Repository {
 	 */
 	public function read_county( string $county ): ?array {
 		$path = $this->resolve_county_path( $county );
+		$data = null;
 
-		if ( ! is_readable( $path ) ) {
+		if ( is_readable( $path ) ) {
+			$raw = file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+
+			if ( false !== $raw && '' !== $raw ) {
+				$decoded = json_decode( $raw, true );
+				$data    = is_array( $decoded ) ? $decoded : null;
+			}
+		}
+
+		$seed_rules = $this->county_rules_for( $county );
+
+		if ( null === $data && empty( $seed_rules ) ) {
 			return null;
 		}
 
-		$raw = file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-
-		if ( false === $raw || '' === $raw ) {
-			return null;
+		if ( null === $data ) {
+			$data = array(
+				'county'               => $county,
+				'filing_notes'         => array(),
+				'special_requirements' => array(),
+			);
 		}
 
-		$data = json_decode( $raw, true );
-
-		if ( ! is_array( $data ) ) {
-			return null;
-		}
-
-		return $this->normalize_county( $county, $data );
+		return $this->normalize_county( $county, $this->merge_county_rules( $data, $seed_rules ) );
 	}
 
 	/**
@@ -328,11 +343,160 @@ final class Guidance_Repository {
 	 * @return array<string, mixed>
 	 */
 	public function normalize_county( string $county, array $data ): array {
-		return array(
+		$normalized = array(
 			'county'               => (string) ( $data['county'] ?? $county ),
 			'filing_notes'         => is_array( $data['filing_notes'] ?? null ) ? array_values( $data['filing_notes'] ) : array(),
 			'special_requirements' => is_array( $data['special_requirements'] ?? null ) ? array_values( $data['special_requirements'] ) : array(),
 		);
+
+		if ( ! empty( $data['rules'] ) && is_array( $data['rules'] ) ) {
+			$normalized['rules'] = array_values( $data['rules'] );
+		}
+
+		return $normalized;
+	}
+
+	/**
+	 * Absolute path to the NYC county rules seed file.
+	 *
+	 * @return string
+	 */
+	public function county_rules_seed_path(): string {
+		/**
+		 * Filter the path to the NYC county rules JSON seed.
+		 *
+		 * @param string $path Default path relative to the app docs folder.
+		 */
+		return (string) apply_filters(
+			'prose_county_rules_seed_path',
+			trailingslashit( dirname( PROSE_CORE_PATH, 3 ) ) . 'docs/county-rules/nyc.json'
+		);
+	}
+
+	/**
+	 * Load and cache the NYC county rules seed.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function load_county_rules_seed(): array {
+		if ( null !== $this->county_rules_seed ) {
+			return $this->county_rules_seed;
+		}
+
+		$path = $this->county_rules_seed_path();
+
+		if ( ! is_readable( $path ) ) {
+			$this->county_rules_seed = array( 'rules' => array() );
+			return $this->county_rules_seed;
+		}
+
+		$raw = file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+
+		if ( false === $raw || '' === $raw ) {
+			$this->county_rules_seed = array( 'rules' => array() );
+			return $this->county_rules_seed;
+		}
+
+		$data = json_decode( $raw, true );
+		$this->county_rules_seed = is_array( $data ) ? $data : array( 'rules' => array() );
+
+		return $this->county_rules_seed;
+	}
+
+	/**
+	 * County rules for a canonical county name from the NYC seed file.
+	 *
+	 * @param string $county County name or slug.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function county_rules_for( string $county ): array {
+		$seed      = $this->load_county_rules_seed();
+		$rules     = is_array( $seed['rules'] ?? null ) ? $seed['rules'] : array();
+		$canonical = $this->canonical_county_name( $county );
+		$matched   = array();
+
+		foreach ( $rules as $rule ) {
+			if ( ! is_array( $rule ) ) {
+				continue;
+			}
+
+			$rule_county = (string) ( $rule['county'] ?? '' );
+
+			if ( '' === $rule_county ) {
+				continue;
+			}
+
+			if ( $this->canonical_county_name( $rule_county ) !== $canonical ) {
+				continue;
+			}
+
+			$matched[] = array(
+				'county'         => $canonical,
+				'court'          => sanitize_key( (string) ( $rule['court'] ?? '' ) ),
+				'topic'          => sanitize_key( (string) ( $rule['topic'] ?? '' ) ),
+				'instruction'    => sanitize_textarea_field( (string) ( $rule['instruction'] ?? '' ) ),
+				'source_url'     => esc_url_raw( (string) ( $rule['source_url'] ?? '' ) ),
+				'effective_date' => sanitize_text_field( (string) ( $rule['effective_date'] ?? '' ) ),
+			);
+		}
+
+		return $matched;
+	}
+
+	/**
+	 * Merge seeded county rules into a county guidance record.
+	 *
+	 * @param array<string, mixed>         $data  County guidance data.
+	 * @param array<int, array<string, mixed>> $rules Seeded rules.
+	 * @return array<string, mixed>
+	 */
+	private function merge_county_rules( array $data, array $rules ): array {
+		if ( empty( $rules ) ) {
+			return $data;
+		}
+
+		$filing_notes = is_array( $data['filing_notes'] ?? null ) ? $data['filing_notes'] : array();
+
+		foreach ( $rules as $rule ) {
+			$note = (string) ( $rule['instruction'] ?? '' );
+			$url  = (string) ( $rule['source_url'] ?? '' );
+
+			if ( '' !== $url ) {
+				$note .= ' ' . sprintf( '(Source: %s)', $url );
+			}
+
+			if ( '' !== trim( $note ) ) {
+				$filing_notes[] = trim( $note );
+			}
+		}
+
+		$data['filing_notes'] = array_values( array_unique( $filing_notes ) );
+		$data['rules']        = $rules;
+
+		return $data;
+	}
+
+	/**
+	 * Normalize county aliases to canonical NYC county names.
+	 *
+	 * @param string $county County name or slug.
+	 * @return string
+	 */
+	private function canonical_county_name( string $county ): string {
+		$slug = $this->county_slug( $county );
+
+		$map = array(
+			'kings'         => 'Kings',
+			'queens'        => 'Queens',
+			'bronx'         => 'Bronx',
+			'new-york'      => 'New York',
+			'richmond'      => 'Richmond',
+			'manhattan'     => 'New York',
+			'brooklyn'      => 'Kings',
+			'staten-island' => 'Richmond',
+		);
+
+		return $map[ $slug ] ?? trim( $county );
 	}
 
 	/**

@@ -1,0 +1,87 @@
+{
+  "version": "1.0.0",
+  "scope": "nyc",
+  "description": "NYC matrimonial e-filing and local procedural notes for MVP counties.",
+  "rules": [
+    {
+      "county": "New York",
+      "court": "supreme_court",
+      "topic": "matrimonial_efiling",
+      "instruction": "Matrimonial actions in New York County (Manhattan) are handled through the Matrimonial Part. NYSCEF e-filing is required for attorneys; unrepresented litigants may file in person at 60 Centre Street or by mail when permitted.",
+      "source_url": "https://www.nycourts.gov/courts/1jd/supctmanhattan/MatrimonialCenter.shtml",
+      "effective_date": "2024-01-01"
+    },
+    {
+      "county": "New York",
+      "court": "supreme_court",
+      "topic": "matrimonial_conference",
+      "instruction": "After commencement, the court may schedule a preliminary conference. Bring a completed Statement of Net Worth and proposed stipulations if you have them.",
+      "source_url": "https://www.nycourts.gov/LITIGANTS/matrimonial/index.shtml",
+      "effective_date": "2024-01-01"
+    },
+    {
+      "county": "Kings",
+      "court": "supreme_court",
+      "topic": "matrimonial_efiling",
+      "instruction": "Kings County (Brooklyn) matrimonial filings are processed through the Kings County Supreme Court matrimonial part. Verify current NYSCEF requirements and local part rules before filing.",
+      "source_url": "https://www.nycourts.gov/courts/2jd/kings/civil/matrimonial.shtml",
+      "effective_date": "2024-01-01"
+    },
+    {
+      "county": "Kings",
+      "court": "supreme_court",
+      "topic": "matrimonial_conference",
+      "instruction": "Kings County uses preliminary conferences for case management. Confirm whether your matter is assigned to a judicial hearing officer or judge.",
+      "source_url": "https://www.nycourts.gov/LITIGANTS/matrimonial/index.shtml",
+      "effective_date": "2024-01-01"
+    },
+    {
+      "county": "Queens",
+      "court": "supreme_court",
+      "topic": "matrimonial_efiling",
+      "instruction": "Queens County matrimonial actions are filed with the Queens Supreme Court matrimonial part. Check NYSCEF and local part instructions for indexing and mandatory forms.",
+      "source_url": "https://www.nycourts.gov/courts/11jd/queens/civil/matrimonial.shtml",
+      "effective_date": "2024-01-01"
+    },
+    {
+      "county": "Queens",
+      "court": "supreme_court",
+      "topic": "matrimonial_conference",
+      "instruction": "Queens matrimonial cases typically receive a preliminary conference order after the summons is filed. Review the order for discovery and net-worth deadlines.",
+      "source_url": "https://www.nycourts.gov/LITIGANTS/matrimonial/index.shtml",
+      "effective_date": "2024-01-01"
+    },
+    {
+      "county": "Bronx",
+      "court": "supreme_court",
+      "topic": "matrimonial_efiling",
+      "instruction": "Bronx County matrimonial filings are handled by the Bronx Supreme Court matrimonial part. Confirm e-filing eligibility and any local cover-sheet requirements.",
+      "source_url": "https://www.nycourts.gov/courts/12jd/bronx/civil/matrimonial.shtml",
+      "effective_date": "2024-01-01"
+    },
+    {
+      "county": "Bronx",
+      "court": "supreme_court",
+      "topic": "matrimonial_conference",
+      "instruction": "Bronx matrimonial matters may be referred to a preliminary conference early in the case. Bring financial disclosure forms if the conference order requires them.",
+      "source_url": "https://www.nycourts.gov/LITIGANTS/matrimonial/index.shtml",
+      "effective_date": "2024-01-01"
+    },
+    {
+      "county": "Richmond",
+      "court": "supreme_court",
+      "topic": "matrimonial_efiling",
+      "instruction": "Richmond County (Staten Island) matrimonial actions are filed with the Richmond Supreme Court matrimonial part. Verify NYSCEF registration and local filing hours.",
+      "source_url": "https://www.nycourts.gov/courts/13jd/richmond/civil/matrimonial.shtml",
+      "effective_date": "2024-01-01"
+    },
+    {
+      "county": "Richmond",
+      "court": "supreme_court",
+      "topic": "matrimonial_conference",
+      "instruction": "Richmond matrimonial cases follow the statewide preliminary conference framework. Watch for part-specific scheduling notices after service is complete.",
+      "source_url": "https://www.nycourts.gov/LITIGANTS/matrimonial/index.shtml",
+      "effective_date": "2024-01-01"
+    }
+  ]
+}
