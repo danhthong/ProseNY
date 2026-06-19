@@ -1,6 +1,6 @@
 # Plan 15 — Search & Knowledge Center
 
-**Status:** Draft — awaiting review  
+**Status:** Complete  
 **Priority:** P3  
 **Depends on:** Plan 05, Plan 10  
 **Estimated effort:** Medium (4–6 days)
