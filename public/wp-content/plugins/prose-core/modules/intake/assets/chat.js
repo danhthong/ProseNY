@@ -199,6 +199,26 @@
 		}
 
 		/**
+		 * Whether intake is complete enough to download forms.
+		 *
+		 * @param {Object} actions Action visibility from the server.
+		 * @return {boolean}
+		 */
+		function canDownloadDocuments( actions ) {
+			if ( ! actions || typeof actions !== 'object' ) {
+				return false;
+			}
+
+			if ( actions.download_enabled === true || actions.intake_complete === true ) {
+				return true;
+			}
+
+			var progress = ( session.case_profile && session.case_profile.progress ) || 0;
+
+			return progress >= 100;
+		}
+
+		/**
 		 * Update the persistent Case Actions panel.
 		 *
 		 * @param {Object} actions Action visibility from the server.
@@ -218,6 +238,7 @@
 
 			var showPanel = actionsPinned || showActions;
 			var showDownload = showPanel;
+			var downloadReady = canDownloadDocuments( actions );
 
 			if ( actionsPanel ) {
 				actionsPanel.hidden = ! showPanel;
@@ -225,7 +246,10 @@
 
 			if ( getDocumentsBtn ) {
 				getDocumentsBtn.hidden = ! showDownload;
-				getDocumentsBtn.disabled = false;
+				getDocumentsBtn.disabled = ! downloadReady;
+				getDocumentsBtn.title = downloadReady
+					? ''
+					: ( STRINGS.finishIntake || 'Finish intake to enable download.' );
 				getDocumentsBtn.textContent = STRINGS.getDocuments || 'Get Documents';
 			}
 
@@ -291,7 +315,11 @@
 				return;
 			}
 
-			getDocumentsBtn.disabled = false;
+			var downloadReady = canDownloadDocuments( session.actions || {} );
+			getDocumentsBtn.disabled = ! downloadReady;
+			getDocumentsBtn.title = downloadReady
+				? ''
+				: ( STRINGS.finishIntake || 'Finish intake to enable download.' );
 			if ( getDocumentsBtn.textContent === ( STRINGS.downloading || 'Preparing download…' ) ) {
 				getDocumentsBtn.textContent = STRINGS.getDocuments || 'Get Documents';
 			}
@@ -338,7 +366,7 @@
 			var actions = session.actions || {};
 			var workflow = actions.workflow || ( session.case_profile && session.case_profile.workflow ) || '';
 
-			if ( ! workflow ) {
+			if ( ! workflow || ! canDownloadDocuments( actions ) ) {
 				return;
 			}
 

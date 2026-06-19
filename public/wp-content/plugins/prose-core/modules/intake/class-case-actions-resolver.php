@@ -112,8 +112,9 @@ final class Case_Actions_Resolver {
 			}
 		}
 
-		$show_documents = $case_known;
-		$court_routing  = $this->build_court_routing( $case_profile, $interpret_result );
+		$show_documents  = $case_known;
+		$download_enabled = $intake_complete && $workflow_resolved;
+		$court_routing   = $this->build_court_routing( $case_profile, $interpret_result );
 
 		return array(
 			'case_known'          => $case_known,
@@ -123,6 +124,7 @@ final class Case_Actions_Resolver {
 			'package_resolved'    => $package_resolved,
 			'blank_pdf_available' => ! empty( $blank_pdf['available'] ),
 			'show_documents'      => $show_documents,
+			'download_enabled'    => $download_enabled,
 			'download_mode'       => $workflow_resolved ? 'merged' : '',
 			'package_id'          => $package_id,
 			'package_label'       => $package_label,

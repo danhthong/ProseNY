@@ -40,7 +40,47 @@ class CaseActionsResolverTest extends TestCase {
 
 		$this->assertTrue( $actions['case_known'] );
 		$this->assertTrue( $actions['show_documents'] );
+		$this->assertFalse( $actions['intake_complete'] );
+		$this->assertFalse( $actions['download_enabled'] );
 		$this->assertNotEmpty( $actions['workflow'] );
+	}
+
+	/**
+	 * Download stays disabled until intake is complete.
+	 */
+	public function test_download_disabled_until_intake_complete(): void {
+		$resolver = new Case_Actions_Resolver();
+		$partial  = $resolver->resolve(
+			array(
+				'workflow' => 'uncontested_divorce_no_children_nyc',
+				'facts'    => array( 'county' => 'Queens' ),
+				'progress' => 60,
+			),
+			array(
+				'intent'         => 'gathering',
+				'completion'     => 60,
+				'missing_fields' => array( 'spouse_name' ),
+			)
+		);
+
+		$this->assertFalse( $partial['intake_complete'] );
+		$this->assertFalse( $partial['download_enabled'] );
+
+		$complete = $resolver->resolve(
+			array(
+				'workflow' => 'uncontested_divorce_no_children_nyc',
+				'facts'    => array( 'county' => 'Queens' ),
+				'progress' => 100,
+			),
+			array(
+				'intent'         => 'intake_complete',
+				'completion'     => 100,
+				'missing_fields' => array(),
+			)
+		);
+
+		$this->assertTrue( $complete['intake_complete'] );
+		$this->assertTrue( $complete['download_enabled'] );
 	}
 
 	/**
