@@ -26,10 +26,10 @@ Review this index first. Each plan is a self-contained file you can approve, rev
 | 06 | [Package builder & filing package](./06-package-builder-and-filing-package.md) | **P1 — done** | 05 | Medium |
 | 07 | [Intake chat UX & prompts](./07-intake-chat-ux-and-prompts.md) | **P1 — done** | 01, 02 | Medium |
 | 08 | [User dashboard & case summary](./08-user-dashboard-and-case-summary.md) | **P1 — done** | 02, 06 | Medium |
-| 09 | [Timeline engine](./09-timeline-engine.md) | P2 | 04, 08 | Medium |
-| 10 | [Procedural navigator & guidance](./10-procedural-navigator-and-guidance.md) | P2 | 04, 09 | Medium |
-| 11 | [Document intelligence](./11-document-intelligence.md) | P2 | 04, 05 | Large |
-| 12 | [AI procedural assistant](./12-ai-procedural-assistant.md) | P2 | 01, 10 | Medium |
+| 09 | [Timeline engine](./09-timeline-engine.md) | **P2 — done** | 04, 08 | Medium |
+| 10 | [Procedural navigator & guidance](./10-procedural-navigator-and-guidance.md) | **P2 — done** | 04, 09 | Medium |
+| 11 | [Document intelligence](./11-document-intelligence.md) | **P2 — done** | 04, 05 | Large |
+| 12 | [AI procedural assistant](./12-ai-procedural-assistant.md) | **P2 — done** | 01, 10 | Medium |
 | 13 | [County rules layer](./13-county-rules-layer.md) | P2 — done | 05 | Medium |
 | 14 | [Admin dashboard](./14-admin-dashboard.md) | P3 — done | 04, 05, 13 | Large |
 | 15 | [Search & knowledge center](./15-search-and-knowledge-center.md) | P3 — done | 05, 10 | Medium |
