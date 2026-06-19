@@ -1,6 +1,6 @@
 # Plan 17 — Security, Verification & Compliance
 
-**Status:** Draft — awaiting review  
+**Status:** Complete  
 **Priority:** P2  
 **Depends on:** Plan 05, Plan 14  
 **Estimated effort:** Medium (3–5 days)
