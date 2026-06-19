@@ -59,6 +59,11 @@ class IntakeAgentTest extends TestCase {
 				'contested_divorce_nyc',
 				array( 'facts' => array( 'children' => true ) ),
 			),
+			'default_divorce' => array(
+				'My spouse did not respond to the divorce papers.',
+				'default_divorce_nyc',
+				array( 'facts' => array( 'spouse_responded' => false ) ),
+			),
 			'custody' => array(
 				'I want custody of my son.',
 				'custody_nyc',

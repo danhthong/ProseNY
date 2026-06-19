@@ -1,0 +1,34 @@
+name: Tests
+
+on:
+  push:
+    paths:
+      - 'public/wp-content/plugins/prose-core/**'
+      - 'docs/**'
+      - '.github/workflows/tests.yml'
+  pull_request:
+    paths:
+      - 'public/wp-content/plugins/prose-core/**'
+      - 'docs/**'
+      - '.github/workflows/tests.yml'
+
+jobs:
+  phpunit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          coverage: none
+
+      - name: Install dependencies
+        working-directory: public/wp-content/plugins/prose-core
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Run PHPUnit
+        working-directory: public/wp-content/plugins/prose-core
+        run: composer test

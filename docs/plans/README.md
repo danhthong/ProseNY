@@ -22,20 +22,20 @@ Review this index first. Each plan is a self-contained file you can approve, rev
 | 02 | [Workspace chat API unification](./02-workspace-chat-api-unification.md) | **P0 — done** | 01 | Medium |
 | 03 | [Court routing & overlap UX](./03-court-routing-and-overlap-ux.md) | **P1 — done** | 01 | Medium |
 | 04 | [Workflow engine hardening](./04-workflow-engine-hardening.md) | **P1 — done** | — | Medium |
-| 05 | [Forms library & form mapping](./05-forms-library-and-form-mapping.md) | P1 | 04 | Large |
-| 06 | [Package builder & filing package](./06-package-builder-and-filing-package.md) | P1 | 05 | Medium |
-| 07 | [Intake chat UX & prompts](./07-intake-chat-ux-and-prompts.md) | P1 | 01, 02 | Medium |
-| 08 | [User dashboard & case summary](./08-user-dashboard-and-case-summary.md) | P1 | 02, 06 | Medium |
+| 05 | [Forms library & form mapping](./05-forms-library-and-form-mapping.md) | **P1 — done** | 04 | Large |
+| 06 | [Package builder & filing package](./06-package-builder-and-filing-package.md) | **P1 — done** | 05 | Medium |
+| 07 | [Intake chat UX & prompts](./07-intake-chat-ux-and-prompts.md) | **P1 — done** | 01, 02 | Medium |
+| 08 | [User dashboard & case summary](./08-user-dashboard-and-case-summary.md) | **P1 — done** | 02, 06 | Medium |
 | 09 | [Timeline engine](./09-timeline-engine.md) | P2 | 04, 08 | Medium |
 | 10 | [Procedural navigator & guidance](./10-procedural-navigator-and-guidance.md) | P2 | 04, 09 | Medium |
 | 11 | [Document intelligence](./11-document-intelligence.md) | P2 | 04, 05 | Large |
 | 12 | [AI procedural assistant](./12-ai-procedural-assistant.md) | P2 | 01, 10 | Medium |
-| 13 | [County rules layer](./13-county-rules-layer.md) | P2 | 05 | Medium |
-| 14 | [Admin dashboard](./14-admin-dashboard.md) | P3 | 04, 05, 13 | Large |
-| 15 | [Search & knowledge center](./15-search-and-knowledge-center.md) | P3 | 05, 10 | Medium |
-| 16 | [Database schema & case persistence](./16-database-schema-and-case-persistence.md) | P2 | 02 | Large |
-| 17 | [Security, verification & compliance](./17-security-verification-and-compliance.md) | P2 | 05, 14 | Medium |
-| 18 | [MVP acceptance & QA](./18-mvp-acceptance-and-qa.md) | P1 | 01–08 min | Medium |
+| 13 | [County rules layer](./13-county-rules-layer.md) | P2 — done | 05 | Medium |
+| 14 | [Admin dashboard](./14-admin-dashboard.md) | P3 — done | 04, 05, 13 | Large |
+| 15 | [Search & knowledge center](./15-search-and-knowledge-center.md) | P3 — done | 05, 10 | Medium |
+| 16 | [Database schema & case persistence](./16-database-schema-and-case-persistence.md) | P2 — done | 02 | Large |
+| 17 | [Security, verification & compliance](./17-security-verification-and-compliance.md) | P2 — done | 05, 14 | Medium |
+| 18 | [MVP acceptance & QA](./18-mvp-acceptance-and-qa.md) | P1 — done | 01–08 min | Medium |
 | 19 | [NYSCEF integration (Phase 2)](./19-nyscef-integration-phase-2.md) | Future | 16, 17 | Large |
 | 20 | [Statewide expansion (Phase 3)](./20-statewide-expansion-phase-3.md) | Future | 19 | Large |
 
@@ -61,6 +61,11 @@ From `docs/requires/` and `AGENTS.md`:
 | Package builder | `prose-core/modules/packagebuilder/` | 06 |
 | Procedural navigator | `prose-core/modules/procedural/` | 10 |
 | Guidance engine | `prose-core/modules/guidance/` | 10, 13 |
+| County rules seed | `docs/county-rules/` | 13 |
+| Search & knowledge center | `prose-core/modules/search/`, `docs/knowledge-center/` | 15 |
+| Security (rate limit, audit) | `prose-core/modules/security/` | 17 |
+| Case persistence schema | `docs/plans/schema/case-persistence.sql` | 16 |
+| MVP QA matrix | `docs/plans/qa/mvp-test-matrix.md` | 18 |
 | Assembly / PDF fill | `prose-core/modules/assembly/` | 06 |
 | Workspace UI | `themes/prose-app/` (blocks, `build/courtflow.js`) | 02, 07, 08 |
 | Homepage intake widget | `[prose_intake_chat]` shortcode | 01, 07 |

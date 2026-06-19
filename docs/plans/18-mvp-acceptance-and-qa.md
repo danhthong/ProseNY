@@ -1,6 +1,6 @@
 # Plan 18 — MVP Acceptance & QA
 
-**Status:** Draft — awaiting review  
+**Status:** Complete  
 **Priority:** P1 (gate before launch)  
 **Depends on:** Plans 01–08 minimum  
 **Estimated effort:** Medium (4–6 days)
