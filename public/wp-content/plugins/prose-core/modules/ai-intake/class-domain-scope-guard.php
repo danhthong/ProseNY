@@ -65,20 +65,9 @@ final class Domain_Scope_Guard {
 	 * }
 	 */
 	public function assess( string $message, array $state = array(), array $conversation = array() ): array {
-		if ( $this->should_bypass( $state, $conversation ) ) {
-			return array(
-				'supported'           => true,
-				'confidence'          => 1.0,
-				'message'             => '',
-				'hybrid'              => false,
-				'out_of_scope_topics' => array(),
-				'bypassed'            => true,
-			);
-		}
-
-		$text              = $this->normalize( $message );
-		$supported_score   = 0.0;
-		$out_of_scope      = array();
+		$text            = $this->normalize( $message );
+		$supported_score = 0.0;
+		$out_of_scope    = array();
 
 		foreach ( $this->catalog->keywords() as $entry ) {
 			$phrase = $this->normalize( (string) ( $entry['phrase'] ?? '' ) );
@@ -107,8 +96,40 @@ final class Domain_Scope_Guard {
 			$out_of_scope[] = $label;
 		}
 
+		foreach ( $this->off_topic_pattern_labels( $text ) as $label ) {
+			if ( ! in_array( $label, $out_of_scope, true ) ) {
+				$out_of_scope[] = $label;
+			}
+		}
+
+		if ( $this->has_active_intake( $state, $conversation ) && $this->is_procedural_follow_up( $text ) ) {
+			$supported_score = max( $supported_score, 0.35 );
+		}
+
 		$hybrid    = ! empty( $out_of_scope ) && $supported_score >= Supported_Issue_Catalog::CONFIDENCE_THRESHOLD;
 		$supported = $supported_score >= Supported_Issue_Catalog::CONFIDENCE_THRESHOLD;
+
+		if ( ! empty( $out_of_scope ) && ! $supported ) {
+			return array(
+				'supported'           => false,
+				'confidence'          => round( $supported_score, 2 ),
+				'message'             => $this->catalog->restriction_message(),
+				'hybrid'              => false,
+				'out_of_scope_topics' => $out_of_scope,
+				'bypassed'            => false,
+			);
+		}
+
+		if ( $this->should_bypass( $message, $state, $conversation ) ) {
+			return array(
+				'supported'           => true,
+				'confidence'          => 1.0,
+				'message'             => '',
+				'hybrid'              => false,
+				'out_of_scope_topics' => array(),
+				'bypassed'            => true,
+			);
+		}
 
 		return array(
 			'supported'           => $supported,
@@ -121,53 +142,22 @@ final class Domain_Scope_Guard {
 	}
 
 	/**
-	 * Whether an active intake session should skip scope checks.
+	 * Whether an active intake session should skip scope checks for this reply.
 	 *
 	 * Short answers like county names or child counts are not divorce keywords
-	 * but are valid mid-intake replies.
+	 * but are valid mid-intake replies. Clearly off-topic messages never bypass.
 	 *
-	 * @param array<string, mixed>              $state        Intake state.
-	 * @param array<int, array<string, string>> $conversation Conversation history.
+	 * @param string                              $message      User message.
+	 * @param array<string, mixed>                $state        Intake state.
+	 * @param array<int, array<string, string>>   $conversation Conversation history.
 	 * @return bool
 	 */
-	public function should_bypass( array $state, array $conversation ): bool {
-		if ( ! empty( $conversation ) ) {
-			return true;
+	public function should_bypass( string $message, array $state, array $conversation = array() ): bool {
+		if ( ! $this->has_active_intake( $state, $conversation ) ) {
+			return false;
 		}
 
-		$workflow = '';
-
-		if ( isset( $state['workflow'] ) && is_string( $state['workflow'] ) && '' !== $state['workflow'] ) {
-			$workflow = $state['workflow'];
-		} elseif ( isset( $state['case_profile']['workflow'] ) && is_string( $state['case_profile']['workflow'] ) ) {
-			$workflow = $state['case_profile']['workflow'];
-		}
-
-		if ( '' !== $workflow ) {
-			return true;
-		}
-
-		$pending = '';
-
-		if ( isset( $state['pending_field'] ) && is_string( $state['pending_field'] ) ) {
-			$pending = $state['pending_field'];
-		} elseif ( isset( $state['case_profile']['pending_field'] ) && is_string( $state['case_profile']['pending_field'] ) ) {
-			$pending = $state['case_profile']['pending_field'];
-		}
-
-		if ( '' !== $pending ) {
-			return true;
-		}
-
-		$facts = array();
-
-		if ( isset( $state['facts'] ) && is_array( $state['facts'] ) ) {
-			$facts = $state['facts'];
-		} elseif ( isset( $state['case_profile']['facts'] ) && is_array( $state['case_profile']['facts'] ) ) {
-			$facts = $state['case_profile']['facts'];
-		}
-
-		return ! empty( $facts );
+		return $this->looks_like_intake_answer( $message, $state );
 	}
 
 	/**
@@ -188,6 +178,173 @@ final class Domain_Scope_Guard {
 			__( 'Note: %s matters are outside ProSeNY\'s current scope. Focus on the in-scope family court portion of the user\'s message and politely explain that limitation.', 'prose-core' ),
 			$joined
 		);
+	}
+
+	/**
+	 * Whether intake is already underway.
+	 *
+	 * @param array<string, mixed>              $state        Intake state.
+	 * @param array<int, array<string, string>> $conversation Conversation history.
+	 * @return bool
+	 */
+	private function has_active_intake( array $state, array $conversation ): bool {
+		if ( ! empty( $conversation ) ) {
+			return true;
+		}
+
+		if ( '' !== $this->workflow_from_state( $state ) ) {
+			return true;
+		}
+
+		if ( '' !== $this->pending_field_from_state( $state ) ) {
+			return true;
+		}
+
+		return ! empty( $this->facts_from_state( $state ) );
+	}
+
+	/**
+	 * Whether a message looks like a direct intake answer rather than a new topic.
+	 *
+	 * @param string               $message User message.
+	 * @param array<string, mixed> $state   Intake state.
+	 * @return bool
+	 */
+	private function looks_like_intake_answer( string $message, array $state ): bool {
+		$text = trim( $message );
+
+		if ( '' === $text ) {
+			return false;
+		}
+
+		if ( '' !== $this->pending_field_from_state( $state ) ) {
+			return strlen( $text ) <= 160;
+		}
+
+		if ( preg_match( '/^\d{1,2}$/', $text ) ) {
+			return true;
+		}
+
+		if ( preg_match( '/^(yes|no|yeah|nope|true|false)\.?$/i', $text ) ) {
+			return true;
+		}
+
+		if ( strlen( $text ) <= 40 && ! str_contains( $text, '?' ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Procedural follow-ups during an active intake remain in scope.
+	 *
+	 * @param string $text Normalized message text.
+	 * @return bool
+	 */
+	private function is_procedural_follow_up( string $text ): bool {
+		$phrases = array(
+			'what happens next',
+			'what do i do next',
+			'what should i do next',
+			'what are the next steps',
+			'what forms do i need',
+			'which forms do i need',
+			'how do i file',
+			'where do i file',
+			'what court',
+			'which court',
+			'deadline',
+			'blank form',
+			'blank pdf',
+			'download',
+		);
+
+		foreach ( $phrases as $phrase ) {
+			if ( str_contains( $text, $phrase ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Detect general-knowledge / chit-chat patterns not covered by keyword lists.
+	 *
+	 * @param string $text Normalized message text.
+	 * @return string[]
+	 */
+	private function off_topic_pattern_labels( string $text ): array {
+		$labels = array();
+
+		if ( preg_match( '/\b\d+\s*[\+\-\*\/x]\s*\d+\b/', $text ) ) {
+			$labels[] = 'general knowledge';
+		}
+
+		$chit_chat = array(
+			'sing a song'     => 'general knowledge',
+			'tell me a joke'  => 'general knowledge',
+			'write a poem'    => 'general knowledge',
+			'who are you'     => 'general knowledge',
+			'what is your name' => 'general knowledge',
+		);
+
+		foreach ( $chit_chat as $phrase => $label ) {
+			if ( str_contains( $text, $phrase ) && ! in_array( $label, $labels, true ) ) {
+				$labels[] = $label;
+			}
+		}
+
+		return $labels;
+	}
+
+	/**
+	 * @param array<string, mixed> $state Intake state.
+	 * @return string
+	 */
+	private function workflow_from_state( array $state ): string {
+		if ( isset( $state['workflow'] ) && is_string( $state['workflow'] ) && '' !== $state['workflow'] ) {
+			return $state['workflow'];
+		}
+
+		if ( isset( $state['case_profile']['workflow'] ) && is_string( $state['case_profile']['workflow'] ) && '' !== $state['case_profile']['workflow'] ) {
+			return $state['case_profile']['workflow'];
+		}
+
+		return '';
+	}
+
+	/**
+	 * @param array<string, mixed> $state Intake state.
+	 * @return string
+	 */
+	private function pending_field_from_state( array $state ): string {
+		if ( isset( $state['pending_field'] ) && is_string( $state['pending_field'] ) && '' !== $state['pending_field'] ) {
+			return $state['pending_field'];
+		}
+
+		if ( isset( $state['case_profile']['pending_field'] ) && is_string( $state['case_profile']['pending_field'] ) && '' !== $state['case_profile']['pending_field'] ) {
+			return $state['case_profile']['pending_field'];
+		}
+
+		return '';
+	}
+
+	/**
+	 * @param array<string, mixed> $state Intake state.
+	 * @return array<string, mixed>
+	 */
+	private function facts_from_state( array $state ): array {
+		if ( isset( $state['facts'] ) && is_array( $state['facts'] ) ) {
+			return $state['facts'];
+		}
+
+		if ( isset( $state['case_profile']['facts'] ) && is_array( $state['case_profile']['facts'] ) ) {
+			return $state['case_profile']['facts'];
+		}
+
+		return array();
 	}
 
 	/**

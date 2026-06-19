@@ -79,7 +79,7 @@ final class AI_Intake_Service {
 			$scope = $this->scope_guard->assess( $message, $state, $conversation );
 
 			if ( ! $scope['supported'] ) {
-				return $this->build_scope_restriction_response( $scope );
+				return $this->build_scope_restriction_response( $scope, $state );
 			}
 
 			if ( ! empty( $scope['hybrid'] ) && ! empty( $scope['out_of_scope_topics'] ) ) {
@@ -162,9 +162,10 @@ final class AI_Intake_Service {
 	 * Build the deterministic out-of-scope response (no OpenAI call).
 	 *
 	 * @param array<string, mixed> $scope Scope guard assessment.
+	 * @param array<string, mixed> $state Intake state to preserve.
 	 * @return array{success: bool, supported: false, message: string, result: array<string, mixed>}
 	 */
-	private function build_scope_restriction_response( array $scope ): array {
+	private function build_scope_restriction_response( array $scope, array $state = array() ): array {
 		$message = (string) ( $scope['message'] ?? '' );
 
 		if ( '' === $message ) {
@@ -178,8 +179,16 @@ final class AI_Intake_Service {
 			'question'     => $message,
 			'confidence'   => (float) ( $scope['confidence'] ?? 0.0 ),
 			'needs_review' => false,
-			'state'        => array(),
+			'state'        => $state,
 		);
+
+		if ( isset( $state['case_profile'] ) && is_array( $state['case_profile'] ) ) {
+			$result['case_profile'] = $state['case_profile'];
+		}
+
+		if ( isset( $state['conversation_id'] ) && is_string( $state['conversation_id'] ) ) {
+			$result['conversation_id'] = $state['conversation_id'];
+		}
 
 		return array(
 			'success'   => true,

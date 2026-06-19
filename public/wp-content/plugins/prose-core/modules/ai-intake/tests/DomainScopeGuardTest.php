@@ -207,6 +207,104 @@ class DomainScopeGuardTest extends TestCase {
 	}
 
 	/**
+	 * Off-topic weather is blocked even during an active intake conversation.
+	 */
+	public function test_blocks_weather_during_active_intake(): void {
+		$result = $this->guard->assess(
+			'how the weather today in Lam Dong',
+			array(
+				'workflow' => 'custody_nyc',
+				'facts'    => array(
+					'issue'  => array( 'value' => 'custody', 'confirmed' => true ),
+					'county' => array( 'value' => 'Queens', 'confirmed' => true ),
+				),
+			),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Help me with child custody in Queens.',
+				),
+				array(
+					'role'    => 'assistant',
+					'content' => 'How many children are involved?',
+				),
+			)
+		);
+
+		$this->assertFalse( $result['supported'] );
+		$this->assertContains( 'weather', $result['out_of_scope_topics'] );
+	}
+
+	/**
+	 * General-knowledge math is blocked during active intake.
+	 */
+	public function test_blocks_math_during_active_intake(): void {
+		$result = $this->guard->assess(
+			'can you give me 1 + 1 ?',
+			array(
+				'workflow'      => 'custody_nyc',
+				'pending_field' => 'child_count',
+			),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Help me with child custody in Queens.',
+				),
+			)
+		);
+
+		$this->assertFalse( $result['supported'] );
+		$this->assertContains( 'general knowledge', $result['out_of_scope_topics'] );
+	}
+
+	/**
+	 * Service skips OpenAI for off-topic messages during active intake.
+	 */
+	public function test_service_skips_openai_for_weather_during_intake(): void {
+		$provider = new Stub_Ai_Provider();
+		$service  = new AI_Intake_Service( $provider );
+
+		$response = $service->interpret(
+			'how the weather today in Lam Dong',
+			array(
+				'workflow' => 'custody_nyc',
+				'facts'    => array(
+					'issue' => array( 'value' => 'custody', 'confirmed' => true ),
+				),
+			),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Help me with child custody in Queens.',
+				),
+			)
+		);
+
+		$this->assertTrue( $response['success'] );
+		$this->assertFalse( $response['supported'] );
+		$this->assertSame( 'domain_restricted', $response['result']['next_action'] );
+		$this->assertSame( 'custody_nyc', $response['result']['state']['workflow'] ?? '' );
+	}
+
+	/**
+	 * Procedural follow-ups remain supported during active intake.
+	 */
+	public function test_allows_procedural_follow_up_during_intake(): void {
+		$result = $this->guard->assess(
+			'What happens next?',
+			array( 'workflow' => 'custody_nyc' ),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'Help me with child custody in Queens.',
+				),
+			)
+		);
+
+		$this->assertTrue( $result['supported'] );
+	}
+
+	/**
 	 * Service invokes interpreter for order of protection topics.
 	 */
 	public function test_service_calls_interpreter_for_order_of_protection(): void {
