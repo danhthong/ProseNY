@@ -122,4 +122,46 @@ class CourtflowResponseMapperTest extends TestCase {
 		$this->assertTrue( $state['court_routing']['overlap'] );
 		$this->assertContains( 'family_court', $state['court_routing']['courts'] );
 	}
+
+	/**
+	 * Completed intake with procedural question returns a procedure card.
+	 */
+	public function test_procedural_card_after_intake_complete(): void {
+		$session = array(
+			'session_id'   => 'test-session',
+			'case_profile' => array(
+				'facts'    => array(
+					'county'        => 'Queens',
+					'children'      => false,
+					'spouse_agrees' => true,
+				),
+				'workflow' => 'uncontested_divorce_no_children_nyc',
+				'progress' => 100,
+			),
+			'actions' => array(
+				'intake_complete'    => true,
+				'workflow_resolved'  => true,
+				'workflow'           => 'uncontested_divorce_no_children_nyc',
+				'issue'              => 'divorce',
+			),
+			'last_interpret' => array(
+				'completion' => 100,
+				'workflow'   => 'uncontested_divorce_no_children_nyc',
+			),
+		);
+
+		$response = $this->mapper->map_message_response(
+			$session,
+			array(
+				'success' => true,
+				'result'  => $session['last_interpret'],
+			),
+			array(),
+			'What happens next after I file?'
+		);
+
+		$this->assertArrayHasKey( 'card', $response );
+		$this->assertSame( 'procedure', $response['card']['type'] );
+		$this->assertNotEmpty( $response['next_steps'] );
+	}
 }

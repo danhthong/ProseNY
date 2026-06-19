@@ -1,6 +1,6 @@
 # Plan 10 — Procedural Navigator & Guidance
 
-**Status:** Draft — awaiting review  
+**Status:** Complete  
 **Priority:** P2  
 **Depends on:** Plan 04, Plan 09  
 **Estimated effort:** Medium (4–6 days)
@@ -48,10 +48,10 @@ After intake, guide users through **next procedural steps** — filing, service,
 
 ## Acceptance criteria
 
-- [ ] User asks “what happens next” after uncontested intake → stage-specific guidance
-- [ ] Guidance cites correct court and forms
-- [ ] AI conversation layer paraphrases navigator content, cannot invent steps
-- [ ] Same next-step whether user uses chat or reads context panel
+- [x] User asks “what happens next” after uncontested intake → stage-specific guidance
+- [x] Guidance cites correct court and forms
+- [x] AI conversation layer paraphrases navigator content, cannot invent steps
+- [x] Same next-step whether user uses chat or reads context panel
 
 ## Implementation tasks
 
