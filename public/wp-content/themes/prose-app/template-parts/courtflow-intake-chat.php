@@ -7,6 +7,8 @@
  * @var int $session_id Passed via get_template_part args.
  */
 
+use ProseApp\Courtflow;
+
 if ( ! isset( $session_id ) && isset( $args['session_id'] ) ) {
 	$session_id = (int) $args['session_id'];
 }
@@ -50,11 +52,7 @@ $session_id = isset( $session_id ) ? (int) $session_id : 0;
 				</div>
 				<p class="cf-empty__title"><?php esc_html_e( 'Start your filing', 'prose-app' ); ?></p>
 				<p class="cf-empty__text"><?php esc_html_e( 'Your conversation history will appear here. Describe your situation in plain language and we will guide you step by step.', 'prose-app' ); ?></p>
-				<div class="cf-prompt-chips" id="cf-prompt-chips">
-					<button type="button" class="cf-chip" data-prompt="<?php esc_attr_e( 'I need to file for divorce in New York', 'prose-app' ); ?>"><?php esc_html_e( 'File for divorce in NY', 'prose-app' ); ?></button>
-					<button type="button" class="cf-chip" data-prompt="<?php esc_attr_e( 'I have children and need help with custody forms', 'prose-app' ); ?>"><?php esc_html_e( 'Divorce with children', 'prose-app' ); ?></button>
-					<button type="button" class="cf-chip" data-prompt="<?php esc_attr_e( 'I am not sure which court forms I need', 'prose-app' ); ?>"><?php esc_html_e( 'Not sure which forms', 'prose-app' ); ?></button>
-				</div>
+				<?php Courtflow\render_prompt_chip_buttons(); ?>
 			</div>
 		</div>
 	</div>

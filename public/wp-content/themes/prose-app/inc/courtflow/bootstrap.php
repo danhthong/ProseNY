@@ -11,4 +11,5 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 require_once get_template_directory() . '/inc/courtflow/icons.php';
 require_once get_template_directory() . '/inc/courtflow/steps.php';
+require_once get_template_directory() . '/inc/courtflow/prompt-chips.php';
 require_once get_template_directory() . '/inc/courtflow/workspace.php';

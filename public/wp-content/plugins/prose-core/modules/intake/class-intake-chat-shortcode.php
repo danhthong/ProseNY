@@ -170,6 +170,7 @@ final class Intake_Chat_Shortcode {
 						'hideSummary'     => __( 'Hide Case Summary', 'prose-core' ),
 						'downloading'     => __( 'Preparing download…', 'prose-core' ),
 						'downloadError'   => __( 'Documents are not available for download yet.', 'prose-core' ),
+						'finishIntake'    => __( 'Finish intake to enable download.', 'prose-core' ),
 					),
 				)
 			);

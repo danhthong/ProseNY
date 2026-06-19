@@ -1,9 +1,10 @@
 # Plan 07 — Intake Chat UX & Prompts
 
-**Status:** Draft — awaiting review  
+**Status:** Complete  
 **Priority:** P1  
 **Depends on:** Plan 01, Plan 02  
-**Estimated effort:** Medium (3–4 days)
+**Estimated effort:** Medium (3–4 days)  
+**Completed:** 2026-06-19
 
 ---
 

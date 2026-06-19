@@ -13,6 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use ProseApp\Courtflow;
+
 $prose_home_url   = esc_url( home_url( '/' ) );
 $prose_login_url  = esc_url( wp_login_url() );
 $prose_reg_url    = esc_url( function_exists( 'wp_registration_url' ) ? wp_registration_url() : wp_login_url() );
@@ -34,24 +36,6 @@ $prose_nav_links  = array(
 	),
 );
 
-$prose_prompts = array(
-	array(
-		'title' => __( 'File for divorce in New York', 'prose-app' ),
-		'desc'  => __( 'Step-by-step guidance for filing.', 'prose-app' ),
-	),
-	array(
-		'title' => __( 'Help me with child custody', 'prose-app' ),
-		'desc'  => __( 'Understand custody arrangements.', 'prose-app' ),
-	),
-	array(
-		'title' => __( 'Calculate child support', 'prose-app' ),
-		'desc'  => __( 'Estimate payments based on income.', 'prose-app' ),
-	),
-	array(
-		'title' => __( 'Review my divorce situation', 'prose-app' ),
-		'desc'  => __( 'Get an overview of next steps.', 'prose-app' ),
-	),
-);
 ?>
 <!DOCTYPE html>
 <html <?php language_attributes(); ?>>
@@ -119,7 +103,7 @@ $prose_prompts = array(
 				<?php esc_html_e( 'How can I help you today?', 'prose-app' ); ?>
 			</h1>
 			<p class="max-w-[620px] text-center text-[16px] leading-[26px] text-slate-500">
-				<?php esc_html_e( 'Ask me anything about divorce, custody, child support, or any legal questions you have.', 'prose-app' ); ?>
+				<?php esc_html_e( 'Guided intake for NYC divorce and Family Court matters — Supreme Court matrimonial filings, custody, support, and orders of protection.', 'prose-app' ); ?>
 			</p>
 
 			<div class="hidden h-4 w-px md:block" aria-hidden="true"></div>
@@ -138,21 +122,13 @@ $prose_prompts = array(
 					echo do_shortcode( '[prose_package_preview]' );
 				}
 				?>
+				<div class="mt-4 w-full">
+					<?php Courtflow\render_intake_disclaimer(); ?>
+				</div>
 			</div>
 
-			<?php // Suggested prompts (2x2 desktop, stacked mobile). Prefill the widget input on click. ?>
-			<div class="flex w-full flex-wrap gap-3 md:w-[720px]">
-				<?php foreach ( $prose_prompts as $prompt ) : ?>
-					<button
-						type="button"
-						class="flex w-full flex-col gap-1.5 rounded-xl border border-slate-100 bg-white px-4 py-[14px] text-left hover:border-slate-200 hover:bg-slate-50 md:w-[354px]"
-						data-prose-intake-prompt="<?php echo esc_attr( $prompt['title'] ); ?>"
-					>
-						<span class="text-[14px] font-semibold text-slate-900"><?php echo esc_html( $prompt['title'] ); ?></span>
-						<span class="text-[13px] leading-[18px] text-slate-500"><?php echo esc_html( $prompt['desc'] ); ?></span>
-					</button>
-				<?php endforeach; ?>
-			</div>
+			<?php // Suggested prompts (shared with workspace). Prefill the widget input on click. ?>
+			<?php Courtflow\render_prompt_chip_cards(); ?>
 
 			<?php // Privacy line. ?>
 			<div class="flex items-center justify-center gap-1.5">
