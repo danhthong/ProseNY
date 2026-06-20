@@ -30,52 +30,7 @@ jobs:
             public/wp-content/plugins/ \
             ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/var/www/html/wp-content/plugins/
 
-      - name: Notify Slack
-        if: success()
+      - name: Fix wp-content ownership
         run: |
-          curl -X POST -H 'Content-type: application/json' \
-            --data '{
-              "blocks": [
-                {
-                  "type": "header",
-                  "text": {
-                    "type": "plain_text",
-                    "text": "🚀 ProSeNY Deployment Successful"
-                  }
-                },
-                {
-                  "type": "section",
-                  "fields": [
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Repository:*\n${{ github.repository }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Branch:*\n${{ github.ref_name }}"
-                    },
-                    {
-                      "type": "mrkdwn",
-                      "text": "*Author:*\n${{ github.actor }}"
-                    }
-                  ]
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Commit Message:*\n>${{ github.event.head_commit.message }}"
-                  }
-                }
-              ]
-            }' \
-            ${{ secrets.SLACK_WEBHOOK_URL }}
-
-      - name: Notify Slack Failure
-        if: failure()
-        run: |
-          curl -X POST -H 'Content-type: application/json' \
-            --data '{
-              "text":"❌ Deployment failed\nRepository: '${{ github.repository }}'\nBranch: '${{ github.ref_name }}'"
-            }' \
-            ${{ secrets.SLACK_WEBHOOK_URL }}
+          ssh ${{ secrets.USERNAME }}@${{ secrets.HOST }} \
+            "sudo chown -R www-data:www-data /var/www/html/wp-content"
