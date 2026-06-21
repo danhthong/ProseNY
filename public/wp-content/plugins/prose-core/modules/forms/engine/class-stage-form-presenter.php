@@ -171,9 +171,8 @@ final class Stage_Form_Presenter {
 			return $this->empty_context( $routing_missing );
 		}
 
-		if ( ! $intake_complete ) {
-			return $this->pre_commencement_context( $workflow, $facts );
-		}
+		// Blank forms unlock once routing resolves the workflow. Personal intake
+		// fields (names, dates, income, etc.) are optional for download.
 
 		$current_node  = $this->resolve_current_node( $workflow, $input, $context );
 		$current_stage = $this->progression->get_current_stage( $workflow, $current_node, $context );

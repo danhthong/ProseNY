@@ -14,6 +14,7 @@
 
 namespace ProSe\Core\Intake;
 
+use ProSe\Core\Ai_Intake\Supported_Language_Guard;
 use ProSe\Core\Routing\Case_Profile;
 use ProSe\Core\Routing\Routing_Engine;
 use ProSe\Core\Routing\Workflow_Catalog;
@@ -77,6 +78,13 @@ final class Intake_Agent {
 	private Document_Request_Detector $documents;
 
 	/**
+	 * Language guard.
+	 *
+	 * @var Supported_Language_Guard
+	 */
+	private Supported_Language_Guard $language_guard;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Routing_Engine|null           $routing        Routing engine.
@@ -86,6 +94,7 @@ final class Intake_Agent {
 	 * @param Question_Selector|null        $selector       Question selector.
 	 * @param Matter_Switch|null            $matter_switch  Matter switch detector.
 	 * @param Document_Request_Detector|null $documents     Document request detector.
+	 * @param Supported_Language_Guard|null  $language_guard Language guard.
 	 */
 	public function __construct(
 		?Routing_Engine $routing = null,
@@ -94,7 +103,8 @@ final class Intake_Agent {
 		?Completion_Calculator $completion = null,
 		?Question_Selector $selector = null,
 		?Matter_Switch $matter_switch = null,
-		?Document_Request_Detector $documents = null
+		?Document_Request_Detector $documents = null,
+		?Supported_Language_Guard $language_guard = null
 	) {
 		$this->catalog        = $catalog ?? new Workflow_Catalog();
 		$this->routing        = $routing ?? new Routing_Engine( $this->catalog );
@@ -103,6 +113,7 @@ final class Intake_Agent {
 		$this->selector       = $selector ?? new Question_Selector();
 		$this->matter_switch  = $matter_switch ?? new Matter_Switch( $this->catalog );
 		$this->documents      = $documents ?? new Document_Request_Detector();
+		$this->language_guard = $language_guard ?? new Supported_Language_Guard();
 	}
 
 	/**
@@ -113,6 +124,26 @@ final class Intake_Agent {
 	 * @return array<string, mixed>
 	 */
 	public function process( string $message, array $case_profile = array() ): array {
+		$language = $this->language_guard->assess( $message );
+
+		if ( ! $language['supported'] ) {
+			$conversation_id = isset( $case_profile['conversation_id'] ) && is_string( $case_profile['conversation_id'] ) && '' !== $case_profile['conversation_id']
+				? $case_profile['conversation_id']
+				: $this->generate_conversation_id();
+
+			return array(
+				'conversation_id' => $conversation_id,
+				'workflow'        => $case_profile['workflow'] ?? null,
+				'facts_extracted' => array(),
+				'case_profile'    => $case_profile,
+				'missing_fields'  => is_array( $case_profile['missing_fields'] ?? null ) ? $case_profile['missing_fields'] : array(),
+				'next_question'   => (string) ( $language['message'] ?? $this->language_guard->restriction_message() ),
+				'next_action'     => 'language_restricted',
+				'completion'      => (int) ( $case_profile['progress'] ?? 0 ),
+				'intent'          => 'language_restricted',
+			);
+		}
+
 		$pending_field = isset( $case_profile['pending_field'] ) && is_string( $case_profile['pending_field'] )
 			? $case_profile['pending_field']
 			: '';

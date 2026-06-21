@@ -31,16 +31,15 @@ class GuidanceEngineTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		Workflow_Catalog::reset_cache();
-		$this->temp_dir = sys_get_temp_dir() . '/prose-guidance-test-' . uniqid( '', true );
-		mkdir( $this->temp_dir, 0777, true );
-		mkdir( $this->temp_dir . '/counties', 0777, true );
+		$this->temp_dir = prose_test_temp_dir( 'prose-guidance-test' );
+		mkdir( $this->temp_dir . DIRECTORY_SEPARATOR . 'counties', 0777, true );
 	}
 
 	/**
 	 * Tear down.
 	 */
 	protected function tearDown(): void {
-		$this->delete_dir( $this->temp_dir );
+		prose_test_remove_tree( $this->temp_dir );
 	}
 
 	/**
@@ -57,7 +56,7 @@ class GuidanceEngineTest extends TestCase {
 		$first = $result['guidance']['steps'][0];
 		$this->assertSame( 1, $first['order'] );
 		$this->assertSame( 'commencement', $first['id'] );
-		$this->assertSame( 'Commencement', $first['title'] );
+		$this->assertSame( 'Starting the Case', $first['title'] );
 		$this->assertNotSame( '', $first['description'] );
 		$this->assertIsArray( $first['tips'] );
 		$this->assertIsArray( $first['warnings'] );
@@ -278,37 +277,5 @@ class GuidanceEngineTest extends TestCase {
 	private function copy_county_seed( string $filename ): void {
 		$source = PROSE_CORE_PATH . 'modules/guidance/data/counties/' . $filename;
 		copy( $source, $this->temp_dir . '/counties/' . $filename );
-	}
-
-	/**
-	 * Recursively delete a directory.
-	 *
-	 * @param string $dir Directory path.
-	 * @return void
-	 */
-	private function delete_dir( string $dir ): void {
-		if ( ! is_dir( $dir ) ) {
-			return;
-		}
-
-		$items = scandir( $dir );
-		if ( false === $items ) {
-			return;
-		}
-
-		foreach ( $items as $item ) {
-			if ( '.' === $item || '..' === $item ) {
-				continue;
-			}
-
-			$path = $dir . '/' . $item;
-			if ( is_dir( $path ) ) {
-				$this->delete_dir( $path );
-			} else {
-				unlink( $path );
-			}
-		}
-
-		rmdir( $dir );
 	}
 }

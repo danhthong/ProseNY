@@ -124,4 +124,99 @@ final class Message_Repository extends Abstract_Repository {
 
 		return $text;
 	}
+
+	/**
+	 * Count messages in a conversation.
+	 *
+	 * @param int $conversation_id Conversation ID.
+	 * @return int
+	 */
+	public function count_for_conversation( int $conversation_id ): int {
+		global $wpdb;
+
+		if ( $conversation_id <= 0 ) {
+			return 0;
+		}
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$count = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COUNT(*) FROM {$this->table()} WHERE conversation_id = %d",
+				$conversation_id
+			)
+		);
+
+		return max( 0, (int) $count );
+	}
+
+	/**
+	 * List messages for a conversation in order.
+	 *
+	 * @param int $conversation_id Conversation ID.
+	 * @param int $limit           Max rows.
+	 * @return array<int, array{role: string, content: string, sequence: int, created_at: string}>
+	 */
+	public function list_for_conversation( int $conversation_id, int $limit = 200 ): array {
+		global $wpdb;
+
+		if ( $conversation_id <= 0 ) {
+			return array();
+		}
+
+		$limit = max( 1, min( 500, $limit ) );
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT role, content, sequence, created_at FROM {$this->table()} WHERE conversation_id = %d ORDER BY sequence ASC LIMIT %d",
+				$conversation_id,
+				$limit
+			)
+		);
+
+		if ( ! is_array( $rows ) ) {
+			return array();
+		}
+
+		$messages = array();
+
+		foreach ( $rows as $row ) {
+			if ( ! $row instanceof \stdClass ) {
+				continue;
+			}
+
+			$messages[] = array(
+				'role'       => (string) $row->role,
+				'content'    => (string) $row->content,
+				'sequence'   => (int) $row->sequence,
+				'created_at' => (string) $row->created_at,
+			);
+		}
+
+		return $messages;
+	}
+
+	/**
+	 * Next sequence number for a conversation.
+	 *
+	 * @param int $conversation_id Conversation ID.
+	 * @return int
+	 */
+	public function next_sequence( int $conversation_id ): int {
+		global $wpdb;
+
+		if ( $conversation_id <= 0 ) {
+			return 1;
+		}
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$max = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT MAX(sequence) FROM {$this->table()} WHERE conversation_id = %d",
+				$conversation_id
+			)
+		);
+
+		return max( 1, (int) $max + 1 );
+	}
 }

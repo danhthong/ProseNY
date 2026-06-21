@@ -47,9 +47,9 @@ class StageFormPresenterTest extends TestCase {
 	}
 
 	/**
-	 * Resolved workflow before intake complete explains case type without forms.
+	 * Resolved workflow shows commencement forms even when personal intake is incomplete.
 	 */
-	public function test_no_forms_when_workflow_resolved_but_intake_incomplete(): void {
+	public function test_forms_visible_when_workflow_resolved_but_intake_incomplete(): void {
 		$context = $this->presenter->present(
 			array(
 				'workflow'        => 'uncontested_divorce_no_children_nyc',
@@ -61,15 +61,15 @@ class StageFormPresenterTest extends TestCase {
 			)
 		);
 
-		$this->assertFalse( $context['forms_visible'] );
-		$this->assertSame( array(), $context['stage_forms'] );
-		$this->assertSame( 'case_type', $context['next_action']['type'] );
+		$this->assertTrue( $context['forms_visible'] );
+		$this->assertSame( 'commencement', $context['current_stage']['id'] );
+		$this->assertNotEmpty( $context['stage_forms'] );
 	}
 
 	/**
 	 * After intake complete only commencement forms are visible.
 	 */
-	public function test_commencement_forms_only_after_intake_complete(): void {
+	public function test_commencement_forms_only_after_workflow_routed(): void {
 		$context = $this->presenter->present(
 			array(
 				'workflow'        => 'uncontested_divorce_no_children_nyc',
@@ -124,7 +124,8 @@ class StageFormPresenterTest extends TestCase {
 	public function test_current_stage_form_codes_empty_when_gated(): void {
 		$codes = $this->presenter->current_stage_form_codes(
 			array(
-				'workflow'        => 'uncontested_divorce_no_children_nyc',
+				'workflow'        => '',
+				'facts'           => array( 'issue' => 'divorce' ),
 				'intake_complete' => false,
 			)
 		);

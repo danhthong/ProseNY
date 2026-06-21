@@ -280,7 +280,7 @@ Reference: `assets/67d1ef07-…-9a9e75507215.png` provided by the user.
 ### Screens (on `Homepage` page)
 | Frame | Size | Notes |
 |---|---|---|
-| Homepage / Desktop | 1440 × 1024 | Sticky header, centered 720-wide hero, ChatInput, 2×2 prompts, privacy line |
+| Homepage / Desktop | 1440 × 1024 | Sticky header, centered **1200px** chat column, ChatInput, 2×2 prompts, privacy line |
 | Homepage / Tablet | 834 × 1112 | Centered 620-wide hero, narrower prompts |
 | Homepage / Mobile | 390 × 844 | Mobile header, stacked prompts, **ChatInput pinned at bottom** with top border |
 | Homepage / Mobile (menu open) | 390 × 844 | 45% black backdrop + 300-wide right-side drawer with nav rows + Login/Register |

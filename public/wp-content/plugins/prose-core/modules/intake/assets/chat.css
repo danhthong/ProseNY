@@ -9,7 +9,7 @@
 	flex-direction: column;
 	gap: 16px;
 	width: 100%;
-	max-width: 720px;
+	max-width: 100%;
 	margin: 0 auto;
 	padding: 20px;
 	background: #ffffff;
@@ -19,6 +19,12 @@
 	box-sizing: border-box;
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 	color: #0f172a;
+}
+
+@media ( min-width: 1280px ) {
+	.prose-intake {
+		max-width: 1200px;
+	}
 }
 
 .prose-intake *,
@@ -92,10 +98,17 @@
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
-	min-height: 120px;
-	max-height: 420px;
+	min-height: 160px;
+	max-height: 480px;
 	overflow-y: auto;
 	padding: 4px;
+}
+
+@media ( min-width: 1280px ) {
+	.prose-intake__transcript {
+		min-height: 200px;
+		max-height: 560px;
+	}
 }
 
 .prose-intake__bubble {

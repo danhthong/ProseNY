@@ -31,6 +31,13 @@ final class AI_Intake_Service {
 	private Domain_Scope_Guard $scope_guard;
 
 	/**
+	 * Language guard.
+	 *
+	 * @var Supported_Language_Guard
+	 */
+	private Supported_Language_Guard $language_guard;
+
+	/**
 	 * AI settings.
 	 *
 	 * @var AI_Settings
@@ -52,18 +59,21 @@ final class AI_Intake_Service {
 	 * @param AI_Logger|null             $logger      Logger.
 	 * @param AI_Intake_Interpreter|null $interpreter Interpreter.
 	 * @param Domain_Scope_Guard|null      $scope_guard Scope guard.
+	 * @param Supported_Language_Guard|null $language_guard Language guard.
 	 */
 	public function __construct(
 		?Ai_Provider_Interface $provider = null,
 		?AI_Settings $settings = null,
 		?AI_Logger $logger = null,
 		?AI_Intake_Interpreter $interpreter = null,
-		?Domain_Scope_Guard $scope_guard = null
+		?Domain_Scope_Guard $scope_guard = null,
+		?Supported_Language_Guard $language_guard = null
 	) {
-		$this->settings    = $settings ?? new AI_Settings();
-		$this->logger      = $logger ?? new AI_Logger();
-		$this->scope_guard = $scope_guard ?? new Domain_Scope_Guard();
-		$this->interpreter = $interpreter ?? new AI_Intake_Interpreter( $provider, null, null, null, null, null, null, null, $this->settings, $this->logger );
+		$this->settings       = $settings ?? new AI_Settings();
+		$this->logger         = $logger ?? new AI_Logger();
+		$this->scope_guard    = $scope_guard ?? new Domain_Scope_Guard();
+		$this->language_guard = $language_guard ?? new Supported_Language_Guard();
+		$this->interpreter    = $interpreter ?? new AI_Intake_Interpreter( $provider, null, null, null, null, null, null, null, $this->settings, $this->logger );
 	}
 
 	/**
@@ -76,6 +86,12 @@ final class AI_Intake_Service {
 	 */
 	public function interpret( string $message, array $state = array(), array $conversation = array() ): array {
 		try {
+			$language = $this->language_guard->assess( $message );
+
+			if ( ! $language['supported'] ) {
+				return $this->build_language_restriction_response( $language, $state );
+			}
+
 			$scope = $this->scope_guard->assess( $message, $state, $conversation );
 
 			if ( ! $scope['supported'] ) {
@@ -194,6 +210,46 @@ final class AI_Intake_Service {
 			'success'   => true,
 			'supported' => false,
 			'message'   => ( new Supported_Issue_Catalog() )->restriction_summary(),
+			'result'    => $result,
+		);
+	}
+
+	/**
+	 * Build the deterministic English-only response (no OpenAI call).
+	 *
+	 * @param array<string, mixed> $language Language guard assessment.
+	 * @param array<string, mixed> $state    Intake state to preserve.
+	 * @return array{success: bool, supported: false, message: string, result: array<string, mixed>}
+	 */
+	private function build_language_restriction_response( array $language, array $state = array() ): array {
+		$message = (string) ( $language['message'] ?? '' );
+
+		if ( '' === $message ) {
+			$message = $this->language_guard->restriction_message();
+		}
+
+		$result = array(
+			'supported'    => false,
+			'intent'       => 'language_restricted',
+			'next_action'  => 'language_restricted',
+			'question'     => $message,
+			'confidence'   => 1.0,
+			'needs_review' => false,
+			'state'        => $state,
+		);
+
+		if ( isset( $state['case_profile'] ) && is_array( $state['case_profile'] ) ) {
+			$result['case_profile'] = $state['case_profile'];
+		}
+
+		if ( isset( $state['conversation_id'] ) && is_string( $state['conversation_id'] ) ) {
+			$result['conversation_id'] = $state['conversation_id'];
+		}
+
+		return array(
+			'success'   => true,
+			'supported' => false,
+			'message'   => $message,
 			'result'    => $result,
 		);
 	}

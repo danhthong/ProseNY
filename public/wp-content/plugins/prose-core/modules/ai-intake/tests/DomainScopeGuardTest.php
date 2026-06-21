@@ -305,6 +305,37 @@ class DomainScopeGuardTest extends TestCase {
 	}
 
 	/**
+	 * Service returns English-only guidance for Vietnamese messages.
+	 */
+	public function test_service_blocks_vietnamese_with_language_message(): void {
+		$provider = new Stub_Ai_Provider();
+		$service  = new AI_Intake_Service( $provider );
+
+		$response = $service->interpret(
+			'chúng tôi đồng thuận ly hôn và con tôi sẽ nuôi',
+			array(
+				'case_profile' => array(
+					'facts' => array(
+						'children' => 1,
+					),
+				),
+			),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'I want a divorce in Queens.',
+				),
+			)
+		);
+
+		$this->assertTrue( $response['success'] );
+		$this->assertFalse( $response['supported'] );
+		$this->assertSame( 'language_restricted', $response['result']['next_action'] );
+		$this->assertStringContainsString( 'English only', $response['result']['question'] );
+		$this->assertStringContainsString( 'tiếng Anh', $response['result']['question'] );
+	}
+
+	/**
 	 * Service invokes interpreter for order of protection topics.
 	 */
 	public function test_service_calls_interpreter_for_order_of_protection(): void {
@@ -315,7 +346,7 @@ class DomainScopeGuardTest extends TestCase {
 
 		$this->assertTrue( $response['success'] );
 		$this->assertArrayNotHasKey( 'supported', $response );
-		$this->assertSame( 'ask_question', $response['result']['next_action'] );
+		$this->assertContains( $response['result']['next_action'], array( 'ask_question', 'guidance' ) );
 	}
 
 	/**

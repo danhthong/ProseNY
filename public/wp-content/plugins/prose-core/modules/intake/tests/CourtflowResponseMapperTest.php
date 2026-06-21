@@ -96,7 +96,7 @@ class CourtflowResponseMapperTest extends TestCase {
 		$this->assertSame( 'Queens', $response['newly_captured'][0]['value'] );
 		$this->assertSame( 40, $response['requirements']['completeness'] );
 		$this->assertArrayHasKey( 'stage_context', $response );
-		$this->assertFalse( $response['stage_context']['forms_visible'] );
+		$this->assertTrue( $response['stage_context']['forms_visible'], 'Forms unlock once routing resolves the workflow.' );
 	}
 
 	/**
@@ -169,9 +169,9 @@ class CourtflowResponseMapperTest extends TestCase {
 	}
 
 	/**
-	 * Required forms alias lists only current stage codes when intake incomplete.
+	 * Required forms appear once routing resolves the workflow, even mid-intake.
 	 */
-	public function test_required_forms_empty_during_intake(): void {
+	public function test_required_forms_visible_during_personal_intake(): void {
 		$session = array(
 			'session_id'   => 'test-session',
 			'case_profile' => array(
@@ -183,14 +183,16 @@ class CourtflowResponseMapperTest extends TestCase {
 				'progress' => 50,
 			),
 			'last_interpret' => array(
-				'completion' => 50,
-				'workflow'   => 'uncontested_divorce_no_children_nyc',
+				'completion'     => 50,
+				'workflow'       => 'uncontested_divorce_no_children_nyc',
+				'missing_fields' => array( 'spouse_name', 'marriage_date' ),
 			),
 		);
 
 		$state = $this->mapper->map_session_state( $session );
 
-		$this->assertSame( array(), $state['required_forms'] );
-		$this->assertFalse( $state['stage_context']['forms_visible'] );
+		$this->assertNotEmpty( $state['required_forms'] );
+		$this->assertTrue( $state['stage_context']['forms_visible'] );
+		$this->assertContains( 'UD-1', $state['required_forms'] );
 	}
 }

@@ -96,18 +96,23 @@ final class Case_Actions_Resolver {
 		$intent     = (string) ( $interpret_result['intent'] ?? '' );
 		$missing    = is_array( $interpret_result['missing_fields'] ?? null ) ? $interpret_result['missing_fields'] : null;
 
-		$workflow = $this->resolve_workflow_key( $case_profile, $interpret_result, $facts );
-		$issue    = $this->resolve_issue( $case_profile, $interpret_result, $facts );
+		$routing_status = $this->resolve_routing_status( $case_profile, $interpret_result, $facts );
+		$workflow       = (string) ( $routing_status['workflow'] ?? '' );
+		$issue          = $this->resolve_issue( $case_profile, $interpret_result, $facts );
+		$routing_missing = is_array( $routing_status['routing_missing'] ?? null )
+			? $routing_status['routing_missing']
+			: array();
 
-		$workflow_resolved = '' !== $workflow;
+		$workflow_resolved = ! empty( $routing_status['resolved'] );
 		$case_known        = $workflow_resolved || '' !== $issue || $this->has_case_signals( $facts );
 		$intake_complete   = $this->is_intake_complete( $workflow_resolved, $completion, $intent, $missing );
 		$stage_context     = $this->stage_presenter->present(
 			array(
 				'workflow'        => $workflow,
 				'facts'           => $facts,
-				'intake_complete' => $intake_complete,
+				'intake_complete' => $workflow_resolved,
 				'issue'           => $issue,
+				'routing_missing' => $routing_missing,
 			)
 		);
 		$current_stage     = is_array( $stage_context['current_stage'] ?? null )
@@ -164,6 +169,66 @@ final class Case_Actions_Resolver {
 			'court_routing'       => $court_routing,
 			'stage_context'       => $stage_context,
 			'summary'             => $this->build_summary( $workflow, $facts, $package_id, $package_label, $issue, $court_routing ),
+		);
+	}
+
+	/**
+	 * Resolve workflow and routing completion from the profile and interpreter.
+	 *
+	 * @param array<string, mixed> $case_profile     Case profile.
+	 * @param array<string, mixed> $interpret_result Interpreter turn data.
+	 * @param array<string, mixed> $facts            Plain facts.
+	 * @return array{workflow: string, routing_missing: string[], resolved: bool}
+	 */
+	private function resolve_routing_status( array $case_profile, array $interpret_result, array $facts ): array {
+		$stored_workflow = trim( (string) ( $case_profile['workflow'] ?? '' ) );
+
+		if ( '' !== $stored_workflow ) {
+			return array(
+				'workflow'        => $stored_workflow,
+				'routing_missing' => array(),
+				'resolved'        => true,
+			);
+		}
+
+		$routing_missing = is_array( $interpret_result['routing_missing'] ?? null )
+			? array_values( array_map( 'strval', $interpret_result['routing_missing'] ) )
+			: array();
+
+		$profile = Case_Profile::from_array( $case_profile );
+		$routed  = $this->routing->route_profile( '', $profile );
+
+		if ( empty( $routing_missing ) ) {
+			$routing_missing = $routed->missing_fields();
+		}
+
+		$workflow = trim( (string) ( $interpret_result['workflow'] ?? '' ) );
+
+		if ( '' === $workflow ) {
+			$state = is_array( $interpret_result['state'] ?? null ) ? $interpret_result['state'] : array();
+			$workflow = trim( (string) ( $state['workflow'] ?? '' ) );
+		}
+
+		$routed_workflow = null !== $routed->workflow() ? trim( (string) $routed->workflow() ) : '';
+
+		if ( '' === $workflow && '' !== $routed_workflow ) {
+			$workflow = $routed_workflow;
+		}
+
+		if ( '' !== $workflow && '' !== $routed_workflow && $workflow === $routed_workflow ) {
+			return array(
+				'workflow'        => $workflow,
+				'routing_missing' => array(),
+				'resolved'        => true,
+			);
+		}
+
+		$resolved = '' !== $workflow && empty( $routing_missing );
+
+		return array(
+			'workflow'        => $workflow,
+			'routing_missing' => $routing_missing,
+			'resolved'        => $resolved,
 		);
 	}
 

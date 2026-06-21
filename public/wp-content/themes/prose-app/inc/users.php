@@ -213,7 +213,9 @@ function enqueue_dashboard_assets(): void {
 				'error'         => __( 'Could not load dashboard data.', 'prose-app' ),
 				'noCase'        => __( 'You have not started a case yet.', 'prose-app' ),
 				'startCase'     => __( 'Start a new case', 'prose-app' ),
-				'noConversations' => __( 'No conversations yet.', 'prose-app' ),
+				'noConversations' => __( 'No conversations yet. Start chatting on the homepage while logged in to save your intake here.', 'prose-app' ),
+				'startChat'       => __( 'Start chatting', 'prose-app' ),
+				'resumeChat'      => __( 'Resume', 'prose-app' ),
 				'noDocuments'   => __( 'No documents generated yet.', 'prose-app' ),
 			),
 		)

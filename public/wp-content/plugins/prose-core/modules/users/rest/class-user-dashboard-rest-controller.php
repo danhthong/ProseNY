@@ -9,6 +9,7 @@ namespace ProSe\Core\Users\Rest;
 
 use ProSe\Core\Forms\Database\Repositories\Case_Repository;
 use ProSe\Core\Loader;
+use ProSe\Core\Routing\Workflow_Catalog;
 use ProSe\Core\Users\Database\Repositories\Conversation_Repository;
 use ProSe\Core\Users\Database\Repositories\Message_Repository;
 use ProSe\Core\Users\Database\Repositories\User_Document_Repository;
@@ -27,6 +28,8 @@ final class User_Dashboard_Rest_Controller {
 	public const NAMESPACE = 'prose/v1';
 
 	public const ROUTE = '/me/dashboard';
+
+	public const ROUTE_CONVERSATION_SESSION = '/me/conversations/session/(?P<session_id>[a-f0-9-]+)';
 
 	/**
 	 * @var Case_Repository
@@ -54,14 +57,20 @@ final class User_Dashboard_Rest_Controller {
 	private Subscription_Status $subscription;
 
 	/**
+	 * @var Workflow_Catalog
+	 */
+	private Workflow_Catalog $workflows;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
-		$this->cases          = new Case_Repository();
-		$this->conversations  = new Conversation_Repository();
-		$this->messages       = new Message_Repository();
-		$this->documents      = new User_Document_Repository();
-		$this->subscription   = new Subscription_Status();
+		$this->cases         = new Case_Repository();
+		$this->conversations = new Conversation_Repository();
+		$this->messages      = new Message_Repository();
+		$this->documents     = new User_Document_Repository();
+		$this->subscription  = new Subscription_Status();
+		$this->workflows     = new Workflow_Catalog();
 	}
 
 	/**
@@ -86,6 +95,16 @@ final class User_Dashboard_Rest_Controller {
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'handle_dashboard' ),
+				'permission_callback' => array( $this, 'can_access' ),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			self::ROUTE_CONVERSATION_SESSION,
+			array(
+				'methods'             => \WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'handle_conversation_session' ),
 				'permission_callback' => array( $this, 'can_access' ),
 			)
 		);
@@ -114,14 +133,8 @@ final class User_Dashboard_Rest_Controller {
 
 		$conversations = array();
 
-		foreach ( $this->conversations->recent_for_user( $user_id, 5 ) as $row ) {
-			$conversations[] = array(
-				'conversation_id' => (int) $row->conversation_id,
-				'title'           => (string) $row->title,
-				'updated_at'      => (string) $row->updated_at,
-				'preview'         => $this->messages->latest_preview( (int) $row->conversation_id ),
-				'case_id'         => ! empty( $row->case_id ) ? (int) $row->case_id : null,
-			);
+		foreach ( $this->conversations->recent_for_user( $user_id, 20 ) as $row ) {
+			$conversations[] = $this->format_conversation_row( $row );
 		}
 
 		$documents = array();
@@ -149,5 +162,143 @@ final class User_Dashboard_Rest_Controller {
 				'subscription'         => $this->subscription->for_user( $user_id ),
 			)
 		);
+	}
+
+	/**
+	 * Load a saved conversation for resume.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function handle_conversation_session( \WP_REST_Request $request ) {
+		$user_id    = get_current_user_id();
+		$session_id = sanitize_text_field( (string) $request->get_param( 'session_id' ) );
+		$row        = $this->conversations->find_owned_by_session( $user_id, $session_id );
+
+		if ( ! $row ) {
+			return new \WP_Error(
+				'prose_conversation_not_found',
+				__( 'Conversation not found.', 'prose-core' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		$conversation_id = (int) $row->conversation_id;
+		$context         = $this->decode_context( (string) ( $row->context_json ?? '' ) );
+		$messages        = $this->messages->list_for_conversation( $conversation_id );
+
+		$conversation = array();
+
+		foreach ( $messages as $message ) {
+			$conversation[] = array(
+				'role'    => 'user' === ( $message['role'] ?? '' ) ? 'user' : 'assistant',
+				'content' => (string) ( $message['content'] ?? '' ),
+			);
+		}
+
+		return rest_ensure_response(
+			array(
+				'conversation_id' => (string) $row->session_id,
+				'title'           => (string) $row->title,
+				'case_profile'    => is_array( $context['case_profile'] ?? null ) ? $context['case_profile'] : array(),
+				'state'           => is_array( $context['state'] ?? null ) ? $context['state'] : array(),
+				'actions'         => is_array( $context['actions'] ?? null ) ? $context['actions'] : array(),
+				'conversation'    => $conversation,
+				'messages'        => $messages,
+			)
+		);
+	}
+
+	/**
+	 * @param object $row Conversation row.
+	 * @return array<string, mixed>
+	 */
+	private function format_conversation_row( object $row ): array {
+		$conversation_id = (int) $row->conversation_id;
+		$session_id      = (string) $row->session_id;
+		$context         = $this->decode_context( (string) ( $row->context_json ?? '' ) );
+		$case_profile    = is_array( $context['case_profile'] ?? null ) ? $context['case_profile'] : array();
+		$workflow_key    = (string) ( $case_profile['workflow'] ?? '' );
+		$workflow_label  = $this->workflow_label( $workflow_key );
+		$updated_at      = (string) $row->updated_at;
+
+		return array(
+			'conversation_id'  => $conversation_id,
+			'session_id'       => $session_id,
+			'title'            => (string) $row->title,
+			'updated_at'       => $updated_at,
+			'updated_at_label' => $this->format_datetime( $updated_at ),
+			'preview'          => $this->messages->latest_preview( $conversation_id ),
+			'message_count'    => $this->messages->count_for_conversation( $conversation_id ),
+			'case_id'          => ! empty( $row->case_id ) ? (int) $row->case_id : null,
+			'status'           => (string) $row->status,
+			'workflow'         => $workflow_key,
+			'workflow_label'   => $workflow_label,
+			'resume_url'       => $this->resume_url( $session_id ),
+		);
+	}
+
+	/**
+	 * @param string $session_id Session UUID.
+	 * @return string
+	 */
+	private function resume_url( string $session_id ): string {
+		if ( '' === $session_id ) {
+			return home_url( '/' );
+		}
+
+		return add_query_arg( 'conversation_id', rawurlencode( $session_id ), home_url( '/' ) );
+	}
+
+	/**
+	 * @param string $workflow_key Workflow key.
+	 * @return string
+	 */
+	private function workflow_label( string $workflow_key ): string {
+		if ( '' === $workflow_key ) {
+			return '';
+		}
+
+		$definition = $this->workflows->by_key( $workflow_key );
+
+		if ( ! is_array( $definition ) ) {
+			return $workflow_key;
+		}
+
+		$description = trim( (string) ( $definition['description'] ?? '' ) );
+
+		return '' !== $description ? $description : $workflow_key;
+	}
+
+	/**
+	 * @param string $json Stored JSON.
+	 * @return array<string, mixed>
+	 */
+	private function decode_context( string $json ): array {
+		if ( '' === $json ) {
+			return array();
+		}
+
+		$decoded = json_decode( $json, true );
+
+		return is_array( $decoded ) ? $decoded : array();
+	}
+
+	/**
+	 * @param string $datetime MySQL datetime.
+	 * @return string
+	 */
+	private function format_datetime( string $datetime ): string {
+		if ( '' === $datetime || '0000-00-00 00:00:00' === $datetime ) {
+			return '';
+		}
+
+		$timestamp = strtotime( $datetime );
+
+		if ( false === $timestamp ) {
+			return $datetime;
+		}
+
+		return (string) wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), $timestamp );
 	}
 }

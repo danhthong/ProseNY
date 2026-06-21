@@ -156,6 +156,8 @@ final class Intake_Chat_Shortcode {
 					'documentsUploadUrl' => esc_url_raw( rest_url( Documents_Rest_Controller::NAMESPACE . Documents_Rest_Controller::ROUTE_UPLOAD ) ),
 					'maxUploadBytes' => Documents_Rest_Controller::MAX_UPLOAD_BYTES,
 					'useAi'          => $use_ai,
+					'loggedIn'       => is_user_logged_in(),
+					'conversationRestUrl' => esc_url_raw( rest_url( 'prose/v1/me/conversations/session/' ) ),
 					'nonce'          => wp_create_nonce( 'wp_rest' ),
 					'storageKey'     => 'prose_intake_session',
 					'strings'        => array(
@@ -173,7 +175,7 @@ final class Intake_Chat_Shortcode {
 						'hideSummary'     => __( 'Hide Case Summary', 'prose-core' ),
 						'downloading'     => __( 'Preparing download…', 'prose-core' ),
 						'downloadError'   => __( 'Documents are not available for download yet.', 'prose-core' ),
-						'finishIntake'    => __( 'Tell us about your case to enable blank form download.', 'prose-core' ),
+						'finishIntake'    => __( 'Answer a few routing questions in English to enable blank form download.', 'prose-core' ),
 						'uploadDocument'  => __( 'Upload court document', 'prose-core' ),
 						'uploadingDocument' => __( 'Reviewing your document…', 'prose-core' ),
 						'uploadError'     => __( 'Could not process that document. Please try a PDF under 10 MB.', 'prose-core' ),
@@ -201,16 +203,6 @@ final class Intake_Chat_Shortcode {
 					<?php esc_html_e( 'Start over', 'prose-core' ); ?>
 				</button>
 			</header>
-
-			<div class="prose-intake__progress" data-prose-intake-progress hidden>
-				<div class="prose-intake__progress-label">
-					<span><?php esc_html_e( 'Intake completion', 'prose-core' ); ?></span>
-					<span data-prose-intake-completion-text>0%</span>
-				</div>
-				<div class="prose-intake__progress-track">
-					<div class="prose-intake__progress-bar" data-prose-intake-completion-bar style="width:0%"></div>
-				</div>
-			</div>
 
 			<div class="prose-intake__transcript" data-prose-intake-transcript></div>
 

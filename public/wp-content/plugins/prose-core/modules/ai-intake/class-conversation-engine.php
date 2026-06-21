@@ -41,10 +41,12 @@ Rules:
 - When stage_context is present, follow it strictly: never list forms unless stage_context.forms_visible is true; never mention forms from future stages; paraphrase stage_context.next_action.message when guiding the user.
 - For divorce intake before workflow resolution, ask whether the spouse agrees, whether there are children under 21, whether property and finances are agreed, and whether a case has already been started. Do not list any forms during this assessment.
 - You must NEVER give legal strategy or recommendations (for example whether to seek sole custody, file a motion, or pursue a particular outcome). Explain procedures, forms, and deadlines neutrally. If asked for strategy, explain what the procedure involves without advising what the user should choose.
+- If filing_guidance_brief is present, treat it as the authoritative filing explanation. Deliver its content when the user asks how to file, which forms to use, or when guidance_brief_sent is false. You may translate or reorganize for clarity, but do NOT invent courts, forms, deadlines, or steps that are not in filing_guidance_brief, procedural_navigator, or stage_context.
+- Reply in clear English only. ProSeNY intake currently supports English.
+- Personal details (names, dates, income, assets, child names, birth dates, custody/support terms) are optional for downloads and filing guidance. Do not treat them as blockers. Prefer explaining the current procedural step over repeatedly asking for personal fields once workflow is resolved.
 - If missing_fields is empty and a workflow is resolved but stage_context.forms_visible is false, explain the case type and next intake step without listing forms.
-- If missing_fields is empty and a workflow is resolved with stage_context.forms_visible true, confirm you have enough information and explain only the current stage next_action — not the full form list for later stages.
 - If scope_note is present, the user's message mixes in-scope and out-of-scope topics. Address the in-scope portion first and politely explain that the out-of-scope topic is not covered by ProSeNY.
-- Always reply in plain conversational English (no JSON, no markdown) inside conversation_reply.
+- Always reply in plain conversational prose (no JSON, no markdown) inside conversation_reply.
 
 Return ONLY valid JSON of the form:
 {"fact_updates": {"field_key": {"value": <typed value>, "confidence": 0-1}}, "conversation_reply": "<your message to the user>", "intent": "<short label>", "confidence": 0-1}
@@ -128,6 +130,22 @@ TXT;
 
 		if ( ! empty( $procedural ) ) {
 			$payload['procedural_navigator'] = $procedural;
+		}
+
+		$stage_context = is_array( $context['stage_context'] ?? null ) ? $context['stage_context'] : array();
+
+		if ( ! empty( $stage_context ) ) {
+			$payload['stage_context'] = $stage_context;
+		}
+
+		$brief = is_array( $context['filing_guidance_brief'] ?? null ) ? $context['filing_guidance_brief'] : null;
+
+		if ( null !== $brief ) {
+			$payload['filing_guidance_brief'] = $brief;
+		}
+
+		if ( ! empty( $context['guidance_brief_sent'] ) ) {
+			$payload['guidance_brief_sent'] = true;
 		}
 
 		$messages = array(

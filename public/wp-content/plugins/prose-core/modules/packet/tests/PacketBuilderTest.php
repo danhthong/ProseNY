@@ -43,9 +43,8 @@ class PacketBuilderTest extends TestCase {
 	 * Set up.
 	 */
 	protected function setUp(): void {
-		$this->temp_dir = sys_get_temp_dir() . '/prose-packet-test-' . uniqid( '', true );
-		$this->pdf_dir  = $this->temp_dir . '/sources';
-		mkdir( $this->temp_dir, 0777, true );
+		$this->temp_dir = prose_test_temp_dir( 'prose-packet-test' );
+		$this->pdf_dir  = $this->temp_dir . DIRECTORY_SEPARATOR . 'sources';
 		mkdir( $this->pdf_dir, 0777, true );
 	}
 
@@ -53,7 +52,7 @@ class PacketBuilderTest extends TestCase {
 	 * Tear down.
 	 */
 	protected function tearDown(): void {
-		$this->delete_dir( $this->temp_dir );
+		prose_test_remove_tree( $this->temp_dir );
 	}
 
 	/**
@@ -393,40 +392,6 @@ class PacketBuilderTest extends TestCase {
 		file_put_contents( $path, $body ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
 
 		return $path;
-	}
-
-	/**
-	 * Recursively delete a directory.
-	 *
-	 * @param string $dir Directory path.
-	 * @return void
-	 */
-	private function delete_dir( string $dir ): void {
-		if ( ! is_dir( $dir ) ) {
-			return;
-		}
-
-		$items = scandir( $dir );
-
-		if ( false === $items ) {
-			return;
-		}
-
-		foreach ( $items as $item ) {
-			if ( in_array( $item, array( '.', '..' ), true ) ) {
-				continue;
-			}
-
-			$path = $dir . '/' . $item;
-
-			if ( is_dir( $path ) ) {
-				$this->delete_dir( $path );
-			} else {
-				unlink( $path );
-			}
-		}
-
-		rmdir( $dir );
 	}
 }
 

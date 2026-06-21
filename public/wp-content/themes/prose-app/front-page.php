@@ -3,7 +3,7 @@
  * Front page template (chat-first landing).
  *
  * Static UI built to match the Figma "Homepage" template
- * (file: xVPgq7caO1qyHwi7EbkPRw, node 30:2).
+ * (file: xVPgq7caO1qyHwi7EbkPRw, node 30:2). Chat column is 1200px on xl+.
  *
  * @package ProseApp
  */
@@ -17,17 +17,17 @@ use ProseApp\Courtflow;
 get_template_part( 'template-parts/prose-site-shell-start' );
 ?>
 <main id="content" class="flex flex-1 justify-center px-4 pb-[180px] pt-12 md:px-8 md:pb-12 md:pt-24">
-	<div class="flex w-full max-w-[900px] flex-col items-center gap-6">
+	<div class="flex w-full max-w-[1200px] flex-col items-center gap-6">
 		<h1 class="text-center text-[28px] font-bold leading-tight text-slate-900 md:text-[36px] md:leading-[44px]">
 			<?php esc_html_e( 'How can I help you today?', 'prose-app' ); ?>
 		</h1>
-		<p class="max-w-[620px] text-center text-[16px] leading-[26px] text-slate-500">
+		<p class="max-w-[720px] text-center text-[16px] leading-[26px] text-slate-500">
 			<?php esc_html_e( 'Guided intake for NYC divorce and Family Court matters — Supreme Court matrimonial filings, custody, support, and orders of protection.', 'prose-app' ); ?>
 		</p>
 
 		<div class="hidden h-4 w-px md:block" aria-hidden="true"></div>
 
-		<div class="w-full md:w-[720px] md:max-w-full">
+		<div class="prose-homepage-chat w-full">
 			<?php
 			if ( shortcode_exists( 'prose_intake_chat' ) ) {
 				echo do_shortcode( '[prose_intake_chat]' );

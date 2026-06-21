@@ -81,11 +81,11 @@ function render_prompt_chip_buttons(): void {
  */
 function render_prompt_chip_cards(): void {
 	?>
-	<div class="flex w-full flex-wrap gap-3 md:w-[720px]">
+	<div class="grid w-full max-w-[1200px] grid-cols-1 gap-3 md:grid-cols-2">
 		<?php foreach ( prompt_chips() as $chip ) : ?>
 			<button
 				type="button"
-				class="flex w-full flex-col gap-1.5 rounded-xl border border-slate-100 bg-white px-4 py-[14px] text-left hover:border-slate-200 hover:bg-slate-50 md:w-[354px]"
+				class="flex w-full flex-col gap-1.5 rounded-xl border border-slate-100 bg-white px-4 py-[14px] text-left hover:border-slate-200 hover:bg-slate-50"
 				data-prose-intake-prompt="<?php echo esc_attr( $chip['prompt'] ); ?>"
 			>
 				<span class="text-[14px] font-semibold text-slate-900"><?php echo esc_html( $chip['label'] ); ?></span>

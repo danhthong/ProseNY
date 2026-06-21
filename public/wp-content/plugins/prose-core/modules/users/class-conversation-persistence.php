@@ -103,6 +103,75 @@ final class Conversation_Persistence {
 	}
 
 	/**
+	 * Persist a homepage / AI intake chat turn for the logged-in user.
+	 *
+	 * @param string               $conversation_id Public conversation UUID.
+	 * @param string               $user_message    User message text.
+	 * @param string               $assistant_reply Assistant reply text.
+	 * @param array<string, mixed> $case_profile    Latest case profile snapshot.
+	 * @param array<string, mixed> $state           Optional AI intake state snapshot.
+	 * @param array<string, mixed> $actions         Optional case actions snapshot.
+	 * @return void
+	 */
+	public function persist_intake_turn(
+		string $conversation_id,
+		string $user_message,
+		string $assistant_reply,
+		array $case_profile = array(),
+		array $state = array(),
+		array $actions = array()
+	): void {
+		if ( get_current_user_id() <= 0 || '' === trim( $conversation_id ) ) {
+			return;
+		}
+
+		$session = array(
+			'session_id' => $conversation_id,
+			'messages'   => array(
+				array(
+					'role' => 'user',
+					'text' => $user_message,
+				),
+			),
+		);
+
+		$db_id = $this->ensure_for_session( $session );
+
+		if ( $db_id <= 0 ) {
+			return;
+		}
+
+		$user_message      = trim( $user_message );
+		$assistant_reply   = trim( $assistant_reply );
+		$existing_messages = $this->messages->count_for_conversation( $db_id );
+
+		if ( '' !== $user_message ) {
+			$this->messages->append( $db_id, 'user', $user_message, $this->messages->next_sequence( $db_id ) );
+		}
+
+		if ( '' !== $assistant_reply ) {
+			$this->messages->append( $db_id, 'assistant', $assistant_reply, $this->messages->next_sequence( $db_id ) );
+		}
+
+		if ( 0 === $existing_messages && '' !== $user_message ) {
+			$title = strlen( $user_message ) > 80 ? substr( $user_message, 0, 77 ) . '…' : $user_message;
+			$this->conversations->update_title( $db_id, $title );
+		}
+
+		$this->conversations->update_context(
+			$db_id,
+			array(
+				'conversation_id' => $conversation_id,
+				'case_profile'      => $case_profile,
+				'state'             => $state,
+				'actions'           => $actions,
+			)
+		);
+
+		$this->conversations->touch( $db_id );
+	}
+
+	/**
 	 * Link conversation to a persisted case.
 	 *
 	 * @param string $session_id Session UUID.

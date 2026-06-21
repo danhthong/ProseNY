@@ -100,6 +100,110 @@
 		var busy = false;
 		var summaryVisible = false;
 		var actionsPinned = false;
+		var resumePending = false;
+
+		/**
+		 * Read conversation_id from the URL for dashboard resume links.
+		 *
+		 * @return {string}
+		 */
+		function conversationIdFromUrl() {
+			try {
+				var params = new URLSearchParams( window.location.search );
+				return ( params.get( 'conversation_id' ) || '' ).trim();
+			} catch ( e ) {
+				return '';
+			}
+		}
+
+		/**
+		 * Restore a saved conversation from the server for logged-in users.
+		 *
+		 * @param {string} conversationId Public conversation UUID.
+		 * @return {Promise<void>}
+		 */
+		function restoreConversationFromServer( conversationId ) {
+			if ( ! CONFIG.loggedIn || ! CONFIG.conversationRestUrl || ! conversationId ) {
+				return Promise.resolve();
+			}
+
+			resumePending = true;
+
+			return fetch( CONFIG.conversationRestUrl + encodeURIComponent( conversationId ), {
+				method: 'GET',
+				credentials: 'same-origin',
+				headers: {
+					Accept: 'application/json',
+					'X-WP-Nonce': CONFIG.nonce || ''
+				}
+			} )
+				.then( function ( res ) {
+					if ( ! res.ok ) {
+						throw new Error( 'HTTP ' + res.status );
+					}
+					return res.json();
+				} )
+				.then( function ( data ) {
+					session.conversation_id = data.conversation_id || conversationId;
+					session.case_profile = data.case_profile && typeof data.case_profile === 'object' ? data.case_profile : {};
+					session.state = data.state && typeof data.state === 'object' ? data.state : {};
+					session.actions = data.actions && typeof data.actions === 'object' ? data.actions : {};
+					session.conversation = Array.isArray( data.conversation ) ? data.conversation : [];
+
+					saveSession(
+						session.conversation_id,
+						session.case_profile,
+						session.conversation,
+						session.state,
+						session.actions
+					);
+				} )
+				.catch( function () {
+					// Fall back to local session when restore fails.
+				} )
+				.finally( function () {
+					resumePending = false;
+				} );
+		}
+
+		/**
+		 * Paint transcript and action panel from the current session.
+		 *
+		 * @return {void}
+		 */
+		function renderSavedSession() {
+			transcript.innerHTML = '';
+
+			var history = Array.isArray( session.conversation ) ? session.conversation : [];
+
+			if ( history.length ) {
+				history.forEach( function ( turn ) {
+					if ( ! turn || ! turn.content ) {
+						return;
+					}
+
+					addBubble( 'user' === turn.role ? 'user' : 'agent', turn.content );
+				} );
+			} else {
+				addBubble( 'agent', STRINGS.greeting || 'How can I help with your legal matter today?' );
+			}
+
+			var savedProgress = ( session.case_profile && session.case_profile.progress ) || 0;
+			setCompletion( savedProgress );
+
+			if ( session.actions && Object.keys( session.actions ).length ) {
+				if ( session.actions.case_known || session.actions.show_documents ) {
+					actionsPinned = true;
+				}
+				updateActionsPanel( session.actions );
+
+				if ( ! canDownloadDocuments( session.actions ) && ( session.actions.workflow || ( session.case_profile && session.case_profile.workflow ) ) ) {
+					refreshActions();
+				}
+			} else if ( history.length ) {
+				refreshActions();
+			}
+		}
 
 		/**
 		 * Whether the session already identifies a legal matter.
@@ -164,16 +268,7 @@
 		 * @param {number} pct Completion percentage 0-100.
 		 */
 		function setCompletion( pct ) {
-			var value = Math.max( 0, Math.min( 100, parseInt( pct, 10 ) || 0 ) );
-			if ( progress ) {
-				progress.hidden = false;
-			}
-			if ( completionText ) {
-				completionText.textContent = value + '%';
-			}
-			if ( completionBar ) {
-				completionBar.style.width = value + '%';
-			}
+			// Intake completion progress is intentionally not shown in the UI.
 		}
 
 		/**
@@ -198,6 +293,21 @@
 				item.textContent = row.label + ': ' + ( row.value || '' );
 				summaryList.appendChild( item );
 			} );
+		}
+
+		function downloadDisabledReason( actions ) {
+			if ( ! actions || typeof actions !== 'object' ) {
+				return STRINGS.finishIntake || 'Answer a few questions about your case to enable blank form download.';
+			}
+
+			var stage = actions.stage_context || {};
+			var nextAction = stage.next_action || {};
+
+			if ( nextAction.message ) {
+				return nextAction.message;
+			}
+
+			return STRINGS.finishIntake || 'Answer a few questions about your case to enable blank form download.';
 		}
 
 		/**
@@ -266,7 +376,7 @@
 				getDocumentsBtn.disabled = ! downloadReady;
 				getDocumentsBtn.title = downloadReady
 					? ''
-					: ( STRINGS.finishIntake || 'Tell us about your case to enable blank form download.' );
+					: downloadDisabledReason( actions );
 				getDocumentsBtn.textContent = STRINGS.getDocuments || 'Get Documents';
 			}
 
@@ -336,7 +446,7 @@
 			getDocumentsBtn.disabled = ! downloadReady;
 			getDocumentsBtn.title = downloadReady
 				? ''
-				: ( STRINGS.finishIntake || 'Tell us about your case to enable blank form download.' );
+				: downloadDisabledReason( session.actions || {} );
 			if ( getDocumentsBtn.textContent === ( STRINGS.downloading || 'Preparing download…' ) ) {
 				getDocumentsBtn.textContent = STRINGS.getDocuments || 'Get Documents';
 			}
@@ -541,9 +651,10 @@
 					var nextAction = ( data.next_action || result.next_action || '' ).trim();
 					var needsReview = result.needs_review === true || result.next_action === 'needs_review';
 					var justCompleted = 'intake_complete' === result.intent || 'intake_complete' === data.intent;
-					var isGuidance = 'guidance' === nextAction || 'complete_intake' === nextAction;
+					var isGuidance = 'guidance' === nextAction || 'complete_intake' === nextAction || 'guidance' === result.intent;
+					var formsReady = !!( data.actions && data.actions.stage_context && data.actions.stage_context.forms_visible );
 					var apiFailed = false === data.success || 'error' === result.next_action;
-					var isComplete = justCompleted || isGuidance || completion >= 100;
+					var isComplete = justCompleted || isGuidance || formsReady;
 
 					if ( needsReview ) {
 						thinking.textContent = STRINGS.review || 'We need a little more help with your intake. A team member may follow up.';
@@ -553,8 +664,8 @@
 						var serverError = ( result && result.error ) ? String( result.error ) : '';
 						thinking.textContent = serverError || STRINGS.error || 'Something went wrong. Please try again.';
 						thinking.classList.add( 'prose-intake__bubble--error' );
-					} else if ( isComplete ) {
-						thinking.textContent = question || ( STRINGS.complete || 'Based on the information you\'ve provided, I identified the appropriate filing package for your case. You can review the next steps below or download the required court forms.' );
+					} else if ( isComplete || isGuidance ) {
+						thinking.textContent = question || ( STRINGS.complete || 'Your forms for the current step are ready below. Ask me how to file, which form to use, or use Get Documents when you are ready.' );
 						thinking.classList.add( 'prose-intake__bubble--complete' );
 					} else {
 						thinking.textContent = question || ( STRINGS.greeting || 'How can I help with your legal matter today?' );
@@ -774,35 +885,16 @@
 			} );
 		} );
 
-		addBubble( 'agent', STRINGS.greeting || 'How can I help with your legal matter today?' );
+		var resumeId = conversationIdFromUrl();
+		var bootPromise = Promise.resolve();
 
-		var history = Array.isArray( session.conversation ) ? session.conversation : [];
-
-		if ( history.length ) {
-			history.forEach( function ( turn ) {
-				if ( ! turn || ! turn.content ) {
-					return;
-				}
-
-				addBubble( 'user' === turn.role ? 'user' : 'agent', turn.content );
-			} );
-
-			var savedProgress = ( session.case_profile && session.case_profile.progress ) || 0;
-			setCompletion( savedProgress );
-
-			if ( session.actions && Object.keys( session.actions ).length ) {
-				if ( session.actions.case_known || session.actions.show_documents ) {
-					actionsPinned = true;
-				}
-				updateActionsPanel( session.actions );
-
-				if ( ! canDownloadDocuments( session.actions ) && ( session.actions.workflow || ( session.case_profile && session.case_profile.workflow ) ) ) {
-					refreshActions();
-				}
-			} else {
-				refreshActions();
-			}
+		if ( resumeId && ( ! session.conversation_id || session.conversation_id !== resumeId ) ) {
+			bootPromise = restoreConversationFromServer( resumeId );
 		}
+
+		bootPromise.finally( function () {
+			renderSavedSession();
+		} );
 	}
 
 	function boot() {

@@ -370,7 +370,7 @@ final class Courtflow_Response_Mapper {
 		return $this->stage_presenter->current_stage_form_codes(
 			array(
 				'workflow'        => $workflow,
-				'intake_complete' => true,
+				'intake_complete' => false,
 			)
 		);
 	}
@@ -413,7 +413,7 @@ final class Courtflow_Response_Mapper {
 			array(
 				'workflow'        => $workflow,
 				'facts'           => $case_facts,
-				'intake_complete' => ! empty( $actions['intake_complete'] ),
+				'intake_complete' => ! empty( $actions['workflow_resolved'] ),
 				'current_node'    => $node,
 				'issue'           => (string) ( $actions['issue'] ?? $case_facts['issue'] ?? 'divorce' ),
 				'routing_missing' => is_array( $interpret['routing_missing'] ?? null ) ? $interpret['routing_missing'] : array(),

@@ -19,7 +19,7 @@ final class Database_Installer {
 	/**
 	 * Schema version stored in prose_core_db_version.
 	 */
-	public const DB_VERSION = '1.2.0';
+	public const DB_VERSION = '1.3.0';
 
 	/**
 	 * Option key for schema version.
@@ -388,6 +388,7 @@ final class Database_Installer {
 				session_id varchar(36) NOT NULL DEFAULT '',
 				title varchar(191) NOT NULL DEFAULT '',
 				status varchar(20) NOT NULL DEFAULT 'active',
+				context_json longtext NULL,
 				created_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
 				updated_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
 				PRIMARY KEY  (conversation_id),

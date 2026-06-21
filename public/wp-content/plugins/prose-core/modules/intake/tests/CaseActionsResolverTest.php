@@ -45,27 +45,86 @@ class CaseActionsResolverTest extends TestCase {
 	}
 
 	/**
-	 * Download stays disabled until intake completes and the current stage unlocks forms.
+	 * Children alone does not unlock document download until routing completes.
 	 */
-	public function test_download_disabled_before_intake_complete(): void {
+	public function test_download_disabled_when_only_children_known(): void {
+		$resolver = new Case_Actions_Resolver();
+		$actions  = $resolver->resolve(
+			array(
+				'facts'    => array(
+					'children' => 1,
+				),
+				'progress' => 10,
+			),
+			array(
+				'intent'     => 'gathering',
+				'completion' => 10,
+			)
+		);
+
+		$this->assertTrue( $actions['case_known'] );
+		$this->assertFalse( $actions['workflow_resolved'] );
+		$this->assertFalse( $actions['download_enabled'] );
+		$this->assertFalse( $actions['stage_context']['forms_visible'] );
+	}
+
+	/**
+	 * Stored workflow unlocks download even when optional routing keys remain unset.
+	 */
+	public function test_download_enabled_when_workflow_stored_without_active_divorce_fact(): void {
+		$resolver = new Case_Actions_Resolver();
+		$actions  = $resolver->resolve(
+			array(
+				'workflow' => 'uncontested_divorce_children_nyc',
+				'facts'    => array(
+					'county'        => 'Queens',
+					'spouse_agrees' => true,
+					'children'      => true,
+					'child_count'   => 1,
+				),
+				'progress' => 40,
+			),
+			array(
+				'intent'     => 'gathering',
+				'completion' => 40,
+			)
+		);
+
+		$this->assertTrue( $actions['workflow_resolved'] );
+		$this->assertTrue( $actions['stage_context']['forms_visible'] );
+		$this->assertTrue( $actions['download_enabled'] );
+		$this->assertGreaterThan( 0, $actions['forms_matched'] );
+	}
+
+	/**
+	 * Download is available once routing resolves the workflow, even when personal intake fields remain.
+	 */
+	public function test_download_enabled_when_workflow_resolved_with_personal_fields_missing(): void {
 		$resolver = new Case_Actions_Resolver();
 		$partial  = $resolver->resolve(
 			array(
 				'workflow' => 'uncontested_divorce_no_children_nyc',
-				'facts'    => array( 'county' => 'Queens' ),
+				'facts'    => array(
+					'county'                    => 'Queens',
+					'spouse_agrees'             => true,
+					'children'                  => false,
+					'marital_property_resolved' => true,
+					'active_divorce'            => false,
+				),
 				'progress' => 60,
 			),
 			array(
 				'intent'         => 'gathering',
 				'completion'     => 60,
-				'missing_fields' => array( 'spouse_name' ),
+				'missing_fields' => array( 'spouse_name', 'marriage_date', 'annual_income' ),
 			)
 		);
 
 		$this->assertFalse( $partial['intake_complete'] );
 		$this->assertTrue( $partial['workflow_resolved'] );
-		$this->assertFalse( $partial['download_enabled'] );
-		$this->assertFalse( $partial['stage_context']['forms_visible'] );
+		$this->assertTrue( $partial['stage_context']['forms_visible'] );
+		$this->assertTrue( $partial['download_enabled'] );
+		$this->assertGreaterThan( 0, $partial['forms_matched'] );
 
 		$complete = $resolver->resolve(
 			array(
@@ -86,9 +145,9 @@ class CaseActionsResolverTest extends TestCase {
 	}
 
 	/**
-	 * Adoption workflow keeps download gated until intake completes.
+	 * Adoption workflow unlocks blank forms once the workflow is routed.
 	 */
-	public function test_adoption_download_gated_until_intake_complete(): void {
+	public function test_adoption_download_available_after_workflow_routed(): void {
 		$resolver = new Case_Actions_Resolver();
 		$actions  = $resolver->resolve(
 			array(
@@ -104,7 +163,8 @@ class CaseActionsResolverTest extends TestCase {
 
 		$this->assertSame( 'adoption_nyc', $actions['workflow'] );
 		$this->assertTrue( $actions['workflow_resolved'] );
-		$this->assertFalse( $actions['download_enabled'] );
+		$this->assertTrue( $actions['stage_context']['forms_visible'] );
+		$this->assertTrue( $actions['download_enabled'] );
 	}
 
 	/**
@@ -116,8 +176,12 @@ class CaseActionsResolverTest extends TestCase {
 			array(
 				'workflow' => 'uncontested_divorce_children_nyc',
 				'facts'    => array(
-					'county'      => 'Queens',
-					'child_count' => 2,
+					'county'                    => 'Queens',
+					'child_count'               => 2,
+					'spouse_agrees'             => true,
+					'children'                  => true,
+					'marital_property_resolved' => true,
+					'active_divorce'            => false,
 				),
 				'progress' => 100,
 			),

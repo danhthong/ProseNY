@@ -11,6 +11,7 @@ use ProSe\Core\Ai_Intake\AI_Intake_Service;
 use ProSe\Core\Intake\Case_Actions_Resolver;
 use ProSe\Core\Loader;
 use ProSe\Core\Security\Rate_Limiter;
+use ProSe\Core\Users\Conversation_Persistence;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -58,16 +59,30 @@ final class AI_Intake_Rest_Controller {
 	private Rate_Limiter $rate_limiter;
 
 	/**
+	 * Conversation persistence for logged-in users.
+	 *
+	 * @var Conversation_Persistence
+	 */
+	private Conversation_Persistence $conversation_persistence;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param AI_Intake_Service|null      $service Service.
-	 * @param Case_Actions_Resolver|null  $actions Case actions resolver.
-	 * @param Rate_Limiter|null           $rate_limiter Rate limiter.
+	 * @param AI_Intake_Service|null           $service                  Service.
+	 * @param Case_Actions_Resolver|null       $actions                  Case actions resolver.
+	 * @param Rate_Limiter|null                $rate_limiter             Rate limiter.
+	 * @param Conversation_Persistence|null    $conversation_persistence Conversation persistence.
 	 */
-	public function __construct( ?AI_Intake_Service $service = null, ?Case_Actions_Resolver $actions = null, ?Rate_Limiter $rate_limiter = null ) {
-		$this->service = $service ?? new AI_Intake_Service();
-		$this->actions = $actions ?? new Case_Actions_Resolver();
-		$this->rate_limiter = $rate_limiter ?? new Rate_Limiter();
+	public function __construct(
+		?AI_Intake_Service $service = null,
+		?Case_Actions_Resolver $actions = null,
+		?Rate_Limiter $rate_limiter = null,
+		?Conversation_Persistence $conversation_persistence = null
+	) {
+		$this->service                  = $service ?? new AI_Intake_Service();
+		$this->actions                  = $actions ?? new Case_Actions_Resolver();
+		$this->rate_limiter             = $rate_limiter ?? new Rate_Limiter();
+		$this->conversation_persistence = $conversation_persistence ?? new Conversation_Persistence();
 	}
 
 	/**
@@ -151,6 +166,15 @@ final class AI_Intake_Rest_Controller {
 		if ( isset( $response['supported'] ) && false === $response['supported'] ) {
 			$response['next_question'] = $response['result']['question'] ?? ( $response['message'] ?? '' );
 			$response['next_action']   = $response['result']['next_action'] ?? 'domain_restricted';
+			$case_profile              = is_array( $response['result']['case_profile'] ?? null )
+				? $response['result']['case_profile']
+				: ( is_array( $state['case_profile'] ?? null ) ? $state['case_profile'] : array() );
+
+			try {
+				$response['actions'] = $this->actions->resolve( $case_profile, is_array( $response['result'] ?? null ) ? $response['result'] : array() );
+			} catch ( \Throwable $e ) {
+				$response['actions'] = array();
+			}
 
 			return rest_ensure_response( $response );
 		}
@@ -181,9 +205,51 @@ final class AI_Intake_Rest_Controller {
 			} catch ( \Throwable $e ) {
 				$response['actions'] = array();
 			}
+
+			$this->maybe_persist_intake_turn(
+				(string) ( $response['conversation_id'] ?? $result['conversation_id'] ?? '' ),
+				$message,
+				(string) ( $response['next_question'] ?? '' ),
+				$case_profile,
+				$state,
+				is_array( $response['actions'] ?? null ) ? $response['actions'] : array()
+			);
 		}
 
 		return rest_ensure_response( $response );
+	}
+
+	/**
+	 * Dual-write intake chat to the user conversation store.
+	 *
+	 * @param string               $conversation_id Public conversation UUID.
+	 * @param string               $user_message    User message.
+	 * @param string               $assistant_reply Assistant reply.
+	 * @param array<string, mixed> $case_profile    Case profile snapshot.
+	 * @param array<string, mixed> $state           Intake state snapshot.
+	 * @param array<string, mixed> $actions         Case actions snapshot.
+	 * @return void
+	 */
+	private function maybe_persist_intake_turn(
+		string $conversation_id,
+		string $user_message,
+		string $assistant_reply,
+		array $case_profile,
+		array $state,
+		array $actions
+	): void {
+		if ( ! is_user_logged_in() || '' === trim( $conversation_id ) ) {
+			return;
+		}
+
+		$this->conversation_persistence->persist_intake_turn(
+			$conversation_id,
+			$user_message,
+			$assistant_reply,
+			$case_profile,
+			$state,
+			$actions
+		);
 	}
 
 	/**

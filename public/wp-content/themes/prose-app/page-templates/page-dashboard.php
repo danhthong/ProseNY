@@ -32,7 +32,7 @@ get_template_part( 'template-parts/prose-site-shell-start' );
 			</section>
 
 			<section class="prose-dashboard__widget prose-dashboard__widget--wide" aria-labelledby="prose-conversations-title">
-				<h2 id="prose-conversations-title" class="prose-dashboard__widget-title"><?php esc_html_e( 'Recent Conversations', 'prose-app' ); ?></h2>
+				<h2 id="prose-conversations-title" class="prose-dashboard__widget-title"><?php esc_html_e( 'Your Conversations', 'prose-app' ); ?></h2>
 				<div id="prose-conversations" class="prose-dashboard__widget-body"></div>
 			</section>
 

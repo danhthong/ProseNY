@@ -113,6 +113,7 @@ CREATE TABLE {prefix}prose_conversations (
   session_id varchar(36) NOT NULL DEFAULT '',
   title varchar(191) NOT NULL DEFAULT '',
   status varchar(20) NOT NULL DEFAULT 'active',
+  context_json longtext NULL,
   created_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
   updated_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
   PRIMARY KEY (conversation_id),

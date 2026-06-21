@@ -154,6 +154,30 @@ final class Conversation_Repository extends Abstract_Repository {
 	}
 
 	/**
+	 * Update conversation title.
+	 *
+	 * @param int    $conversation_id Conversation ID.
+	 * @param string $title         Title.
+	 * @return bool
+	 */
+	public function update_title( int $conversation_id, string $title ): bool {
+		global $wpdb;
+
+		if ( $conversation_id <= 0 ) {
+			return false;
+		}
+
+		return false !== $wpdb->update(
+			$this->table(),
+			array(
+				'title'      => sanitize_text_field( $title ),
+				'updated_at' => $this->now(),
+			),
+			array( 'conversation_id' => $conversation_id )
+		);
+	}
+
+	/**
 	 * Recent conversations for a user.
 	 *
 	 * @param int $user_id User ID.
@@ -174,5 +198,87 @@ final class Conversation_Repository extends Abstract_Repository {
 		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $user_id, $limit ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 
 		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
+	 * Find a conversation owned by a user.
+	 *
+	 * @param int $user_id         User ID.
+	 * @param int $conversation_id Conversation ID.
+	 * @return object|null
+	 */
+	public function find_owned( int $user_id, int $conversation_id ): ?object {
+		global $wpdb;
+
+		if ( $user_id <= 0 || $conversation_id <= 0 ) {
+			return null;
+		}
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$this->table()} WHERE conversation_id = %d AND user_id = %d LIMIT 1",
+				$conversation_id,
+				$user_id
+			)
+		);
+
+		return $row instanceof \stdClass ? $row : null;
+	}
+
+	/**
+	 * Find a conversation owned by a user via session UUID.
+	 *
+	 * @param int    $user_id    User ID.
+	 * @param string $session_id Session UUID.
+	 * @return object|null
+	 */
+	public function find_owned_by_session( int $user_id, string $session_id ): ?object {
+		global $wpdb;
+
+		if ( $user_id <= 0 || '' === $session_id ) {
+			return null;
+		}
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$this->table()} WHERE session_id = %s AND user_id = %d LIMIT 1",
+				$session_id,
+				$user_id
+			)
+		);
+
+		return $row instanceof \stdClass ? $row : null;
+	}
+
+	/**
+	 * Persist intake snapshot JSON for resume.
+	 *
+	 * @param int                  $conversation_id Conversation ID.
+	 * @param array<string, mixed> $context         Snapshot payload.
+	 * @return bool
+	 */
+	public function update_context( int $conversation_id, array $context ): bool {
+		global $wpdb;
+
+		if ( $conversation_id <= 0 ) {
+			return false;
+		}
+
+		$json = wp_json_encode( $context );
+
+		if ( ! is_string( $json ) ) {
+			return false;
+		}
+
+		return false !== $wpdb->update(
+			$this->table(),
+			array(
+				'context_json' => $json,
+				'updated_at'   => $this->now(),
+			),
+			array( 'conversation_id' => $conversation_id )
+		);
 	}
 }

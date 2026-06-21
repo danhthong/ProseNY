@@ -99,20 +99,56 @@
 		}
 
 		if (!items || !items.length) {
-			el.innerHTML = '<p class="prose-dashboard__empty">' + escapeHtml(I18N.noConversations || 'No conversations.') + '</p>';
+			el.innerHTML =
+				'<p class="prose-dashboard__empty">' +
+				escapeHtml(I18N.noConversations || 'No conversations yet.') +
+				'</p>' +
+				'<p><a class="prose-dashboard__cta" href="' +
+				escapeAttr(cfg.homeUrl || '/') +
+				'">' +
+				escapeHtml(I18N.startChat || 'Start chatting') +
+				'</a></p>';
 			return;
 		}
 
 		el.innerHTML =
-			'<ul class="prose-dashboard__list">' +
+			'<ul class="prose-dashboard__conversation-list">' +
 			items
 				.map(function (item) {
+					var meta = [];
+					if (item.updated_at_label) {
+						meta.push(item.updated_at_label);
+					}
+					if (item.message_count) {
+						meta.push(
+							(item.message_count === 1 ? '1 message' : item.message_count + ' messages')
+						);
+					}
+					if (item.workflow_label) {
+						meta.push(item.workflow_label);
+					}
+
 					return (
-						'<li><strong>' +
+						'<li class="prose-dashboard__conversation">' +
+						'<div class="prose-dashboard__conversation-main">' +
+						'<a class="prose-dashboard__conversation-title" href="' +
+						escapeAttr(item.resume_url || cfg.homeUrl || '/') +
+						'">' +
 						escapeHtml(item.title || 'Conversation') +
-						'</strong><br><span>' +
-						escapeHtml(item.preview || '') +
-						'</span></li>'
+						'</a>' +
+						(item.preview
+							? '<p class="prose-dashboard__conversation-preview">' + escapeHtml(item.preview) + '</p>'
+							: '') +
+						(meta.length
+							? '<p class="prose-dashboard__conversation-meta">' + escapeHtml(meta.join(' · ')) + '</p>'
+							: '') +
+						'</div>' +
+						'<a class="prose-dashboard__conversation-resume" href="' +
+						escapeAttr(item.resume_url || cfg.homeUrl || '/') +
+						'">' +
+						escapeHtml(I18N.resumeChat || 'Resume') +
+						'</a>' +
+						'</li>'
 					);
 				})
 				.join('') +

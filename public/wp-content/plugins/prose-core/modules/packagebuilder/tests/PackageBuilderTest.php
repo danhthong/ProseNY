@@ -146,8 +146,9 @@ class PackageBuilderTest extends TestCase {
 
 		$this->assertStringStartsWith( 'pkg_', $preview['package_id'] );
 		$this->assertNotSame( '', $preview['workflow_title'] );
-		$this->assertGreaterThan( 0, $preview['counts']['required'] );
-		$this->assertSame( 2, $preview['counts']['optional'] );
+		$this->assertSame( 'commencement', $preview['stage_context']['current_stage']['id'] ?? '' );
+		$this->assertSame( 2, $preview['counts']['required'], 'Commencement has two required forms.' );
+		$this->assertSame( 0, $preview['counts']['optional'], 'Optional forms live in later stages; preview counts the current stage only.' );
 		$this->assertNotEmpty( $preview['stages'] );
 		$this->assertArrayHasKey( 'forms', $preview['stages'][0] );
 	}

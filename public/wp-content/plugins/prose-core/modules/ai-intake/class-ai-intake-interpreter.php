@@ -7,6 +7,7 @@
 
 namespace ProSe\Core\Ai_Intake;
 
+use ProSe\Core\Guidance\Filing_Guidance_Brief_Resolver;
 use ProSe\Core\Intake\Completion_Calculator;
 use ProSe\Core\Intake\Document_Request_Detector;
 use ProSe\Core\Procedural\Procedural_Navigator;
@@ -251,6 +252,10 @@ final class AI_Intake_Interpreter {
 		$missing_pre  = $this->fields_provider->missing_prioritized( $resolved_pre['fields'], $intake );
 		$workflow_pre = $intake->workflow();
 		$was_complete = empty( $missing_pre ) && null !== $workflow_pre && '' !== $workflow_pre;
+		$missing_ai   = $this->conversation_missing( $missing_pre, $workflow_pre );
+		$stage_pre    = $this->stage_context( $workflow_pre, $intake, null !== $workflow_pre && '' !== $workflow_pre );
+		$brief_pre    = $this->resolve_filing_brief( $workflow_pre, $intake, $stage_pre );
+		$brief_sent   = ! empty( $state['case_profile']['guidance_brief_delivered'] );
 
 		$completion_pre = $this->completion->calculate(
 			$resolved_pre['required_field_defs'],
@@ -264,18 +269,20 @@ final class AI_Intake_Interpreter {
 			$message,
 			$intake,
 			array(
-				'extraction_defs'      => $resolved_pre['extraction_defs'] ?? $resolved_pre['required_field_defs'],
-				'missing'              => $missing_pre,
-				'workflow'             => $workflow_pre,
-				'workflow_info'        => $this->workflow_info( $workflow_pre, $completion_pre, $intake, empty( $missing_pre ) ),
-				'package'              => $this->package_context( $missing_pre, $completion_pre, $workflow_pre ),
-				'completion'           => $completion_pre,
-				'contradictions'       => $this->consistency->check( $intake ),
-				'summary'              => $memory_ctx['summary'],
-				'recent'               => $memory_ctx['recent'],
-				'scope_note'           => $scope_note,
-				'procedural_navigator' => $this->procedural_navigator_context( $intake, $workflow_pre ),
-				'stage_context'        => $this->stage_context( $workflow_pre, $intake, empty( $missing_pre ) ),
+				'extraction_defs'       => $resolved_pre['extraction_defs'] ?? $resolved_pre['required_field_defs'],
+				'missing'               => $missing_ai,
+				'workflow'              => $workflow_pre,
+				'workflow_info'         => $this->workflow_info( $workflow_pre, $completion_pre, $intake, null !== $workflow_pre && '' !== $workflow_pre ),
+				'package'               => $this->package_context( $missing_ai, $completion_pre, $workflow_pre ),
+				'completion'            => $completion_pre,
+				'contradictions'        => $this->consistency->check( $intake ),
+				'summary'               => $memory_ctx['summary'],
+				'recent'                => $memory_ctx['recent'],
+				'scope_note'            => $scope_note,
+				'procedural_navigator'  => $this->procedural_navigator_context( $intake, $workflow_pre ),
+				'stage_context'         => $stage_pre,
+				'filing_guidance_brief' => $brief_pre,
+				'guidance_brief_sent'   => $brief_sent,
 			),
 			$this->provider,
 			$this->logger
@@ -298,6 +305,17 @@ final class AI_Intake_Interpreter {
 		$reply        = trim( (string) $turn['reply'] );
 		$workflow     = $intake->workflow();
 		$has_workflow = null !== $workflow && '' !== $workflow;
+		$stage_ctx    = $this->stage_context( $workflow, $intake, $has_workflow );
+		$filing_brief = $this->resolve_filing_brief( $workflow, $intake, $stage_ctx );
+		$brief_extra  = array();
+		$reply        = $this->apply_filing_brief_reply(
+			$reply,
+			$filing_brief,
+			$brief_sent,
+			$message,
+			! empty( $stage_ctx['forms_visible'] ),
+			$brief_extra
+		);
 
 		// --- Escalation safety net (repeated genuine uncertainty) ---
 		$escalation = $this->escalation->detect( $message, $intake, $turn['raw_confidence'] );
@@ -314,30 +332,9 @@ final class AI_Intake_Interpreter {
 				'' !== $reply ? $reply : __( 'Thanks for sharing. A member of our team can help you from here.', 'prose-core' ),
 				$turn['raw_confidence'],
 				true,
-				$completion_pct
-			);
-		}
-
-		// --- Intake complete: transition to guidance (only when facts are consistent) ---
-		if ( empty( $missing ) && $has_workflow && empty( $contradictions ) ) {
-			$intake->set_pending_field( '' );
-
-			if ( '' === $reply ) {
-				$reply = $this->build_guidance_fallback( $workflow, $completion_pct );
-			}
-
-			return $this->build_result(
-				$intake,
-				$applied,
-				array(),
-				$contradictions,
-				array(),
-				'intake_complete',
-				$was_complete ? 'guidance' : 'complete_intake',
-				$reply,
-				1.0,
-				false,
-				100
+				$completion_pct,
+				'',
+				$brief_extra
 			);
 		}
 
@@ -352,6 +349,8 @@ final class AI_Intake_Interpreter {
 		}
 
 		$pending_hint = ! empty( $missing ) ? (string) $missing[0]['field'] : '';
+		$next_action  = ! empty( $brief_extra['guidance_brief_delivered'] ) ? 'guidance' : 'ask_question';
+		$intent       = ! empty( $brief_extra['guidance_brief_delivered'] ) ? 'guidance' : 'gathering';
 
 		return $this->build_result(
 			$intake,
@@ -359,13 +358,14 @@ final class AI_Intake_Interpreter {
 			$missing,
 			$contradictions,
 			array(),
-			'gathering',
-			'ask_question',
+			$intent,
+			$next_action,
 			$reply,
 			$turn['raw_confidence'],
 			false,
 			$completion_pct,
-			$pending_hint
+			$pending_hint,
+			$brief_extra
 		);
 	}
 
@@ -433,7 +433,7 @@ final class AI_Intake_Interpreter {
 			array(
 				'workflow'        => $workflow,
 				'facts'           => $intake->plain_facts(),
-				'intake_complete' => $complete,
+				'intake_complete' => $complete || ( null !== $workflow && '' !== $workflow ),
 				'issue'           => (string) ( $intake->plain_facts()['issue'] ?? 'divorce' ),
 			)
 		);
@@ -578,7 +578,8 @@ final class AI_Intake_Interpreter {
 		float $confidence,
 		bool $needs_review,
 		int $completion,
-		string $pending_field = ''
+		string $pending_field = '',
+		array $case_profile_extra = array()
 	): array {
 		if ( '' !== $pending_field ) {
 			$state->set_pending_field( $pending_field );
@@ -607,7 +608,7 @@ final class AI_Intake_Interpreter {
 			'question'             => $question,
 			'confidence'           => $confidence,
 			'state'                => $state->to_array(),
-			'case_profile'         => $state->to_case_profile( $completion ),
+			'case_profile'         => array_merge( $state->to_case_profile( $completion ), $case_profile_extra ),
 			'completion'           => $completion,
 			'workflow'             => $state->workflow(),
 			'conversation_id'      => $state->conversation_id(),
@@ -841,6 +842,171 @@ final class AI_Intake_Interpreter {
 		}
 
 		return (string) $a === (string) $b;
+	}
+
+	/**
+	 * Personal intake fields that do not block routing, downloads, or filing guidance.
+	 *
+	 * @var string[]
+	 */
+	private const OPTIONAL_CONVERSATION_FIELDS = array(
+		'marriage_date',
+		'separation_date',
+		'grounds_for_divorce',
+		'plaintiff_information',
+		'defendant_information',
+		'petitioner_information',
+		'respondent_information',
+		'has_minor_children',
+		'child_count',
+		'child_names',
+		'child_birth_dates',
+		'child_name',
+		'child_birth_date',
+		'custody_arrangement',
+		'visitation_arrangement',
+		'child_support_terms',
+		'existing_orders',
+		'assets',
+		'debts',
+		'income',
+		'spouse_name',
+		'plaintiff_name',
+		'defendant_name',
+	);
+
+	/**
+	 * @param array<int, array<string, mixed>> $missing  Missing fields.
+	 * @param string|null                        $workflow Workflow key.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function conversation_missing( array $missing, ?string $workflow ): array {
+		if ( null === $workflow || '' === $workflow ) {
+			return $missing;
+		}
+
+		return array_values(
+			array_filter(
+				$missing,
+				function ( array $field ): bool {
+					$key = (string) ( $field['field'] ?? '' );
+
+					return '' !== $key && ! in_array( $key, self::OPTIONAL_CONVERSATION_FIELDS, true );
+				}
+			)
+		);
+	}
+
+	/**
+	 * @param string|null               $workflow Workflow key.
+	 * @param Intake_State              $intake   Intake state.
+	 * @param array<string, mixed>|null $stage    Stage context.
+	 * @return array<string, mixed>|null
+	 */
+	private function resolve_filing_brief( ?string $workflow, Intake_State $intake, ?array $stage ): ?array {
+		if ( null === $workflow || '' === $workflow || empty( $stage['forms_visible'] ) ) {
+			return null;
+		}
+
+		$facts = $intake->plain_facts();
+
+		return ( new Filing_Guidance_Brief_Resolver() )->resolve(
+			array(
+				'workflow' => $workflow,
+				'facts'    => $facts,
+				'stage'    => (string) ( $stage['current_stage']['id'] ?? 'commencement' ),
+				'county'   => (string) ( $facts['county'] ?? '' ),
+			)
+		);
+	}
+
+	/**
+	 * @param string               $reply         Model or fallback reply.
+	 * @param array<string, mixed>|null $brief    Resolved brief.
+	 * @param bool                 $already_sent  Brief already delivered.
+	 * @param string               $message       User message.
+	 * @param bool                 $forms_visible Forms are visible.
+	 * @param array<string, mixed> $profile_extra Case profile extras (by reference).
+	 * @return string
+	 */
+	private function apply_filing_brief_reply(
+		string $reply,
+		?array $brief,
+		bool $already_sent,
+		string $message,
+		bool $forms_visible,
+		array &$profile_extra
+	): string {
+		if ( ! $forms_visible || ! is_array( $brief ) ) {
+			return $reply;
+		}
+
+		$resolver  = new Filing_Guidance_Brief_Resolver();
+		$formatted = $resolver->format( $brief );
+
+		if ( ! $already_sent ) {
+			$profile_extra['guidance_brief_delivered'] = true;
+
+			if ( '' === $reply || $this->reply_only_asks_optional_fields( $reply ) ) {
+				return $formatted;
+			}
+
+			return $reply;
+		}
+
+		if ( $this->message_requests_guidance( $message ) && strlen( $reply ) < 200 ) {
+			return $formatted;
+		}
+
+		return $reply;
+	}
+
+	/**
+	 * @param string $reply Assistant reply.
+	 * @return bool
+	 */
+	private function reply_only_asks_optional_fields( string $reply ): bool {
+		$text = strtolower( $reply );
+
+		foreach ( array( 'marriage date', 'annual income', 'assets', 'debts', 'full legal name', 'contact information' ) as $needle ) {
+			if ( str_contains( $text, $needle ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * @param string $message User message.
+	 * @return bool
+	 */
+	private function message_requests_guidance( string $message ): bool {
+		$text = strtolower( trim( $message ) );
+
+		foreach ( array(
+			'how do i file',
+			'how to file',
+			'what happens next',
+			'what do i do next',
+			'next step',
+			'next steps',
+			'how to start',
+			'ud-1',
+			'ud-2',
+			'summons',
+			'complaint',
+			'commencement',
+			'file divorce',
+			'which form',
+			'what form',
+		) as $phrase ) {
+			if ( str_contains( $text, $phrase ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**

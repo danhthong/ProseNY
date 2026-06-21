@@ -1,0 +1,100 @@
+{
+  "id": "divorce_commencement_supreme_nyc",
+  "title": "Starting a divorce in NYC Supreme Court",
+  "court_label": "New York Supreme Court",
+  "stage": "commencement",
+  "disclaimer": "Informational guidance only — not legal advice.",
+  "scenarios": [
+    {
+      "id": "active_case_exists",
+      "when": {
+        "active_divorce": true
+      },
+      "headline": "Your situation — an active divorce case is already open",
+      "sections": [
+        {
+          "heading": "Do not start a second divorce case",
+          "paragraphs": [
+            "When a matrimonial action between the same spouses is already pending in Supreme Court, you generally should not file a new Summons With Notice (UD-1) or Verified Complaint (UD-2) to open another divorce case.",
+            "Filing a duplicate case can be rejected or dismissed because the court already has a pending matter between the same parties."
+          ]
+        },
+        {
+          "heading": "What to do in the existing case instead",
+          "paragraphs": [
+            "If you need property division, maintenance (spousal support), counsel fees, or other relief, those requests are usually made inside the case that is already open — for example through an Answer, Counterclaim, Notice of Motion, or other papers filed in that index number.",
+            "Use Get Documents for the forms tied to your current procedural step (for example Answer or service-related forms), not the initial commencement packet, unless you are truly starting a brand-new case."
+          ],
+          "bullets": [
+            "Confirm the county and index number of the existing case.",
+            "Identify whether you are the plaintiff (person who filed first) or the defendant (spouse who was served).",
+            "Ask the clerk or consult the court's matrimonial part rules for the correct next paper in that case."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "new_commencement",
+      "when": {
+        "active_divorce": false
+      },
+      "headline": "How a new divorce case usually starts in NYC Supreme Court",
+      "sections": [
+        {
+          "heading": "Overview",
+          "paragraphs": [
+            "If you are self-represented and there is no pending matrimonial case between you and your spouse, the case typically begins in the Supreme Court of the county where you meet residency requirements (for example Queens County).",
+            "The commencement stage forms in your package explain how to start the case. Two common paths are below."
+          ]
+        }
+      ],
+      "options": [
+        {
+          "title": "Option 1 — Summons With Notice (Form UD-1)",
+          "paragraphs": [
+            "This is the simpler path many self-represented filers use when starting a matrimonial action.",
+            "UD-1 is typically a short form (often about 2–3 pages). After it is filed, you must serve your spouse within the time limits set by court rules."
+          ],
+          "bullets": [
+            "Plaintiff (person starting the case) and Defendant (spouse) names",
+            "County where you are filing",
+            "Addresses of both parties",
+            "Date and place of marriage",
+            "Grounds for divorce (many NYC filings use irretrievable breakdown for at least six months under DRL §170(7))",
+            "Relief requested: divorce, equitable distribution, maintenance, counsel fees, and any other court orders you seek"
+          ]
+        },
+        {
+          "title": "Option 2 — Summons (UD-1a) + Verified Complaint (UD-2)",
+          "paragraphs": [
+            "This path is more detailed and is often used when the case may involve disputes over property, maintenance, or other issues.",
+            "UD-2 (Verified Complaint) is longer (often about 6–8 pages depending on the version) and requires verified statements under oath."
+          ],
+          "bullets": [
+            "Full names and addresses of both parties",
+            "Date and place of marriage",
+            "Information about minor children, if any",
+            "New York residency facts supporting Supreme Court jurisdiction",
+            "Grounds for divorce",
+            "Prior cases between the parties, if any",
+            "Specific relief requested: divorce, property division, maintenance, counsel fees, and other orders"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "default",
+      "default": true,
+      "headline": "Commencement forms for your divorce matter",
+      "sections": [
+        {
+          "heading": "Current step",
+          "paragraphs": [
+            "Your workflow is at the commencement stage. Use the linked form pages and Get Documents to download blank forms for this step only.",
+            "After filing, you must serve the papers on your spouse according to court rules and keep proof of service."
+          ]
+        }
+      ]
+    }
+  ]
+}
