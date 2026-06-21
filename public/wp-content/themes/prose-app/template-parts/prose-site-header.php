@@ -77,7 +77,7 @@ $prose_logout_url = esc_url( wp_logout_url( is_user_logged_in() ? Users\dashboar
 				<?php esc_html_e( 'Dashboard', 'prose-app' ); ?>
 			</a>
 			<a href="<?php echo $prose_logout_url; ?>" class="prose-btn prose-btn--secondary">
-				<?php esc_html_e( 'Log out', 'prose-app' ); ?>
+				<?php esc_html_e( 'Logout', 'prose-app' ); ?>
 			</a>
 		<?php else : ?>
 			<a href="<?php echo $prose_login_url; ?>" class="prose-btn prose-btn--secondary">
@@ -132,7 +132,7 @@ $prose_logout_url = esc_url( wp_logout_url( is_user_logged_in() ? Users\dashboar
 					<?php esc_html_e( 'Dashboard', 'prose-app' ); ?>
 				</a>
 				<a href="<?php echo $prose_logout_url; ?>" class="prose-btn prose-btn--secondary prose-btn--block">
-					<?php esc_html_e( 'Log out', 'prose-app' ); ?>
+					<?php esc_html_e( 'Logout', 'prose-app' ); ?>
 				</a>
 			<?php else : ?>
 				<a href="<?php echo $prose_login_url; ?>" class="prose-btn prose-btn--secondary prose-btn--block">
