@@ -57,8 +57,18 @@ function localize(): void {
 		'courtflow-workspace',
 		'courtflowConfig',
 		array(
-			'restUrl'    => esc_url_raw( rest_url( 'courtflow/v1/' ) ),
-			'nonce'      => wp_create_nonce( 'wp_rest' ),
+			'restUrl'      => esc_url_raw( rest_url( 'courtflow/v1/' ) ),
+			'nonce'        => wp_create_nonce( 'wp_rest' ),
+			'loginUrl'     => class_exists( '\ProSe\Core\Users\Page_Installer' )
+				? esc_url_raw( \ProSe\Core\Users\Page_Installer::url( 'login' ) )
+				: esc_url_raw( wp_login_url() ),
+			'registerUrl'  => class_exists( '\ProSe\Core\Users\Page_Installer' )
+				? esc_url_raw( \ProSe\Core\Users\Page_Installer::url( 'register' ) )
+				: esc_url_raw( wp_registration_url() ),
+			'dashboardUrl' => class_exists( '\ProSe\Core\Users\Page_Installer' )
+				? esc_url_raw( \ProSe\Core\Users\Page_Installer::url( 'dashboard' ) )
+				: esc_url_raw( home_url( '/dashboard/' ) ),
+			'isLoggedIn'   => is_user_logged_in(),
 			'disclaimer' => class_exists( '\Prose\Core\Security\Disclaimer' )
 				? \Prose\Core\Security\Disclaimer::text()
 				: '',

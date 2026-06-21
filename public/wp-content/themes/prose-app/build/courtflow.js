@@ -169,6 +169,38 @@
 		});
 	}
 
+	function authUrls() {
+		return {
+			login: courtflowConfig.loginUrl || '/login/',
+			register: courtflowConfig.registerUrl || '/register/',
+		};
+	}
+
+	function showAuthPrompt(message, detail) {
+		detail = detail || {};
+		var urls = authUrls();
+		var sessionParam = sessionId ? '?session_id=' + encodeURIComponent(String(sessionId)) : '';
+		var text =
+			message ||
+			'Create a free account to save your progress and generate documents.';
+		var html =
+			text +
+			' <a href="' +
+			urls.register +
+			sessionParam +
+			'">Register</a> or <a href="' +
+			urls.login +
+			sessionParam +
+			'">Log in</a>.';
+		state.messages.push({
+			role: 'system',
+			text: html,
+			created_at: new Date().toISOString(),
+			auth_prompt: true,
+		});
+		renderMessages();
+	}
+
 	function stepIndexForNode(slug) {
 		if (!slug) return 0;
 		for (var i = 0; i < STEP_CATALOG.length; i++) {
@@ -411,7 +443,11 @@
 		var div = document.createElement('div');
 		var roleClass = type === 'user' ? 'user' : type === 'assistant' ? 'assistant' : 'system';
 		div.className = 'cf-msg cf-msg--' + roleClass + ' courtflow-message courtflow-message-' + roleClass;
-		div.innerHTML = escapeHtml(text) + '<span class="cf-msg__time">' + escapeHtml(formatTime(timeAttr)) + '</span>';
+		if (msg.auth_prompt) {
+			div.innerHTML = text + '<span class="cf-msg__time">' + escapeHtml(formatTime(timeAttr)) + '</span>';
+		} else {
+			div.innerHTML = escapeHtml(text) + '<span class="cf-msg__time">' + escapeHtml(formatTime(timeAttr)) + '</span>';
+		}
 		return div;
 	}
 
@@ -1098,6 +1134,11 @@
 						state.messages.push({ role: 'assistant', text: reply, created_at: now });
 					}
 					updateState(data);
+					if (data.auth_required) {
+						showAuthPrompt(
+							'Your intake is complete. Register or log in to save your case progress.'
+						);
+					}
 					renderMessages();
 					scrollManager.scrollToBottom(true);
 				})
@@ -1153,7 +1194,14 @@
 				.catch(function (err) {
 					btn.textContent = 'Generate Filing Package';
 					var detail = err && err.body && typeof err.body === 'object' ? err.body : null;
-					if (err && err.status === 422 && detail) {
+					if (err && (err.status === 401 || err.status === 403) && detail) {
+						showAuthPrompt(
+							detail.message ||
+								(err.status === 403
+									? 'A subscription may be required to generate documents.'
+									: 'Please register or log in to generate documents.')
+						);
+					} else if (err && err.status === 422 && detail) {
 						state.requirements = Object.assign({}, state.requirements, {
 							missing: detail.missing || state.requirements.missing,
 							next: detail.next || state.requirements.next,

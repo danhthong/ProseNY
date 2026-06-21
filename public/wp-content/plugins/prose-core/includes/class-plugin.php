@@ -31,6 +31,9 @@ use ProSe\Core\Packet\Packet_Module;
 use ProSe\Core\Procedural\Procedural_Module;
 use ProSe\Core\Search\Search_Module;
 use ProSe\Core\Security\Security_Module;
+use ProSe\Core\Users\Page_Installer;
+use ProSe\Core\Users\Role_Registrar;
+use ProSe\Core\Users\Users_Module;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -103,6 +106,9 @@ final class Plugin {
 
 		Database_Installer::install();
 		Courtflow_Seeder::install_and_seed();
+
+		Role_Registrar::install();
+		Page_Installer::install();
 
 		$backfill = new Graph_Backfill();
 		$backfill->backfill_package_versions();
@@ -183,6 +189,7 @@ final class Plugin {
 				AI_Intake_Module::class,
 				Search_Module::class,
 				Security_Module::class,
+				Users_Module::class,
 			)
 		);
 

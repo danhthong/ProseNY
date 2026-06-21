@@ -12,9 +12,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+use ProseApp\Users;
+
 $prose_home_url  = esc_url( home_url( '/' ) );
-$prose_login_url = esc_url( wp_login_url() );
-$prose_reg_url   = esc_url( function_exists( 'wp_registration_url' ) ? wp_registration_url() : wp_login_url() );
+$prose_login_url = esc_url( Users\login_url() );
+$prose_reg_url   = esc_url( Users\register_url() );
 
 if ( function_exists( 'get_post_type_archive_link' ) ) {
 	$prose_forms_url = get_post_type_archive_link( 'prose_form' );
@@ -45,6 +47,9 @@ $prose_nav_links = array(
 		'active' => false,
 	),
 );
+
+$prose_dash_url   = esc_url( Users\dashboard_url() );
+$prose_logout_url = esc_url( wp_logout_url( is_user_logged_in() ? Users\dashboard_url() : home_url( '/' ) ) );
 ?>
 <header class="sticky top-0 z-30 flex h-[72px] items-center justify-between border-b border-slate-100 bg-white px-4 md:px-8">
 	<a href="<?php echo $prose_home_url; ?>" class="flex items-center gap-2 no-underline" rel="home">
@@ -67,12 +72,21 @@ $prose_nav_links = array(
 	</nav>
 
 	<div class="hidden items-center gap-2 md:flex">
-		<a href="<?php echo $prose_login_url; ?>" class="rounded-lg border border-slate-200 px-4 py-2 text-[14px] font-medium text-slate-900 no-underline hover:bg-slate-50">
-			<?php esc_html_e( 'Login', 'prose-app' ); ?>
-		</a>
-		<a href="<?php echo $prose_reg_url; ?>" class="rounded-lg bg-indigo-600 px-4 py-2 text-[14px] font-semibold text-white no-underline hover:bg-indigo-700">
-			<?php esc_html_e( 'Register', 'prose-app' ); ?>
-		</a>
+		<?php if ( is_user_logged_in() ) : ?>
+			<a href="<?php echo $prose_dash_url; ?>" class="prose-btn prose-btn--primary">
+				<?php esc_html_e( 'Dashboard', 'prose-app' ); ?>
+			</a>
+			<a href="<?php echo $prose_logout_url; ?>" class="prose-btn prose-btn--secondary">
+				<?php esc_html_e( 'Log out', 'prose-app' ); ?>
+			</a>
+		<?php else : ?>
+			<a href="<?php echo $prose_login_url; ?>" class="prose-btn prose-btn--secondary">
+				<?php esc_html_e( 'Login', 'prose-app' ); ?>
+			</a>
+			<a href="<?php echo $prose_reg_url; ?>" class="prose-btn prose-btn--primary">
+				<?php esc_html_e( 'Register', 'prose-app' ); ?>
+			</a>
+		<?php endif; ?>
 	</div>
 
 	<button
@@ -113,12 +127,21 @@ $prose_nav_links = array(
 			<?php endforeach; ?>
 		</nav>
 		<div class="mt-auto flex flex-col gap-2 border-t border-slate-100 p-4">
-			<a href="<?php echo $prose_login_url; ?>" class="rounded-lg border border-slate-200 px-4 py-2.5 text-center text-[14px] font-medium text-slate-900 no-underline hover:bg-slate-50">
-				<?php esc_html_e( 'Login', 'prose-app' ); ?>
-			</a>
-			<a href="<?php echo $prose_reg_url; ?>" class="rounded-lg bg-indigo-600 px-4 py-2.5 text-center text-[14px] font-semibold text-white no-underline hover:bg-indigo-700">
-				<?php esc_html_e( 'Register', 'prose-app' ); ?>
-			</a>
+			<?php if ( is_user_logged_in() ) : ?>
+				<a href="<?php echo $prose_dash_url; ?>" class="prose-btn prose-btn--primary prose-btn--block">
+					<?php esc_html_e( 'Dashboard', 'prose-app' ); ?>
+				</a>
+				<a href="<?php echo $prose_logout_url; ?>" class="prose-btn prose-btn--secondary prose-btn--block">
+					<?php esc_html_e( 'Log out', 'prose-app' ); ?>
+				</a>
+			<?php else : ?>
+				<a href="<?php echo $prose_login_url; ?>" class="prose-btn prose-btn--secondary prose-btn--block">
+					<?php esc_html_e( 'Login', 'prose-app' ); ?>
+				</a>
+				<a href="<?php echo $prose_reg_url; ?>" class="prose-btn prose-btn--primary prose-btn--block">
+					<?php esc_html_e( 'Register', 'prose-app' ); ?>
+				</a>
+			<?php endif; ?>
 		</div>
 	</div>
 </div>

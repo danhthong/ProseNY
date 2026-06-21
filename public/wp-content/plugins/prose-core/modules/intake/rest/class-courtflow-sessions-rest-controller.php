@@ -12,6 +12,10 @@ use ProSe\Core\Intake\Case_Actions_Resolver;
 use ProSe\Core\Loader;
 use ProSe\Core\PackageBuilder\Merged_Blank_Pdf_Service;
 use ProSe\Core\Security\Rate_Limiter;
+use ProSe\Core\Users\Auth_Gate;
+use ProSe\Core\Users\Conversation_Persistence;
+use ProSe\Core\Users\Database\Repositories\User_Document_Repository;
+use ProSe\Core\Users\Entitlements;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -77,6 +81,34 @@ final class Courtflow_Sessions_Rest_Controller {
 	private Rate_Limiter $rate_limiter;
 
 	/**
+	 * Auth gate.
+	 *
+	 * @var Auth_Gate
+	 */
+	private Auth_Gate $auth_gate;
+
+	/**
+	 * Entitlements.
+	 *
+	 * @var Entitlements
+	 */
+	private Entitlements $entitlements;
+
+	/**
+	 * Conversation persistence.
+	 *
+	 * @var Conversation_Persistence
+	 */
+	private Conversation_Persistence $conversation_persistence;
+
+	/**
+	 * User document repository.
+	 *
+	 * @var User_Document_Repository
+	 */
+	private User_Document_Repository $user_documents;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param AI_Intake_Service|null           $service     AI intake service.
@@ -86,6 +118,10 @@ final class Courtflow_Sessions_Rest_Controller {
 	 * @param Courtflow_Case_Persistence|null  $persistence Case persistence.
 	 * @param Case_Actions_Resolver|null       $actions     Case actions resolver.
 	 * @param Rate_Limiter|null                $rate_limiter Rate limiter.
+	 * @param Auth_Gate|null                   $auth_gate   Auth gate.
+	 * @param Entitlements|null                $entitlements Entitlements.
+	 * @param Conversation_Persistence|null    $conversation_persistence Conversation persistence.
+	 * @param User_Document_Repository|null    $user_documents User documents.
 	 */
 	public function __construct(
 		?AI_Intake_Service $service = null,
@@ -94,15 +130,23 @@ final class Courtflow_Sessions_Rest_Controller {
 		?Merged_Blank_Pdf_Service $merged_pdfs = null,
 		?Courtflow_Case_Persistence $persistence = null,
 		?Case_Actions_Resolver $actions = null,
-		?Rate_Limiter $rate_limiter = null
+		?Rate_Limiter $rate_limiter = null,
+		?Auth_Gate $auth_gate = null,
+		?Entitlements $entitlements = null,
+		?Conversation_Persistence $conversation_persistence = null,
+		?User_Document_Repository $user_documents = null
 	) {
-		$this->service     = $service ?? new AI_Intake_Service();
-		$this->store       = $store ?? new Courtflow_Session_Store();
-		$this->mapper      = $mapper ?? new Courtflow_Response_Mapper();
-		$this->merged_pdfs = $merged_pdfs ?? new Merged_Blank_Pdf_Service();
-		$this->persistence = $persistence ?? new Courtflow_Case_Persistence();
-		$this->actions     = $actions ?? new Case_Actions_Resolver();
-		$this->rate_limiter = $rate_limiter ?? new Rate_Limiter();
+		$this->service                  = $service ?? new AI_Intake_Service();
+		$this->store                    = $store ?? new Courtflow_Session_Store();
+		$this->mapper                   = $mapper ?? new Courtflow_Response_Mapper();
+		$this->merged_pdfs              = $merged_pdfs ?? new Merged_Blank_Pdf_Service();
+		$this->persistence              = $persistence ?? new Courtflow_Case_Persistence();
+		$this->actions                  = $actions ?? new Case_Actions_Resolver();
+		$this->rate_limiter             = $rate_limiter ?? new Rate_Limiter();
+		$this->auth_gate                = $auth_gate ?? new Auth_Gate();
+		$this->entitlements             = $entitlements ?? new Entitlements();
+		$this->conversation_persistence = $conversation_persistence ?? new Conversation_Persistence();
+		$this->user_documents           = $user_documents ?? new User_Document_Repository();
 	}
 
 	/**
@@ -224,6 +268,8 @@ final class Courtflow_Sessions_Rest_Controller {
 			)
 		);
 
+		$this->conversation_persistence->ensure_for_session( $session );
+
 		return rest_ensure_response(
 			array(
 				'session_id' => $session['session_id'],
@@ -329,6 +375,7 @@ final class Courtflow_Sessions_Rest_Controller {
 		$applied  = is_array( $result['fact_updates'] ?? null ) ? $result['fact_updates'] : array();
 
 		$this->store->append_message( $session, 'user', $text );
+		$this->conversation_persistence->append_message( $session, 'user', $text );
 
 		$reply = (string) ( $result['question'] ?? '' );
 
@@ -338,6 +385,7 @@ final class Courtflow_Sessions_Rest_Controller {
 
 		if ( '' !== $reply ) {
 			$this->store->append_message( $session, 'assistant', $reply );
+			$this->conversation_persistence->append_message( $session, 'assistant', $reply );
 		}
 
 		$session['conversation_id'] = (string) ( $result['conversation_id'] ?? $session['conversation_id'] ?? '' );
@@ -361,9 +409,15 @@ final class Courtflow_Sessions_Rest_Controller {
 
 		$this->store->save( (string) $session['session_id'], $session );
 
-		return rest_ensure_response(
-			$this->mapper->map_message_response( $session, $response, $applied, $text )
-		);
+		$response_payload = $this->mapper->map_message_response( $session, $response, $applied, $text );
+
+		if ( ! empty( $session['intake_complete_pending'] ) ) {
+			$response_payload['auth_required'] = true;
+			$response_payload['login_url']     = \ProSe\Core\Users\Page_Installer::url( 'login' );
+			$response_payload['register_url']  = \ProSe\Core\Users\Page_Installer::url( 'register' );
+		}
+
+		return rest_ensure_response( $response_payload );
 	}
 
 	/**
@@ -396,6 +450,16 @@ final class Courtflow_Sessions_Rest_Controller {
 	 * @return \WP_REST_Response|\WP_Error
 	 */
 	public function post_documents( \WP_REST_Request $request ) {
+		$auth = $this->auth_gate->require_auth( Auth_Gate::ACTION_GENERATE_PDF );
+
+		if ( is_wp_error( $auth ) ) {
+			return $this->auth_gate->rest_response( $auth );
+		}
+
+		if ( ! $this->entitlements->can_generate_pdf( get_current_user_id(), array( 'source' => 'courtflow_session' ) ) ) {
+			return $this->entitlements->subscription_rest_response( $this->entitlements->subscription_required_error() );
+		}
+
 		$session = $this->load_session( (string) $request->get_param( 'id' ) );
 
 		if ( is_wp_error( $session ) ) {
@@ -452,6 +516,23 @@ final class Courtflow_Sessions_Rest_Controller {
 		$session['documents'] = $documents;
 		$this->store->save( (string) $session['session_id'], $session );
 
+		$user_id = get_current_user_id();
+		$case_id = (int) ( $session['case_id'] ?? 0 );
+
+		foreach ( $documents as $doc ) {
+			$this->user_documents->create(
+				array(
+					'user_id'        => $user_id,
+					'case_id'        => $case_id,
+					'document_type'  => 'blank_package',
+					'form_code'      => (string) ( $doc['form_slug'] ?? '' ),
+					'title'          => (string) ( $doc['title'] ?? '' ),
+					'download_token' => (string) ( $doc['download_url'] ?? '' ),
+					'status'         => (string) ( $doc['status'] ?? 'ready' ),
+				)
+			);
+		}
+
 		do_action(
 			'prose_package_downloaded',
 			(string) $session['session_id'],
@@ -475,11 +556,33 @@ final class Courtflow_Sessions_Rest_Controller {
 	 *
 	 * @return bool|\WP_Error
 	 */
-	public function can_access() {
-		return $this->rate_limiter->rest_permission(
+	public function can_access( \WP_REST_Request $request ) {
+		$allowed = $this->rate_limiter->rest_permission(
 			$this->rate_limiter->bucket_for_route( 'courtflow_sessions' ),
 			90,
 			60
+		);
+
+		if ( true !== $allowed ) {
+			return $allowed;
+		}
+
+		$session_id = sanitize_text_field( (string) $request->get_param( 'id' ) );
+
+		if ( '' === $session_id ) {
+			return true;
+		}
+
+		$owns = $this->conversation_persistence->user_owns_session( $session_id );
+
+		if ( null === $owns || true === $owns ) {
+			return true;
+		}
+
+		return new \WP_Error(
+			'prose_forbidden',
+			__( 'You do not have access to this session.', 'prose-core' ),
+			array( 'status' => 403 )
 		);
 	}
 
@@ -540,6 +643,13 @@ final class Courtflow_Sessions_Rest_Controller {
 			return;
 		}
 
+		$auth = $this->auth_gate->require_auth( Auth_Gate::ACTION_PERSIST_CASE );
+
+		if ( is_wp_error( $auth ) ) {
+			$session['intake_complete_pending'] = true;
+			return;
+		}
+
 		$case_id = $this->persistence->persist_intake_complete( $session );
 
 		if ( $case_id <= 0 ) {
@@ -547,6 +657,9 @@ final class Courtflow_Sessions_Rest_Controller {
 		}
 
 		$session['case_id'] = $case_id;
+		unset( $session['intake_complete_pending'] );
+
+		$this->conversation_persistence->link_case( (string) $session['session_id'], $case_id );
 
 		do_action(
 			'prose_intake_complete',

@@ -6,6 +6,7 @@
  */
 
 use ProseApp\Courtflow;
+use ProseApp\Users;
 
 $workflow_title = Courtflow\default_workflow_title();
 ?>
@@ -29,11 +30,12 @@ $workflow_title = Courtflow\default_workflow_title();
 				</button>
 				<div class="cf-user-menu__dropdown" id="cf-user-menu-dropdown" hidden>
 					<span class="cf-user-menu__name"><?php echo esc_html( wp_get_current_user()->display_name ); ?></span>
+					<a href="<?php echo esc_url( Users\dashboard_url() ); ?>"><?php esc_html_e( 'Dashboard', 'prose-app' ); ?></a>
 					<a href="<?php echo esc_url( wp_logout_url( get_permalink() ) ); ?>"><?php esc_html_e( 'Log out', 'prose-app' ); ?></a>
 				</div>
 			</div>
 		<?php else : ?>
-			<a href="<?php echo esc_url( wp_login_url( get_permalink() ) ); ?>" class="cf-btn cf-btn--ghost cf-btn--sm"><?php esc_html_e( 'Log in', 'prose-app' ); ?></a>
+			<a href="<?php echo esc_url( Users\login_url( get_permalink() ) ); ?>" class="cf-btn cf-btn--ghost cf-btn--sm"><?php esc_html_e( 'Log in', 'prose-app' ); ?></a>
 		<?php endif; ?>
 	</div>
 </header>

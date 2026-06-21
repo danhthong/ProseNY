@@ -19,7 +19,7 @@ final class Database_Installer {
 	/**
 	 * Schema version stored in prose_core_db_version.
 	 */
-	public const DB_VERSION = '1.1.0';
+	public const DB_VERSION = '1.2.0';
 
 	/**
 	 * Option key for schema version.
@@ -46,6 +46,9 @@ final class Database_Installer {
 			'prose_case_packages',
 			'prose_case_forms',
 			'prose_case_events',
+			'prose_conversations',
+			'prose_messages',
+			'prose_documents',
 		);
 	}
 
@@ -87,6 +90,9 @@ final class Database_Installer {
 		$case_pkg  = self::table( 'prose_case_packages' );
 		$case_form = self::table( 'prose_case_forms' );
 		$case_evt  = self::table( 'prose_case_events' );
+		$conv      = self::table( 'prose_conversations' );
+		$msgs      = self::table( 'prose_messages' );
+		$user_docs = self::table( 'prose_documents' );
 
 		dbDelta(
 			"CREATE TABLE {$workflows} (
@@ -371,6 +377,57 @@ final class Database_Installer {
 				PRIMARY KEY  (event_id),
 				KEY idx_case_time (case_id, occurred_at),
 				KEY idx_type (event_type)
+			) {$charset};"
+		);
+
+		dbDelta(
+			"CREATE TABLE {$conv} (
+				conversation_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				user_id bigint(20) unsigned NOT NULL DEFAULT 0,
+				case_id bigint(20) unsigned NULL,
+				session_id varchar(36) NOT NULL DEFAULT '',
+				title varchar(191) NOT NULL DEFAULT '',
+				status varchar(20) NOT NULL DEFAULT 'active',
+				created_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+				updated_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+				PRIMARY KEY  (conversation_id),
+				UNIQUE KEY uq_session (session_id),
+				KEY idx_user (user_id, updated_at),
+				KEY idx_case (case_id)
+			) {$charset};"
+		);
+
+		dbDelta(
+			"CREATE TABLE {$msgs} (
+				message_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				conversation_id bigint(20) unsigned NOT NULL,
+				role varchar(16) NOT NULL DEFAULT 'user',
+				content longtext NOT NULL,
+				sequence int(11) NOT NULL DEFAULT 0,
+				created_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+				PRIMARY KEY  (message_id),
+				KEY idx_conversation (conversation_id, sequence)
+			) {$charset};"
+		);
+
+		dbDelta(
+			"CREATE TABLE {$user_docs} (
+				document_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+				user_id bigint(20) unsigned NOT NULL DEFAULT 0,
+				case_id bigint(20) unsigned NOT NULL DEFAULT 0,
+				conversation_id bigint(20) unsigned NULL,
+				document_type varchar(32) NOT NULL DEFAULT 'generated_pdf',
+				form_code varchar(64) NOT NULL DEFAULT '',
+				title varchar(191) NOT NULL DEFAULT '',
+				file_path varchar(255) NOT NULL DEFAULT '',
+				download_token varchar(64) NOT NULL DEFAULT '',
+				status varchar(20) NOT NULL DEFAULT 'pending',
+				created_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+				updated_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+				PRIMARY KEY  (document_id),
+				KEY idx_user (user_id, created_at),
+				KEY idx_case (case_id),
+				KEY idx_token (download_token)
 			) {$charset};"
 		);
 

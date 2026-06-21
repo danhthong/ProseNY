@@ -104,3 +104,51 @@ CREATE TABLE {prefix}prose_case_deadlines (
 -- * Guest sessions map to user_id = 0; link on login via session token import (future).
 -- * answers JSON stores the full case_profile structure from intake.
 -- * Plugin uninstall policy: data retained by default (see uninstall.php).
+
+-- User conversations (logged-in chat persistence)
+CREATE TABLE {prefix}prose_conversations (
+  conversation_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  user_id bigint(20) unsigned NOT NULL DEFAULT 0,
+  case_id bigint(20) unsigned NULL,
+  session_id varchar(36) NOT NULL DEFAULT '',
+  title varchar(191) NOT NULL DEFAULT '',
+  status varchar(20) NOT NULL DEFAULT 'active',
+  created_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  updated_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY (conversation_id),
+  UNIQUE KEY uq_session (session_id),
+  KEY idx_user (user_id, updated_at),
+  KEY idx_case (case_id)
+);
+
+-- Chat messages per conversation
+CREATE TABLE {prefix}prose_messages (
+  message_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  conversation_id bigint(20) unsigned NOT NULL,
+  role varchar(16) NOT NULL DEFAULT 'user',
+  content longtext NOT NULL,
+  sequence int(11) NOT NULL DEFAULT 0,
+  created_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY (message_id),
+  KEY idx_conversation (conversation_id, sequence)
+);
+
+-- User-facing generated/uploaded documents
+CREATE TABLE {prefix}prose_documents (
+  document_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  user_id bigint(20) unsigned NOT NULL DEFAULT 0,
+  case_id bigint(20) unsigned NOT NULL DEFAULT 0,
+  conversation_id bigint(20) unsigned NULL,
+  document_type varchar(32) NOT NULL DEFAULT 'generated_pdf',
+  form_code varchar(64) NOT NULL DEFAULT '',
+  title varchar(191) NOT NULL DEFAULT '',
+  file_path varchar(255) NOT NULL DEFAULT '',
+  download_token varchar(64) NOT NULL DEFAULT '',
+  status varchar(20) NOT NULL DEFAULT 'pending',
+  created_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  updated_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+  PRIMARY KEY (document_id),
+  KEY idx_user (user_id, created_at),
+  KEY idx_case (case_id),
+  KEY idx_token (download_token)
+);

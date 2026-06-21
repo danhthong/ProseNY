@@ -9,6 +9,8 @@ namespace ProSe\Core\Packet\Rest;
 
 use ProSe\Core\Loader;
 use ProSe\Core\Packet\Packet_Service;
+use ProSe\Core\Users\Auth_Gate;
+use ProSe\Core\Users\Entitlements;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -47,12 +49,34 @@ final class Packet_Rest_Controller {
 	private Packet_Service $service;
 
 	/**
+	 * Auth gate.
+	 *
+	 * @var Auth_Gate
+	 */
+	private Auth_Gate $auth_gate;
+
+	/**
+	 * Entitlements.
+	 *
+	 * @var Entitlements
+	 */
+	private Entitlements $entitlements;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Packet_Service|null $service Packet service.
+	 * @param Packet_Service|null $service      Packet service.
+	 * @param Auth_Gate|null      $auth_gate    Auth gate.
+	 * @param Entitlements|null   $entitlements Entitlements.
 	 */
-	public function __construct( ?Packet_Service $service = null ) {
-		$this->service = $service ?? new Packet_Service();
+	public function __construct(
+		?Packet_Service $service = null,
+		?Auth_Gate $auth_gate = null,
+		?Entitlements $entitlements = null
+	) {
+		$this->service      = $service ?? new Packet_Service();
+		$this->auth_gate    = $auth_gate ?? new Auth_Gate();
+		$this->entitlements = $entitlements ?? new Entitlements();
 	}
 
 	/**
@@ -133,7 +157,17 @@ final class Packet_Rest_Controller {
 	 * @param \WP_REST_Request $request Request.
 	 * @return \WP_REST_Response
 	 */
-	public function handle_download( \WP_REST_Request $request ): \WP_REST_Response {
+	public function handle_download( \WP_REST_Request $request ) {
+		$auth = $this->auth_gate->require_auth( Auth_Gate::ACTION_DOWNLOAD_PDF );
+
+		if ( is_wp_error( $auth ) ) {
+			return $this->auth_gate->rest_response( $auth );
+		}
+
+		if ( ! $this->entitlements->can_download_pdf( get_current_user_id(), array( 'source' => 'packet_download' ) ) ) {
+			return $this->entitlements->subscription_rest_response( $this->entitlements->subscription_required_error() );
+		}
+
 		$package_id = (string) $request->get_param( 'package_id' );
 		$result     = $this->service->download( $package_id );
 
