@@ -139,4 +139,20 @@ final class Courtflow_Session_Store {
 
 		return $session_id;
 	}
+
+	/**
+	 * Delete a session transient.
+	 *
+	 * @param string $session_id Session id.
+	 * @return bool
+	 */
+	public function delete( string $session_id ): bool {
+		$session_id = $this->sanitize_id( $session_id );
+
+		if ( '' === $session_id ) {
+			return false;
+		}
+
+		return delete_transient( self::TRANSIENT_PREFIX . $session_id );
+	}
 }

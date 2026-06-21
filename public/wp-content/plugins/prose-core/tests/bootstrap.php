@@ -394,6 +394,46 @@ if ( ! function_exists( 'apply_filters' ) ) {
 	}
 }
 
+if ( ! class_exists( 'WP_REST_Response' ) ) {
+	/**
+	 * Minimal REST response stub.
+	 */
+	class WP_REST_Response {
+		/**
+		 * @var mixed
+		 */
+		private $data;
+
+		/**
+		 * @var int
+		 */
+		private int $status;
+
+		/**
+		 * @param mixed $data   Response data.
+		 * @param int   $status HTTP status.
+		 */
+		public function __construct( $data = null, $status = 200 ) {
+			$this->data   = $data;
+			$this->status = (int) $status;
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function get_data() {
+			return $this->data;
+		}
+
+		/**
+		 * @return int
+		 */
+		public function get_status() {
+			return $this->status;
+		}
+	}
+}
+
 if ( ! class_exists( 'WP_Error' ) ) {
 	/**
 	 * Minimal WP_Error stub for unit tests.
@@ -402,15 +442,34 @@ if ( ! class_exists( 'WP_Error' ) ) {
 		/**
 		 * @var string
 		 */
+		private string $code;
+
+		/**
+		 * @var string
+		 */
 		private string $message;
+
+		/**
+		 * @var mixed
+		 */
+		private $data;
 
 		/**
 		 * @param string $code    Error code.
 		 * @param string $message Error message.
+		 * @param mixed  $data    Error data.
 		 */
-		public function __construct( $code = '', $message = '' ) {
-			unset( $code );
+		public function __construct( $code = '', $message = '', $data = null ) {
+			$this->code    = (string) $code;
 			$this->message = (string) $message;
+			$this->data    = $data;
+		}
+
+		/**
+		 * @return string
+		 */
+		public function get_error_code() {
+			return $this->code;
 		}
 
 		/**
@@ -418,6 +477,13 @@ if ( ! class_exists( 'WP_Error' ) ) {
 		 */
 		public function get_error_message() {
 			return $this->message;
+		}
+
+		/**
+		 * @return mixed
+		 */
+		public function get_error_data() {
+			return $this->data;
 		}
 	}
 }

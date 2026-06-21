@@ -16,6 +16,7 @@
 			<directory>modules/guidance/tests</directory>
 			<directory>modules/ai-intake/tests</directory>
 			<directory>modules/documents/tests</directory>
+			<directory>modules/users/tests</directory>
 		</testsuite>
 		<testsuite name="unit">
 			<directory>tests/unit</directory>
@@ -46,6 +47,9 @@
 		</testsuite>
 		<testsuite name="documents">
 			<directory>modules/documents/tests</directory>
+		</testsuite>
+		<testsuite name="users">
+			<directory>modules/users/tests</directory>
 		</testsuite>
 	</testsuites>
 </phpunit>

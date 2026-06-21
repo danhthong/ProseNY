@@ -113,6 +113,12 @@ final class Case_Repository extends Abstract_Repository {
 			'updated_at'          => $now,
 		);
 
+		$user_id = get_current_user_id();
+
+		if ( $user_id > 0 ) {
+			$row['user_id'] = $user_id;
+		}
+
 		if ( $state->case_id() > 0 ) {
 			$wpdb->update( $this->table(), $row, array( 'case_id' => $state->case_id() ) );
 		} else {
@@ -374,5 +380,101 @@ final class Case_Repository extends Abstract_Repository {
 		$rows = $wpdb->get_results( $wpdb->prepare( $sql, $case_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 
 		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
+	 * Assign a case to a user (guest claim / login migration).
+	 *
+	 * @param int $case_id Case ID.
+	 * @param int $user_id User ID.
+	 * @return bool
+	 */
+	public function assign_user( int $case_id, int $user_id ): bool {
+		global $wpdb;
+
+		if ( $case_id <= 0 || $user_id <= 0 ) {
+			return false;
+		}
+
+		return false !== $wpdb->update(
+			$this->table(),
+			array(
+				'user_id'    => $user_id,
+				'updated_at' => $this->now(),
+			),
+			array( 'case_id' => $case_id )
+		);
+	}
+
+	/**
+	 * Find the active case for a user.
+	 *
+	 * @param int $user_id User ID.
+	 * @return array<string, mixed>|null
+	 */
+	public function find_active_for_user( int $user_id ): ?array {
+		global $wpdb;
+
+		if ( $user_id <= 0 ) {
+			return null;
+		}
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT * FROM {$this->table()} WHERE user_id = %d AND status = %s ORDER BY updated_at DESC LIMIT 1",
+				$user_id,
+				'active'
+			)
+		);
+
+		if ( ! $row instanceof \stdClass ) {
+			return null;
+		}
+
+		return array(
+			'case_id'             => (int) $row->case_id,
+			'title'               => $this->case_title( $row ),
+			'progress_percentage' => (int) $row->progress_percentage,
+			'current_stage'       => $this->stage_label( (string) $row->current_node ),
+			'status'              => (string) $row->status,
+			'workflow_key'        => (string) $row->workflow_key,
+		);
+	}
+
+	/**
+	 * Derive a display title for a case row.
+	 *
+	 * @param object $row Case row.
+	 * @return string
+	 */
+	private function case_title( object $row ): string {
+		$title = trim( (string) ( $row->title ?? '' ) );
+
+		if ( '' !== $title ) {
+			return $title;
+		}
+
+		$workflow = trim( (string) ( $row->workflow_key ?? '' ) );
+
+		if ( '' !== $workflow ) {
+			return ucwords( str_replace( '_', ' ', $workflow ) );
+		}
+
+		return __( 'Your case', 'prose-core' );
+	}
+
+	/**
+	 * Human-readable stage label.
+	 *
+	 * @param string $node Node key.
+	 * @return string
+	 */
+	private function stage_label( string $node ): string {
+		if ( '' === $node ) {
+			return __( 'Intake', 'prose-core' );
+		}
+
+		return ucwords( str_replace( '_', ' ', $node ) );
 	}
 }

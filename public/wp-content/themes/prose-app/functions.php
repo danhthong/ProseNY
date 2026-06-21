@@ -16,6 +16,7 @@ require_once get_template_directory() . '/inc/enqueue.php';
 require_once get_template_directory() . '/inc/interactivity.php';
 require_once get_template_directory() . '/inc/forms.php';
 require_once get_template_directory() . '/inc/courtflow/bootstrap.php';
+require_once get_template_directory() . '/inc/users.php';
 
 /**
  * Theme setup.
