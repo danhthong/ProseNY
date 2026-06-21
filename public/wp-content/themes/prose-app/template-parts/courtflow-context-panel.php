@@ -80,13 +80,25 @@
 		<ul id="courtflow-missing-fields" class="cf-missing-list" hidden></ul>
 		<p class="cf-empty cf-empty--inline" id="cf-missing-empty" hidden></p>
 
+		<details class="cf-accordion cf-accordion--open" id="cf-accordion-next-steps" open>
+			<summary class="cf-accordion__trigger"><?php esc_html_e( 'Next steps', 'prose-app' ); ?></summary>
+			<div class="cf-accordion__body">
+				<p class="cf-empty cf-empty--inline" id="cf-next-steps-empty"><?php esc_html_e( 'Complete intake to see your next procedural step.', 'prose-app' ); ?></p>
+				<ul class="cf-next-steps" id="cf-next-steps-list"></ul>
+			</div>
+		</details>
+
 		<details class="cf-accordion">
 			<summary class="cf-accordion__trigger"><?php esc_html_e( 'Documents', 'prose-app' ); ?></summary>
 			<div class="cf-accordion__body">
+				<div id="cf-stage-forms" class="cf-stage-forms"></div>
 				<ul id="courtflow-documents-list" class="cf-documents-list"></ul>
 				<div class="cf-empty cf-empty--inline" id="cf-documents-empty">
 					<p><?php esc_html_e( 'No documents yet. Complete intake to see required forms.', 'prose-app' ); ?></p>
 				</div>
+				<button type="button" id="cf-complete-stage" class="cf-btn cf-btn--secondary cf-btn--block" hidden>
+					<?php esc_html_e( "I've completed this step", 'prose-app' ); ?>
+				</button>
 			</div>
 		</details>
 	</div>

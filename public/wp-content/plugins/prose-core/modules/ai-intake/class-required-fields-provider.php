@@ -27,11 +27,12 @@ final class Required_Fields_Provider {
 	 * @var array<string, int>
 	 */
 	private const ROUTING_PRIORITIES = array(
-		'children'          => 95,
-		'spouse_agrees'     => 90,
-		'spouse_responded'  => 85,
-		'active_divorce'    => 80,
-		'protection_needed' => 75,
+		'children'                  => 95,
+		'spouse_agrees'             => 90,
+		'marital_property_resolved' => 88,
+		'spouse_responded'          => 85,
+		'active_divorce'            => 80,
+		'protection_needed'         => 75,
 	);
 
 	/**
@@ -312,11 +313,12 @@ final class Required_Fields_Provider {
 	 */
 	private function resolution_question( string $key ): string {
 		$map = array(
-			'children'          => 'Do you have any children under 21?',
-			'spouse_agrees'     => 'Does your spouse agree to the divorce?',
-			'spouse_responded'  => 'Did your spouse respond to the divorce papers?',
-			'active_divorce'    => 'Is there an active divorce case?',
-			'protection_needed' => 'Do you need protection from someone who has harmed or threatened you?',
+			'children'                  => 'Do you have any children under 21?',
+			'spouse_agrees'             => 'Does your spouse agree to the divorce?',
+			'marital_property_resolved' => 'Do you and your spouse agree on property and finances?',
+			'spouse_responded'          => 'Did your spouse respond to the divorce papers?',
+			'active_divorce'            => 'Is there an active divorce case?',
+			'protection_needed'         => 'Do you need protection from someone who has harmed or threatened you?',
 		);
 
 		return (string) ( $map[ $key ] ?? 'Could you tell me a bit more about your situation?' );
@@ -329,7 +331,7 @@ final class Required_Fields_Provider {
 	 * @return string
 	 */
 	private function infer_type( string $key ): string {
-		if ( in_array( $key, array( 'children', 'spouse_agrees', 'spouse_responded', 'active_divorce', 'protection_needed' ), true ) ) {
+		if ( in_array( $key, array( 'children', 'spouse_agrees', 'marital_property_resolved', 'spouse_responded', 'active_divorce', 'protection_needed' ), true ) ) {
 			return 'boolean';
 		}
 

@@ -16,6 +16,7 @@
 			<directory>modules/guidance/tests</directory>
 			<directory>modules/ai-intake/tests</directory>
 			<directory>modules/documents/tests</directory>
+			<directory>modules/forms/tests</directory>
 			<directory>modules/users/tests</directory>
 		</testsuite>
 		<testsuite name="unit">

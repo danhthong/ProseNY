@@ -77,10 +77,12 @@ final class Merged_Blank_Pdf_Service {
 	/**
 	 * Read-only availability for a workflow (never generates).
 	 *
-	 * @param string $workflow Workflow key.
+	 * @param string               $workflow   Workflow key.
+	 * @param string|null          $stage_slug Optional stage slug to scope forms.
+	 * @param array<string, mixed> $context    Optional facts for conditional forms.
 	 * @return array<string, mixed>
 	 */
-	public function status( string $workflow ): array {
+	public function status( string $workflow, ?string $stage_slug = null, array $context = array() ): array {
 		$workflow = \sanitize_key( $workflow );
 
 		if ( '' === $workflow ) {
@@ -90,8 +92,8 @@ final class Merged_Blank_Pdf_Service {
 			);
 		}
 
-		$package_id   = $this->package_id( $workflow );
-		$sources      = $this->resolve_sources( $workflow );
+		$package_id   = $this->package_id( $workflow, $stage_slug );
+		$sources      = $this->resolve_sources( $workflow, $stage_slug, $context );
 		$has_sources  = ! empty( $sources['paths'] );
 		$already_made = $this->store->pdf_exists( $package_id );
 
@@ -107,11 +109,13 @@ final class Merged_Blank_Pdf_Service {
 	/**
 	 * Build (or reuse) the merged blank PDF for a workflow.
 	 *
-	 * @param string $workflow Workflow key.
-	 * @param bool   $force    Force a rebuild even when cached.
+	 * @param string               $workflow   Workflow key.
+	 * @param bool                 $force      Force a rebuild even when cached.
+	 * @param string|null          $stage_slug Optional stage slug to scope forms.
+	 * @param array<string, mixed> $context    Optional facts for conditional forms.
 	 * @return array<string, mixed>
 	 */
-	public function build( string $workflow, bool $force = false ): array {
+	public function build( string $workflow, bool $force = false, ?string $stage_slug = null, array $context = array() ): array {
 		$workflow = \sanitize_key( $workflow );
 
 		if ( '' === $workflow ) {
@@ -128,15 +132,15 @@ final class Merged_Blank_Pdf_Service {
 			);
 		}
 
-		$package_id = $this->package_id( $workflow );
+		$package_id = $this->package_id( $workflow, $stage_slug );
 
 		if ( ! $force && $this->store->pdf_exists( $package_id ) ) {
-			$sources = $this->resolve_sources( $workflow );
+			$sources = $this->resolve_sources( $workflow, $stage_slug, $context );
 
-			return $this->success( $workflow, $package_id, $sources );
+			return $this->success( $workflow, $package_id, $sources, $stage_slug );
 		}
 
-		$sources = $this->resolve_sources( $workflow );
+		$sources = $this->resolve_sources( $workflow, $stage_slug, $context );
 
 		if ( empty( $sources['paths'] ) ) {
 			return $this->failure(
@@ -155,7 +159,7 @@ final class Merged_Blank_Pdf_Service {
 			return $this->failure( __( 'Could not save the merged PDF.', 'prose-core' ) );
 		}
 
-		return $this->success( $workflow, $package_id, $sources );
+		return $this->success( $workflow, $package_id, $sources, $stage_slug );
 	}
 
 	/**
@@ -268,22 +272,28 @@ final class Merged_Blank_Pdf_Service {
 	/**
 	 * Resolve the ordered source PDF paths for a workflow.
 	 *
-	 * @param string $workflow Workflow key.
+	 * @param string               $workflow   Workflow key.
+	 * @param string|null          $stage_slug Optional stage slug.
+	 * @param array<string, mixed> $context    Optional facts for conditional forms.
 	 * @return array{paths: array<int, string>, missing: array<int, string>, codes: array<int, string>}
 	 */
-	private function resolve_sources( string $workflow ): array {
-		$composite = $this->composite_path( $workflow );
+	private function resolve_sources( string $workflow, ?string $stage_slug = null, array $context = array() ): array {
+		$stage_slug = null !== $stage_slug ? sanitize_key( $stage_slug ) : null;
 
-		if ( '' !== $composite ) {
-			return array(
-				'paths'   => array( $composite ),
-				'missing' => array(),
-				'codes'   => array(),
-			);
+		if ( null === $stage_slug || '' === $stage_slug ) {
+			$composite = $this->composite_path( $workflow );
+
+			if ( '' !== $composite ) {
+				return array(
+					'paths'   => array( $composite ),
+					'missing' => array(),
+					'codes'   => array(),
+				);
+			}
 		}
 
 		$definition = $this->workflows->by_key( $workflow );
-		$codes      = is_array( $definition ) ? $this->workflows->required_form_codes( $definition ) : array();
+		$codes      = $this->form_codes_for_scope( $workflow, $definition, $stage_slug, $context );
 
 		$paths   = array();
 		$missing = array();
@@ -495,11 +505,51 @@ final class Merged_Blank_Pdf_Service {
 	/**
 	 * Stored package id for a workflow.
 	 *
-	 * @param string $workflow Workflow key.
+	 * Form codes for a workflow, optionally scoped to one stage.
+	 *
+	 * @param string                    $workflow   Workflow key.
+	 * @param array<string, mixed>|null $definition Workflow definition.
+	 * @param string|null               $stage_slug Stage slug.
+	 * @param array<string, mixed>      $context    Optional facts for conditional forms.
+	 * @return array<int, string>
+	 */
+	private function form_codes_for_scope( string $workflow, ?array $definition, ?string $stage_slug, array $context = array() ): array {
+		if ( ! is_array( $definition ) ) {
+			return array();
+		}
+
+		if ( null === $stage_slug || '' === $stage_slug ) {
+			return $this->workflows->required_form_codes( $definition );
+		}
+
+		$progression = new \ProSe\Core\Forms\Engine\Workflow_Progression_Service( $this->workflows );
+		$forms       = $progression->get_stage_forms( $workflow, $stage_slug, $context );
+		$codes       = array();
+
+		foreach ( $forms as $form ) {
+			$code = trim( (string) ( $form['code'] ?? '' ) );
+
+			if ( '' !== $code ) {
+				$codes[] = $code;
+			}
+		}
+
+		return $codes;
+	}
+
+	/**
+	 * @param string      $workflow   Workflow key.
+	 * @param string|null $stage_slug Optional stage slug.
 	 * @return string
 	 */
-	private function package_id( string $workflow ): string {
-		return self::ID_PREFIX . $workflow;
+	private function package_id( string $workflow, ?string $stage_slug = null ): string {
+		$id = self::ID_PREFIX . $workflow;
+
+		if ( null !== $stage_slug && '' !== sanitize_key( $stage_slug ) ) {
+			$id .= '-' . sanitize_key( $stage_slug );
+		}
+
+		return $id;
 	}
 
 	/**
@@ -508,16 +558,19 @@ final class Merged_Blank_Pdf_Service {
 	 * @param string                                                                    $workflow   Workflow key.
 	 * @param string                                                                    $package_id Stored package id.
 	 * @param array{paths: array<int, string>, missing: array<int, string>, codes: array<int, string>} $sources Resolved sources.
+	 * @param string|null                                                               $stage_slug Stage slug when scoped.
 	 * @return array<string, mixed>
 	 */
-	private function success( string $workflow, string $package_id, array $sources ): array {
+	private function success( string $workflow, string $package_id, array $sources, ?string $stage_slug = null ): array {
 		return array(
 			'success'      => true,
 			'workflow'     => $workflow,
+			'stage'        => null !== $stage_slug ? sanitize_key( $stage_slug ) : '',
 			'download_url' => $this->store->pdf_url( $package_id ),
 			'form_count'   => count( $sources['codes'] ),
 			'merged_count' => count( $sources['paths'] ),
 			'missing'      => $sources['missing'],
+			'form_codes'   => $sources['codes'],
 		);
 	}
 

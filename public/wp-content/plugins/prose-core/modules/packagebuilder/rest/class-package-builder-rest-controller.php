@@ -12,6 +12,7 @@
 
 namespace ProSe\Core\PackageBuilder\Rest;
 
+use ProSe\Core\Forms\Engine\Stage_Form_Presenter;
 use ProSe\Core\Loader;
 use ProSe\Core\PackageBuilder\Merged_Blank_Pdf_Service;
 use ProSe\Core\PackageBuilder\Package_Builder;
@@ -188,6 +189,14 @@ final class Package_Builder_Rest_Controller {
 					return \sanitize_key( (string) $value );
 				},
 			),
+			'stage'           => array(
+				'type'              => 'string',
+				'required'          => false,
+				'default'           => '',
+				'sanitize_callback' => static function ( $value ): string {
+					return \sanitize_key( (string) $value );
+				},
+			),
 		);
 	}
 
@@ -228,7 +237,73 @@ final class Package_Builder_Rest_Controller {
 	 * @return \WP_REST_Response
 	 */
 	public function handle_merged_pdf( \WP_REST_Request $request ): \WP_REST_Response {
-		return rest_ensure_response( $this->merged->build( (string) $request->get_param( 'workflow' ) ) );
+		$input    = $this->input( $request );
+		$workflow = (string) $input['workflow'];
+		$facts    = is_array( $input['facts'] ) ? $input['facts'] : array();
+		$stage    = sanitize_key( (string) $request->get_param( 'stage' ) );
+
+		if ( '' === $stage && $this->stage_gating_enabled() ) {
+			$stage = $this->resolve_current_stage( $workflow, $facts );
+		}
+
+		if ( $this->stage_gating_enabled() && '' === $stage ) {
+			return rest_ensure_response(
+				array(
+					'success' => false,
+					'error'   => array(
+						'message' => __( 'Complete intake to download forms for your current procedural step.', 'prose-core' ),
+					),
+				)
+			);
+		}
+
+		$stage_slug = '' !== $stage ? $stage : null;
+
+		return rest_ensure_response(
+			$this->merged->build( $workflow, false, $stage_slug, $facts )
+		);
+	}
+
+	/**
+	 * Whether stage-gated form disclosure is active.
+	 *
+	 * @return bool
+	 */
+	private function stage_gating_enabled(): bool {
+		return (bool) apply_filters( 'prose_stage_gated_forms', true );
+	}
+
+	/**
+	 * Resolve the current procedural stage slug from workflow facts.
+	 *
+	 * @param string               $workflow Workflow key.
+	 * @param array<string, mixed> $facts    Plain facts.
+	 * @return string Stage slug or empty string.
+	 */
+	private function resolve_current_stage( string $workflow, array $facts ): string {
+		if ( '' === $workflow ) {
+			return '';
+		}
+
+		$context = ( new Stage_Form_Presenter() )->present(
+			array(
+				'workflow'        => $workflow,
+				'facts'           => $facts,
+				'intake_complete' => true,
+			)
+		);
+
+		if ( empty( $context['forms_visible'] ) ) {
+			return '';
+		}
+
+		$current = $context['current_stage'] ?? null;
+
+		if ( ! is_array( $current ) ) {
+			return '';
+		}
+
+		return sanitize_key( (string) ( $current['id'] ?? '' ) );
 	}
 
 	/**

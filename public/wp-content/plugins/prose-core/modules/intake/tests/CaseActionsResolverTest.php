@@ -39,19 +39,15 @@ class CaseActionsResolverTest extends TestCase {
 		);
 
 		$this->assertTrue( $actions['case_known'] );
-		$this->assertTrue( $actions['show_documents'] );
+		$this->assertFalse( $actions['show_documents'] );
 		$this->assertFalse( $actions['intake_complete'] );
-		$this->assertNotEmpty( $actions['workflow'] );
-
-		if ( $actions['workflow_resolved'] && $actions['forms_matched'] > 0 ) {
-			$this->assertTrue( $actions['download_enabled'] );
-		}
+		$this->assertFalse( $actions['download_enabled'] );
 	}
 
 	/**
-	 * Blank form download is available once workflow forms are matched, without full intake.
+	 * Download stays disabled until intake completes and the current stage unlocks forms.
 	 */
-	public function test_download_enabled_when_workflow_resolved_without_full_intake(): void {
+	public function test_download_disabled_before_intake_complete(): void {
 		$resolver = new Case_Actions_Resolver();
 		$partial  = $resolver->resolve(
 			array(
@@ -68,8 +64,8 @@ class CaseActionsResolverTest extends TestCase {
 
 		$this->assertFalse( $partial['intake_complete'] );
 		$this->assertTrue( $partial['workflow_resolved'] );
-		$this->assertGreaterThan( 0, $partial['forms_matched'] );
-		$this->assertTrue( $partial['download_enabled'] );
+		$this->assertFalse( $partial['download_enabled'] );
+		$this->assertFalse( $partial['stage_context']['forms_visible'] );
 
 		$complete = $resolver->resolve(
 			array(
@@ -85,13 +81,14 @@ class CaseActionsResolverTest extends TestCase {
 		);
 
 		$this->assertTrue( $complete['intake_complete'] );
-		$this->assertTrue( $complete['download_enabled'] );
+		$this->assertTrue( $complete['stage_context']['forms_visible'] );
+		$this->assertGreaterThan( 0, $complete['forms_matched'] );
 	}
 
 	/**
-	 * Adoption workflow enables download when forms are listed, even before PDFs are ready.
+	 * Adoption workflow keeps download gated until intake completes.
 	 */
-	public function test_adoption_download_enabled_when_forms_matched(): void {
+	public function test_adoption_download_gated_until_intake_complete(): void {
 		$resolver = new Case_Actions_Resolver();
 		$actions  = $resolver->resolve(
 			array(
@@ -107,8 +104,7 @@ class CaseActionsResolverTest extends TestCase {
 
 		$this->assertSame( 'adoption_nyc', $actions['workflow'] );
 		$this->assertTrue( $actions['workflow_resolved'] );
-		$this->assertGreaterThanOrEqual( 2, $actions['forms_matched'] );
-		$this->assertTrue( $actions['download_enabled'] );
+		$this->assertFalse( $actions['download_enabled'] );
 	}
 
 	/**

@@ -8,6 +8,11 @@
 namespace ProSe\Core\Intake\Rest;
 
 use ProSe\Core\Ai_Intake\AI_Intake_Service;
+use ProSe\Core\Forms\Database\Repositories\Case_Repository;
+use ProSe\Core\Forms\Engine\Case_Catalog;
+use ProSe\Core\Forms\Engine\Case_Service;
+use ProSe\Core\Forms\Engine\Case_State;
+use ProSe\Core\Forms\Engine\Stage_Form_Presenter;
 use ProSe\Core\Intake\Case_Actions_Resolver;
 use ProSe\Core\Loader;
 use ProSe\Core\PackageBuilder\Merged_Blank_Pdf_Service;
@@ -109,6 +114,20 @@ final class Courtflow_Sessions_Rest_Controller {
 	private User_Document_Repository $user_documents;
 
 	/**
+	 * Stage form presenter.
+	 *
+	 * @var Stage_Form_Presenter
+	 */
+	private Stage_Form_Presenter $stage_presenter;
+
+	/**
+	 * Case service.
+	 *
+	 * @var Case_Service
+	 */
+	private Case_Service $case_service;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param AI_Intake_Service|null           $service     AI intake service.
@@ -147,6 +166,8 @@ final class Courtflow_Sessions_Rest_Controller {
 		$this->entitlements             = $entitlements ?? new Entitlements();
 		$this->conversation_persistence = $conversation_persistence ?? new Conversation_Persistence();
 		$this->user_documents           = $user_documents ?? new User_Document_Repository();
+		$this->stage_presenter          = new Stage_Form_Presenter();
+		$this->case_service             = new Case_Service( new Case_Repository() );
 	}
 
 	/**
@@ -250,6 +271,28 @@ final class Courtflow_Sessions_Rest_Controller {
 					'methods'             => \WP_REST_Server::CREATABLE,
 					'callback'            => array( $this, 'post_documents' ),
 					'permission_callback' => array( $this, 'can_access' ),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/sessions/(?P<id>[a-f0-9-]{8,64})/stages/complete',
+			array(
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'complete_stage' ),
+				'permission_callback' => array( $this, 'can_access' ),
+				'args'                => array(
+					'stage' => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'event' => array(
+						'type'              => 'string',
+						'required'          => false,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
 				),
 			)
 		);
@@ -487,7 +530,29 @@ final class Courtflow_Sessions_Rest_Controller {
 			);
 		}
 
-		$build = $this->merged_pdfs->build( $workflow );
+		$stage_context = is_array( $context['stage_context'] ?? null ) ? $context['stage_context'] : array();
+		$current_stage = is_array( $stage_context['current_stage'] ?? null )
+			? (string) ( $stage_context['current_stage']['id'] ?? '' )
+			: null;
+
+		if ( empty( $stage_context['forms_visible'] ) ) {
+			return new \WP_REST_Response(
+				array_merge(
+					$this->mapper->map_generation_blocked( $session ),
+					array(
+						'message' => __( 'Complete intake and reach the current procedural stage before generating documents.', 'prose-core' ),
+					)
+				),
+				422
+			);
+		}
+
+		$build = $this->merged_pdfs->build(
+			$workflow,
+			false,
+			$current_stage,
+			is_array( $context['facts'] ?? null ) ? (array) $context['facts'] : array()
+		);
 
 		if ( empty( $build['success'] ) ) {
 			$message = (string) ( $build['error']['message'] ?? __( 'Could not generate the filing package.', 'prose-core' ) );
@@ -504,12 +569,25 @@ final class Courtflow_Sessions_Rest_Controller {
 			);
 		}
 
+		$stage_title = is_array( $stage_context['current_stage'] ?? null )
+			? trim( (string) ( $stage_context['current_stage']['title'] ?? $current_stage ) )
+			: '';
+		$doc_title   = '' !== $stage_title
+			? sprintf(
+				/* translators: %s: procedural stage title */
+				__( 'Blank forms — %s', 'prose-core' ),
+				$stage_title
+			)
+			: __( 'Blank filing package', 'prose-core' );
+
 		$documents = array(
 			array(
 				'form_slug'    => $workflow,
-				'title'        => __( 'Blank filing package', 'prose-core' ),
+				'title'        => $doc_title,
 				'download_url' => (string) ( $build['download_url'] ?? '' ),
 				'status'       => 'ready',
+				'stage'        => (string) ( $build['stage'] ?? $current_stage ?? '' ),
+				'form_codes'   => is_array( $build['form_codes'] ?? null ) ? $build['form_codes'] : array(),
 			),
 		);
 
@@ -547,6 +625,106 @@ final class Courtflow_Sessions_Rest_Controller {
 				'message'   => __( 'Your blank filing package is ready to download.', 'prose-core' ),
 				'documents' => $documents,
 				'forms'     => $context['required_forms'] ?? array(),
+				'stage_context' => $context['stage_context'] ?? array(),
+			)
+		);
+	}
+
+	/**
+	 * Mark the current procedural stage complete and advance the case.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function complete_stage( \WP_REST_Request $request ) {
+		$session_id = sanitize_text_field( (string) $request->get_param( 'id' ) );
+		$session    = $this->load_session( $session_id );
+
+		if ( is_wp_error( $session ) ) {
+			return $session;
+		}
+
+		$stage = sanitize_key( (string) $request->get_param( 'stage' ) );
+
+		if ( '' === $stage ) {
+			return new \WP_Error(
+				'courtflow_stage_required',
+				__( 'A stage identifier is required.', 'prose-core' ),
+				array( 'status' => 400 )
+			);
+		}
+
+		$context = $this->mapper->map_session_state( $session );
+		$actions = is_array( $context['actions'] ?? null ) ? $context['actions'] : array();
+
+		if ( empty( $actions['intake_complete'] ) ) {
+			return new \WP_REST_Response(
+				array(
+					'message' => __( 'Complete intake before advancing procedural stages.', 'prose-core' ),
+				),
+				422
+			);
+		}
+
+		$workflow = trim( (string) ( $actions['workflow'] ?? $context['facts']['case']['workflow'] ?? '' ) );
+
+		if ( '' === $workflow ) {
+			return new \WP_REST_Response(
+				array(
+					'message' => __( 'A resolved workflow is required.', 'prose-core' ),
+				),
+				422
+			);
+		}
+
+		$facts         = is_array( $context['facts']['case'] ?? null ) ? $context['facts']['case'] : array();
+		$current_node  = trim( (string) ( $session['procedural_node'] ?? '' ) );
+		$case_id       = (int) ( $session['case_id'] ?? 0 );
+		$trigger       = $this->stage_presenter->completion_trigger( $workflow, $stage, $facts );
+		$event         = sanitize_text_field( (string) $request->get_param( 'event' ) );
+
+		if ( $case_id > 0 ) {
+			$case_state = $this->case_service->get_case( $case_id );
+
+			if ( $case_state instanceof Case_State ) {
+				$current_node = $case_state->current_node();
+
+				if ( null !== $trigger && Case_Catalog::COND_PACKAGE === $trigger['kind'] ) {
+					$case_state = $this->case_service->complete_package( $case_state, $trigger['value'] );
+				} elseif ( '' !== $event || ( null !== $trigger && Case_Catalog::COND_EVENT === $trigger['kind'] ) ) {
+					$event_type = '' !== $event ? $event : $trigger['value'];
+					$case_state = $this->case_service->record_event( $case_state, $event_type );
+				}
+
+				$advanced = $this->stage_presenter->advance_after_stage( $workflow, $current_node, $stage, $facts );
+
+				if ( $advanced !== $current_node ) {
+					$case_state->set_current_node( $advanced );
+					( new Case_Repository() )->save_state( $case_state );
+				}
+
+				$current_node                 = $case_state->current_node();
+				$session['case_current_node'] = $current_node;
+			}
+		} else {
+			if ( '' === $current_node ) {
+				$current_node = trim( (string) ( $context['stage_context']['procedural_node'] ?? '' ) );
+			}
+
+			$current_node = $this->stage_presenter->advance_after_stage( $workflow, $current_node, $stage, $facts );
+		}
+
+		$session['procedural_node'] = $current_node;
+		$this->store->save( $session_id, $session );
+
+		$updated = $this->mapper->map_session_state( $session );
+
+		return rest_ensure_response(
+			array(
+				'message'       => __( 'Stage marked complete. Here are the forms for your next step.', 'prose-core' ),
+				'stage_context' => $updated['stage_context'] ?? array(),
+				'current_node'  => $updated['current_node'] ?? array(),
+				'next_steps'    => $updated['next_steps'] ?? array(),
 			)
 		);
 	}

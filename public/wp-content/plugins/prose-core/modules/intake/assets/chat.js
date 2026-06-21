@@ -211,6 +211,10 @@
 				return false;
 			}
 
+			if ( actions.stage_context && actions.stage_context.forms_visible === false ) {
+				return false;
+			}
+
 			if ( actions.download_enabled === true ) {
 				return true;
 			}
@@ -405,6 +409,11 @@
 				return Promise.resolve();
 			}
 
+			var actions = session.actions || {};
+			var stageContext = actions.stage_context || {};
+			var currentStage = stageContext.current_stage || {};
+			var stage = currentStage.id || '';
+
 			return fetch( CONFIG.mergedPdfUrl, {
 				method: 'POST',
 				headers: {
@@ -413,6 +422,7 @@
 				},
 				body: JSON.stringify( {
 					workflow: workflow,
+					stage: stage,
 					conversation_id: session.conversation_id || '',
 					facts: ( session.case_profile && session.case_profile.facts ) || {}
 				} )

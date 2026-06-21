@@ -86,6 +86,7 @@ final class Decision_Key_Catalog {
 		if ( $has_divorce ) {
 			$keys[] = 'children';
 			$keys[] = 'spouse_agrees';
+			$keys[] = 'marital_property_resolved';
 
 			if ( in_array( 'default_divorce_nyc', $candidate_keys, true ) ) {
 				$keys[] = 'spouse_responded';

@@ -9,6 +9,7 @@ namespace ProSe\Core\Intake\Rest;
 
 use ProSe\Core\Ai_Intake\Intake_State;
 use ProSe\Core\Ai_Intake\Required_Fields_Provider;
+use ProSe\Core\Forms\Engine\Stage_Form_Presenter;
 use ProSe\Core\Intake\Case_Actions_Resolver;
 use ProSe\Core\Procedural\Procedural_Navigator;
 use ProSe\Core\Routing\Workflow_Catalog;
@@ -51,23 +52,33 @@ final class Courtflow_Response_Mapper {
 	private Procedural_Navigator $navigator;
 
 	/**
+	 * Stage form presenter.
+	 *
+	 * @var Stage_Form_Presenter
+	 */
+	private Stage_Form_Presenter $stage_presenter;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Required_Fields_Provider|null $fields    Fields provider.
-	 * @param Case_Actions_Resolver|null    $actions   Actions resolver.
-	 * @param Workflow_Catalog|null         $workflows Workflow catalog.
-	 * @param Procedural_Navigator|null     $navigator Procedural navigator.
+	 * @param Required_Fields_Provider|null $fields           Fields provider.
+	 * @param Case_Actions_Resolver|null    $actions          Actions resolver.
+	 * @param Workflow_Catalog|null         $workflows        Workflow catalog.
+	 * @param Procedural_Navigator|null     $navigator        Procedural navigator.
+	 * @param Stage_Form_Presenter|null     $stage_presenter  Stage form presenter.
 	 */
 	public function __construct(
 		?Required_Fields_Provider $fields = null,
 		?Case_Actions_Resolver $actions = null,
 		?Workflow_Catalog $workflows = null,
-		?Procedural_Navigator $navigator = null
+		?Procedural_Navigator $navigator = null,
+		?Stage_Form_Presenter $stage_presenter = null
 	) {
-		$this->fields    = $fields ?? new Required_Fields_Provider();
-		$this->actions   = $actions ?? new Case_Actions_Resolver();
-		$this->workflows = $workflows ?? new Workflow_Catalog();
-		$this->navigator = $navigator ?? new Procedural_Navigator();
+		$this->fields          = $fields ?? new Required_Fields_Provider();
+		$this->actions         = $actions ?? new Case_Actions_Resolver();
+		$this->workflows       = $workflows ?? new Workflow_Catalog();
+		$this->navigator       = $navigator ?? new Procedural_Navigator();
+		$this->stage_presenter = $stage_presenter ?? new Stage_Form_Presenter();
 	}
 
 	/**
@@ -84,6 +95,7 @@ final class Courtflow_Response_Mapper {
 			array(
 				'workflow_state' => array(
 					'required_forms' => $context['required_forms'],
+					'stage_context'  => $context['stage_context'],
 					'current_node'   => $context['current_node'],
 					'requirements'   => $context['requirements'],
 				),
@@ -116,6 +128,7 @@ final class Courtflow_Response_Mapper {
 				'newly_captured'  => $this->map_newly_captured( $applied_updates ),
 				'workflow_state'  => array(
 					'required_forms' => $context['required_forms'],
+					'stage_context'  => $context['stage_context'],
 					'current_node'   => $context['current_node'],
 					'requirements'   => $context['requirements'],
 				),
@@ -180,19 +193,22 @@ final class Courtflow_Response_Mapper {
 		$contradictions = is_array( $interpret['contradictions'] ?? null ) ? $interpret['contradictions'] : array();
 		$requirements   = $this->build_requirements( $missing, $completion, $workflow, $actions, $contradictions );
 		$facts          = $this->build_facts( $case_profile, $interpret, $actions );
-		$required_forms = $this->required_forms_for_workflow( $workflow );
-		$current_node   = $this->current_node( $completion, $workflow, $missing, $facts );
+		$stage_context  = $this->build_stage_context( $session, $workflow, $facts, $actions, $interpret );
+		$required_forms = $this->required_forms_from_context( $stage_context );
+		$current_node   = $this->current_node( $completion, $workflow, $missing, $facts, $stage_context, $session );
 		$procedural     = $this->procedural_navigation( $session, $case_profile, $interpret, $actions, $current_node );
+		$next_steps     = $this->sanitize_next_steps( $procedural['next_steps'] ?? array(), $stage_context );
 
 		return array(
 			'facts'          => $facts,
 			'validation'     => $this->build_validation( $contradictions, $requirements ),
 			'requirements'   => $requirements,
 			'required_forms' => $required_forms,
+			'stage_context'  => $stage_context,
 			'current_node'   => $current_node,
 			'actions'        => $actions,
 			'court_routing'  => is_array( $actions['court_routing'] ?? null ) ? $actions['court_routing'] : array(),
-			'next_steps'     => $procedural['next_steps'] ?? array(),
+			'next_steps'     => $next_steps,
 			'procedural'     => $procedural,
 		);
 	}
@@ -351,13 +367,92 @@ final class Courtflow_Response_Mapper {
 			return array();
 		}
 
-		$definition = $this->workflows->by_key( $workflow );
+		return $this->stage_presenter->current_stage_form_codes(
+			array(
+				'workflow'        => $workflow,
+				'intake_complete' => true,
+			)
+		);
+	}
 
-		if ( null === $definition ) {
-			return array();
+	/**
+	 * @param array<string, mixed> $stage_context Stage context DTO.
+	 * @return array<int, string>
+	 */
+	private function required_forms_from_context( array $stage_context ): array {
+		$codes = array();
+
+		foreach ( (array) ( $stage_context['stage_forms'] ?? array() ) as $form ) {
+			$code = trim( (string) ( $form['code'] ?? '' ) );
+
+			if ( '' !== $code ) {
+				$codes[] = $code;
+			}
 		}
 
-		return $this->workflows->required_form_codes( $definition );
+		return $codes;
+	}
+
+	/**
+	 * @param array<string, mixed> $session  Session.
+	 * @param string               $workflow Workflow key.
+	 * @param array<string, mixed> $facts    Facts block.
+	 * @param array<string, mixed> $actions  Case actions.
+	 * @param array<string, mixed> $interpret Interpreter snapshot.
+	 * @return array<string, mixed>
+	 */
+	private function build_stage_context( array $session, string $workflow, array $facts, array $actions, array $interpret ): array {
+		$case_facts = is_array( $facts['case'] ?? null ) ? $facts['case'] : array();
+		$node       = trim( (string) ( $session['procedural_node'] ?? '' ) );
+
+		if ( '' === $node && ! empty( $session['case_id'] ) ) {
+			$node = trim( (string) ( $session['case_current_node'] ?? '' ) );
+		}
+
+		return $this->stage_presenter->present(
+			array(
+				'workflow'        => $workflow,
+				'facts'           => $case_facts,
+				'intake_complete' => ! empty( $actions['intake_complete'] ),
+				'current_node'    => $node,
+				'issue'           => (string) ( $actions['issue'] ?? $case_facts['issue'] ?? 'divorce' ),
+				'routing_missing' => is_array( $interpret['routing_missing'] ?? null ) ? $interpret['routing_missing'] : array(),
+			)
+		);
+	}
+
+	/**
+	 * Strip forms from locked stages in workspace next_steps payload.
+	 *
+	 * @param array<int, array<string, mixed>> $next_steps    Raw next steps.
+	 * @param array<string, mixed>             $stage_context Stage context.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function sanitize_next_steps( array $next_steps, array $stage_context ): array {
+		$current_id = is_array( $stage_context['current_stage'] ?? null )
+			? (string) ( $stage_context['current_stage']['id'] ?? '' )
+			: '';
+
+		$sanitized = array();
+
+		foreach ( $next_steps as $step ) {
+			if ( ! is_array( $step ) ) {
+				continue;
+			}
+
+			$step_id = (string) ( $step['id'] ?? '' );
+			$current = '' !== $current_id && $step_id === $current_id;
+
+			if ( ! $current ) {
+				unset( $step['forms'] );
+				$step['locked'] = true;
+			}
+
+			$step['current'] = $current;
+			$sanitized[]     = $step;
+		}
+
+		return $sanitized;
 	}
 
 	/**
@@ -367,7 +462,21 @@ final class Courtflow_Response_Mapper {
 	 * @param array<string, mixed>             $facts      Workspace facts.
 	 * @return array<string, mixed>
 	 */
-	private function current_node( int $completion, string $workflow, array $missing, array $facts ): array {
+	private function current_node( int $completion, string $workflow, array $missing, array $facts, array $stage_context = array(), array $session = array() ): array {
+		unset( $session );
+
+		if ( ! empty( $stage_context['forms_visible'] ) && is_array( $stage_context['current_stage'] ?? null ) ) {
+			$stage = (string) ( $stage_context['current_stage']['id'] ?? '' );
+
+			if ( '' !== $stage ) {
+				return array(
+					'id'    => $stage,
+					'slug'  => $stage,
+					'label' => (string) ( $stage_context['current_stage']['title'] ?? ucwords( str_replace( '_', ' ', $stage ) ) ),
+				);
+			}
+		}
+
 		$slug  = 'intake_basics';
 		$label = __( 'Intake', 'prose-core' );
 

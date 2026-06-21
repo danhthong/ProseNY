@@ -1,10 +1,11 @@
 {
     "id": "commencement",
-    "title": "Commencement",
-    "description": "Start the case by filing the required initial documents with the court.",
+    "title": "Starting the Case",
+    "description": "You must start the divorce case by filing the initial court papers with the Supreme Court in your county.",
     "tips": [
-        "Review all forms carefully before filing.",
-        "Keep copies of everything you file or serve."
+        "File the Summons and Verified Complaint to commence the matrimonial action.",
+        "Attach the Notice of Automatic Orders when required by your county's practice.",
+        "Keep stamped copies of everything you file."
     ],
     "warnings": [
         "Missing signatures or incorrect service may delay your case."

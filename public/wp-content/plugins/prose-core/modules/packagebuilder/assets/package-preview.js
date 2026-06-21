@@ -43,10 +43,25 @@
 	function renderForm( form ) {
 		var row = el( 'div', 'prose-package__form' );
 		var main = el( 'div', 'prose-package__form-main' );
-		main.appendChild( el( 'span', 'prose-package__form-code', form.code ) );
-		if ( form.title ) {
-			main.appendChild( el( 'span', 'prose-package__form-title', form.title ) );
+
+		if ( form.url ) {
+			var link = el( 'a', 'prose-package__form-link' );
+			link.href = form.url;
+			link.target = '_blank';
+			link.rel = 'noopener noreferrer';
+			link.setAttribute( 'aria-label', ( form.title || form.code || 'Form' ) + ( strings.viewForm ? ' — ' + strings.viewForm : '' ) );
+			link.appendChild( el( 'span', 'prose-package__form-code', form.code ) );
+			if ( form.title ) {
+				link.appendChild( el( 'span', 'prose-package__form-title', form.title ) );
+			}
+			main.appendChild( link );
+		} else {
+			main.appendChild( el( 'span', 'prose-package__form-code', form.code ) );
+			if ( form.title ) {
+				main.appendChild( el( 'span', 'prose-package__form-title', form.title ) );
+			}
 		}
+
 		row.appendChild( main );
 
 		var badges = el( 'div', 'prose-package__badges' );
@@ -79,8 +94,17 @@
 		els.stages.innerHTML = '';
 		( data.stages || [] ).forEach( function ( stage ) {
 			var block = el( 'div', 'prose-package__stage' );
+			if ( 'locked' === stage.status ) {
+				block.classList.add( 'prose-package__stage--locked' );
+			} else if ( 'current' === stage.status ) {
+				block.classList.add( 'prose-package__stage--current' );
+			}
 			if ( stage.stage ) {
-				block.appendChild( el( 'p', 'prose-package__stage-label', stage.stage ) );
+				var label = stage.stage.replace( /_/g, ' ' );
+				if ( 'locked' === stage.status ) {
+					label += ' (locked)';
+				}
+				block.appendChild( el( 'p', 'prose-package__stage-label', label ) );
 			}
 			( stage.forms || [] ).forEach( function ( form ) {
 				block.appendChild( renderForm( form ) );

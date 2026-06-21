@@ -1,13 +1,14 @@
 {
     "id": "service",
-    "title": "Service",
-    "description": "Properly serve court papers on the other party according to court rules.",
+    "title": "Service of Process",
+    "description": "After filing, you must properly serve the court papers on your spouse according to New York court rules.",
     "tips": [
-        "Review all forms carefully before filing.",
-        "Keep copies of everything you file or serve."
+        "Use the Affidavit of Service (or Affirmation of Service) to document how and when papers were delivered.",
+        "Service must follow the method allowed for matrimonial actions in Supreme Court.",
+        "Keep proof of service — you will need it for later steps."
     ],
     "warnings": [
-        "Missing signatures or incorrect service may delay your case."
+        "Incorrect service can delay your case or require you to serve again."
     ],
     "related_forms": [],
     "resources": [],

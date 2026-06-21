@@ -267,7 +267,7 @@ final class AI_Intake_Interpreter {
 				'extraction_defs'      => $resolved_pre['extraction_defs'] ?? $resolved_pre['required_field_defs'],
 				'missing'              => $missing_pre,
 				'workflow'             => $workflow_pre,
-				'workflow_info'        => $this->workflow_info( $workflow_pre, $completion_pre ),
+				'workflow_info'        => $this->workflow_info( $workflow_pre, $completion_pre, $intake, empty( $missing_pre ) ),
 				'package'              => $this->package_context( $missing_pre, $completion_pre, $workflow_pre ),
 				'completion'           => $completion_pre,
 				'contradictions'       => $this->consistency->check( $intake ),
@@ -275,6 +275,7 @@ final class AI_Intake_Interpreter {
 				'recent'               => $memory_ctx['recent'],
 				'scope_note'           => $scope_note,
 				'procedural_navigator' => $this->procedural_navigator_context( $intake, $workflow_pre ),
+				'stage_context'        => $this->stage_context( $workflow_pre, $intake, empty( $missing_pre ) ),
 			),
 			$this->provider,
 			$this->logger
@@ -371,11 +372,13 @@ final class AI_Intake_Interpreter {
 	/**
 	 * Build a compact workflow context object for the conversation engine.
 	 *
-	 * @param string|null $workflow   Workflow key.
-	 * @param int         $completion Completion percentage.
+	 * @param string|null          $workflow   Workflow key.
+	 * @param int                  $completion Completion percentage.
+	 * @param Intake_State|null    $intake     Intake state.
+	 * @param bool                 $complete   Whether intake is complete.
 	 * @return array<string, mixed>
 	 */
-	private function workflow_info( ?string $workflow, int $completion ): array {
+	private function workflow_info( ?string $workflow, int $completion, ?Intake_State $intake = null, bool $complete = false ): array {
 		if ( null === $workflow || '' === $workflow ) {
 			return array(
 				'resolved'   => false,
@@ -393,10 +396,10 @@ final class AI_Intake_Interpreter {
 			);
 		}
 
-		$forms = array();
+		$stage_context = null;
 
-		foreach ( $this->workflows->required_form_codes( $definition ) as $code ) {
-			$forms[] = $code;
+		if ( null !== $intake ) {
+			$stage_context = $this->stage_context( $workflow, $intake, $complete );
 		}
 
 		return array(
@@ -405,9 +408,34 @@ final class AI_Intake_Interpreter {
 			'title'                => (string) ( $definition['description'] ?? '' ),
 			'court'                => (string) ( $definition['court'] ?? '' ),
 			'stages'               => is_array( $definition['stages'] ?? null ) ? $definition['stages'] : array(),
-			'required_form_codes'  => $forms,
+			'stage_context'        => $stage_context,
 			'supporting_documents' => is_array( $definition['supporting_documents'] ?? null ) ? $definition['supporting_documents'] : array(),
 			'completion'           => $completion,
+		);
+	}
+
+	/**
+	 * Build read-only stage context for the conversation engine.
+	 *
+	 * @param string|null  $workflow Workflow key.
+	 * @param Intake_State $intake   Intake state.
+	 * @param bool         $complete Whether intake is complete.
+	 * @return array<string, mixed>
+	 */
+	private function stage_context( ?string $workflow, Intake_State $intake, bool $complete ): array {
+		if ( null === $workflow || '' === $workflow ) {
+			return array(
+				'forms_visible' => false,
+			);
+		}
+
+		return ( new \ProSe\Core\Forms\Engine\Stage_Form_Presenter() )->present(
+			array(
+				'workflow'        => $workflow,
+				'facts'           => $intake->plain_facts(),
+				'intake_complete' => $complete,
+				'issue'           => (string) ( $intake->plain_facts()['issue'] ?? 'divorce' ),
+			)
 		);
 	}
 

@@ -86,7 +86,8 @@
     {
       "stage": "commencement",
       "forms": [
-        { "code": "UD-1a", "internal_code": null, "title": "Summons (to be served with Verified Complaint)" }
+        { "code": "UD-1a", "internal_code": null, "title": "Summons (to be served with Verified Complaint)" },
+        { "code": "AUTO-ORDERS", "internal_code": null, "title": "Notice of Automatic Orders" }
       ]
     }
   ],

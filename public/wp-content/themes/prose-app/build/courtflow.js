@@ -15,6 +15,8 @@
 		facts: { case: {}, user: {} },
 		validation: { errors: [], warnings: [], valid: true },
 		requiredForms: [],
+		stageContext: null,
+		nextSteps: [],
 		messages: [],
 		currentNode: null,
 		documents: [],
@@ -213,9 +215,13 @@
 
 	function intakeReady(req) {
 		req = req || state.requirements || {};
+		var stage = state.stageContext || {};
 		var workflow = (state.facts && state.facts.case && state.facts.case.workflow) || '';
-		var hasForms = (state.requiredForms || []).length > 0;
-		return !!(workflow || hasForms || req.ready_to_generate || Number(req.completeness || 0) >= 100);
+		var hasForms = !!(stage.forms_visible && (stage.stage_forms || []).length);
+		if (!hasForms) {
+			hasForms = (state.requiredForms || []).length > 0;
+		}
+		return !!(stage.forms_visible && workflow) || !!(workflow && hasForms && req.ready_to_generate) || !!(req.ready_to_generate || Number(req.completeness || 0) >= 100);
 	}
 
 	function effectiveCurrentStepIndex() {
@@ -308,12 +314,16 @@
 				var sub = document.createElement('ul');
 				sub.id = 'courtflow-required-forms';
 				sub.className = 'cf-step__sublist cf-forms-list';
-				(state.requiredForms || []).forEach(function (form) {
+				var stageForms = (state.stageContext && state.stageContext.stage_forms) || [];
+				var formItems = stageForms.length
+					? stageForms.map(function (f) { return f.code || f.title; })
+					: (state.requiredForms || []);
+				formItems.forEach(function (form) {
 					var subLi = document.createElement('li');
-					subLi.textContent = form;
+					subLi.textContent = typeof form === 'string' ? form : (form.code || form.title || '');
 					sub.appendChild(subLi);
 				});
-				if (state.requiredForms && state.requiredForms.length) {
+				if (formItems.length) {
 					sub.removeAttribute('hidden');
 				}
 				li.appendChild(sub);
@@ -724,12 +734,18 @@
 	function renderDocuments() {
 		var list = document.getElementById('courtflow-documents-list');
 		var empty = document.getElementById('cf-documents-empty');
+		var stageBlock = document.getElementById('cf-stage-forms');
 		if (!list) return;
 		list.innerHTML = '';
+		if (stageBlock) stageBlock.innerHTML = '';
 
 		var docs = state.documents || [];
-		var required = state.requiredForms || [];
-		var ready = !!(state.requirements && state.requirements.ready_to_generate);
+		var stage = state.stageContext || {};
+		var stageForms = stage.stage_forms || [];
+		var required = stageForms.length ? stageForms : (state.requiredForms || []).map(function (code) {
+			return { code: code, title: code, purpose: '' };
+		});
+		var ready = !!(stage.forms_visible && stageForms.length) || !!(state.requirements && state.requirements.ready_to_generate);
 
 		docs.forEach(function (doc) {
 			var li = document.createElement('li');
@@ -746,12 +762,49 @@
 			list.appendChild(li);
 		});
 
-		if (!docs.length && required.length) {
-			required.forEach(function (slug) {
+		if (!docs.length && stage.forms_visible && stageForms.length && stageBlock) {
+			stageForms.forEach(function (form) {
+				var card = document.createElement('article');
+				card.className = 'cf-form-card';
+				var title = document.createElement(form.url ? 'a' : 'h4');
+				title.className = 'cf-form-card__title';
+				if (form.url) {
+					title.href = form.url;
+				}
+				title.textContent = form.title || form.code || 'Form';
+				card.appendChild(title);
+				if (form.purpose) {
+					var purpose = document.createElement('p');
+					purpose.className = 'cf-form-card__purpose';
+					purpose.textContent = form.purpose;
+					card.appendChild(purpose);
+				}
+				if (form.url) {
+					var view = document.createElement('a');
+					view.className = 'cf-form-card__view';
+					view.href = form.url;
+					view.textContent = I18N.viewForm || 'View form';
+					card.appendChild(view);
+				}
+				if (form.download_url) {
+					var dl = document.createElement('a');
+					dl.className = 'cf-btn cf-btn--secondary cf-form-card__download';
+					dl.href = form.download_url;
+					dl.target = '_blank';
+					dl.rel = 'noopener noreferrer';
+					dl.textContent = I18N.downloadForm || 'Download';
+					card.appendChild(dl);
+				}
+				stageBlock.appendChild(card);
+			});
+		}
+
+		if (!docs.length && !stage.forms_visible && required.length) {
+			required.forEach(function (form) {
 				var li = document.createElement('li');
 				li.className = 'cf-documents-list__pending';
 				var label = document.createElement('span');
-				label.textContent = slug;
+				label.textContent = form.code || form.title || form;
 				li.appendChild(label);
 				var chip = document.createElement('span');
 				chip.className = 'cf-badge cf-badge--muted';
@@ -763,14 +816,17 @@
 
 		if (empty) {
 			var emptyP = empty.querySelector('p');
-			if (docs.length) {
+			if (docs.length || (stage.forms_visible && stageForms.length)) {
 				empty.hidden = true;
+			} else if (stage.next_action && stage.next_action.message) {
+				empty.hidden = false;
+				if (emptyP) emptyP.textContent = stage.next_action.message;
 			} else if (required.length) {
 				empty.hidden = false;
 				if (emptyP) {
 					emptyP.textContent = ready
-						? 'Required forms: ' + required.join(', ') + '. Click Generate Filing Package to create downloads.'
-						: 'Required forms for your case: ' + required.join(', ') + '. Click Generate Filing Package to download blank forms.';
+						? 'Complete intake to unlock forms for your current procedural step.'
+						: 'Complete intake to see which forms you need first.';
 				}
 			} else {
 				empty.hidden = false;
@@ -781,6 +837,76 @@
 				}
 			}
 		}
+
+		renderStageActions();
+	}
+
+	function renderNextSteps() {
+		var list = document.getElementById('cf-next-steps-list');
+		var empty = document.getElementById('cf-next-steps-empty');
+		if (!list) return;
+		list.innerHTML = '';
+		var steps = state.nextSteps || [];
+		var stage = state.stageContext || {};
+
+		if (stage.next_action && stage.next_action.message) {
+			var lead = document.createElement('li');
+			lead.className = 'cf-next-steps__lead';
+			lead.textContent = stage.next_action.message;
+			list.appendChild(lead);
+		}
+
+		steps.forEach(function (step) {
+			var li = document.createElement('li');
+			li.className = 'cf-next-steps__item';
+			if (step.current) li.classList.add('is-current');
+			if (step.locked) li.classList.add('cf-stage--locked');
+			li.textContent = step.title || step.id || '';
+			list.appendChild(li);
+		});
+
+		if (empty) empty.hidden = list.children.length > 0;
+	}
+
+	function renderStageActions() {
+		var btn = document.getElementById('cf-complete-stage');
+		var stage = state.stageContext || {};
+		if (!btn) return;
+		var current = stage.current_stage || {};
+		btn.hidden = !stage.forms_visible || !current.id;
+		btn.dataset.stage = current.id || '';
+	}
+
+	function completeCurrentStage() {
+		var btn = document.getElementById('cf-complete-stage');
+		if (!btn || !sessionId) return;
+		var stageId = btn.dataset.stage || '';
+		if (!stageId) return;
+		btn.disabled = true;
+		fetch(courtflowConfig.restUrl + 'sessions/' + encodeURIComponent(sessionId) + '/stages/complete', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'X-WP-Nonce': courtflowConfig.nonce,
+			},
+			body: JSON.stringify({ stage: stageId }),
+		})
+			.then(function (res) { return res.json().then(function (body) { return { ok: res.ok, body: body }; }); })
+			.then(function (result) {
+				btn.disabled = false;
+				if (result.body) {
+					if (result.body.stage_context) state.stageContext = result.body.stage_context;
+					if (result.body.next_steps) state.nextSteps = result.body.next_steps;
+					if (result.body.current_node) state.currentNode = result.body.current_node;
+					renderStepper();
+					renderDocuments();
+					renderNextSteps();
+					updateChatHeader();
+				}
+			})
+			.catch(function () {
+				btn.disabled = false;
+			});
 	}
 
 	function updateChatHeader() {
@@ -831,6 +957,9 @@
 			if (data.workflow_state.required_forms) {
 				state.requiredForms = data.workflow_state.required_forms;
 			}
+			if (data.workflow_state.stage_context) {
+				state.stageContext = data.workflow_state.stage_context;
+			}
 			if (data.workflow_state.current_node) {
 				state.currentNode = data.workflow_state.current_node;
 				state.currentStepIndex = stepIndexForNode(
@@ -852,6 +981,8 @@
 		}
 		if (data.missing_fields) state.missingFields = data.missing_fields;
 		if (data.required_forms) state.requiredForms = data.required_forms;
+		if (data.stage_context) state.stageContext = data.stage_context;
+		if (data.next_steps) state.nextSteps = data.next_steps;
 		if (data.court_routing) state.courtRouting = data.court_routing;
 		else if (data.actions && data.actions.court_routing) state.courtRouting = data.actions.court_routing;
 
@@ -862,6 +993,7 @@
 		renderRequirements();
 		renderMissing();
 		renderDocuments();
+		renderNextSteps();
 		updateChatHeader();
 		setSaveIndicator(false);
 	}
@@ -1184,6 +1316,9 @@
 					if (res && res.forms) {
 						state.requiredForms = res.forms;
 					}
+					if (res && res.stage_context) {
+						state.stageContext = res.stage_context;
+					}
 					renderDocuments();
 					renderStepper();
 					var note = (res && res.message) ? res.message : 'Filing package generated.';
@@ -1320,9 +1455,16 @@
 		renderMessages();
 	}
 
+	function initStageComplete() {
+		var btn = document.getElementById('cf-complete-stage');
+		if (!btn) return;
+		btn.addEventListener('click', completeCurrentStage);
+	}
+
 	document.addEventListener('DOMContentLoaded', function () {
 		initChat();
 		initGeneratePackage();
+		initStageComplete();
 		initMobileNav();
 		initUserMenu();
 		initScrollTracker();
@@ -1346,6 +1488,8 @@
 				updateState({
 					facts: data.facts,
 					workflow_state: data,
+					stage_context: data.stage_context,
+					next_steps: data.next_steps,
 					validation: data.validation || { valid: true, errors: [], warnings: [] },
 					requirements: data.requirements || (data.workflow_state && data.workflow_state.requirements),
 				});
@@ -1375,6 +1519,8 @@
 							updateState({
 								facts: data.facts,
 								workflow_state: data,
+								stage_context: data.stage_context,
+								next_steps: data.next_steps,
 								validation: data.validation || { valid: true, errors: [], warnings: [] },
 								requirements: data.requirements || (data.workflow_state && data.workflow_state.requirements),
 							});

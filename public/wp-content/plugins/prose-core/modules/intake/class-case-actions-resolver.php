@@ -8,6 +8,7 @@
 namespace ProSe\Core\Intake;
 
 use ProSe\Core\Forms\Classification\Vocabulary;
+use ProSe\Core\Forms\Engine\Stage_Form_Presenter;
 use ProSe\Core\PackageBuilder\Merged_Blank_Pdf_Service;
 use ProSe\Core\Procedural\Package_Resolver;
 use ProSe\Core\Routing\Case_Profile;
@@ -53,23 +54,33 @@ final class Case_Actions_Resolver {
 	private Workflow_Catalog $workflows;
 
 	/**
+	 * Stage form presenter.
+	 *
+	 * @var Stage_Form_Presenter
+	 */
+	private Stage_Form_Presenter $stage_presenter;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Package_Resolver|null         $packages  Package resolver.
-	 * @param Workflow_Catalog|null         $workflows Workflow catalog.
-	 * @param Merged_Blank_Pdf_Service|null $merged    Merged blank PDF service.
-	 * @param Routing_Engine|null           $routing   Routing engine.
+	 * @param Package_Resolver|null         $packages        Package resolver.
+	 * @param Workflow_Catalog|null         $workflows       Workflow catalog.
+	 * @param Merged_Blank_Pdf_Service|null $merged          Merged blank PDF service.
+	 * @param Routing_Engine|null           $routing         Routing engine.
+	 * @param Stage_Form_Presenter|null     $stage_presenter Stage form presenter.
 	 */
 	public function __construct(
 		?Package_Resolver $packages = null,
 		?Workflow_Catalog $workflows = null,
 		?Merged_Blank_Pdf_Service $merged = null,
-		?Routing_Engine $routing = null
+		?Routing_Engine $routing = null,
+		?Stage_Form_Presenter $stage_presenter = null
 	) {
-		$this->packages  = $packages ?? new Package_Resolver();
-		$this->workflows = $workflows ?? new Workflow_Catalog();
-		$this->merged    = $merged ?? new Merged_Blank_Pdf_Service();
-		$this->routing   = $routing ?? new Routing_Engine( $this->workflows );
+		$this->packages        = $packages ?? new Package_Resolver();
+		$this->workflows       = $workflows ?? new Workflow_Catalog();
+		$this->merged          = $merged ?? new Merged_Blank_Pdf_Service();
+		$this->routing         = $routing ?? new Routing_Engine( $this->workflows );
+		$this->stage_presenter = $stage_presenter ?? new Stage_Form_Presenter();
 	}
 
 	/**
@@ -91,6 +102,17 @@ final class Case_Actions_Resolver {
 		$workflow_resolved = '' !== $workflow;
 		$case_known        = $workflow_resolved || '' !== $issue || $this->has_case_signals( $facts );
 		$intake_complete   = $this->is_intake_complete( $workflow_resolved, $completion, $intent, $missing );
+		$stage_context     = $this->stage_presenter->present(
+			array(
+				'workflow'        => $workflow,
+				'facts'           => $facts,
+				'intake_complete' => $intake_complete,
+				'issue'           => $issue,
+			)
+		);
+		$current_stage     = is_array( $stage_context['current_stage'] ?? null )
+			? (string) ( $stage_context['current_stage']['id'] ?? '' )
+			: null;
 
 		$package_id       = '';
 		$package_resolved = false;
@@ -100,8 +122,8 @@ final class Case_Actions_Resolver {
 			'download_url' => '',
 		);
 
-		if ( $workflow_resolved ) {
-			$blank_pdf = $this->merged->status( $workflow );
+		if ( $workflow_resolved && ! empty( $stage_context['forms_visible'] ) ) {
+			$blank_pdf = $this->merged->status( $workflow, $current_stage, $facts );
 
 			$resolved = $this->packages->resolve( $workflow, $facts );
 
@@ -112,14 +134,16 @@ final class Case_Actions_Resolver {
 			}
 		}
 
-		$forms_matched    = $this->count_workflow_forms( $workflow );
-		$show_documents   = $case_known;
-		$download_enabled = $workflow_resolved && (
-			$package_resolved
-			|| $forms_matched > 0
-			|| ! empty( $blank_pdf['available'] )
-			|| (int) ( $blank_pdf['form_count'] ?? 0 ) > 0
-		);
+		$forms_matched    = count( (array) ( $stage_context['stage_forms'] ?? array() ) );
+		$show_documents   = $case_known && ! empty( $stage_context['forms_visible'] );
+		$download_enabled = $workflow_resolved
+			&& ! empty( $stage_context['forms_visible'] )
+			&& (
+				$package_resolved
+				|| $forms_matched > 0
+				|| ! empty( $blank_pdf['available'] )
+				|| ! empty( $stage_context['stage_download']['available'] )
+			);
 		$court_routing   = $this->build_court_routing( $case_profile, $interpret_result );
 
 		return array(
@@ -138,6 +162,7 @@ final class Case_Actions_Resolver {
 			'workflow'            => $workflow,
 			'workflow_title'      => $this->workflow_title( $workflow ),
 			'court_routing'       => $court_routing,
+			'stage_context'       => $stage_context,
 			'summary'             => $this->build_summary( $workflow, $facts, $package_id, $package_label, $issue, $court_routing ),
 		);
 	}

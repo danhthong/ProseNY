@@ -1,13 +1,14 @@
 {
     "id": "calendar",
-    "title": "Calendar",
-    "description": "Schedule required court dates and calendar conferences.",
+    "title": "Final Papers and Calendar",
+    "description": "Prepare the final submission forms, including the Note of Issue and Request for Judicial Intervention, before judgment.",
     "tips": [
-        "Review all forms carefully before filing.",
-        "Keep copies of everything you file or serve."
+        "Complete all sworn statements and affirmations required for an uncontested divorce.",
+        "File the Note of Issue when your case is ready for the court's review.",
+        "Request judicial intervention when your county requires it for the next conference or review."
     ],
     "warnings": [
-        "Missing signatures or incorrect service may delay your case."
+        "Incomplete final papers are a common reason for court rejection."
     ],
     "related_forms": [],
     "resources": [],

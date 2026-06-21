@@ -81,6 +81,8 @@ function localize(): void {
 				'attention'   => __( 'Needs attention', 'prose-app' ),
 				'stepOf'      => __( 'Step %1$d of %2$d', 'prose-app' ),
 				'informational' => __( 'Informational guidance only — not legal advice.', 'prose-app' ),
+				'viewForm'    => __( 'View form details', 'prose-app' ),
+				'downloadForm' => __( 'Download', 'prose-app' ),
 			),
 		)
 	);

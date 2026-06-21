@@ -27,11 +27,12 @@ final class Question_Selector {
 	 * @var array<string, string>
 	 */
 	private const RESOLUTION_QUESTIONS = array(
-		'children'         => 'Do you have any children under 21?',
-		'spouse_agrees'    => 'Does your spouse agree to the divorce?',
-		'spouse_responded' => 'Did your spouse respond to the divorce papers?',
-		'active_divorce'   => 'Is there an active divorce case?',
-		'protection_needed' => 'Do you need protection from someone who has harmed or threatened you?',
+		'children'                  => 'Do you have any children under 21?',
+		'spouse_agrees'             => 'Does your spouse agree to the divorce?',
+		'marital_property_resolved' => 'Do you and your spouse agree on property and finances?',
+		'spouse_responded'          => 'Did your spouse respond to the divorce papers?',
+		'active_divorce'            => 'Is there an active divorce case?',
+		'protection_needed'         => 'Do you need protection from someone who has harmed or threatened you?',
 	);
 
 	/**
