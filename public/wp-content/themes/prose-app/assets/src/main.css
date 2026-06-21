@@ -6,6 +6,15 @@
 	a {
 		@apply text-gray-900 underline decoration-gray-300 underline-offset-2 transition hover:decoration-gray-900;
 	}
+
+	/* Public app layout must not be shifted by wp-admin bar (sticky header uses top-0). */
+	html {
+		margin-top: 0 !important;
+	}
+
+	#wpadminbar {
+		display: none !important;
+	}
 }
 
 @layer components {

@@ -46,6 +46,10 @@ php vendor/bin/phpunit -c phpunit.xml.dist --testsuite ai-intake
 php vendor/bin/phpunit -c phpunit.xml.dist --testsuite intake
 php vendor/bin/phpunit -c phpunit.xml.dist --testsuite routing
 php vendor/bin/phpunit -c phpunit.xml.dist --testsuite procedural
+php vendor/bin/phpunit -c phpunit.xml.dist --testsuite guidance
+php vendor/bin/phpunit -c phpunit.xml.dist --testsuite packet
+php vendor/bin/phpunit -c phpunit.xml.dist --testsuite packagebuilder
+php vendor/bin/phpunit -c phpunit.xml.dist --testsuite users
 ```
 
 ## Run one test class or method
@@ -85,6 +89,9 @@ Or use the helper script:
 | `procedural` | `modules/procedural/tests/` |
 | `packet` | `modules/packet/tests/` |
 | `guidance` | `modules/guidance/tests/` |
+| `documents` | `modules/documents/tests/` |
+| `forms` | `modules/forms/tests/` |
+| `users` | `modules/users/tests/` |
 
 Manual PDF / overlay scripts live in `tests/manual/` and are **not** part of PHPUnit.
 
@@ -93,6 +100,14 @@ Manual PDF / overlay scripts live in `tests/manual/` and are **not** part of PHP
 - Config file: `phpunit.xml.dist`
 - Bootstrap: `tests/bootstrap.php` (WordPress stubs + plugin autoloader)
 
+## Temp directories (Windows)
+
+Tests that need writable temp dirs should use **`prose_test_temp_dir()`** and clean up with **`prose_test_remove_tree()`** from `tests/bootstrap.php`.
+
+Do **not** use `sys_get_temp_dir()` / `C:\Windows\TEMP` for test fixtures — teardown can fail with **Access is denied** when PHPUnit runs `scandir()` on Windows system temp.
+
+Artifact dirs are created under `tests/tmp/` (safe to delete locally; not committed).
+
 ## Troubleshooting
 
 **`php` not found** — Install PHP and add it to your PATH, or use the full path to `php.exe`.
@@ -100,3 +115,5 @@ Manual PDF / overlay scripts live in `tests/manual/` and are **not** part of PHP
 **`composer` not found** — Install Composer globally or use `php composer.phar install`.
 
 **Class `PHPUnit\Framework\TestCase` not found** — Run `composer install` in this directory first.
+
+**`scandir(...): Access is denied` on Windows** — Update the test to use `prose_test_temp_dir()` / `prose_test_remove_tree()` instead of `sys_get_temp_dir()`.
