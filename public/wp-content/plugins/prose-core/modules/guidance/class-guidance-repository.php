@@ -266,6 +266,36 @@ final class Guidance_Repository {
 	}
 
 	/**
+	 * Read issue-level intake roadmap seed data.
+	 *
+	 * @param string $issue Issue slug (for example divorce, custody).
+	 * @return array<string, mixed>|null
+	 */
+	public function read_intake_roadmap( string $issue ): ?array {
+		$issue = sanitize_key( $issue );
+
+		if ( '' === $issue ) {
+			return null;
+		}
+
+		$path = $this->seed_dir . 'intake-roadmaps/' . $issue . '.json';
+
+		if ( ! is_readable( $path ) ) {
+			return null;
+		}
+
+		$raw = file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+
+		if ( false === $raw || '' === $raw ) {
+			return null;
+		}
+
+		$data = json_decode( $raw, true );
+
+		return is_array( $data ) ? $data : null;
+	}
+
+	/**
 	 * Read and normalize county guidance.
 	 *
 	 * @param string $county County name or slug.

@@ -193,6 +193,13 @@ function enqueue_dashboard_assets(): void {
 		prose_app_asset_version( 'assets/css/courtflow.css' )
 	);
 
+	wp_enqueue_style(
+		'courtflow-roadmap',
+		get_template_directory_uri() . '/assets/css/courtflow-roadmap.css',
+		array( 'courtflow-workspace' ),
+		prose_app_asset_version( 'assets/css/courtflow-roadmap.css' )
+	);
+
 	wp_enqueue_script(
 		'prose-dashboard',
 		get_template_directory_uri() . '/build/dashboard.js',
@@ -216,6 +223,7 @@ function enqueue_dashboard_assets(): void {
 				'noConversations' => __( 'No conversations yet. Start chatting on the homepage while logged in to save your intake here.', 'prose-app' ),
 				'startChat'       => __( 'Start chatting', 'prose-app' ),
 				'resumeChat'      => __( 'Resume', 'prose-app' ),
+				'continueCase'    => __( 'Continue Case', 'prose-app' ),
 				'noDocuments'   => __( 'No documents generated yet.', 'prose-app' ),
 			),
 		)

@@ -125,9 +125,88 @@ class CourtflowResponseMapperTest extends TestCase {
 	}
 
 	/**
-	 * Completed intake with procedural question returns a procedure card.
+	 * Session state hydrates persisted roadmap.
 	 */
-	public function test_procedural_card_after_intake_complete(): void {
+	public function test_session_state_includes_persisted_roadmap(): void {
+		$roadmap = array(
+			'show'          => true,
+			'mode'          => 'intake',
+			'current_stage' => array(
+				'id'    => 'intake_divorce',
+				'label' => 'Initial Divorce Intake',
+			),
+		);
+
+		$state = $this->mapper->map_session_state(
+			array(
+				'session_id'   => 'test-session',
+				'case_profile' => array(
+					'facts'   => array( 'issue' => 'divorce' ),
+					'roadmap' => $roadmap,
+				),
+			)
+		);
+
+		$this->assertArrayHasKey( 'roadmap', $state );
+		$this->assertTrue( $state['roadmap']['show'] );
+		$this->assertFalse( $state['roadmap_changed'] );
+	}
+
+	/**
+	 * Message response emits roadmap only when it changed.
+	 */
+	public function test_message_response_emits_roadmap_when_changed(): void {
+		$roadmap = array(
+			'show'          => true,
+			'mode'          => 'intake',
+			'current_stage' => array( 'label' => 'Initial Divorce Intake' ),
+		);
+
+		$session = array(
+			'session_id'   => 'test-session',
+			'case_profile' => array(
+				'facts'    => array( 'issue' => 'divorce' ),
+				'workflow' => '',
+				'progress' => 10,
+			),
+		);
+
+		$changed = $this->mapper->map_message_response(
+			$session,
+			array(
+				'success' => true,
+				'result'  => array(
+					'completion'      => 10,
+					'question'        => 'Thanks for sharing.',
+					'roadmap_changed' => true,
+					'roadmap'         => $roadmap,
+				),
+			)
+		);
+
+		$this->assertTrue( $changed['roadmap_changed'] );
+		$this->assertSame( $roadmap, $changed['roadmap'] );
+
+		$unchanged = $this->mapper->map_message_response(
+			$session,
+			array(
+				'success' => true,
+				'result'  => array(
+					'completion'      => 10,
+					'question'        => 'Tell me more.',
+					'roadmap_changed' => false,
+				),
+			)
+		);
+
+		$this->assertFalse( $unchanged['roadmap_changed'] );
+		$this->assertArrayNotHasKey( 'roadmap', $unchanged );
+	}
+
+	/**
+	 * Completed intake procedural questions no longer return chat cards.
+	 */
+	public function test_procedural_question_does_not_return_chat_card(): void {
 		$session = array(
 			'session_id'   => 'test-session',
 			'case_profile' => array(
@@ -140,10 +219,10 @@ class CourtflowResponseMapperTest extends TestCase {
 				'progress' => 100,
 			),
 			'actions' => array(
-				'intake_complete'    => true,
-				'workflow_resolved'  => true,
-				'workflow'           => 'uncontested_divorce_no_children_nyc',
-				'issue'              => 'divorce',
+				'intake_complete'   => true,
+				'workflow_resolved' => true,
+				'workflow'          => 'uncontested_divorce_no_children_nyc',
+				'issue'             => 'divorce',
 			),
 			'last_interpret' => array(
 				'completion' => 100,
@@ -161,11 +240,9 @@ class CourtflowResponseMapperTest extends TestCase {
 			'What happens next after I file?'
 		);
 
-		$this->assertArrayHasKey( 'card', $response );
-		$this->assertSame( 'procedure', $response['card']['type'] );
+		$this->assertArrayNotHasKey( 'card', $response );
 		$this->assertNotEmpty( $response['next_steps'] );
 		$this->assertTrue( $response['stage_context']['forms_visible'] );
-		$this->assertSame( 'commencement', $response['stage_context']['current_stage']['id'] );
 	}
 
 	/**

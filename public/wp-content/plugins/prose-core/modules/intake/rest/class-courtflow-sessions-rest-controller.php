@@ -715,16 +715,19 @@ final class Courtflow_Sessions_Rest_Controller {
 		}
 
 		$session['procedural_node'] = $current_node;
+		$roadmap_refresh              = $this->mapper->refresh_session_roadmap( $session );
 		$this->store->save( $session_id, $session );
 
 		$updated = $this->mapper->map_session_state( $session );
 
 		return rest_ensure_response(
 			array(
-				'message'       => __( 'Stage marked complete. Here are the forms for your next step.', 'prose-core' ),
-				'stage_context' => $updated['stage_context'] ?? array(),
-				'current_node'  => $updated['current_node'] ?? array(),
-				'next_steps'    => $updated['next_steps'] ?? array(),
+				'message'         => __( 'Stage marked complete. Here are the forms for your next step.', 'prose-core' ),
+				'stage_context'   => $updated['stage_context'] ?? array(),
+				'current_node'    => $updated['current_node'] ?? array(),
+				'next_steps'      => $updated['next_steps'] ?? array(),
+				'roadmap'         => $roadmap_refresh['roadmap'] ?? null,
+				'roadmap_changed' => ! empty( $roadmap_refresh['changed'] ),
 			)
 		);
 	}

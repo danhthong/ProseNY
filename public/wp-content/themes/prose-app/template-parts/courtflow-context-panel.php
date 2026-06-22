@@ -12,6 +12,18 @@
 			<span class="cf-badge cf-badge--count" id="cf-validation-count" hidden>0</span>
 		</div>
 
+		<section class="cf-roadmap-card" id="cf-roadmap-card" hidden aria-labelledby="cf-roadmap-title">
+			<header class="cf-roadmap-card__header">
+				<p class="cf-roadmap-card__eyebrow"><?php esc_html_e( 'Where you may be in the process', 'prose-app' ); ?></p>
+				<h3 class="cf-roadmap-card__title" id="cf-roadmap-title"></h3>
+			</header>
+			<div class="cf-roadmap-card__body" id="cf-roadmap-body"></div>
+			<footer class="cf-roadmap-card__footer">
+				<p class="cf-roadmap-card__disclaimer" id="cf-roadmap-disclaimer"></p>
+				<p class="cf-roadmap-card__informational"><?php esc_html_e( 'Informational guidance only — not legal advice.', 'prose-app' ); ?></p>
+			</footer>
+		</section>
+
 		<details class="cf-accordion cf-accordion--open" open>
 			<summary class="cf-accordion__trigger"><?php esc_html_e( 'Case summary', 'prose-app' ); ?></summary>
 			<div class="cf-accordion__body" id="cf-case-summary">
@@ -80,7 +92,7 @@
 		<ul id="courtflow-missing-fields" class="cf-missing-list" hidden></ul>
 		<p class="cf-empty cf-empty--inline" id="cf-missing-empty" hidden></p>
 
-		<details class="cf-accordion cf-accordion--open" id="cf-accordion-next-steps" open>
+		<details class="cf-accordion" id="cf-accordion-next-steps" hidden>
 			<summary class="cf-accordion__trigger"><?php esc_html_e( 'Next steps', 'prose-app' ); ?></summary>
 			<div class="cf-accordion__body">
 				<p class="cf-empty cf-empty--inline" id="cf-next-steps-empty"><?php esc_html_e( 'Complete intake to see your next procedural step.', 'prose-app' ); ?></p>

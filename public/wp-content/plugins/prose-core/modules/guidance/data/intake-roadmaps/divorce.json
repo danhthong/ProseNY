@@ -1,0 +1,42 @@
+{
+  "issue": "divorce",
+  "title": "Divorce Intake",
+  "current_stage_label": "Initial Divorce Intake",
+  "steps": [
+    {
+      "id": "residency",
+      "title": "Determine residency eligibility",
+      "description": "Confirm whether either spouse meets New York residency requirements for filing.",
+      "relevance": "Residency rules affect which court may hear the case.",
+      "fact_keys": ["county"]
+    },
+    {
+      "id": "contested",
+      "title": "Identify the type of divorce",
+      "description": "Determine whether the matter is likely uncontested or contested.",
+      "relevance": "Agreement on major issues often affects the forms and process path.",
+      "fact_keys": ["spouse_agrees"]
+    },
+    {
+      "id": "children",
+      "title": "Gather basic family information",
+      "description": "Information regarding children under 21 may affect custody, support, and required forms.",
+      "relevance": "Child-related issues commonly shape the procedural path.",
+      "fact_keys": ["has_minor_children"]
+    },
+    {
+      "id": "property",
+      "title": "Review property and finances",
+      "description": "Assets, debts, and support obligations may affect the process.",
+      "relevance": "Financial issues can influence agreements and filings.",
+      "fact_keys": ["marital_property_resolved"]
+    },
+    {
+      "id": "forms",
+      "title": "Identify required court forms",
+      "description": "The appropriate forms can vary depending on the circumstances of the case.",
+      "relevance": "Form requirements depend on your county and case type.",
+      "fact_keys": []
+    }
+  ]
+}

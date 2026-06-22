@@ -17,6 +17,7 @@
 		requiredForms: [],
 		stageContext: null,
 		nextSteps: [],
+		roadmap: null,
 		messages: [],
 		currentNode: null,
 		documents: [],
@@ -841,6 +842,119 @@
 		renderStageActions();
 	}
 
+	function renderRoadmapCard() {
+		var card = document.getElementById('cf-roadmap-card');
+		var body = document.getElementById('cf-roadmap-body');
+		var title = document.getElementById('cf-roadmap-title');
+		var disclaimer = document.getElementById('cf-roadmap-disclaimer');
+		var roadmap = state.roadmap;
+
+		if (!card || !body) return;
+
+		if (!roadmap || !roadmap.show) {
+			card.hidden = true;
+			return;
+		}
+
+		card.hidden = false;
+
+		var currentStage = roadmap.current_stage || {};
+		if (title) {
+			title.textContent = currentStage.label || currentStage.title || '';
+		}
+		if (disclaimer) {
+			disclaimer.textContent = roadmap.disclaimer || '';
+		}
+
+		var html = '';
+
+		var completed = roadmap.completed_steps || [];
+		if (completed.length) {
+			html += '<div class="cf-roadmap__section"><h4 class="cf-roadmap__section-title">Information already provided</h4><ul class="cf-roadmap__list">';
+			completed.forEach(function (step) {
+				html +=
+					'<li class="cf-roadmap__step cf-roadmap__step--done"><span class="cf-roadmap__marker" aria-hidden="true">✓</span>' +
+					'<div class="cf-roadmap__step-content"><strong>' +
+					escapeHtml(step.title || '') +
+					'</strong>' +
+					(step.description ? '<p>' + escapeHtml(step.description) + '</p>' : '') +
+					(step.relevance ? '<p class="cf-roadmap__relevance">' + escapeHtml(step.relevance) + '</p>' : '') +
+					'</div></li>';
+			});
+			html += '</ul></div>';
+		}
+
+		var focus = roadmap.current_focus || {};
+		if (focus.title) {
+			html +=
+				'<div class="cf-roadmap__section"><h4 class="cf-roadmap__section-title">Current focus</h4>' +
+				'<div class="cf-roadmap__step cf-roadmap__step--current"><span class="cf-roadmap__marker" aria-hidden="true">➜</span>' +
+				'<div class="cf-roadmap__step-content"><strong>' +
+				escapeHtml(focus.title) +
+				'</strong>' +
+				(focus.description ? '<p>' + escapeHtml(focus.description) + '</p>' : '') +
+				(focus.relevance ? '<p class="cf-roadmap__relevance">' + escapeHtml(focus.relevance) + '</p>' : '') +
+				'</div></div></div>';
+		}
+
+		var upcoming = roadmap.upcoming_steps || [];
+		if (upcoming.length) {
+			html += '<div class="cf-roadmap__section"><h4 class="cf-roadmap__section-title">Possible upcoming steps</h4><ul class="cf-roadmap__list">';
+			upcoming.forEach(function (step) {
+				html +=
+					'<li class="cf-roadmap__step cf-roadmap__step--upcoming"><span class="cf-roadmap__marker" aria-hidden="true">□</span>' +
+					'<div class="cf-roadmap__step-content"><strong>' +
+					escapeHtml(step.title || '') +
+					'</strong>' +
+					(step.description ? '<p>' + escapeHtml(step.description) + '</p>' : '') +
+					(step.relevance ? '<p class="cf-roadmap__relevance">' + escapeHtml(step.relevance) + '</p>' : '') +
+					(step.needs_info ? '<p class="cf-roadmap__needs-info">More information may be helpful.</p>' : '') +
+					'</div></li>';
+			});
+			html += '</ul></div>';
+		}
+
+		var forms = roadmap.required_forms || [];
+		if (forms.length) {
+			html += '<div class="cf-roadmap__section cf-roadmap__forms"><h4 class="cf-roadmap__section-title">Required forms</h4><ul class="cf-roadmap__form-list">';
+			forms.forEach(function (form) {
+				html +=
+					'<li><strong>' +
+					escapeHtml(form.code || '') +
+					'</strong>' +
+					(form.title && form.title !== form.code ? ' — ' + escapeHtml(form.title) : '') +
+					'</li>';
+			});
+			html += '</ul></div>';
+		}
+
+		if (roadmap.procedural_guidance) {
+			html +=
+				'<div class="cf-roadmap__section cf-roadmap__guidance"><h4 class="cf-roadmap__section-title">Procedural guidance</h4><p>' +
+				escapeHtml(roadmap.procedural_guidance) +
+				'</p></div>';
+		}
+
+		var confidence = roadmap.confidence_level || {};
+		if (confidence.label) {
+			html +=
+				'<div class="cf-roadmap__confidence"><span class="cf-roadmap__confidence-label">Confidence: ' +
+				escapeHtml(confidence.label) +
+				'</span>' +
+				(confidence.reason ? '<p>' + escapeHtml(confidence.reason) + '</p>' : '') +
+				'</div>';
+		}
+
+		if (roadmap.suggested_next_question) {
+			html +=
+				'<div class="cf-roadmap__question"><h4 class="cf-roadmap__section-title">Suggested follow-up</h4><p>' +
+				escapeHtml(roadmap.suggested_next_question) +
+				'</p></div>';
+		}
+
+		body.innerHTML = html;
+	}
+
 	function renderNextSteps() {
 		var list = document.getElementById('cf-next-steps-list');
 		var empty = document.getElementById('cf-next-steps-empty');
@@ -898,9 +1012,10 @@
 					if (result.body.stage_context) state.stageContext = result.body.stage_context;
 					if (result.body.next_steps) state.nextSteps = result.body.next_steps;
 					if (result.body.current_node) state.currentNode = result.body.current_node;
+					if (result.body.roadmap) state.roadmap = result.body.roadmap;
 					renderStepper();
 					renderDocuments();
-					renderNextSteps();
+					renderRoadmapCard();
 					updateChatHeader();
 				}
 			})
@@ -986,6 +1101,10 @@
 		if (data.court_routing) state.courtRouting = data.court_routing;
 		else if (data.actions && data.actions.court_routing) state.courtRouting = data.actions.court_routing;
 
+		if (data.roadmap) {
+			state.roadmap = data.roadmap;
+		}
+
 		renderStepper();
 		renderFacts();
 		renderCourtsInvolved();
@@ -993,7 +1112,7 @@
 		renderRequirements();
 		renderMissing();
 		renderDocuments();
-		renderNextSteps();
+		renderRoadmapCard();
 		updateChatHeader();
 		setSaveIndicator(false);
 	}
@@ -1258,11 +1377,7 @@
 							created_at: now,
 						});
 					}
-					if (data.card) {
-						state.messages.push(
-							Object.assign({ type: data.card.type || 'procedure', created_at: now }, data.card)
-						);
-					} else {
+					if (reply) {
 						state.messages.push({ role: 'assistant', text: reply, created_at: now });
 					}
 					updateState(data);

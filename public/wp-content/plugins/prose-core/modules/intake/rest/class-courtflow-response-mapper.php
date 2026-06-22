@@ -10,6 +10,7 @@ namespace ProSe\Core\Intake\Rest;
 use ProSe\Core\Ai_Intake\Intake_State;
 use ProSe\Core\Ai_Intake\Required_Fields_Provider;
 use ProSe\Core\Forms\Engine\Stage_Form_Presenter;
+use ProSe\Core\Guidance\Procedural_Roadmap_Presenter;
 use ProSe\Core\Intake\Case_Actions_Resolver;
 use ProSe\Core\Procedural\Procedural_Navigator;
 use ProSe\Core\Routing\Workflow_Catalog;
@@ -59,6 +60,13 @@ final class Courtflow_Response_Mapper {
 	private Stage_Form_Presenter $stage_presenter;
 
 	/**
+	 * Roadmap presenter.
+	 *
+	 * @var Procedural_Roadmap_Presenter
+	 */
+	private Procedural_Roadmap_Presenter $roadmap_presenter;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Required_Fields_Provider|null $fields           Fields provider.
@@ -72,13 +80,65 @@ final class Courtflow_Response_Mapper {
 		?Case_Actions_Resolver $actions = null,
 		?Workflow_Catalog $workflows = null,
 		?Procedural_Navigator $navigator = null,
-		?Stage_Form_Presenter $stage_presenter = null
+		?Stage_Form_Presenter $stage_presenter = null,
+		?Procedural_Roadmap_Presenter $roadmap_presenter = null
 	) {
 		$this->fields          = $fields ?? new Required_Fields_Provider();
 		$this->actions         = $actions ?? new Case_Actions_Resolver();
 		$this->workflows       = $workflows ?? new Workflow_Catalog();
 		$this->navigator       = $navigator ?? new Procedural_Navigator();
 		$this->stage_presenter = $stage_presenter ?? new Stage_Form_Presenter();
+		$this->roadmap_presenter = $roadmap_presenter ?? new Procedural_Roadmap_Presenter();
+	}
+
+	/**
+	 * Recompute and persist roadmap on the session case profile.
+	 *
+	 * @param array<string, mixed> $session Session (by reference).
+	 * @return array{fingerprint: string, changed: bool, roadmap: array<string, mixed>}
+	 */
+	public function refresh_session_roadmap( array &$session ): array {
+		$case_profile = is_array( $session['case_profile'] ?? null ) ? $session['case_profile'] : array();
+		$context      = $this->build_context( $session );
+		$facts        = is_array( $context['facts']['case'] ?? null ) ? $context['facts']['case'] : array();
+		$workflow     = trim( (string) ( $case_profile['workflow'] ?? $facts['workflow'] ?? '' ) );
+		$actions      = is_array( $context['actions'] ?? null ) ? $context['actions'] : array();
+		$requirements = is_array( $context['requirements'] ?? null ) ? $context['requirements'] : array();
+		$intake_state = Intake_State::from_array(
+			is_array( $session['intake_state'] ?? null ) ? $session['intake_state'] : array()
+		);
+		$resolved     = $this->fields->resolve( $intake_state, '' );
+		$missing      = $this->fields->missing_prioritized( $resolved['fields'], $intake_state );
+		$procedural   = $this->procedural_navigation(
+			$session,
+			$case_profile,
+			array(),
+			$actions,
+			is_array( $context['current_node'] ?? null ) ? $context['current_node'] : array()
+		);
+
+		$stored = (string) ( $case_profile['roadmap_fingerprint'] ?? '' );
+		$result = $this->roadmap_presenter->resolve_with_change_detection(
+			$stored,
+			array(
+				'issue'                => sanitize_key( (string) ( $facts['issue'] ?? $resolved['issue'] ?? '' ) ),
+				'facts'                => $facts,
+				'workflow'             => $workflow,
+				'missing_fields'       => $missing,
+				'completion'           => (int) ( $requirements['completeness'] ?? 0 ),
+				'stage_context'        => is_array( $context['stage_context'] ?? null ) ? $context['stage_context'] : array(),
+				'procedural_navigator' => $procedural,
+				'workflow_resolved'    => ! empty( $actions['workflow_resolved'] ),
+				'intake_complete'      => ! empty( $actions['intake_complete'] ),
+				'procedural_node'      => (string) ( $session['procedural_node'] ?? '' ),
+			)
+		);
+
+		$case_profile['roadmap']             = $result['roadmap'];
+		$case_profile['roadmap_fingerprint'] = (string) ( $result['fingerprint'] ?? '' );
+		$session['case_profile']             = $case_profile;
+
+		return $result;
 	}
 
 	/**
@@ -92,6 +152,7 @@ final class Courtflow_Response_Mapper {
 
 		return array_merge(
 			$context,
+			$this->map_roadmap_fields( $session ),
 			array(
 				'workflow_state' => array(
 					'required_forms' => $context['required_forms'],
@@ -132,16 +193,43 @@ final class Courtflow_Response_Mapper {
 					'current_node'   => $context['current_node'],
 					'requirements'   => $context['requirements'],
 				),
-			)
+			),
+			$this->map_roadmap_fields( $session, $result )
 		);
 
-		$card = $this->build_procedural_card( $session, $context, $user_message );
+		return $response;
+	}
 
-		if ( null !== $card ) {
-			$response['card'] = $card;
+	/**
+	 * Map roadmap payload for workspace clients.
+	 *
+	 * @param array<string, mixed>      $session Stored session.
+	 * @param array<string, mixed>|null $result  Optional fresh interpreter result.
+	 * @return array<string, mixed>
+	 */
+	private function map_roadmap_fields( array $session, ?array $result = null ): array {
+		$case_profile = is_array( $session['case_profile'] ?? null ) ? $session['case_profile'] : array();
+		$persisted    = is_array( $case_profile['roadmap'] ?? null ) ? $case_profile['roadmap'] : null;
+
+		if ( is_array( $result ) && array_key_exists( 'roadmap_changed', $result ) ) {
+			$changed = ! empty( $result['roadmap_changed'] );
+			$payload = array( 'roadmap_changed' => $changed );
+
+			if ( $changed && is_array( $result['roadmap'] ?? null ) ) {
+				$payload['roadmap'] = $result['roadmap'];
+			}
+
+			return $payload;
 		}
 
-		return $response;
+		if ( is_array( $persisted ) && ! empty( $persisted['show'] ) ) {
+			return array(
+				'roadmap'         => $persisted,
+				'roadmap_changed' => false,
+			);
+		}
+
+		return array( 'roadmap_changed' => false );
 	}
 
 	/**

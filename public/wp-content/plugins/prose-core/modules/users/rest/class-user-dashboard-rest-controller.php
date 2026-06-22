@@ -8,6 +8,7 @@
 namespace ProSe\Core\Users\Rest;
 
 use ProSe\Core\Forms\Database\Repositories\Case_Repository;
+use ProSe\Core\Guidance\Procedural_Roadmap_Presenter;
 use ProSe\Core\Loader;
 use ProSe\Core\Routing\Workflow_Catalog;
 use ProSe\Core\Users\Database\Repositories\Conversation_Repository;
@@ -62,6 +63,11 @@ final class User_Dashboard_Rest_Controller {
 	private Workflow_Catalog $workflows;
 
 	/**
+	 * @var Procedural_Roadmap_Presenter
+	 */
+	private Procedural_Roadmap_Presenter $roadmap_presenter;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
@@ -71,6 +77,7 @@ final class User_Dashboard_Rest_Controller {
 		$this->documents     = new User_Document_Repository();
 		$this->subscription  = new Subscription_Status();
 		$this->workflows     = new Workflow_Catalog();
+		$this->roadmap_presenter = new Procedural_Roadmap_Presenter();
 	}
 
 	/**
@@ -132,10 +139,18 @@ final class User_Dashboard_Rest_Controller {
 		$active_case = $this->cases->find_active_for_user( $user_id );
 
 		$conversations = array();
+		$resume_url    = home_url( '/' );
 
 		foreach ( $this->conversations->recent_for_user( $user_id, 20 ) as $row ) {
-			$conversations[] = $this->format_conversation_row( $row );
+			$formatted       = $this->format_conversation_row( $row );
+			$conversations[] = $formatted;
+
+			if ( ! empty( $formatted['resume_url'] ) && home_url( '/' ) === $resume_url ) {
+				$resume_url = (string) $formatted['resume_url'];
+			}
 		}
+
+		$case_progress = $this->build_case_progress( $conversations, $active_case, $resume_url );
 
 		$documents = array();
 
@@ -157,6 +172,7 @@ final class User_Dashboard_Rest_Controller {
 					'email'        => (string) $user->user_email,
 				),
 				'active_case'          => $active_case,
+				'case_progress'        => $case_progress,
 				'recent_conversations' => $conversations,
 				'documents'            => $documents,
 				'subscription'         => $this->subscription->for_user( $user_id ),
@@ -207,6 +223,56 @@ final class User_Dashboard_Rest_Controller {
 				'messages'        => $messages,
 			)
 		);
+	}
+
+	/**
+	 * Build compact case progress summary for the dashboard (Option B).
+	 *
+	 * @param array<int, array<string, mixed>> $conversations Recent conversations.
+	 * @param array<string, mixed>|null        $active_case   Active case row.
+	 * @param string                           $resume_url    Default resume URL.
+	 * @return array<string, mixed>
+	 */
+	private function build_case_progress( array $conversations, $active_case, string $resume_url ): array {
+		$roadmap = null;
+		$url     = $resume_url;
+
+		foreach ( $conversations as $conversation ) {
+			if ( empty( $conversation['session_id'] ) ) {
+				continue;
+			}
+
+			$row = $this->conversations->find_owned_by_session(
+				get_current_user_id(),
+				(string) $conversation['session_id']
+			);
+
+			if ( ! $row ) {
+				continue;
+			}
+
+			$context      = $this->decode_context( (string) ( $row->context_json ?? '' ) );
+			$case_profile = is_array( $context['case_profile'] ?? null ) ? $context['case_profile'] : array();
+			$candidate    = is_array( $case_profile['roadmap'] ?? null ) ? $case_profile['roadmap'] : null;
+
+			if ( is_array( $candidate ) && ! empty( $candidate['show'] ) ) {
+				$roadmap = $candidate;
+				$url     = (string) ( $conversation['resume_url'] ?? $resume_url );
+				break;
+			}
+		}
+
+		if ( ! is_array( $roadmap ) ) {
+			return array( 'show' => false );
+		}
+
+		$summary = $this->roadmap_presenter->to_summary( $roadmap, $url );
+
+		if ( is_array( $active_case ) && isset( $active_case['progress_percentage'] ) ) {
+			$summary['progress_percentage'] = (int) $active_case['progress_percentage'];
+		}
+
+		return $summary;
 	}
 
 	/**

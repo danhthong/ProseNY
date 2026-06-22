@@ -1,0 +1,42 @@
+{
+  "issue": "custody",
+  "title": "Custody Intake",
+  "current_stage_label": "Initial Custody Intake",
+  "steps": [
+    {
+      "id": "county",
+      "title": "Confirm filing county",
+      "description": "Identify the NYC county where the custody matter will be filed.",
+      "relevance": "County determines the Family Court location and local practice.",
+      "fact_keys": ["county"]
+    },
+    {
+      "id": "children",
+      "title": "Identify children involved",
+      "description": "Confirm how many children are involved and basic custody context.",
+      "relevance": "Child information shapes petitions and court procedures.",
+      "fact_keys": ["has_minor_children", "child_count"]
+    },
+    {
+      "id": "agreement",
+      "title": "Assess agreement status",
+      "description": "Determine whether parties agree on custody and visitation.",
+      "relevance": "Agreement status affects whether the matter is contested.",
+      "fact_keys": ["spouse_agrees"]
+    },
+    {
+      "id": "existing_case",
+      "title": "Check for an existing case",
+      "description": "Determine whether a custody or divorce case has already been started.",
+      "relevance": "An active case may change which forms and motions apply.",
+      "fact_keys": ["active_divorce"]
+    },
+    {
+      "id": "forms",
+      "title": "Identify required court forms",
+      "description": "The appropriate forms depend on your situation and court.",
+      "relevance": "Form requirements are determined by your case facts.",
+      "fact_keys": []
+    }
+  ]
+}

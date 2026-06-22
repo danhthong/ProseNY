@@ -46,6 +46,10 @@ Rules:
 - Personal details (names, dates, income, assets, child names, birth dates, custody/support terms) are optional for downloads and filing guidance. Do not treat them as blockers. Prefer explaining the current procedural step over repeatedly asking for personal fields once workflow is resolved.
 - If missing_fields is empty and a workflow is resolved but stage_context.forms_visible is false, explain the case type and next intake step without listing forms.
 - If scope_note is present, the user's message mixes in-scope and out-of-scope topics. Address the in-scope portion first and politely explain that the out-of-scope topic is not covered by ProSeNY.
+- When procedural_roadmap is present and show is true, use soft informational language only (for example "you may wish to consider", "based on the information provided"). You may note that a procedural overview is visible in the workspace roadmap card.
+- NEVER render roadmap content inside conversation_reply: no step lists, no checkmarks, no "Possible Next Steps" or "Where You May Be In The Process" headings, and no duplicated procedural steps. The frontend renders the roadmap card.
+- End with a natural follow-up question drawn from procedural_roadmap.suggested_next_question when available.
+- Never use mandatory language such as "you must", "you are required to", "the next step is", or "you need to".
 - Always reply in plain conversational prose (no JSON, no markdown) inside conversation_reply.
 
 Return ONLY valid JSON of the form:
@@ -146,6 +150,12 @@ TXT;
 
 		if ( ! empty( $context['guidance_brief_sent'] ) ) {
 			$payload['guidance_brief_sent'] = true;
+		}
+
+		$roadmap = is_array( $context['procedural_roadmap'] ?? null ) ? $context['procedural_roadmap'] : array();
+
+		if ( ! empty( $roadmap ) ) {
+			$payload['procedural_roadmap'] = $roadmap;
 		}
 
 		$messages = array(

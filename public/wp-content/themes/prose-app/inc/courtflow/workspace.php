@@ -63,6 +63,7 @@ function enqueue_assets(): void {
 	}
 
 	wp_enqueue_style( 'courtflow-workspace' );
+	wp_enqueue_style( 'courtflow-roadmap' );
 	wp_enqueue_script( 'courtflow-workspace' );
 	if ( function_exists( 'ProseApp\\Enqueue\\localize' ) ) {
 		\ProseApp\Enqueue\localize();

@@ -37,9 +37,57 @@
 		el.className = 'prose-dashboard__status' + (isError ? ' prose-dashboard__status--error' : '');
 	}
 
-	function renderCaseProgress(activeCase) {
+	function renderCaseProgress(activeCase, caseProgress) {
 		var el = document.getElementById('prose-case-progress');
 		if (!el) {
+			return;
+		}
+
+		caseProgress = caseProgress || {};
+
+		if (caseProgress.show) {
+			var pct = Math.max(0, Math.min(100, Number(caseProgress.progress_percentage || 0)));
+			var confidence = caseProgress.confidence_level || {};
+			var nextStep = caseProgress.next_likely_step || {};
+			var continueUrl = caseProgress.continue_case_url || cfg.homeUrl || '/';
+
+			el.innerHTML =
+				'<p class="prose-dashboard__stage">' +
+				escapeHtml(caseProgress.current_stage || 'Intake') +
+				' · ' +
+				escapeHtml(String(pct)) +
+				'% complete</p>' +
+				'<div class="prose-dashboard__progress">' +
+				'<div class="prose-dashboard__progress-bar" style="width:' +
+				pct +
+				'%"></div>' +
+				'</div>' +
+				'<dl class="prose-dashboard__case-progress-meta">' +
+				(confidence.label
+					? '<div><dt>Confidence</dt><dd>' +
+						escapeHtml(confidence.label) +
+						(confidence.reason ? ' — ' + escapeHtml(confidence.reason) : '') +
+						'</dd></div>'
+					: '') +
+				(nextStep.title
+					? '<div><dt>Next likely step</dt><dd><strong>' +
+						escapeHtml(nextStep.title) +
+						'</strong>' +
+						(nextStep.description ? '<br>' + escapeHtml(nextStep.description) : '') +
+						'</dd></div>'
+					: '') +
+				(caseProgress.suggested_follow_up_question
+					? '<div><dt>Suggested follow-up</dt><dd>' +
+						escapeHtml(caseProgress.suggested_follow_up_question) +
+						'</dd></div>'
+					: '') +
+				'</dl>' +
+				'<p class="prose-dashboard__case-progress-note">For your reference only — not a mandatory checklist.</p>' +
+				'<p><a class="prose-dashboard__cta prose-dashboard__continue-case" href="' +
+				escapeAttr(continueUrl) +
+				'">' +
+				escapeHtml(I18N.continueCase || 'Continue Case') +
+				'</a></p>';
 			return;
 		}
 
@@ -200,7 +248,7 @@
 			if (greeting && data.user) {
 				greeting.textContent = 'Welcome back, ' + (data.user.display_name || data.user.email || 'there') + '.';
 			}
-			renderCaseProgress(data.active_case);
+			renderCaseProgress(data.active_case, data.case_progress);
 			renderSubscription(data.subscription);
 			renderConversations(data.recent_conversations);
 			renderDocuments(data.documents);

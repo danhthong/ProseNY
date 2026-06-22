@@ -1,0 +1,141 @@
+/* Procedural roadmap card (workspace context panel) */
+
+.cf-roadmap-card {
+	margin-bottom: 1rem;
+	padding: 1rem;
+	background: var(--cf-surface-raised, #fff);
+	border: 1px solid var(--cf-border, #e2e8f0);
+	border-radius: var(--cf-radius-md, 10px);
+	box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.cf-roadmap-card__eyebrow {
+	margin: 0 0 0.25rem;
+	font-size: 0.6875rem;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--cf-ink-muted, #64748b);
+}
+
+.cf-roadmap-card__title {
+	margin: 0 0 0.75rem;
+	font-size: 1rem;
+	font-weight: 600;
+	line-height: 1.35;
+	color: var(--cf-ink, #0f172a);
+}
+
+.cf-roadmap-card__footer {
+	margin-top: 0.75rem;
+	padding-top: 0.75rem;
+	border-top: 1px solid var(--cf-border, #e2e8f0);
+}
+
+.cf-roadmap-card__disclaimer,
+.cf-roadmap-card__informational {
+	margin: 0;
+	font-size: 0.75rem;
+	line-height: 1.45;
+	color: var(--cf-ink-muted, #64748b);
+}
+
+.cf-roadmap-card__informational {
+	margin-top: 0.35rem;
+}
+
+.cf-roadmap__section {
+	margin-bottom: 0.875rem;
+}
+
+.cf-roadmap__section-title {
+	margin: 0 0 0.5rem;
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: var(--cf-ink-muted, #64748b);
+}
+
+.cf-roadmap__list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.cf-roadmap__step {
+	display: flex;
+	gap: 0.5rem;
+	margin-bottom: 0.625rem;
+	font-size: 0.8125rem;
+	line-height: 1.45;
+}
+
+.cf-roadmap__marker {
+	flex: 0 0 1.25rem;
+	font-weight: 700;
+	color: var(--cf-brand, #2563eb);
+}
+
+.cf-roadmap__step--done .cf-roadmap__marker {
+	color: var(--cf-success, #16a34a);
+}
+
+.cf-roadmap__step-content p {
+	margin: 0.25rem 0 0;
+	color: var(--cf-ink-muted, #64748b);
+}
+
+.cf-roadmap__relevance,
+.cf-roadmap__needs-info {
+	font-size: 0.75rem;
+	font-style: italic;
+}
+
+.cf-roadmap__form-list {
+	margin: 0;
+	padding-left: 1.1rem;
+	font-size: 0.8125rem;
+}
+
+.cf-roadmap__confidence,
+.cf-roadmap__question {
+	font-size: 0.8125rem;
+}
+
+.cf-roadmap__confidence-label {
+	font-weight: 600;
+}
+
+/* Dashboard case progress summary */
+
+.prose-dashboard__case-progress-meta {
+	margin: 0.75rem 0;
+	font-size: 0.875rem;
+}
+
+.prose-dashboard__case-progress-meta div {
+	margin-bottom: 0.5rem;
+}
+
+.prose-dashboard__case-progress-meta dt {
+	font-weight: 600;
+	color: var(--cf-ink-muted, #64748b);
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.prose-dashboard__case-progress-meta dd {
+	margin: 0.15rem 0 0;
+}
+
+.prose-dashboard__case-progress-note {
+	margin: 0.5rem 0 0.75rem;
+	font-size: 0.75rem;
+	color: var(--cf-ink-muted, #64748b);
+}
+
+.prose-dashboard__continue-case {
+	display: inline-block;
+}

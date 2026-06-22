@@ -8,6 +8,7 @@
 namespace ProSe\Core\Ai_Intake;
 
 use ProSe\Core\Guidance\Filing_Guidance_Brief_Resolver;
+use ProSe\Core\Guidance\Procedural_Roadmap_Presenter;
 use ProSe\Core\Intake\Completion_Calculator;
 use ProSe\Core\Intake\Document_Request_Detector;
 use ProSe\Core\Procedural\Procedural_Navigator;
@@ -113,6 +114,13 @@ final class AI_Intake_Interpreter {
 	private Document_Request_Detector $documents;
 
 	/**
+	 * Procedural roadmap presenter.
+	 *
+	 * @var Procedural_Roadmap_Presenter
+	 */
+	private Procedural_Roadmap_Presenter $roadmap_presenter;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Ai_Provider_Interface|null      $provider         Provider override.
@@ -139,7 +147,8 @@ final class AI_Intake_Interpreter {
 		?AI_Settings $settings = null,
 		?AI_Logger $logger = null,
 		?Conversation_Engine $engine = null,
-		?Document_Request_Detector $documents = null
+		?Document_Request_Detector $documents = null,
+		?Procedural_Roadmap_Presenter $roadmap_presenter = null
 	) {
 		$this->settings        = $settings ?? new AI_Settings();
 		$this->logger          = $logger ?? new AI_Logger();
@@ -154,6 +163,7 @@ final class AI_Intake_Interpreter {
 		$this->engine          = $engine ?? new Conversation_Engine( $this->settings, $this->extractor );
 		$this->workflows       = new \ProSe\Core\Routing\Workflow_Catalog();
 		$this->documents       = $documents ?? new Document_Request_Detector();
+		$this->roadmap_presenter = $roadmap_presenter ?? new Procedural_Roadmap_Presenter();
 	}
 
 	/**
@@ -262,6 +272,18 @@ final class AI_Intake_Interpreter {
 			$intake->plain_facts()
 		);
 
+		$roadmap_pre = $this->roadmap_presenter->present(
+			$this->roadmap_input(
+				$intake,
+				$workflow_pre,
+				$missing_pre,
+				$completion_pre,
+				$stage_pre,
+				$this->procedural_navigator_context( $intake, $workflow_pre ),
+				$resolved_pre
+			)
+		);
+
 		// --- Single conversational OpenAI call: extract facts + write reply ---
 		$scope_note = isset( $state['scope_note'] ) && is_string( $state['scope_note'] ) ? trim( $state['scope_note'] ) : '';
 
@@ -283,6 +305,7 @@ final class AI_Intake_Interpreter {
 				'stage_context'         => $stage_pre,
 				'filing_guidance_brief' => $brief_pre,
 				'guidance_brief_sent'   => $brief_sent,
+				'procedural_roadmap'    => $roadmap_pre,
 			),
 			$this->provider,
 			$this->logger
@@ -352,7 +375,26 @@ final class AI_Intake_Interpreter {
 		$next_action  = ! empty( $brief_extra['guidance_brief_delivered'] ) ? 'guidance' : 'ask_question';
 		$intent       = ! empty( $brief_extra['guidance_brief_delivered'] ) ? 'guidance' : 'gathering';
 
-		return $this->build_result(
+		$stored_fingerprint = (string) ( $state['case_profile']['roadmap_fingerprint'] ?? '' );
+		$roadmap_resolution = $this->roadmap_presenter->resolve_with_change_detection(
+			$stored_fingerprint,
+			$this->roadmap_input(
+				$intake,
+				$workflow,
+				$missing,
+				$completion_pct,
+				$stage_ctx,
+				$this->procedural_navigator_context( $intake, $workflow ),
+				$resolved
+			)
+		);
+
+		$roadmap_extra = array(
+			'roadmap'             => $roadmap_resolution['roadmap'],
+			'roadmap_fingerprint' => (string) ( $roadmap_resolution['fingerprint'] ?? '' ),
+		);
+
+		$result = $this->build_result(
 			$intake,
 			$applied,
 			$missing,
@@ -365,8 +407,16 @@ final class AI_Intake_Interpreter {
 			false,
 			$completion_pct,
 			$pending_hint,
-			$brief_extra
+			array_merge( $brief_extra, $roadmap_extra )
 		);
+
+		$result['roadmap_changed'] = ! empty( $roadmap_resolution['changed'] );
+
+		if ( ! empty( $roadmap_resolution['changed'] ) ) {
+			$result['roadmap'] = $roadmap_resolution['roadmap'];
+		}
+
+		return $result;
 	}
 
 	/**
@@ -436,6 +486,53 @@ final class AI_Intake_Interpreter {
 				'intake_complete' => $complete || ( null !== $workflow && '' !== $workflow ),
 				'issue'           => (string) ( $intake->plain_facts()['issue'] ?? 'divorce' ),
 			)
+		);
+	}
+
+	/**
+	 * Build input for the procedural roadmap presenter.
+	 *
+	 * @param Intake_State                       $intake      Intake state.
+	 * @param string|null                        $workflow    Workflow key.
+	 * @param array<int, array<string, mixed>>   $missing     Missing fields.
+	 * @param int                                $completion  Completion percent.
+	 * @param array<string, mixed>               $stage_ctx   Stage context.
+	 * @param array<string, mixed>               $navigator   Navigator context.
+	 * @param array<string, mixed>               $resolved    Resolved fields payload.
+	 * @return array<string, mixed>
+	 */
+	private function roadmap_input(
+		Intake_State $intake,
+		?string $workflow,
+		array $missing,
+		int $completion,
+		array $stage_ctx,
+		array $navigator,
+		array $resolved
+	): array {
+		$facts = $intake->plain_facts();
+		$issue = sanitize_key( (string) ( $facts['issue'] ?? $resolved['issue'] ?? '' ) );
+
+		if ( '' === $issue && null !== $workflow && '' !== $workflow ) {
+			$definition = $this->workflows->by_key( $workflow );
+			$issue      = sanitize_key( (string) ( $definition['issue_type'] ?? $definition['workflow_category'] ?? '' ) );
+		}
+
+		$candidates = is_array( $resolved['candidate_workflows'] ?? null ) ? $resolved['candidate_workflows'] : array();
+
+		return array(
+			'issue'                 => $issue,
+			'facts'                 => $facts,
+			'workflow'              => (string) ( $workflow ?? '' ),
+			'missing_fields'        => $missing,
+			'completion'            => $completion,
+			'stage_context'         => $stage_ctx,
+			'procedural_navigator'  => $navigator,
+			'workflow_resolved'     => null !== $workflow && '' !== $workflow,
+			'intake_complete'       => empty( $missing ) && null !== $workflow && '' !== $workflow,
+			'candidate_workflows'   => $candidates,
+			'routing_status'        => (string) ( $resolved['routing_status'] ?? '' ),
+			'procedural_node'       => (string) ( $stage_ctx['current_stage']['id'] ?? '' ),
 		);
 	}
 

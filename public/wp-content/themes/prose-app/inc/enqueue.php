@@ -32,6 +32,14 @@ function register_assets(): void {
 		array(),
 		file_exists( $css ) ? prose_app_asset_version( 'assets/css/courtflow.css' ) : PROSE_APP_VERSION
 	);
+
+	$roadmap_css = get_template_directory() . '/assets/css/courtflow-roadmap.css';
+	wp_register_style(
+		'courtflow-roadmap',
+		get_template_directory_uri() . '/assets/css/courtflow-roadmap.css',
+		array( 'courtflow-workspace' ),
+		file_exists( $roadmap_css ) ? prose_app_asset_version( 'assets/css/courtflow-roadmap.css' ) : PROSE_APP_VERSION
+	);
 }
 
 function enqueue_inter_font(): void {

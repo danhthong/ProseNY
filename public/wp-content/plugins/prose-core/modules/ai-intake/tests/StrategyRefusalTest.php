@@ -104,6 +104,27 @@ class StrategyRefusalTest extends TestCase {
 		$this->assertStringContainsString( 'procedural_navigator', $capturing->last_user_payload );
 		$this->assertStringContainsString( 'next_steps', $capturing->last_user_payload );
 	}
+
+	/**
+	 * Procedural roadmap context is injected when issue is known.
+	 */
+	public function test_procedural_roadmap_injected_in_converse_payload(): void {
+		$capturing   = new Capturing_Stub_Provider();
+		$interpreter = new AI_Intake_Interpreter( $capturing );
+
+		$interpreter->interpret(
+			'I want a divorce in Queens.',
+			array(
+				'facts' => array(
+					'issue'  => array( 'value' => 'divorce', 'confidence' => 1.0, 'confirmed' => true ),
+					'county' => array( 'value' => 'Queens', 'confidence' => 1.0, 'confirmed' => true ),
+				),
+			)
+		);
+
+		$this->assertStringContainsString( 'procedural_roadmap', $capturing->last_user_payload );
+		$this->assertStringContainsString( '"show":true', str_replace( ' ', '', $capturing->last_user_payload ) );
+	}
 }
 
 /**
