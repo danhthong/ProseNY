@@ -79,7 +79,7 @@ final class Package_Preview_Shortcode {
 				self::HANDLE,
 				PROSE_CORE_URL . 'modules/packagebuilder/assets/package-preview.css',
 				array(),
-				PROSE_CORE_VERSION
+				prose_core_asset_version( 'modules/packagebuilder/assets/package-preview.css' )
 			);
 		}
 
@@ -88,7 +88,7 @@ final class Package_Preview_Shortcode {
 				self::HANDLE,
 				PROSE_CORE_URL . 'modules/packagebuilder/assets/package-preview.js',
 				array(),
-				PROSE_CORE_VERSION,
+				prose_core_asset_version( 'modules/packagebuilder/assets/package-preview.js' ),
 				true
 			);
 		}

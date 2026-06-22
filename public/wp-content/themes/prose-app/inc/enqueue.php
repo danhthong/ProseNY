@@ -20,7 +20,7 @@ function register_assets(): void {
 			'courtflow-workspace',
 			get_template_directory_uri() . '/build/courtflow.js',
 			array(),
-			(string) filemtime( $build ),
+			prose_app_asset_version( 'build/courtflow.js' ),
 			true
 		);
 	}
@@ -30,7 +30,7 @@ function register_assets(): void {
 		'courtflow-workspace',
 		get_template_directory_uri() . '/assets/css/courtflow.css',
 		array(),
-		file_exists( $css ) ? (string) filemtime( $css ) : PROSE_APP_VERSION
+		file_exists( $css ) ? prose_app_asset_version( 'assets/css/courtflow.css' ) : PROSE_APP_VERSION
 	);
 }
 

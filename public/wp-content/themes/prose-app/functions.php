@@ -9,7 +9,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'PROSE_APP_VERSION', '0.3.0' );
+define( 'PROSE_APP_VERSION', '0.4.0' );
+
+/**
+ * Cache-busting version for a theme asset (file mtime, else theme version).
+ *
+ * @param string $relative_path Path relative to the theme root.
+ * @return string
+ */
+function prose_app_asset_version( string $relative_path ): string {
+	$path = get_template_directory() . '/' . ltrim( $relative_path, '/' );
+
+	if ( file_exists( $path ) ) {
+		return (string) filemtime( $path );
+	}
+
+	return PROSE_APP_VERSION;
+}
 
 require_once get_template_directory() . '/inc/blocks.php';
 require_once get_template_directory() . '/inc/enqueue.php';
@@ -58,7 +74,7 @@ function prose_app_enqueue_assets(): void {
 			'prose-app',
 			get_template_directory_uri() . '/assets/css/main.css',
 			array(),
-			(string) filemtime( $stylesheet )
+			prose_app_asset_version( 'assets/css/main.css' )
 		);
 	}
 }

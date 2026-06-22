@@ -100,7 +100,7 @@ final class Intake_Chat_Shortcode {
 				self::HANDLE,
 				PROSE_CORE_URL . 'modules/intake/assets/chat.css',
 				array(),
-				PROSE_CORE_VERSION
+				prose_core_asset_version( 'modules/intake/assets/chat.css' )
 			);
 		}
 
@@ -109,7 +109,7 @@ final class Intake_Chat_Shortcode {
 				self::HANDLE,
 				PROSE_CORE_URL . 'modules/intake/assets/chat.js',
 				array(),
-				PROSE_CORE_VERSION,
+				prose_core_asset_version( 'modules/intake/assets/chat.js' ),
 				true
 			);
 		}

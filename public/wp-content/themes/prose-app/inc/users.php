@@ -190,14 +190,14 @@ function enqueue_dashboard_assets(): void {
 		'courtflow-workspace',
 		get_template_directory_uri() . '/assets/css/courtflow.css',
 		array(),
-		PROSE_APP_VERSION
+		prose_app_asset_version( 'assets/css/courtflow.css' )
 	);
 
 	wp_enqueue_script(
 		'prose-dashboard',
 		get_template_directory_uri() . '/build/dashboard.js',
 		array(),
-		(string) filemtime( $script ),
+		(string) ( file_exists( $script ) ? prose_app_asset_version( 'build/dashboard.js' ) : PROSE_APP_VERSION ),
 		true
 	);
 
