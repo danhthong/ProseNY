@@ -106,6 +106,11 @@ final class Domain_Scope_Guard {
 			$supported_score = max( $supported_score, 0.35 );
 		}
 
+		// Mid-intake fact answers (dates, names, residency) rarely repeat "divorce" keywords.
+		if ( $this->has_active_intake( $state, $conversation ) && empty( $out_of_scope ) ) {
+			$supported_score = max( $supported_score, Supported_Issue_Catalog::CONFIDENCE_THRESHOLD );
+		}
+
 		$hybrid    = ! empty( $out_of_scope ) && $supported_score >= Supported_Issue_Catalog::CONFIDENCE_THRESHOLD;
 		$supported = $supported_score >= Supported_Issue_Catalog::CONFIDENCE_THRESHOLD;
 

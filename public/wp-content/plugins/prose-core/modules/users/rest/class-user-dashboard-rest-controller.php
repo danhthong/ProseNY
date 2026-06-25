@@ -8,7 +8,9 @@
 namespace ProSe\Core\Users\Rest;
 
 use ProSe\Core\Forms\Database\Repositories\Case_Repository;
+use ProSe\Core\Guidance\Eligibility_Presenter;
 use ProSe\Core\Guidance\Procedural_Roadmap_Presenter;
+use ProSe\Core\Intake\Case_Lifecycle_Service;
 use ProSe\Core\Intake\Rest\Courtflow_Session_Store;
 use ProSe\Core\Loader;
 use ProSe\Core\Routing\Workflow_Catalog;
@@ -74,6 +76,16 @@ final class User_Dashboard_Rest_Controller {
 	private Courtflow_Session_Store $session_store;
 
 	/**
+	 * @var Case_Lifecycle_Service
+	 */
+	private Case_Lifecycle_Service $lifecycle_service;
+
+	/**
+	 * @var Eligibility_Presenter
+	 */
+	private Eligibility_Presenter $eligibility;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Courtflow_Session_Store|null $session_store Optional session store.
@@ -87,6 +99,8 @@ final class User_Dashboard_Rest_Controller {
 		$this->workflows         = new Workflow_Catalog();
 		$this->roadmap_presenter = new Procedural_Roadmap_Presenter();
 		$this->session_store     = $session_store ?? new Courtflow_Session_Store();
+		$this->lifecycle_service = new Case_Lifecycle_Service();
+		$this->eligibility       = new Eligibility_Presenter();
 	}
 
 	/**
@@ -170,6 +184,8 @@ final class User_Dashboard_Rest_Controller {
 		}
 
 		$case_progress = $this->build_case_progress( $conversations, $active_case, $resume_url );
+		$case_lifecycle = $this->build_case_lifecycle( $conversations, $case_progress );
+		$matter_map     = $case_lifecycle['matter_map'] ?? array( 'show' => false );
 
 		$documents = array();
 
@@ -192,6 +208,8 @@ final class User_Dashboard_Rest_Controller {
 				),
 				'active_case'          => $active_case,
 				'case_progress'        => $case_progress,
+				'case_lifecycle'       => $case_lifecycle,
+				'matter_map'           => $matter_map,
 				'recent_conversations' => $conversations,
 				'documents'            => $documents,
 				'subscription'         => $this->subscription->for_user( $user_id ),
@@ -333,6 +351,60 @@ final class User_Dashboard_Rest_Controller {
 		}
 
 		return $summary;
+	}
+
+	/**
+	 * Build lifecycle checklist for dashboard from the most recent divorce conversation.
+	 *
+	 * @param array<int, array<string, mixed>> $conversations Recent conversations.
+	 * @param array<string, mixed>             $case_progress Case progress summary.
+	 * @return array<string, mixed>
+	 */
+	private function build_case_lifecycle( array $conversations, array $case_progress ): array {
+		foreach ( $conversations as $conversation ) {
+			if ( empty( $conversation['session_id'] ) ) {
+				continue;
+			}
+
+			$row = $this->conversations->find_owned_by_session(
+				get_current_user_id(),
+				(string) $conversation['session_id']
+			);
+
+			if ( ! $row ) {
+				continue;
+			}
+
+			$context      = $this->decode_context( (string) ( $row->context_json ?? '' ) );
+			$case_profile = is_array( $context['case_profile'] ?? null ) ? $context['case_profile'] : array();
+			$facts        = is_array( $case_profile['facts'] ?? null ) ? $case_profile['facts'] : array();
+			$actions      = is_array( $context['actions'] ?? null ) ? $context['actions'] : array();
+			$lifecycle    = $this->lifecycle_service->build(
+				$case_profile,
+				array(
+					'intake_complete' => ! empty( $actions['intake_complete'] ),
+					'completion'      => (int) ( $case_progress['progress_percentage'] ?? 0 ),
+				)
+			);
+
+			if ( empty( $lifecycle['show'] ) ) {
+				continue;
+			}
+
+			$eligibility = $this->eligibility->evaluate( $facts );
+			$matter_map  = $this->lifecycle_service->build_matter_map( $case_profile );
+
+			return array_merge(
+				$lifecycle,
+				array(
+					'eligibility'       => $eligibility,
+					'matter_map'        => $matter_map,
+					'continue_case_url' => (string) ( $case_progress['continue_case_url'] ?? $conversation['resume_url'] ?? home_url( '/' ) ),
+				)
+			);
+		}
+
+		return array( 'show' => false );
 	}
 
 	/**

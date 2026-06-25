@@ -1,35 +1,49 @@
 {
   "issue": "divorce",
   "title": "Divorce Intake",
-  "current_stage_label": "Initial Divorce Intake",
+  "current_stage_label": "Eligibility & Intake",
   "steps": [
     {
       "id": "residency",
       "title": "Determine residency eligibility",
       "description": "Confirm whether either spouse meets New York residency requirements for filing.",
       "relevance": "Residency rules affect which court may hear the case.",
-      "fact_keys": ["county"]
+      "fact_keys": ["county", "residency_qualification"]
     },
     {
-      "id": "contested",
+      "id": "case_type",
       "title": "Identify the type of divorce",
       "description": "Determine whether the matter is likely uncontested or contested.",
       "relevance": "Agreement on major issues often affects the forms and process path.",
       "fact_keys": ["spouse_agrees"]
     },
     {
+      "id": "marriage",
+      "title": "Basic marriage information",
+      "description": "Marriage date and location help establish jurisdiction and required pleadings.",
+      "relevance": "Commencement forms typically ask for marriage facts.",
+      "fact_keys": ["marriage_date", "marriage_location"]
+    },
+    {
       "id": "children",
-      "title": "Gather basic family information",
+      "title": "Children and custody",
       "description": "Information regarding children under 21 may affect custody, support, and required forms.",
       "relevance": "Child-related issues commonly shape the procedural path.",
-      "fact_keys": ["has_minor_children"]
+      "fact_keys": ["has_minor_children", "custody_dispute"]
     },
     {
       "id": "property",
-      "title": "Review property and finances",
-      "description": "Assets, debts, and support obligations may affect the process.",
-      "relevance": "Financial issues can influence agreements and filings.",
-      "fact_keys": ["marital_property_resolved"]
+      "title": "Property, debt, and support",
+      "description": "Assets, debts, and support disputes may affect agreements and filings.",
+      "relevance": "Financial and support issues can influence the process path.",
+      "fact_keys": ["marital_property_resolved", "support_dispute"]
+    },
+    {
+      "id": "safety",
+      "title": "Safety and prior cases",
+      "description": "Prior orders or safety concerns may involve additional Family Court matters.",
+      "relevance": "Safety-sensitive issues may overlap with separate Family Court workflows.",
+      "fact_keys": ["domestic_violence_concerns", "prior_court_cases"]
     },
     {
       "id": "forms",

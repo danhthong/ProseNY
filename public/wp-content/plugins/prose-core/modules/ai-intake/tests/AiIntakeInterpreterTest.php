@@ -293,6 +293,8 @@ class AiIntakeInterpreterTest extends TestCase {
 
 		$facts = array(
 			'county'                    => array( 'value' => 'Queens', 'confidence' => 0.99, 'confirmed' => true ),
+			'marriage_location'         => array( 'value' => 'Queens, NY', 'confidence' => 0.99, 'confirmed' => true ),
+			'residency_qualification'   => array( 'value' => '1_year_state', 'confidence' => 0.99, 'confirmed' => true ),
 			'marriage_date'             => array( 'value' => '2010-01-01', 'confidence' => 0.99, 'confirmed' => true ),
 			'separation_date'           => array( 'value' => '2024-01-01', 'confidence' => 0.99, 'confirmed' => true ),
 			'grounds_for_divorce'       => array( 'value' => 'irretrievable breakdown', 'confidence' => 0.99, 'confirmed' => true ),

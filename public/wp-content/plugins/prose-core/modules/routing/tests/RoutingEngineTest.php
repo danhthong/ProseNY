@@ -224,6 +224,31 @@ class RoutingEngineTest extends TestCase {
 	}
 
 	/**
+	 * Mid-divorce fact answers must not reroute on the OP trigger inside "property".
+	 */
+	public function test_property_answer_does_not_reroute_to_order_of_protection(): void {
+		$profile = Case_Profile::from_array(
+			array(
+				'issue'    => 'divorce',
+				'court'    => 'supreme_court',
+				'workflow' => 'uncontested_divorce_no_children_nyc',
+				'facts'    => array(
+					'county'        => 'Queens',
+					'spouse_agrees' => true,
+				),
+			)
+		);
+
+		$result = $this->engine->route_profile(
+			'My spouse agrees. No children under 21. Property and support are agreed.',
+			$profile
+		);
+
+		$this->assertSame( 'divorce', $result->issue() );
+		$this->assertSame( 'uncontested_divorce_no_children_nyc', $result->workflow() );
+	}
+
+	/**
 	 * Active divorce redirects standalone custody to Supreme Court divorce workflow.
 	 */
 	public function test_active_divorce_custody_routes_to_supreme(): void {

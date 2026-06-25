@@ -31,6 +31,16 @@ get_template_part( 'template-parts/prose-site-shell-start' );
 				<div id="prose-subscription" class="prose-dashboard__widget-body"></div>
 			</section>
 
+			<section class="prose-dashboard__widget" aria-labelledby="prose-case-lifecycle-title">
+				<h2 id="prose-case-lifecycle-title" class="prose-dashboard__widget-title"><?php esc_html_e( 'Case Lifecycle', 'prose-app' ); ?></h2>
+				<div id="prose-case-lifecycle" class="prose-dashboard__widget-body"></div>
+			</section>
+
+			<section class="prose-dashboard__widget" aria-labelledby="prose-matter-map-title">
+				<h2 id="prose-matter-map-title" class="prose-dashboard__widget-title"><?php esc_html_e( 'Courts Involved', 'prose-app' ); ?></h2>
+				<div id="prose-matter-map" class="prose-dashboard__widget-body"></div>
+			</section>
+
 			<section class="prose-dashboard__widget prose-dashboard__widget--wide" aria-labelledby="prose-conversations-title">
 				<h2 id="prose-conversations-title" class="prose-dashboard__widget-title"><?php esc_html_e( 'Your Conversations', 'prose-app' ); ?></h2>
 				<div id="prose-conversations" class="prose-dashboard__widget-body"></div>

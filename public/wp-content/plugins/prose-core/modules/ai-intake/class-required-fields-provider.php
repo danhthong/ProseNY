@@ -43,11 +43,13 @@ final class Required_Fields_Provider {
 	private const FIELD_PRIORITIES = array(
 		'county'                => 100,
 		'issue'                 => 98,
+		'residency_qualification' => 96,
 		'has_minor_children'    => 90,
 		'children'              => 90,
 		'child_count'           => 88,
 		'spouse_agrees'         => 85,
 		'marriage_date'         => 70,
+		'marriage_location'   => 69,
 		'separation_date'       => 68,
 		'grounds_for_divorce'   => 65,
 		'plaintiff_information' => 60,

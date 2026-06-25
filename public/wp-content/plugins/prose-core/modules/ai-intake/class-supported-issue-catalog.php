@@ -152,6 +152,11 @@ final class Supported_Issue_Catalog {
 			array( 'phrase' => 'wife', 'weight' => 0.15 ),
 			array( 'phrase' => 'married', 'weight' => 0.15 ),
 			array( 'phrase' => 'marriage', 'weight' => 0.15 ),
+			array( 'phrase' => 'separated', 'weight' => 0.20 ),
+			array( 'phrase' => 'residency', 'weight' => 0.20 ),
+			array( 'phrase' => 'plaintiff', 'weight' => 0.20 ),
+			array( 'phrase' => 'defendant', 'weight' => 0.20 ),
+			array( 'phrase' => 'irretrievable', 'weight' => 0.25 ),
 		);
 
 		/**

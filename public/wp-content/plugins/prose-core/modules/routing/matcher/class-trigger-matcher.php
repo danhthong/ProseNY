@@ -90,7 +90,7 @@ final class Trigger_Matcher {
 		foreach ( $triggers as $trigger ) {
 			$phrase = $this->catalog->normalize_text( (string) $trigger );
 
-			if ( '' === $phrase || ! str_contains( $normalized, $phrase ) ) {
+			if ( '' === $phrase || ! $this->phrase_matches( $normalized, $phrase ) ) {
 				continue;
 			}
 
@@ -99,5 +99,25 @@ final class Trigger_Matcher {
 		}
 
 		return round( $score, 4 );
+	}
+
+	/**
+	 * Match a trigger phrase without substring false positives (e.g. "op" in "property").
+	 *
+	 * @param string $normalized Normalized user text.
+	 * @param string $phrase     Normalized trigger phrase.
+	 * @return bool
+	 */
+	private function phrase_matches( string $normalized, string $phrase ): bool {
+		if ( '' === $phrase ) {
+			return false;
+		}
+
+		// Short single-token triggers must match whole words only.
+		if ( ! str_contains( $phrase, ' ' ) && strlen( $phrase ) <= 3 ) {
+			return 1 === preg_match( '/\b' . preg_quote( $phrase, '/' ) . '\b/u', $normalized );
+		}
+
+		return str_contains( $normalized, $phrase );
 	}
 }

@@ -24,6 +24,16 @@
 			</footer>
 		</section>
 
+		<section class="cf-lifecycle-card" id="cf-lifecycle-card" hidden aria-labelledby="cf-lifecycle-title">
+			<header class="cf-lifecycle-card__header">
+				<p class="cf-lifecycle-card__eyebrow"><?php esc_html_e( 'Case milestones', 'prose-app' ); ?></p>
+				<h3 class="cf-lifecycle-card__title" id="cf-lifecycle-title"></h3>
+			</header>
+			<div class="cf-lifecycle-card__body" id="cf-lifecycle-body"></div>
+			<div class="cf-lifecycle-card__actions" id="cf-lifecycle-actions"></div>
+			<p class="cf-lifecycle-card__note"><?php esc_html_e( 'Confirm milestones as you progress. Informational only — not legal advice.', 'prose-app' ); ?></p>
+		</section>
+
 		<details class="cf-accordion cf-accordion--open" open>
 			<summary class="cf-accordion__trigger"><?php esc_html_e( 'Case summary', 'prose-app' ); ?></summary>
 			<div class="cf-accordion__body" id="cf-case-summary">

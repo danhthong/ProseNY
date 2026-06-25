@@ -14,6 +14,7 @@ use ProSe\Core\Forms\Engine\Case_Service;
 use ProSe\Core\Forms\Engine\Case_State;
 use ProSe\Core\Forms\Engine\Stage_Form_Presenter;
 use ProSe\Core\Intake\Case_Actions_Resolver;
+use ProSe\Core\Intake\Case_Lifecycle_Service;
 use ProSe\Core\Loader;
 use ProSe\Core\PackageBuilder\Merged_Blank_Pdf_Service;
 use ProSe\Core\Security\Rate_Limiter;
@@ -128,6 +129,13 @@ final class Courtflow_Sessions_Rest_Controller {
 	private Case_Service $case_service;
 
 	/**
+	 * Lifecycle service.
+	 *
+	 * @var Case_Lifecycle_Service
+	 */
+	private Case_Lifecycle_Service $lifecycle_service;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param AI_Intake_Service|null           $service     AI intake service.
@@ -168,6 +176,7 @@ final class Courtflow_Sessions_Rest_Controller {
 		$this->user_documents           = $user_documents ?? new User_Document_Repository();
 		$this->stage_presenter          = new Stage_Form_Presenter();
 		$this->case_service             = new Case_Service( new Case_Repository() );
+		$this->lifecycle_service        = new Case_Lifecycle_Service();
 	}
 
 	/**
@@ -289,6 +298,28 @@ final class Courtflow_Sessions_Rest_Controller {
 						'sanitize_callback' => 'sanitize_key',
 					),
 					'event' => array(
+						'type'              => 'string',
+						'required'          => false,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			'/sessions/(?P<id>[a-f0-9-]{8,64})/lifecycle',
+			array(
+				'methods'             => \WP_REST_Server::EDITABLE,
+				'callback'            => array( $this, 'patch_lifecycle' ),
+				'permission_callback' => array( $this, 'can_access' ),
+				'args'                => array(
+					'event' => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'date'  => array(
 						'type'              => 'string',
 						'required'          => false,
 						'sanitize_callback' => 'sanitize_text_field',
@@ -547,6 +578,19 @@ final class Courtflow_Sessions_Rest_Controller {
 			);
 		}
 
+		$facts = is_array( $context['facts']['case'] ?? null ) ? $context['facts']['case'] : array();
+		$eligibility = ( new \ProSe\Core\Guidance\Eligibility_Presenter() )->evaluate( $facts );
+
+		if ( \ProSe\Core\Guidance\Eligibility_Presenter::STATUS_LIKELY_INELIGIBLE === ( $eligibility['status'] ?? '' ) ) {
+			return new \WP_REST_Response(
+				array(
+					'message'     => (string) ( $eligibility['reason'] ?? __( 'Residency requirements may not be met.', 'prose-core' ) ),
+					'eligibility' => $eligibility,
+				),
+				422
+			);
+		}
+
 		$build = $this->merged_pdfs->build(
 			$workflow,
 			false,
@@ -592,6 +636,19 @@ final class Courtflow_Sessions_Rest_Controller {
 		);
 
 		$session['documents'] = $documents;
+
+		$case_profile = is_array( $session['case_profile'] ?? null ) ? $session['case_profile'] : array();
+		$updated      = $this->lifecycle_service->apply_event(
+			$case_profile,
+			Case_Lifecycle_Service::EVENT_FORMS_GENERATED,
+			gmdate( 'Y-m-d' )
+		);
+
+		if ( ! is_wp_error( $updated ) ) {
+			$session['case_profile'] = $updated;
+		}
+
+		$this->mapper->refresh_session_roadmap( $session );
 		$this->store->save( (string) $session['session_id'], $session );
 
 		$user_id = get_current_user_id();
@@ -626,6 +683,54 @@ final class Courtflow_Sessions_Rest_Controller {
 				'documents' => $documents,
 				'forms'     => $context['required_forms'] ?? array(),
 				'stage_context' => $context['stage_context'] ?? array(),
+				'lifecycle' => $this->mapper->map_lifecycle_fields( $session, $context )['lifecycle'] ?? array(),
+			)
+		);
+	}
+
+	/**
+	 * Record a user-confirmed lifecycle milestone.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function patch_lifecycle( \WP_REST_Request $request ) {
+		$session_id = sanitize_text_field( (string) $request->get_param( 'id' ) );
+		$session    = $this->load_session( $session_id );
+
+		if ( is_wp_error( $session ) ) {
+			return $session;
+		}
+
+		$event = sanitize_key( (string) $request->get_param( 'event' ) );
+		$date  = sanitize_text_field( (string) $request->get_param( 'date' ) );
+
+		$case_profile = is_array( $session['case_profile'] ?? null ) ? $session['case_profile'] : array();
+		$updated      = $this->lifecycle_service->apply_event( $case_profile, $event, $date );
+
+		if ( is_wp_error( $updated ) ) {
+			return $updated;
+		}
+
+		$session['case_profile'] = $updated;
+		$roadmap_refresh           = $this->mapper->refresh_session_roadmap( $session );
+		$this->store->save( $session_id, $session );
+
+		$this->conversation_persistence->update_session_context(
+			$session_id,
+			$updated,
+			is_array( $session['intake_state'] ?? null ) ? $session['intake_state'] : array(),
+			is_array( $session['actions'] ?? null ) ? $session['actions'] : array()
+		);
+
+		$context = $this->mapper->map_session_state( $session );
+
+		return rest_ensure_response(
+			array(
+				'message'         => __( 'Case milestone recorded.', 'prose-core' ),
+				'lifecycle'       => $context['lifecycle'] ?? array(),
+				'roadmap'         => $roadmap_refresh['roadmap'] ?? null,
+				'roadmap_changed' => ! empty( $roadmap_refresh['changed'] ),
 			)
 		);
 	}

@@ -18,6 +18,8 @@
 		stageContext: null,
 		nextSteps: [],
 		roadmap: null,
+		lifecycle: null,
+		eligibility: null,
 		messages: [],
 		currentNode: null,
 		documents: [],
@@ -955,6 +957,100 @@
 		body.innerHTML = html;
 	}
 
+	function renderLifecycleCard() {
+		var card = document.getElementById('cf-lifecycle-card');
+		var body = document.getElementById('cf-lifecycle-body');
+		var title = document.getElementById('cf-lifecycle-title');
+		var actionsEl = document.getElementById('cf-lifecycle-actions');
+		var lifecycle = state.lifecycle;
+
+		if (!card || !body) return;
+
+		if (!lifecycle || !lifecycle.show) {
+			card.hidden = true;
+			return;
+		}
+
+		card.hidden = false;
+		var current = (lifecycle.milestones || []).find(function (m) {
+			return m.status === 'current';
+		});
+		if (title) {
+			title.textContent = current ? current.label : I18N.lifecycleTitle || 'Case progress';
+		}
+
+		var html = '<ul class="cf-lifecycle__list">';
+		(lifecycle.milestones || []).forEach(function (item) {
+			html +=
+				'<li class="cf-lifecycle__item cf-lifecycle__item--' +
+				escapeAttr(item.status || 'upcoming') +
+				'"><span class="cf-lifecycle__marker" aria-hidden="true"></span>' +
+				escapeHtml(item.label || item.id || '') +
+				'</li>';
+		});
+		html += '</ul>';
+
+		if (lifecycle.deadlines && lifecycle.deadlines.length) {
+			var d = lifecycle.deadlines[0];
+			html +=
+				'<div class="cf-lifecycle__deadline"><strong>' +
+				escapeHtml(d.label || 'Deadline') +
+				'</strong><br>' +
+				escapeHtml(d.due_date || '') +
+				(d.description ? '<p>' + escapeHtml(d.description) + '</p>' : '') +
+				'</div>';
+		}
+
+		body.innerHTML = html;
+
+		if (actionsEl) {
+			actionsEl.innerHTML = '';
+			(lifecycle.next_actions || []).forEach(function (action) {
+				var btn = document.createElement('button');
+				btn.type = 'button';
+				btn.className = 'cf-btn cf-btn--secondary cf-btn--block cf-lifecycle__action';
+				btn.textContent = action.label || action.event || '';
+				btn.dataset.event = action.event || '';
+				if (action.requires_date) {
+					btn.dataset.requiresDate = '1';
+				}
+				btn.addEventListener('click', onLifecycleActionClick);
+				actionsEl.appendChild(btn);
+			});
+		}
+	}
+
+	function onLifecycleActionClick(event) {
+		var btn = event.currentTarget;
+		var eventKey = btn.dataset.event;
+		if (!eventKey || !sessionId) return;
+
+		var date = '';
+		if (btn.dataset.requiresDate === '1') {
+			date = window.prompt(I18N.serviceDatePrompt || 'Enter the service date (YYYY-MM-DD):', '');
+			if (!date) return;
+		}
+
+		btn.disabled = true;
+		api('sessions/' + encodeURIComponent(sessionId) + '/lifecycle', {
+			method: 'PATCH',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ event: eventKey, date: date }),
+		})
+			.then(function (data) {
+				if (data.lifecycle) state.lifecycle = data.lifecycle;
+				if (data.roadmap) state.roadmap = data.roadmap;
+				renderLifecycleCard();
+				renderRoadmapCard();
+			})
+			.catch(function (err) {
+				window.alert(err.message || I18N.lifecycleError || 'Could not record milestone.');
+			})
+			.finally(function () {
+				btn.disabled = false;
+			});
+	}
+
 	function renderNextSteps() {
 		var list = document.getElementById('cf-next-steps-list');
 		var empty = document.getElementById('cf-next-steps-empty');
@@ -1104,6 +1200,12 @@
 		if (data.roadmap) {
 			state.roadmap = data.roadmap;
 		}
+		if (data.lifecycle) {
+			state.lifecycle = data.lifecycle;
+		}
+		if (data.eligibility) {
+			state.eligibility = data.eligibility;
+		}
 
 		renderStepper();
 		renderFacts();
@@ -1113,6 +1215,7 @@
 		renderMissing();
 		renderDocuments();
 		renderRoadmapCard();
+		renderLifecycleCard();
 		updateChatHeader();
 		setSaveIndicator(false);
 	}

@@ -57,6 +57,87 @@
 		el.className = 'prose-dashboard__status' + (isError ? ' prose-dashboard__status--error' : '');
 	}
 
+	function renderCaseLifecycle(caseLifecycle) {
+		var el = document.getElementById('prose-case-lifecycle');
+		if (!el) {
+			return;
+		}
+
+		caseLifecycle = caseLifecycle || {};
+
+		if (!caseLifecycle.show) {
+			el.innerHTML =
+				'<p class="prose-dashboard__empty">' +
+				escapeHtml(I18N.noLifecycle || 'Lifecycle tracking appears after you start a divorce case.') +
+				'</p>';
+			return;
+		}
+
+		var html = '<ol class="prose-dashboard__lifecycle-list">';
+		(caseLifecycle.milestones || []).forEach(function (item) {
+			html +=
+				'<li class="prose-dashboard__lifecycle-item prose-dashboard__lifecycle-item--' +
+				escapeAttr(item.status || 'upcoming') +
+				'">' +
+				escapeHtml(item.label || item.id || '') +
+				'</li>';
+		});
+		html += '</ol>';
+
+		if (caseLifecycle.deadlines && caseLifecycle.deadlines.length) {
+			var d = caseLifecycle.deadlines[0];
+			html +=
+				'<p class="prose-dashboard__deadline"><strong>' +
+				escapeHtml(d.label || 'Deadline') +
+				'</strong> — ' +
+				escapeHtml(d.due_date || '') +
+				'</p>';
+		}
+
+		if (caseLifecycle.continue_case_url) {
+			html +=
+				'<p><a class="prose-dashboard__cta" href="' +
+				escapeAttr(caseLifecycle.continue_case_url) +
+				'">' +
+				escapeHtml(I18N.updateMilestones || 'Update milestones') +
+				'</a></p>';
+		}
+
+		el.innerHTML = html;
+	}
+
+	function renderMatterMap(matterMap) {
+		var el = document.getElementById('prose-matter-map');
+		if (!el) {
+			return;
+		}
+
+		matterMap = matterMap || {};
+
+		if (!matterMap.show || !matterMap.tracks || !matterMap.tracks.length) {
+			el.innerHTML =
+				'<p class="prose-dashboard__empty">' +
+				escapeHtml(I18N.noMatterMap || 'No parallel court tracks identified yet.') +
+				'</p>';
+			return;
+		}
+
+		el.innerHTML =
+			'<ul class="prose-dashboard__matter-tracks">' +
+			matterMap.tracks
+				.map(function (track) {
+					return (
+						'<li class="prose-dashboard__matter-track"><strong>' +
+						escapeHtml(track.label || '') +
+						'</strong>' +
+						(track.note ? '<p>' + escapeHtml(track.note) + '</p>' : '') +
+						'</li>'
+					);
+				})
+				.join('') +
+			'</ul>';
+	}
+
 	function renderCaseProgress(activeCase, caseProgress) {
 		var el = document.getElementById('prose-case-progress');
 		if (!el) {
@@ -279,6 +360,8 @@
 			greeting.textContent = 'Welcome back, ' + (data.user.display_name || data.user.email || 'there') + '.';
 		}
 		renderCaseProgress(data.active_case, data.case_progress);
+		renderCaseLifecycle(data.case_lifecycle);
+		renderMatterMap(data.matter_map);
 		renderSubscription(data.subscription);
 		renderConversations(data.recent_conversations);
 		renderDocuments(data.documents);

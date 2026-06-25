@@ -89,6 +89,7 @@ final class Procedural_Roadmap_Presenter {
 		$navigator  = is_array( $input['procedural_navigator'] ?? null ) ? $input['procedural_navigator'] : array();
 		$resolved   = ! empty( $input['workflow_resolved'] );
 		$intake_ok  = ! empty( $input['intake_complete'] );
+		$lifecycle  = is_array( $input['lifecycle'] ?? null ) ? $input['lifecycle'] : array();
 
 		if ( '' === $issue && '' === $workflow ) {
 			return $this->empty_roadmap();
@@ -96,7 +97,7 @@ final class Procedural_Roadmap_Presenter {
 
 		$mode   = ( '' !== $workflow && $resolved ) ? 'workflow' : 'intake';
 		$roadmap = 'workflow' === $mode
-			? $this->build_workflow_roadmap( $workflow, $facts, $stage_ctx, $navigator, $missing, $completion, $resolved, $intake_ok )
+			? $this->build_workflow_roadmap( $workflow, $facts, $stage_ctx, $navigator, $missing, $completion, $resolved, $intake_ok, $lifecycle )
 			: $this->build_intake_roadmap( $issue, $facts, $missing, $completion, $resolved, $intake_ok );
 
 		$roadmap['fingerprint'] = $this->compute_fingerprint( $input, $roadmap );
@@ -152,6 +153,8 @@ final class Procedural_Roadmap_Presenter {
 			),
 			'suggested_follow_up_question' => (string) ( $roadmap['suggested_next_question'] ?? '' ),
 			'continue_case_url'            => $continue_case_url,
+			'lifecycle_stage'              => (string) ( $roadmap['lifecycle_stage'] ?? '' ),
+			'answer_deadline'              => is_array( $roadmap['answer_deadline'] ?? null ) ? $roadmap['answer_deadline'] : null,
 		);
 	}
 
@@ -163,6 +166,7 @@ final class Procedural_Roadmap_Presenter {
 	public function compute_fingerprint( array $input, array $roadmap ): string {
 		$facts       = is_array( $input['facts'] ?? null ) ? $input['facts'] : array();
 		$stage_ctx   = is_array( $input['stage_context'] ?? null ) ? $input['stage_context'] : array();
+		$lifecycle   = is_array( $input['lifecycle'] ?? null ) ? $input['lifecycle'] : array();
 		$current     = is_array( $stage_ctx['current_stage'] ?? null ) ? $stage_ctx['current_stage'] : array();
 		$form_codes  = $this->visible_form_codes( $stage_ctx, $roadmap );
 
@@ -178,6 +182,8 @@ final class Procedural_Roadmap_Presenter {
 				'forms_visible'        => ! empty( $stage_ctx['forms_visible'] ),
 				'routing_status'       => (string) ( $input['routing_status'] ?? '' ),
 				'candidate_workflows'  => array_values( (array) ( $input['candidate_workflows'] ?? array() ) ),
+				'lifecycle_stage'      => (string) ( $lifecycle['stage'] ?? '' ),
+				'lifecycle_branch'     => (string) ( $lifecycle['branch'] ?? '' ),
 			),
 		);
 
@@ -322,6 +328,7 @@ final class Procedural_Roadmap_Presenter {
 	 * @param int                  $completion Completion.
 	 * @param bool                 $resolved  Workflow resolved.
 	 * @param bool                 $intake_ok Intake complete.
+	 * @param array<string, mixed> $lifecycle Lifecycle payload.
 	 * @return array<string, mixed>
 	 */
 	private function build_workflow_roadmap(
@@ -332,7 +339,8 @@ final class Procedural_Roadmap_Presenter {
 		array $missing,
 		int $completion,
 		bool $resolved,
-		bool $intake_ok
+		bool $intake_ok,
+		array $lifecycle = array()
 	): array {
 		$next_steps   = is_array( $navigator['next_steps'] ?? null ) ? $navigator['next_steps'] : array();
 		$forms_visible = ! empty( $stage_ctx['forms_visible'] );
@@ -453,7 +461,7 @@ final class Procedural_Roadmap_Presenter {
 
 		$current_stage = is_array( $stage_ctx['current_stage'] ?? null ) ? $stage_ctx['current_stage'] : array();
 
-		return array(
+		$roadmap = array(
 			'show'                    => true,
 			'mode'                    => 'workflow',
 			'current_stage'           => array(
@@ -472,6 +480,101 @@ final class Procedural_Roadmap_Presenter {
 			'disclaimer'              => $this->disclaimer(),
 			'progress_percentage'     => $completion,
 		);
+
+		return $this->merge_lifecycle_roadmap( $roadmap, $lifecycle, $intake_ok );
+	}
+
+	/**
+	 * Overlay post-intake lifecycle milestones on workflow roadmap.
+	 *
+	 * @param array<string, mixed> $roadmap   Base roadmap.
+	 * @param array<string, mixed> $lifecycle Lifecycle payload.
+	 * @param bool                 $intake_ok Intake complete.
+	 * @return array<string, mixed>
+	 */
+	private function merge_lifecycle_roadmap( array $roadmap, array $lifecycle, bool $intake_ok ): array {
+		if ( empty( $lifecycle['show'] ) || ! $intake_ok ) {
+			return $roadmap;
+		}
+
+		$stage       = (string) ( $lifecycle['stage'] ?? '' );
+		$milestones  = is_array( $lifecycle['milestones'] ?? null ) ? $lifecycle['milestones'] : array();
+		$deadlines   = is_array( $lifecycle['deadlines'] ?? null ) ? $lifecycle['deadlines'] : array();
+		$next_actions = is_array( $lifecycle['next_actions'] ?? null ) ? $lifecycle['next_actions'] : array();
+
+		if ( '' === $stage || empty( $milestones ) ) {
+			return $roadmap;
+		}
+
+		$completed = array();
+		$upcoming  = array();
+		$focus     = array();
+		$label     = '';
+
+		foreach ( $milestones as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+
+			$row = array(
+				'id'          => (string) ( $item['id'] ?? '' ),
+				'title'       => (string) ( $item['label'] ?? '' ),
+				'description' => '',
+				'relevance'   => '',
+			);
+
+			$status = (string) ( $item['status'] ?? '' );
+
+			if ( 'completed' === $status ) {
+				$completed[] = $row;
+			} elseif ( 'current' === $status ) {
+				$focus = $row;
+				$label = $row['title'];
+			} else {
+				$upcoming[] = $row;
+			}
+		}
+
+		if ( empty( $focus ) && ! empty( $upcoming[0] ) ) {
+			$focus = $upcoming[0];
+			$label = (string) ( $focus['title'] ?? '' );
+			array_shift( $upcoming );
+		}
+
+		$guidance = $roadmap['procedural_guidance'];
+
+		if ( ! empty( $deadlines[0] ) && is_array( $deadlines[0] ) ) {
+			$guidance = trim(
+				(string) $guidance . ' ' . (string) ( $deadlines[0]['description'] ?? '' )
+			);
+		}
+
+		$question = $roadmap['suggested_next_question'];
+
+		if ( '' === $question && ! empty( $next_actions[0]['label'] ) ) {
+			$question = (string) $next_actions[0]['label'];
+		}
+
+		$roadmap['lifecycle_stage']  = $stage;
+		$roadmap['completed_steps']  = $completed;
+		$roadmap['current_focus']    = $focus;
+		$roadmap['upcoming_steps']   = $upcoming;
+		$roadmap['next_likely_step'] = $this->next_likely_step( $focus, $upcoming );
+		$roadmap['procedural_guidance'] = '' !== trim( (string) $guidance ) ? trim( (string) $guidance ) : null;
+		$roadmap['suggested_next_question'] = $question;
+		$roadmap['current_stage']    = array(
+			'id'    => $stage,
+			'title' => $label,
+			'label' => $label,
+		);
+		$roadmap['answer_deadline']  = ! empty( $deadlines[0] ) && is_array( $deadlines[0] )
+			? array(
+				'label'    => (string) ( $deadlines[0]['label'] ?? '' ),
+				'due_date' => (string) ( $deadlines[0]['due_date'] ?? '' ),
+			)
+			: null;
+
+		return $roadmap;
 	}
 
 	/**

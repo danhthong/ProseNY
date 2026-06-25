@@ -13,6 +13,10 @@ if ( ! defined( 'HOUR_IN_SECONDS' ) ) {
 	define( 'HOUR_IN_SECONDS', 3600 );
 }
 
+if ( ! defined( 'DAY_IN_SECONDS' ) ) {
+	define( 'DAY_IN_SECONDS', 86400 );
+}
+
 if ( ! defined( 'PROSE_CORE_PATH' ) ) {
 	define( 'PROSE_CORE_PATH', dirname( __DIR__ ) . '/' );
 }
@@ -130,6 +134,53 @@ if ( ! function_exists( 'sanitize_key' ) ) {
 	function sanitize_key( $key ) {
 		$key = strtolower( (string) $key );
 		return preg_replace( '/[^a-z0-9_\-]/', '', $key );
+	}
+}
+
+if ( ! function_exists( 'wp_strip_all_tags' ) ) {
+	/**
+	 * @param string $string        Text.
+	 * @param bool   $remove_breaks Collapse whitespace.
+	 * @return string
+	 */
+	function wp_strip_all_tags( $string, $remove_breaks = false ) {
+		$string = (string) $string;
+		$string = preg_replace( '@<(script|style)[^>]*?>.*?</\\1>@si', '', $string );
+		$string = strip_tags( $string );
+
+		if ( $remove_breaks ) {
+			$string = preg_replace( '/[\r\n\t ]+/', ' ', $string );
+		}
+
+		return trim( $string );
+	}
+}
+
+if ( ! function_exists( 'wp_trim_words' ) ) {
+	/**
+	 * @param string      $text      Text.
+	 * @param int         $num_words Word limit.
+	 * @param string|null $more      Suffix when truncated.
+	 * @return string
+	 */
+	function wp_trim_words( $text, $num_words = 55, $more = null ) {
+		if ( null === $more ) {
+			$more = '…';
+		}
+
+		$text        = wp_strip_all_tags( (string) $text );
+		$words_array = preg_split( '/[\n\r\t ]+/', $text, -1, PREG_SPLIT_NO_EMPTY );
+
+		if ( ! is_array( $words_array ) ) {
+			return '';
+		}
+
+		if ( count( $words_array ) > (int) $num_words ) {
+			$words_array = array_slice( $words_array, 0, (int) $num_words );
+			return implode( ' ', $words_array ) . $more;
+		}
+
+		return implode( ' ', $words_array );
 	}
 }
 

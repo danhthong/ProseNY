@@ -10,8 +10,10 @@ namespace ProSe\Core\Intake\Rest;
 use ProSe\Core\Ai_Intake\Intake_State;
 use ProSe\Core\Ai_Intake\Required_Fields_Provider;
 use ProSe\Core\Forms\Engine\Stage_Form_Presenter;
+use ProSe\Core\Guidance\Eligibility_Presenter;
 use ProSe\Core\Guidance\Procedural_Roadmap_Presenter;
 use ProSe\Core\Intake\Case_Actions_Resolver;
+use ProSe\Core\Intake\Case_Lifecycle_Service;
 use ProSe\Core\Procedural\Procedural_Navigator;
 use ProSe\Core\Routing\Workflow_Catalog;
 
@@ -67,6 +69,20 @@ final class Courtflow_Response_Mapper {
 	private Procedural_Roadmap_Presenter $roadmap_presenter;
 
 	/**
+	 * Lifecycle service.
+	 *
+	 * @var Case_Lifecycle_Service
+	 */
+	private Case_Lifecycle_Service $lifecycle_service;
+
+	/**
+	 * Eligibility presenter.
+	 *
+	 * @var Eligibility_Presenter
+	 */
+	private Eligibility_Presenter $eligibility;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Required_Fields_Provider|null $fields           Fields provider.
@@ -81,14 +97,18 @@ final class Courtflow_Response_Mapper {
 		?Workflow_Catalog $workflows = null,
 		?Procedural_Navigator $navigator = null,
 		?Stage_Form_Presenter $stage_presenter = null,
-		?Procedural_Roadmap_Presenter $roadmap_presenter = null
+		?Procedural_Roadmap_Presenter $roadmap_presenter = null,
+		?Case_Lifecycle_Service $lifecycle_service = null,
+		?Eligibility_Presenter $eligibility = null
 	) {
-		$this->fields          = $fields ?? new Required_Fields_Provider();
-		$this->actions         = $actions ?? new Case_Actions_Resolver();
-		$this->workflows       = $workflows ?? new Workflow_Catalog();
-		$this->navigator       = $navigator ?? new Procedural_Navigator();
-		$this->stage_presenter = $stage_presenter ?? new Stage_Form_Presenter();
+		$this->fields            = $fields ?? new Required_Fields_Provider();
+		$this->actions           = $actions ?? new Case_Actions_Resolver();
+		$this->workflows         = $workflows ?? new Workflow_Catalog();
+		$this->navigator         = $navigator ?? new Procedural_Navigator();
+		$this->stage_presenter   = $stage_presenter ?? new Stage_Form_Presenter();
 		$this->roadmap_presenter = $roadmap_presenter ?? new Procedural_Roadmap_Presenter();
+		$this->lifecycle_service = $lifecycle_service ?? new Case_Lifecycle_Service();
+		$this->eligibility       = $eligibility ?? new Eligibility_Presenter();
 	}
 
 	/**
@@ -118,6 +138,13 @@ final class Courtflow_Response_Mapper {
 		);
 
 		$stored = (string) ( $case_profile['roadmap_fingerprint'] ?? '' );
+		$lifecycle = $this->lifecycle_service->build(
+			$case_profile,
+			array(
+				'intake_complete' => ! empty( $actions['intake_complete'] ),
+				'completion'      => (int) ( $requirements['completeness'] ?? 0 ),
+			)
+		);
 		$result = $this->roadmap_presenter->resolve_with_change_detection(
 			$stored,
 			array(
@@ -131,6 +158,7 @@ final class Courtflow_Response_Mapper {
 				'workflow_resolved'    => ! empty( $actions['workflow_resolved'] ),
 				'intake_complete'      => ! empty( $actions['intake_complete'] ),
 				'procedural_node'      => (string) ( $session['procedural_node'] ?? '' ),
+				'lifecycle'            => $lifecycle,
 			)
 		);
 
@@ -153,6 +181,7 @@ final class Courtflow_Response_Mapper {
 		return array_merge(
 			$context,
 			$this->map_roadmap_fields( $session ),
+			$this->map_lifecycle_fields( $session, $context ),
 			array(
 				'workflow_state' => array(
 					'required_forms' => $context['required_forms'],
@@ -161,6 +190,39 @@ final class Courtflow_Response_Mapper {
 					'requirements'   => $context['requirements'],
 				),
 			)
+		);
+	}
+
+	/**
+	 * Map lifecycle and eligibility payloads for workspace clients.
+	 *
+	 * @param array<string, mixed> $session Stored session.
+	 * @param array<string, mixed> $context Built context.
+	 * @return array<string, mixed>
+	 */
+	public function map_lifecycle_fields( array $session, array $context = array() ): array {
+		if ( empty( $context ) ) {
+			$context = $this->build_context( $session );
+		}
+
+		$case_profile = is_array( $session['case_profile'] ?? null ) ? $session['case_profile'] : array();
+		$facts        = is_array( $context['facts']['case'] ?? null ) ? $context['facts']['case'] : array();
+		$actions      = is_array( $context['actions'] ?? null ) ? $context['actions'] : array();
+
+		$eligibility = $this->eligibility->evaluate( $facts );
+		$lifecycle   = $this->lifecycle_service->build(
+			$case_profile,
+			array(
+				'intake_complete' => ! empty( $actions['intake_complete'] ),
+				'completion'      => (int) ( $context['requirements']['completeness'] ?? 0 ),
+			)
+		);
+		$matter_map  = $this->lifecycle_service->build_matter_map( $case_profile );
+
+		return array(
+			'eligibility'  => $eligibility,
+			'lifecycle'    => $lifecycle,
+			'matter_map'   => $matter_map,
 		);
 	}
 
@@ -194,7 +256,8 @@ final class Courtflow_Response_Mapper {
 					'requirements'   => $context['requirements'],
 				),
 			),
-			$this->map_roadmap_fields( $session, $result )
+			$this->map_roadmap_fields( $session, $result ),
+			$this->map_lifecycle_fields( $session, $context )
 		);
 
 		return $response;

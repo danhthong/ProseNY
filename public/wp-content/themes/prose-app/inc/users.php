@@ -228,6 +228,9 @@ function enqueue_dashboard_assets(): void {
 				'removingConversation' => __( 'Removing conversation…', 'prose-app' ),
 				'removeError'     => __( 'Could not remove conversation.', 'prose-app' ),
 				'continueCase'    => __( 'Continue Case', 'prose-app' ),
+				'noLifecycle'     => __( 'Lifecycle tracking appears after you start a divorce case.', 'prose-app' ),
+				'updateMilestones' => __( 'Update milestones', 'prose-app' ),
+				'noMatterMap'     => __( 'No parallel court tracks identified yet.', 'prose-app' ),
 				'noDocuments'   => __( 'No documents generated yet.', 'prose-app' ),
 			),
 		)

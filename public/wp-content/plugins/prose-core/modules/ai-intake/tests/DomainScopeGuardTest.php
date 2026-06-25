@@ -31,6 +31,7 @@ class DomainScopeGuardTest extends TestCase {
 	protected function setUp(): void {
 		Workflow_Catalog::reset_cache();
 		AI_Settings::clear_cache();
+		$GLOBALS['prose_test_options'] = array();
 		$this->guard = new Domain_Scope_Guard();
 	}
 
@@ -204,6 +205,65 @@ class DomainScopeGuardTest extends TestCase {
 
 		$this->assertTrue( $result['supported'] );
 		$this->assertTrue( $result['bypassed'] );
+	}
+
+	/**
+	 * Bulk fact answers during active intake stay in scope without repeating "divorce".
+	 */
+	public function test_allows_fact_dump_during_active_intake(): void {
+		$result = $this->guard->assess(
+			"We were married on June 1, 2010 in Queens, NY.\nI've lived in New York for over one year (1-year state residency).\nWe separated on January 1, 2024.\nGrounds: irretrievable breakdown.\nPlaintiff: Jane Doe. Defendant: John Doe.",
+			array(
+				'workflow' => 'uncontested_divorce_no_children_nyc',
+				'facts'    => array(
+					'issue'         => array( 'value' => 'divorce' ),
+					'county'        => array( 'value' => 'Queens' ),
+					'spouse_agrees' => array( 'value' => true ),
+				),
+			),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'I want a divorce in Queens.',
+				),
+				array(
+					'role'    => 'assistant',
+					'content' => 'Do you and your spouse agree on major issues?',
+				),
+			)
+		);
+
+		$this->assertTrue( $result['supported'] );
+		$this->assertFalse( $result['bypassed'] );
+	}
+
+	/**
+	 * Service invokes interpreter for mid-intake fact dumps.
+	 */
+	public function test_service_calls_interpreter_for_intake_fact_dump(): void {
+		$provider = new Stub_Ai_Provider();
+		$service  = new AI_Intake_Service( $provider );
+
+		$response = $service->interpret(
+			'We were married on June 1, 2010 in Queens, NY. NY residency over one year. Separated January 1, 2024.',
+			array(
+				'workflow' => 'uncontested_divorce_no_children_nyc',
+				'facts'    => array(
+					'issue'  => array( 'value' => 'divorce' ),
+					'county' => array( 'value' => 'Queens' ),
+				),
+			),
+			array(
+				array(
+					'role'    => 'user',
+					'content' => 'I want a divorce in Queens.',
+				),
+			)
+		);
+
+		$this->assertTrue( $response['success'] );
+		$this->assertArrayNotHasKey( 'supported', $response );
+		$this->assertSame( 'ask_question', $response['result']['next_action'] );
 	}
 
 	/**

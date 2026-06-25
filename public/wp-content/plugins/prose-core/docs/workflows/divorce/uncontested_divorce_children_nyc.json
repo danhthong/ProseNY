@@ -3,7 +3,13 @@
   "workflow_category": "divorce",
   "issue_type": "divorce",
   "court": "supreme_court",
-  "counties_supported": ["New York", "Kings", "Queens", "Bronx", "Richmond"],
+  "counties_supported": [
+    "New York",
+    "Kings",
+    "Queens",
+    "Bronx",
+    "Richmond"
+  ],
   "description": "Uncontested matrimonial action in NYC Supreme Court where both parties agree to divorce and there are minor children under 21. Custody, visitation, and child support are resolved within this Supreme Court workflow.",
   "triggers": [
     "divorce",
@@ -29,20 +35,126 @@
     "Matrimonial action is uncontested"
   ],
   "required_fields": [
-    { "key": "county", "type": "string", "required": true, "question": "In which NYC county are you filing?" },
-    { "key": "marriage_date", "type": "date", "required": true, "question": "On what date were you married?" },
-    { "key": "separation_date", "type": "date", "required": true, "question": "On what date did you and your spouse separate?" },
-    { "key": "grounds_for_divorce", "type": "string", "required": true, "question": "What are your grounds for divorce?" },
-    { "key": "plaintiff_information", "type": "string", "required": true, "question": "What is your full legal name and contact information?" },
-    { "key": "defendant_information", "type": "string", "required": true, "question": "What is your spouse's full legal name and contact information?" },
-    { "key": "has_minor_children", "type": "boolean", "required": true, "question": "Do you have any children under 21 with your spouse?" },
-    { "key": "child_count", "type": "integer", "required": true, "question": "How many children are involved?" },
-    { "key": "child_names", "type": "array", "required": true, "question": "What are the full names of your children?" },
-    { "key": "child_birth_dates", "type": "array", "required": true, "question": "What are the birth dates of your children?" },
-    { "key": "custody_arrangement", "type": "string", "required": true, "question": "What custody arrangement have you agreed to?" },
-    { "key": "visitation_arrangement", "type": "string", "required": false, "question": "What visitation or parenting time schedule have you agreed to?" },
-    { "key": "child_support_terms", "type": "string", "required": true, "question": "What child support terms have you agreed to?" },
-    { "key": "marital_property_resolved", "type": "boolean", "required": true, "question": "Have you and your spouse resolved all marital property and debt issues?" }
+    {
+      "key": "county",
+      "type": "string",
+      "required": true,
+      "question": "In which NYC county are you filing?"
+    },
+    {
+      "key": "prior_court_cases",
+      "type": "array",
+      "required": false,
+      "question": "Are there prior court cases involving you and your spouse?"
+    },
+    {
+      "key": "domestic_violence_concerns",
+      "type": "boolean",
+      "required": false,
+      "question": "Are there domestic violence or safety concerns?"
+    },
+    {
+      "key": "support_dispute",
+      "type": "boolean",
+      "required": false,
+      "question": "Is child or spousal support disputed?"
+    },
+    {
+      "key": "custody_dispute",
+      "type": "boolean",
+      "required": false,
+      "question": "Is custody disputed?"
+    },
+    {
+      "key": "residency_qualification",
+      "type": "string",
+      "required": true,
+      "question": "Which New York residency basis applies (1-year state, 2-year state, or other)?"
+    },
+    {
+      "key": "marriage_location",
+      "type": "string",
+      "required": true,
+      "question": "Where were you married (city and state or country)?"
+    },
+    {
+      "key": "marriage_date",
+      "type": "date",
+      "required": true,
+      "question": "On what date were you married?"
+    },
+    {
+      "key": "separation_date",
+      "type": "date",
+      "required": true,
+      "question": "On what date did you and your spouse separate?"
+    },
+    {
+      "key": "grounds_for_divorce",
+      "type": "string",
+      "required": true,
+      "question": "What are your grounds for divorce?"
+    },
+    {
+      "key": "plaintiff_information",
+      "type": "string",
+      "required": true,
+      "question": "What is your full legal name and contact information?"
+    },
+    {
+      "key": "defendant_information",
+      "type": "string",
+      "required": true,
+      "question": "What is your spouse's full legal name and contact information?"
+    },
+    {
+      "key": "has_minor_children",
+      "type": "boolean",
+      "required": true,
+      "question": "Do you have any children under 21 with your spouse?"
+    },
+    {
+      "key": "child_count",
+      "type": "integer",
+      "required": true,
+      "question": "How many children are involved?"
+    },
+    {
+      "key": "child_names",
+      "type": "array",
+      "required": true,
+      "question": "What are the full names of your children?"
+    },
+    {
+      "key": "child_birth_dates",
+      "type": "array",
+      "required": true,
+      "question": "What are the birth dates of your children?"
+    },
+    {
+      "key": "custody_arrangement",
+      "type": "string",
+      "required": true,
+      "question": "What custody arrangement have you agreed to?"
+    },
+    {
+      "key": "visitation_arrangement",
+      "type": "string",
+      "required": false,
+      "question": "What visitation or parenting time schedule have you agreed to?"
+    },
+    {
+      "key": "child_support_terms",
+      "type": "string",
+      "required": true,
+      "question": "What child support terms have you agreed to?"
+    },
+    {
+      "key": "marital_property_resolved",
+      "type": "boolean",
+      "required": true,
+      "question": "Have you and your spouse resolved all marital property and debt issues?"
+    }
   ],
   "stages": [
     "commencement",
@@ -60,38 +172,106 @@
     {
       "stage": "commencement",
       "forms": [
-        { "code": "UD-1", "internal_code": "UD-1", "title": "Summons With Notice" },
-        { "code": "UD-2", "internal_code": "UD-2", "title": "Verified Complaint" }
+        {
+          "code": "UD-1",
+          "internal_code": "UD-1",
+          "title": "Summons With Notice"
+        },
+        {
+          "code": "UD-2",
+          "internal_code": "UD-2",
+          "title": "Verified Complaint"
+        }
       ]
     },
     {
       "stage": "service",
       "forms": [
-        { "code": "UD-3", "internal_code": "UD-3", "title": "Affirmation of Service" }
+        {
+          "code": "UD-3",
+          "internal_code": "UD-3",
+          "title": "Affirmation of Service"
+        }
       ]
     },
     {
       "stage": "calendar",
       "forms": [
-        { "code": "UD-4", "internal_code": "UD-4", "title": "Sworn Statement of Removal of Barriers to Remarriage" },
-        { "code": "UD-5", "internal_code": "UD-5", "title": "Affirmation of Regularity" },
-        { "code": "UD-6", "internal_code": "UD-6", "title": "Sworn Affirmation of Plaintiff" },
-        { "code": "UD-7", "internal_code": "UD-7", "title": "Affirmation of Defendant" },
-        { "code": "UD-8(1)", "internal_code": "UD-8", "title": "Annual Income Worksheet" },
-        { "code": "UD-8(2)", "internal_code": null, "title": "Maintenance Guidelines Worksheet" },
-        { "code": "UD-8(3)", "internal_code": null, "title": "Child Support Worksheet" },
-        { "code": "UD-8a", "internal_code": null, "title": "Support Collection Unit Information Sheet" },
-        { "code": "UD-9", "internal_code": null, "title": "Note of Issue" },
-        { "code": "UD-10", "internal_code": null, "title": "Findings of Fact and Conclusions of Law" },
-        { "code": "UD-12", "internal_code": "UD-12", "title": "Part 130 Certification" },
-        { "code": "UD-13", "internal_code": "RJI", "title": "Request for Judicial Intervention" }
+        {
+          "code": "UD-4",
+          "internal_code": "UD-4",
+          "title": "Sworn Statement of Removal of Barriers to Remarriage"
+        },
+        {
+          "code": "UD-5",
+          "internal_code": "UD-5",
+          "title": "Affirmation of Regularity"
+        },
+        {
+          "code": "UD-6",
+          "internal_code": "UD-6",
+          "title": "Sworn Affirmation of Plaintiff"
+        },
+        {
+          "code": "UD-7",
+          "internal_code": "UD-7",
+          "title": "Affirmation of Defendant"
+        },
+        {
+          "code": "UD-8(1)",
+          "internal_code": "UD-8",
+          "title": "Annual Income Worksheet"
+        },
+        {
+          "code": "UD-8(2)",
+          "internal_code": null,
+          "title": "Maintenance Guidelines Worksheet"
+        },
+        {
+          "code": "UD-8(3)",
+          "internal_code": null,
+          "title": "Child Support Worksheet"
+        },
+        {
+          "code": "UD-8a",
+          "internal_code": null,
+          "title": "Support Collection Unit Information Sheet"
+        },
+        {
+          "code": "UD-9",
+          "internal_code": null,
+          "title": "Note of Issue"
+        },
+        {
+          "code": "UD-10",
+          "internal_code": null,
+          "title": "Findings of Fact and Conclusions of Law"
+        },
+        {
+          "code": "UD-12",
+          "internal_code": "UD-12",
+          "title": "Part 130 Certification"
+        },
+        {
+          "code": "UD-13",
+          "internal_code": "RJI",
+          "title": "Request for Judicial Intervention"
+        }
       ]
     },
     {
       "stage": "judgment",
       "forms": [
-        { "code": "UD-11", "internal_code": null, "title": "Judgment of Divorce" },
-        { "code": "UD-14", "internal_code": null, "title": "Notice of Entry" }
+        {
+          "code": "UD-11",
+          "internal_code": null,
+          "title": "Judgment of Divorce"
+        },
+        {
+          "code": "UD-14",
+          "internal_code": null,
+          "title": "Notice of Entry"
+        }
       ]
     }
   ],
@@ -99,8 +279,16 @@
     {
       "stage": "calendar",
       "forms": [
-        { "code": "UD-8b", "internal_code": null, "title": "Qualified Medical Child Support Order (QMCSO)" },
-        { "code": "LDSS-5258", "internal_code": null, "title": "Enrollment for Child Support Services" }
+        {
+          "code": "UD-8b",
+          "internal_code": null,
+          "title": "Qualified Medical Child Support Order (QMCSO)"
+        },
+        {
+          "code": "LDSS-5258",
+          "internal_code": null,
+          "title": "Enrollment for Child Support Services"
+        }
       ]
     }
   ],
@@ -114,7 +302,13 @@
     "statement_of_net_worth",
     "proof_of_income"
   ],
-  "includes": ["custody", "visitation", "child_support", "maintenance", "property_division"],
+  "includes": [
+    "custody",
+    "visitation",
+    "child_support",
+    "maintenance",
+    "property_division"
+  ],
   "internal": {
     "workflow_enum": "UNCONTESTED_DIVORCE_WITH_CHILDREN",
     "workflow_enum_base": "UNCONTESTED_DIVORCE",
@@ -124,9 +318,23 @@
       "NODE_1010_JUDGMENT"
     ],
     "progression": [
-      { "node": "NODE_1001_DIVORCE_FILED" },
-      { "node": "NODE_1002_SERVICE_COMPLETE", "condition": { "kind": "event", "value": "SERVICE_COMPLETED" } },
-      { "node": "NODE_1010_JUDGMENT", "condition": { "kind": "package", "value": "PKG_JUDGMENT" } }
+      {
+        "node": "NODE_1001_DIVORCE_FILED"
+      },
+      {
+        "node": "NODE_1002_SERVICE_COMPLETE",
+        "condition": {
+          "kind": "event",
+          "value": "SERVICE_COMPLETED"
+        }
+      },
+      {
+        "node": "NODE_1010_JUDGMENT",
+        "condition": {
+          "kind": "package",
+          "value": "PKG_JUDGMENT"
+        }
+      }
     ]
   },
   "source_references": [

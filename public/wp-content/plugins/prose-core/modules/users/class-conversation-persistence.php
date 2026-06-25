@@ -172,6 +172,44 @@ final class Conversation_Persistence {
 	}
 
 	/**
+	 * Update stored context snapshot for a session (lifecycle, roadmap, etc.).
+	 *
+	 * @param string               $session_id   Session UUID.
+	 * @param array<string, mixed> $case_profile Case profile snapshot.
+	 * @param array<string, mixed> $state        Optional intake state.
+	 * @param array<string, mixed> $actions      Optional actions.
+	 * @return void
+	 */
+	public function update_session_context(
+		string $session_id,
+		array $case_profile = array(),
+		array $state = array(),
+		array $actions = array()
+	): void {
+		if ( get_current_user_id() <= 0 || '' === trim( $session_id ) ) {
+			return;
+		}
+
+		$row = $this->conversations->find_by_session_id( $session_id );
+
+		if ( ! $row ) {
+			return;
+		}
+
+		$this->conversations->update_context(
+			(int) $row->conversation_id,
+			array(
+				'conversation_id' => $session_id,
+				'case_profile'      => $case_profile,
+				'state'             => $state,
+				'actions'           => $actions,
+			)
+		);
+
+		$this->conversations->touch( (int) $row->conversation_id );
+	}
+
+	/**
 	 * Link conversation to a persisted case.
 	 *
 	 * @param string $session_id Session UUID.

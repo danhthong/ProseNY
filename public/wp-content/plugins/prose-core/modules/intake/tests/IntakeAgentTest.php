@@ -200,6 +200,8 @@ class IntakeAgentTest extends TestCase {
 			is_array( $profile['facts'] ?? null ) ? $profile['facts'] : array(),
 			array(
 				'county'                    => 'Kings',
+				'marriage_location'         => 'Brooklyn, NY',
+				'residency_qualification'   => '1_year_state',
 				'marriage_date'             => '2010-06-05',
 				'separation_date'           => '2020-01-01',
 				'grounds_for_divorce'       => 'irretrievable breakdown',

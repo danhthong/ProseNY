@@ -52,8 +52,9 @@ class ProceduralRoadmapPresenterTest extends TestCase {
 			array(
 				'issue'              => 'divorce',
 				'facts'              => array(
-					'issue'  => 'divorce',
-					'county' => 'Queens',
+					'issue'                   => 'divorce',
+					'county'                  => 'Queens',
+					'residency_qualification' => '1_year_state',
 				),
 				'workflow'           => '',
 				'missing_fields'     => array(

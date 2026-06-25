@@ -91,6 +91,9 @@ function localize(): void {
 				'informational' => __( 'Informational guidance only — not legal advice.', 'prose-app' ),
 				'viewForm'    => __( 'View form details', 'prose-app' ),
 				'downloadForm' => __( 'Download', 'prose-app' ),
+				'lifecycleTitle' => __( 'Case milestones', 'prose-app' ),
+				'serviceDatePrompt' => __( 'Enter the service date (YYYY-MM-DD):', 'prose-app' ),
+				'lifecycleError' => __( 'Could not record milestone.', 'prose-app' ),
 			),
 		)
 	);

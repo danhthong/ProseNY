@@ -202,6 +202,38 @@
 		@apply rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] font-medium text-slate-600 hover:border-red-200 hover:bg-red-50 hover:text-red-700;
 	}
 
+.prose-dashboard__case-progress-note {
+	@apply mt-2 text-[12px] leading-4 text-slate-500;
+}
+
+.prose-dashboard__lifecycle-list {
+	@apply m-0 flex list-none flex-wrap gap-2 p-0;
+}
+
+.prose-dashboard__lifecycle-item {
+	@apply rounded-full border border-slate-200 bg-white px-3 py-1 text-[12px] font-medium text-slate-600;
+}
+
+.prose-dashboard__lifecycle-item--completed {
+	@apply border-emerald-200 bg-emerald-50 text-emerald-800;
+}
+
+.prose-dashboard__lifecycle-item--current {
+	@apply border-indigo-300 bg-indigo-50 text-indigo-800;
+}
+
+.prose-dashboard__deadline {
+	@apply mt-3 text-[13px] leading-5 text-slate-600;
+}
+
+.prose-dashboard__matter-tracks {
+	@apply m-0 list-none space-y-2 p-0;
+}
+
+.prose-dashboard__matter-track {
+	@apply rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] leading-5 text-slate-700;
+}
+
 	/* Homepage chat column — 1200px on 1440 desktop (Figma Homepage / Desktop). */
 	.prose-homepage-chat {
 		@apply w-full max-w-[1200px];

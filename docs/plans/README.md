@@ -38,6 +38,7 @@ Review this index first. Each plan is a self-contained file you can approve, rev
 | 18 | [MVP acceptance & QA](./18-mvp-acceptance-and-qa.md) | P1 — done | 01–08 min | Medium |
 | 19 | [NYSCEF integration (Phase 2)](./19-nyscef-integration-phase-2.md) | Future | 16, 17 | Large |
 | 20 | [Statewide expansion (Phase 3)](./20-statewide-expansion-phase-3.md) | Future | 19 | Large |
+| 21 | [NY Divorce Ecosystem Lifecycle (Phase 2)](./21-divorce-ecosystem-lifecycle.md) | **P1 — done** | 04, 06, 08–10, 12 | Large |
 
 ## MVP definition (Phase 1)
 
