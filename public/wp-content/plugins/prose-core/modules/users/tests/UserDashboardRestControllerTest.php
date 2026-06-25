@@ -49,5 +49,9 @@ class UserDashboardRestControllerTest extends TestCase {
 	 */
 	public function test_dashboard_route_constant(): void {
 		$this->assertSame( '/me/dashboard', User_Dashboard_Rest_Controller::ROUTE );
+		$this->assertSame(
+			'/me/conversations/session/(?P<session_id>[a-f0-9-]+)',
+			User_Dashboard_Rest_Controller::ROUTE_CONVERSATION_SESSION
+		);
 	}
 }

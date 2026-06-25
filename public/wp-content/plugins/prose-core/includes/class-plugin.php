@@ -160,6 +160,8 @@ final class Plugin {
 		\WP_CLI::add_command( 'prose pdf calibrate', \ProSe\Core\Forms\Documents\Overlay\Pdf_Calibrate_Command::class );
 		\WP_CLI::add_command( 'prose forms migrate-source-files', \ProSe\Core\Forms\Form_Migrate_Source_Files_Command::class );
 		\WP_CLI::add_command( 'prose forms build-repository', \ProSe\Core\Forms\Build_Repository_Command::class );
+		\WP_CLI::add_command( 'prose forms sync-knowledge-summaries', \ProSe\Core\Forms\Sync_Knowledge_Summaries_Command::class );
+		\WP_CLI::add_command( 'prose knowledge crawl', \ProSe\Core\Search\Knowledge_Crawl_Command::class );
 	}
 
 	/**

@@ -23,6 +23,7 @@ $prose_file_name = Forms\get_file_name( $prose_post_id );
 $prose_file_url  = Forms\get_file_url( $prose_post_id );
 $prose_case_type = Forms\get_case_type_label( $prose_post_id );
 $prose_desc      = Forms\get_description( $prose_post_id );
+$prose_explain   = Forms\get_ai_explanation( $prose_post_id );
 $prose_forms_url = get_post_type_archive_link( Forms\POST_TYPE );
 $prose_forms_url = $prose_forms_url ? esc_url( $prose_forms_url ) : esc_url( home_url( '/' ) );
 ?>
@@ -183,17 +184,127 @@ $prose_forms_url = $prose_forms_url ? esc_url( $prose_forms_url ) : esc_url( hom
 					</button>
 				</div>
 
-				<?php // AI explanation placeholder. ?>
-				<div class="flex flex-col gap-2 rounded-xl bg-slate-100 p-4">
+				<?php // AI explanation. ?>
+				<div class="flex max-h-[70vh] flex-col gap-3 overflow-y-auto rounded-xl bg-slate-100 p-4">
 					<div class="flex items-center gap-2">
-						<svg class="size-4 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<svg class="size-4 shrink-0 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 							<path d="M12 3l1.9 4.8L18.7 9.7l-4.8 1.9L12 16.4l-1.9-4.8L5.3 9.7l4.8-1.9z" />
 						</svg>
 						<h2 class="text-[15px] font-semibold text-slate-900"><?php esc_html_e( 'AI explanation', 'prose-app' ); ?></h2>
 					</div>
-					<p class="text-[13px] leading-[20px] text-slate-500">
-						<?php esc_html_e( 'Coming soon: a plain-language summary of this form, who needs it, and when to file it.', 'prose-app' ); ?>
-					</p>
+
+					<?php if ( ! empty( $prose_explain['has_content'] ) ) : ?>
+						<?php
+						$prose_summary      = trim( (string) ( $prose_explain['summary'] ?? '' ) );
+						$prose_body         = trim( (string) ( $prose_explain['body'] ?? '' ) );
+						$prose_show_summary = '' !== $prose_summary && ( '' === $prose_body || $prose_summary !== $prose_body );
+						$prose_sections     = is_array( $prose_explain['sections'] ?? null ) ? $prose_explain['sections'] : array();
+						$prose_prepare      = is_array( $prose_explain['prepare'] ?? null ) ? $prose_explain['prepare'] : array();
+						$prose_labels       = array(
+							'what'  => __( 'What it is', 'prose-app' ),
+							'why'   => __( 'Who needs it', 'prose-app' ),
+							'when'  => __( 'When to file', 'prose-app' ),
+							'next'  => __( "What's next", 'prose-app' ),
+						);
+						?>
+
+						<?php if ( $prose_show_summary ) : ?>
+							<p class="text-[13px] leading-[20px] text-slate-700"><?php echo esc_html( $prose_summary ); ?></p>
+						<?php endif; ?>
+
+						<?php foreach ( $prose_labels as $prose_key => $prose_label ) : ?>
+							<?php if ( '' !== trim( (string) ( $prose_sections[ $prose_key ] ?? '' ) ) ) : ?>
+								<div>
+									<p class="text-[12px] font-semibold uppercase tracking-wide text-slate-500"><?php echo esc_html( $prose_label ); ?></p>
+									<p class="text-[13px] leading-[20px] text-slate-600"><?php echo esc_html( (string) $prose_sections[ $prose_key ] ); ?></p>
+								</div>
+							<?php endif; ?>
+						<?php endforeach; ?>
+
+						<?php if ( '' !== $prose_body ) : ?>
+							<div class="flex flex-col gap-1 border-t border-slate-200/80 pt-2">
+								<?php
+								// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in helper.
+								echo Forms\format_explanation_body( $prose_body );
+								?>
+							</div>
+						<?php endif; ?>
+
+						<?php if ( ! empty( $prose_prepare['required'] ) || ! empty( $prose_prepare['optional'] ) || ! empty( $prose_prepare['conditional'] ) ) : ?>
+							<div class="border-t border-slate-200/80 pt-2">
+								<p class="text-[12px] font-semibold uppercase tracking-wide text-slate-500"><?php esc_html_e( 'What to prepare', 'prose-app' ); ?></p>
+								<p class="mb-2 text-[12px] leading-[18px] text-slate-500"><?php esc_html_e( 'Gather this information before you fill out the form.', 'prose-app' ); ?></p>
+
+								<?php if ( ! empty( $prose_prepare['required'] ) ) : ?>
+									<p class="text-[12px] font-medium text-slate-700"><?php esc_html_e( 'Required', 'prose-app' ); ?></p>
+									<ul class="mt-1 list-disc space-y-1 pl-4 text-[13px] leading-[20px] text-slate-600">
+										<?php foreach ( $prose_prepare['required'] as $prose_item ) : ?>
+											<li><?php echo esc_html( (string) ( $prose_item['label'] ?? '' ) ); ?></li>
+										<?php endforeach; ?>
+									</ul>
+								<?php endif; ?>
+
+								<?php if ( ! empty( $prose_prepare['optional'] ) ) : ?>
+									<p class="mt-2 text-[12px] font-medium text-slate-700"><?php esc_html_e( 'Helpful to have', 'prose-app' ); ?></p>
+									<ul class="mt-1 list-disc space-y-1 pl-4 text-[13px] leading-[20px] text-slate-600">
+										<?php foreach ( $prose_prepare['optional'] as $prose_item ) : ?>
+											<li><?php echo esc_html( (string) ( $prose_item['label'] ?? '' ) ); ?></li>
+										<?php endforeach; ?>
+									</ul>
+								<?php endif; ?>
+
+								<?php if ( ! empty( $prose_prepare['conditional'] ) ) : ?>
+									<p class="mt-2 text-[12px] font-medium text-slate-700"><?php esc_html_e( 'If applicable', 'prose-app' ); ?></p>
+									<ul class="mt-1 list-disc space-y-1 pl-4 text-[13px] leading-[20px] text-slate-600">
+										<?php foreach ( $prose_prepare['conditional'] as $prose_item ) : ?>
+											<li><?php echo esc_html( (string) ( $prose_item['label'] ?? '' ) ); ?></li>
+										<?php endforeach; ?>
+									</ul>
+								<?php endif; ?>
+							</div>
+						<?php endif; ?>
+
+						<?php if ( '' !== trim( (string) ( $prose_sections['stage'] ?? '' ) ) || '' !== trim( (string) ( $prose_sections['court'] ?? '' ) ) ) : ?>
+							<div class="flex flex-wrap gap-2 pt-1">
+								<?php if ( '' !== trim( (string) ( $prose_sections['stage'] ?? '' ) ) ) : ?>
+									<span class="rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600"><?php echo esc_html( (string) $prose_sections['stage'] ); ?></span>
+								<?php endif; ?>
+								<?php if ( '' !== trim( (string) ( $prose_sections['court'] ?? '' ) ) ) : ?>
+									<span class="rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600"><?php echo esc_html( (string) $prose_sections['court'] ); ?></span>
+								<?php endif; ?>
+							</div>
+						<?php endif; ?>
+
+						<?php if ( ! empty( $prose_explain['common_mistakes'] ) ) : ?>
+							<div>
+								<p class="text-[12px] font-semibold uppercase tracking-wide text-slate-500"><?php esc_html_e( 'Common mistakes', 'prose-app' ); ?></p>
+								<ul class="mt-1 list-disc space-y-1 pl-4 text-[13px] leading-[20px] text-slate-600">
+									<?php foreach ( $prose_explain['common_mistakes'] as $prose_mistake ) : ?>
+										<li><?php echo esc_html( (string) $prose_mistake ); ?></li>
+									<?php endforeach; ?>
+								</ul>
+							</div>
+						<?php endif; ?>
+
+						<?php if ( '' !== (string) ( $prose_explain['official_url'] ?? '' ) ) : ?>
+							<a
+								href="<?php echo esc_url( (string) $prose_explain['official_url'] ); ?>"
+								target="_blank"
+								rel="noopener noreferrer"
+								class="text-[12px] font-medium text-indigo-600 no-underline hover:text-indigo-700"
+							>
+								<?php esc_html_e( 'View on NY Courts', 'prose-app' ); ?>
+							</a>
+						<?php endif; ?>
+
+						<p class="text-[11px] leading-[16px] text-slate-400">
+							<?php esc_html_e( 'Informational guidance only — not legal advice.', 'prose-app' ); ?>
+						</p>
+					<?php else : ?>
+						<p class="text-[13px] leading-[20px] text-slate-500">
+							<?php esc_html_e( 'Coming soon: a plain-language summary of this form, who needs it, and when to file it.', 'prose-app' ); ?>
+						</p>
+					<?php endif; ?>
 				</div>
 			</aside>
 

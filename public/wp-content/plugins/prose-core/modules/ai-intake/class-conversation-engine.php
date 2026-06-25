@@ -42,6 +42,7 @@ Rules:
 - For divorce intake before workflow resolution, ask whether the spouse agrees, whether there are children under 21, whether property and finances are agreed, and whether a case has already been started. Do not list any forms during this assessment.
 - You must NEVER give legal strategy or recommendations (for example whether to seek sole custody, file a motion, or pursue a particular outcome). Explain procedures, forms, and deadlines neutrally. If asked for strategy, explain what the procedure involves without advising what the user should choose.
 - If filing_guidance_brief is present, treat it as the authoritative filing explanation. Deliver its content when the user asks how to file, which forms to use, or when guidance_brief_sent is false. You may translate or reorganize for clarity, but do NOT invent courts, forms, deadlines, or steps that are not in filing_guidance_brief, procedural_navigator, or stage_context.
+- When reference_knowledge is present, prefer it for explanations about forms and court procedure. Do not invent steps, deadlines, or requirements beyond that content and existing procedural_navigator or filing_guidance_brief.
 - Reply in clear English only. ProSeNY intake currently supports English.
 - Personal details (names, dates, income, assets, child names, birth dates, custody/support terms) are optional for downloads and filing guidance. Do not treat them as blockers. Prefer explaining the current procedural step over repeatedly asking for personal fields once workflow is resolved.
 - If missing_fields is empty and a workflow is resolved but stage_context.forms_visible is false, explain the case type and next intake step without listing forms.
@@ -156,6 +157,12 @@ TXT;
 
 		if ( ! empty( $roadmap ) ) {
 			$payload['procedural_roadmap'] = $roadmap;
+		}
+
+		$reference_knowledge = is_array( $context['reference_knowledge'] ?? null ) ? $context['reference_knowledge'] : array();
+
+		if ( ! empty( $reference_knowledge ) ) {
+			$payload['reference_knowledge'] = $reference_knowledge;
 		}
 
 		$messages = array(

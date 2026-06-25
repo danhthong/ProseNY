@@ -9,6 +9,7 @@ namespace ProSe\Core\Users\Rest;
 
 use ProSe\Core\Forms\Database\Repositories\Case_Repository;
 use ProSe\Core\Guidance\Procedural_Roadmap_Presenter;
+use ProSe\Core\Intake\Rest\Courtflow_Session_Store;
 use ProSe\Core\Loader;
 use ProSe\Core\Routing\Workflow_Catalog;
 use ProSe\Core\Users\Database\Repositories\Conversation_Repository;
@@ -68,16 +69,24 @@ final class User_Dashboard_Rest_Controller {
 	private Procedural_Roadmap_Presenter $roadmap_presenter;
 
 	/**
-	 * Constructor.
+	 * @var Courtflow_Session_Store
 	 */
-	public function __construct() {
-		$this->cases         = new Case_Repository();
-		$this->conversations = new Conversation_Repository();
-		$this->messages      = new Message_Repository();
-		$this->documents     = new User_Document_Repository();
-		$this->subscription  = new Subscription_Status();
-		$this->workflows     = new Workflow_Catalog();
+	private Courtflow_Session_Store $session_store;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param Courtflow_Session_Store|null $session_store Optional session store.
+	 */
+	public function __construct( ?Courtflow_Session_Store $session_store = null ) {
+		$this->cases             = new Case_Repository();
+		$this->conversations     = new Conversation_Repository();
+		$this->messages          = new Message_Repository();
+		$this->documents         = new User_Document_Repository();
+		$this->subscription      = new Subscription_Status();
+		$this->workflows         = new Workflow_Catalog();
 		$this->roadmap_presenter = new Procedural_Roadmap_Presenter();
+		$this->session_store     = $session_store ?? new Courtflow_Session_Store();
 	}
 
 	/**
@@ -112,6 +121,16 @@ final class User_Dashboard_Rest_Controller {
 			array(
 				'methods'             => \WP_REST_Server::READABLE,
 				'callback'            => array( $this, 'handle_conversation_session' ),
+				'permission_callback' => array( $this, 'can_access' ),
+			)
+		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			self::ROUTE_CONVERSATION_SESSION,
+			array(
+				'methods'             => \WP_REST_Server::DELETABLE,
+				'callback'            => array( $this, 'handle_delete_conversation_session' ),
 				'permission_callback' => array( $this, 'can_access' ),
 			)
 		);
@@ -221,6 +240,47 @@ final class User_Dashboard_Rest_Controller {
 				'actions'         => is_array( $context['actions'] ?? null ) ? $context['actions'] : array(),
 				'conversation'    => $conversation,
 				'messages'        => $messages,
+			)
+		);
+	}
+
+	/**
+	 * Remove a saved conversation owned by the current user.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function handle_delete_conversation_session( \WP_REST_Request $request ) {
+		$user_id    = get_current_user_id();
+		$session_id = sanitize_text_field( (string) $request->get_param( 'session_id' ) );
+		$row        = $this->conversations->find_owned_by_session( $user_id, $session_id );
+
+		if ( ! $row ) {
+			return new \WP_Error(
+				'prose_conversation_not_found',
+				__( 'Conversation not found.', 'prose-core' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		$conversation_id = (int) $row->conversation_id;
+
+		$this->messages->delete_for_conversation( $conversation_id );
+
+		if ( ! $this->conversations->delete_owned( $user_id, $conversation_id ) ) {
+			return new \WP_Error(
+				'prose_conversation_delete_failed',
+				__( 'Could not remove conversation.', 'prose-core' ),
+				array( 'status' => 500 )
+			);
+		}
+
+		$this->session_store->delete( $session_id );
+
+		return rest_ensure_response(
+			array(
+				'deleted'    => true,
+				'session_id' => $session_id,
 			)
 		);
 	}

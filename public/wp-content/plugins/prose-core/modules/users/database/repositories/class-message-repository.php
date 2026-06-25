@@ -219,4 +219,26 @@ final class Message_Repository extends Abstract_Repository {
 
 		return max( 1, (int) $max + 1 );
 	}
+
+	/**
+	 * Delete all messages for a conversation.
+	 *
+	 * @param int $conversation_id Conversation ID.
+	 * @return bool
+	 */
+	public function delete_for_conversation( int $conversation_id ): bool {
+		global $wpdb;
+
+		if ( $conversation_id <= 0 ) {
+			return false;
+		}
+
+		$deleted = $wpdb->delete(
+			$this->table(),
+			array( 'conversation_id' => $conversation_id ),
+			array( '%d' )
+		);
+
+		return false !== $deleted;
+	}
 }

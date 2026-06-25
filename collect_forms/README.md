@@ -8,6 +8,7 @@ collect_forms/
 ├── collect_form_links.py     # Stage 1: crawl listing -> Divorce_Forms_Extract.csv
 ├── crawl4ai_forms/
 │   └── enrich_forms.py       # Stage 2: enrich each form -> forms_enriched.csv
+├── crawl_knowledge.py        # Stage 3: crawl knowledge -> prose-core/documents/knowledge/
 ├── run_pipeline.py           # Orchestrator: runs stage 1 then stage 2
 ├── requirements.txt
 ├── setup.ps1                 # One-time environment setup

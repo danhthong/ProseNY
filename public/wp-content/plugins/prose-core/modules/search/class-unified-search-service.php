@@ -165,33 +165,20 @@ final class Unified_Search_Service {
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function search_articles( string $query, int $limit ): array {
-		$needle  = strtolower( $query );
 		$results = array();
 
-		foreach ( $this->articles->all() as $article ) {
-			$haystack = strtolower(
-				(string) ( $article['title'] ?? '' ) . ' ' .
-				(string) ( $article['summary'] ?? '' ) . ' ' .
-				(string) ( $article['slug'] ?? '' ) . ' ' .
-				implode( ' ', (array) ( $article['tags'] ?? array() ) )
-			);
-
-			if ( false === strpos( $haystack, $needle ) ) {
-				continue;
-			}
-
+		foreach ( $this->articles->search( $query, array(), $limit ) as $article ) {
 			$results[] = array(
-				'type'        => 'article',
-				'slug'        => (string) ( $article['slug'] ?? '' ),
-				'title'       => (string) ( $article['title'] ?? '' ),
-				'summary'     => (string) ( $article['summary'] ?? '' ),
-				'workflow'    => (string) ( $article['workflow'] ?? '' ),
+				'type'          => 'article',
+				'slug'          => (string) ( $article['slug'] ?? '' ),
+				'title'         => (string) ( $article['title'] ?? '' ),
+				'summary'       => (string) ( $article['summary'] ?? '' ),
+				'workflow'      => (string) ( $article['workflow'] ?? '' ),
 				'intake_prompt' => (string) ( $article['intake_prompt'] ?? '' ),
+				'form_code'     => (string) ( $article['form_code'] ?? '' ),
+				'source_url'    => (string) ( $article['source_url'] ?? '' ),
+				'corpus'        => (string) ( $article['corpus'] ?? '' ),
 			);
-
-			if ( count( $results ) >= $limit ) {
-				break;
-			}
 		}
 
 		return $results;

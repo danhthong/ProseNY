@@ -281,4 +281,30 @@ final class Conversation_Repository extends Abstract_Repository {
 			array( 'conversation_id' => $conversation_id )
 		);
 	}
+
+	/**
+	 * Delete a conversation owned by the given user.
+	 *
+	 * @param int $user_id         User ID.
+	 * @param int $conversation_id Conversation ID.
+	 * @return bool
+	 */
+	public function delete_owned( int $user_id, int $conversation_id ): bool {
+		global $wpdb;
+
+		if ( $user_id <= 0 || $conversation_id <= 0 ) {
+			return false;
+		}
+
+		$deleted = $wpdb->delete(
+			$this->table(),
+			array(
+				'conversation_id' => $conversation_id,
+				'user_id'         => $user_id,
+			),
+			array( '%d', '%d' )
+		);
+
+		return false !== $deleted && $deleted > 0;
+	}
 }

@@ -1,6 +1,6 @@
 <?php
 /**
- * Load Knowledge Center markdown articles from docs/knowledge-center/.
+ * Load Knowledge Center and crawled NY Courts markdown articles.
  *
  * @package ProSeCore
  */
@@ -24,7 +24,7 @@ final class Knowledge_Article_Loader {
 	private ?array $cache = null;
 
 	/**
-	 * All indexed articles.
+	 * All indexed articles (curated + crawled), de-duplicated by slug.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 */
@@ -33,26 +33,114 @@ final class Knowledge_Article_Loader {
 			return $this->cache;
 		}
 
-		$this->cache = array();
-		$dir         = $this->articles_dir();
+		$by_slug = array();
 
-		if ( ! is_dir( $dir ) ) {
-			return $this->cache;
-		}
-
-		foreach ( glob( $dir . '*.md' ) ?: array() as $file ) {
+		foreach ( $this->collect_markdown_files() as $file ) {
 			$article = $this->parse_markdown( $file );
 
-			if ( null !== $article ) {
-				$this->cache[] = $article;
+			if ( null === $article ) {
+				continue;
 			}
+
+			$slug = (string) ( $article['slug'] ?? '' );
+
+			if ( '' === $slug || isset( $by_slug[ $slug ] ) ) {
+				continue;
+			}
+
+			$by_slug[ $slug ] = $article;
 		}
+
+		$this->cache = array_values( $by_slug );
 
 		return $this->cache;
 	}
 
 	/**
-	 * Knowledge center directory path.
+	 * Find an article by form code (e.g. UD-1).
+	 *
+	 * @param string $form_code Form code.
+	 * @return array<string, mixed>|null
+	 */
+	public function find_by_form_code( string $form_code ): ?array {
+		$form_code = strtoupper( trim( $form_code ) );
+
+		if ( '' === $form_code ) {
+			return null;
+		}
+
+		$slug = sanitize_title( $form_code );
+
+		foreach ( $this->all() as $article ) {
+			$article_code = strtoupper( trim( (string) ( $article['form_code'] ?? '' ) ) );
+			$article_slug = (string) ( $article['slug'] ?? '' );
+
+			if ( $form_code === $article_code || $slug === $article_slug ) {
+				return $article;
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Search articles by query and optional tags.
+	 *
+	 * @param string   $query Search query.
+	 * @param string[] $tags  Optional tag filters (any match).
+	 * @param int      $limit Max results.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function search( string $query, array $tags = array(), int $limit = 5 ): array {
+		$needle  = strtolower( trim( $query ) );
+		$results = array();
+
+		foreach ( $this->all() as $article ) {
+			if ( ! empty( $tags ) ) {
+				$article_tags = array_map( 'strtolower', (array) ( $article['tags'] ?? array() ) );
+				$tag_match    = false;
+
+				foreach ( $tags as $tag ) {
+					$tag = strtolower( trim( (string) $tag ) );
+
+					if ( '' !== $tag && in_array( $tag, $article_tags, true ) ) {
+						$tag_match = true;
+						break;
+					}
+				}
+
+				if ( ! $tag_match ) {
+					continue;
+				}
+			}
+
+			if ( '' !== $needle ) {
+				$haystack = strtolower(
+					(string) ( $article['title'] ?? '' ) . ' ' .
+					(string) ( $article['summary'] ?? '' ) . ' ' .
+					(string) ( $article['slug'] ?? '' ) . ' ' .
+					(string) ( $article['form_code'] ?? '' ) . ' ' .
+					(string) ( $article['content'] ?? '' ) . ' ' .
+					implode( ' ', (array) ( $article['tags'] ?? array() ) )
+				);
+
+				if ( false === strpos( $haystack, $needle ) ) {
+					continue;
+				}
+			}
+
+			$results[] = $article;
+
+			if ( count( $results ) >= $limit ) {
+				break;
+			}
+		}
+
+		return $results;
+	}
+
+	/**
+	 * Curated Knowledge Center directory path.
 	 *
 	 * @return string
 	 */
@@ -68,6 +156,50 @@ final class Knowledge_Article_Loader {
 				trailingslashit( dirname( PROSE_CORE_PATH, 3 ) ) . 'docs/knowledge-center'
 			)
 		);
+	}
+
+	/**
+	 * Crawled NY Courts knowledge directory path.
+	 *
+	 * @return string
+	 */
+	public function court_knowledge_dir(): string {
+		/**
+		 * Filter the crawled court knowledge directory.
+		 *
+		 * @param string $path Default prose-core/documents/knowledge path.
+		 */
+		return trailingslashit(
+			(string) apply_filters(
+				'prose_court_knowledge_dir',
+				PROSE_CORE_PATH . 'documents/knowledge'
+			)
+		);
+	}
+
+	/**
+	 * Collect markdown files from all knowledge sources.
+	 *
+	 * @return string[]
+	 */
+	private function collect_markdown_files(): array {
+		$files = array();
+
+		foreach ( array( $this->articles_dir(), $this->court_knowledge_dir() ) as $dir ) {
+			if ( ! is_dir( $dir ) ) {
+				continue;
+			}
+
+			$pattern = trailingslashit( $dir ) . '*.md';
+			$nested  = glob( trailingslashit( $dir ) . '*/*.md' ) ?: array();
+			$root    = glob( $pattern ) ?: array();
+
+			foreach ( array_merge( $root, $nested ) as $file ) {
+				$files[] = $file;
+			}
+		}
+
+		return $files;
 	}
 
 	/**
@@ -96,28 +228,94 @@ final class Knowledge_Article_Loader {
 					}
 
 					list( $key, $value ) = array_map( 'trim', explode( ':', $line, 2 ) );
-					$meta[ \sanitize_key( $key ) ] = trim( $value, " \t\"'" );
+					$meta[ sanitize_key( $key ) ] = trim( $value, " \t\"'" );
 				}
 
 				$content = $parts[1];
 			}
 		}
 
-		$slug = basename( $path, '.md' );
-		$tags = array();
+		$slug       = basename( $path, '.md' );
+		$tags       = array();
+		$corpus     = 'curated';
+
+		if ( str_contains( $path, 'documents' . DIRECTORY_SEPARATOR . 'knowledge' ) ) {
+			$corpus = 'court';
+		}
 
 		if ( ! empty( $meta['tags'] ) ) {
 			$tags = array_map( 'trim', explode( ',', (string) $meta['tags'] ) );
 		}
 
+		$plain_content = trim( wp_strip_all_tags( $content ) );
+		$body          = self::strip_form_details_sidebar( trim( $content ) );
+		$plain_content = self::strip_form_details_sidebar( $plain_content );
+
 		return array(
 			'slug'          => $slug,
 			'title'         => (string) ( $meta['title'] ?? ucwords( str_replace( '-', ' ', $slug ) ) ),
-			'summary'       => (string) ( $meta['summary'] ?? wp_trim_words( wp_strip_all_tags( $content ), 30, '…' ) ),
+			'summary'       => (string) ( $meta['summary'] ?? wp_trim_words( $plain_content, 30, '…' ) ),
 			'workflow'      => (string) ( $meta['workflow'] ?? '' ),
 			'intake_prompt' => (string) ( $meta['intake_prompt'] ?? '' ),
+			'form_code'     => (string) ( $meta['form_code'] ?? '' ),
+			'source_url'    => (string) ( $meta['source_url'] ?? '' ),
 			'tags'          => $tags,
+			'content'       => $plain_content,
+			'body'          => $body,
+			'corpus'        => $corpus,
 			'path'          => $path,
 		);
+	}
+
+	/**
+	 * Remove NY Courts "FORM DETAILS" sidebar boilerplate from text.
+	 *
+	 * @param string $text Raw text.
+	 * @return string
+	 */
+	private static function strip_form_details_sidebar( string $text ): string {
+		$text = trim( $text );
+
+		if ( '' === $text ) {
+			return '';
+		}
+
+		$clean = array();
+
+		foreach ( preg_split( '/\r?\n/', $text ) ?: array() as $line ) {
+			$trim = trim( $line );
+
+			if ( '' === $trim ) {
+				$clean[] = '';
+				continue;
+			}
+
+			if ( preg_match( '/^form details\b/i', $trim ) ) {
+				continue;
+			}
+
+			$clean[] = $line;
+		}
+
+		$text = trim( implode( "\n", $clean ) );
+
+		if ( preg_match( '/^form details\b/i', preg_replace( '/\s+/', ' ', $text ) ) ) {
+			return '';
+		}
+
+		$non_empty = array_values(
+			array_filter(
+				array_map( 'trim', $clean ),
+				static function ( string $line ): bool {
+					return '' !== $line;
+				}
+			)
+		);
+
+		if ( 1 === count( $non_empty ) && preg_match( '/^#{1,3}\s+/', $non_empty[0] ) ) {
+			return '';
+		}
+
+		return $text;
 	}
 }

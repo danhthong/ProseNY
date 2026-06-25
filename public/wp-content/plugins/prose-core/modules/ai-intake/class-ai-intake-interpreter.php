@@ -12,6 +12,7 @@ use ProSe\Core\Guidance\Procedural_Roadmap_Presenter;
 use ProSe\Core\Intake\Completion_Calculator;
 use ProSe\Core\Intake\Document_Request_Detector;
 use ProSe\Core\Procedural\Procedural_Navigator;
+use ProSe\Core\Search\Knowledge_Context_Provider;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -121,6 +122,13 @@ final class AI_Intake_Interpreter {
 	private Procedural_Roadmap_Presenter $roadmap_presenter;
 
 	/**
+	 * Reference knowledge provider.
+	 *
+	 * @var Knowledge_Context_Provider
+	 */
+	private Knowledge_Context_Provider $knowledge_context;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Ai_Provider_Interface|null      $provider         Provider override.
@@ -134,6 +142,9 @@ final class AI_Intake_Interpreter {
 	 * @param AI_Settings|null                $settings         Settings.
 	 * @param AI_Logger|null                  $logger           Logger.
 	 * @param Conversation_Engine|null        $engine           Conversation engine.
+	 * @param Document_Request_Detector|null  $documents        Document detector.
+	 * @param Procedural_Roadmap_Presenter|null $roadmap_presenter Roadmap presenter.
+	 * @param Knowledge_Context_Provider|null $knowledge_context Knowledge context.
 	 */
 	public function __construct(
 		?Ai_Provider_Interface $provider = null,
@@ -148,7 +159,8 @@ final class AI_Intake_Interpreter {
 		?AI_Logger $logger = null,
 		?Conversation_Engine $engine = null,
 		?Document_Request_Detector $documents = null,
-		?Procedural_Roadmap_Presenter $roadmap_presenter = null
+		?Procedural_Roadmap_Presenter $roadmap_presenter = null,
+		?Knowledge_Context_Provider $knowledge_context = null
 	) {
 		$this->settings        = $settings ?? new AI_Settings();
 		$this->logger          = $logger ?? new AI_Logger();
@@ -164,6 +176,7 @@ final class AI_Intake_Interpreter {
 		$this->workflows       = new \ProSe\Core\Routing\Workflow_Catalog();
 		$this->documents       = $documents ?? new Document_Request_Detector();
 		$this->roadmap_presenter = $roadmap_presenter ?? new Procedural_Roadmap_Presenter();
+		$this->knowledge_context = $knowledge_context ?? new Knowledge_Context_Provider();
 	}
 
 	/**
@@ -306,6 +319,7 @@ final class AI_Intake_Interpreter {
 				'filing_guidance_brief' => $brief_pre,
 				'guidance_brief_sent'   => $brief_sent,
 				'procedural_roadmap'    => $roadmap_pre,
+				'reference_knowledge'   => $this->knowledge_context->for_message( $message, $workflow_pre, null ),
 			),
 			$this->provider,
 			$this->logger

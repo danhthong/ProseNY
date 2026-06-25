@@ -28,6 +28,26 @@
 		});
 	}
 
+	function apiDelete(path) {
+		return fetch(cfg.restUrl + path, {
+			method: 'DELETE',
+			credentials: 'same-origin',
+			headers: {
+				Accept: 'application/json',
+				'X-WP-Nonce': cfg.nonce,
+			},
+		}).then(function (response) {
+			return response.json().then(function (body) {
+				if (!response.ok) {
+					throw new Error((body && body.message) || I18N.removeError || I18N.error || 'Request failed');
+				}
+				return body;
+			});
+		});
+	}
+
+	var dashboardData = null;
+
 	function setStatus(message, isError) {
 		var el = document.getElementById('prose-dashboard-status');
 		if (!el) {
@@ -191,11 +211,24 @@
 							? '<p class="prose-dashboard__conversation-meta">' + escapeHtml(meta.join(' · ')) + '</p>'
 							: '') +
 						'</div>' +
+						'<div class="prose-dashboard__conversation-actions">' +
 						'<a class="prose-dashboard__conversation-resume" href="' +
 						escapeAttr(item.resume_url || cfg.homeUrl || '/') +
 						'">' +
 						escapeHtml(I18N.resumeChat || 'Resume') +
 						'</a>' +
+						'<button type="button" class="prose-dashboard__conversation-remove" data-session-id="' +
+						escapeAttr(item.session_id || '') +
+						'" aria-label="' +
+						escapeAttr(
+							(I18N.removeConversation || 'Remove') +
+								': ' +
+								(item.title || 'Conversation')
+						) +
+						'">' +
+						escapeHtml(I18N.removeConversation || 'Remove') +
+						'</button>' +
+						'</div>' +
 						'</li>'
 					);
 				})
@@ -239,19 +272,71 @@
 		return escapeHtml(text).replace(/'/g, '&#39;');
 	}
 
+	function renderDashboard(data) {
+		dashboardData = data;
+		var greeting = document.getElementById('prose-dashboard-greeting');
+		if (greeting && data.user) {
+			greeting.textContent = 'Welcome back, ' + (data.user.display_name || data.user.email || 'there') + '.';
+		}
+		renderCaseProgress(data.active_case, data.case_progress);
+		renderSubscription(data.subscription);
+		renderConversations(data.recent_conversations);
+		renderDocuments(data.documents);
+	}
+
+	function handleConversationRemoveClick(event) {
+		var button = event.target.closest('.prose-dashboard__conversation-remove');
+		if (!button || button.disabled) {
+			return;
+		}
+
+		var sessionId = button.getAttribute('data-session-id');
+		if (!sessionId) {
+			return;
+		}
+
+		var confirmMessage =
+			I18N.confirmRemoveConversation ||
+			'Remove this conversation from your dashboard? This cannot be undone.';
+
+		if (!window.confirm(confirmMessage)) {
+			return;
+		}
+
+		button.disabled = true;
+		setStatus(I18N.removingConversation || 'Removing…');
+
+		apiDelete('me/conversations/session/' + encodeURIComponent(sessionId))
+			.then(function () {
+				return api('me/dashboard');
+			})
+			.then(function (data) {
+				setStatus('');
+				renderDashboard(data);
+			})
+			.catch(function (err) {
+				button.disabled = false;
+				setStatus(err.message || I18N.removeError || I18N.error || 'Error', true);
+			});
+	}
+
+	function bindConversationActions() {
+		var el = document.getElementById('prose-conversations');
+		if (!el || el.dataset.removeBound === '1') {
+			return;
+		}
+
+		el.dataset.removeBound = '1';
+		el.addEventListener('click', handleConversationRemoveClick);
+	}
+
 	setStatus(I18N.loading || 'Loading…');
+	bindConversationActions();
 
 	api('me/dashboard')
 		.then(function (data) {
 			setStatus('');
-			var greeting = document.getElementById('prose-dashboard-greeting');
-			if (greeting && data.user) {
-				greeting.textContent = 'Welcome back, ' + (data.user.display_name || data.user.email || 'there') + '.';
-			}
-			renderCaseProgress(data.active_case, data.case_progress);
-			renderSubscription(data.subscription);
-			renderConversations(data.recent_conversations);
-			renderDocuments(data.documents);
+			renderDashboard(data);
 		})
 		.catch(function (err) {
 			setStatus(err.message || I18N.error || 'Error', true);
