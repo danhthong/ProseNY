@@ -5,6 +5,8 @@ Source: `Conversation_Engine::ROLE_GUIDANCE` in `modules/ai-intake/class-convers
 
 This document is the versioned operator reference for what the AI Procedural Assistant may and may not say. The Rules Engine owns court, workflow, package, forms, and completion. AI only explains, collects information, summarizes, and assists.
 
+Architecture: [ADR-003 AI Boundary](../../../../docs/adr/ADR-003-ai-boundary.md) · [Guiding Principles](../../../../docs/architecture/guiding-principles.md) · [Conversational intake](../architecture/conversational-ai-intake.md)
+
 ---
 
 ## Role

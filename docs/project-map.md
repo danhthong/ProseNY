@@ -10,7 +10,12 @@ CourtFlow AI is a **procedural navigation platform** for NYC Divorce and Family 
 
 | Area | Path |
 |------|------|
-| **Implementation plans (start here)** | [docs/plans/README.md](./plans/README.md) |
+| **Platform architecture** | [docs/architecture/README.md](./architecture/README.md) |
+| Guiding principles | [docs/architecture/guiding-principles.md](./architecture/guiding-principles.md) |
+| Architecture decisions (ADR) | [docs/adr/README.md](./adr/README.md) |
+| RFC process | [docs/rfc/README.md](./rfc/README.md) |
+| **Implementation plans** | [docs/plans/README.md](./plans/README.md) |
+| Reference specifications | [docs/reference/README.md](./reference/README.md) |
 | Requirements (source) | [docs/requires/](./requires/) |
 | UI specifications | [docs/ui/](./ui/) |
 | Agent / dev rules | [AGENTS.md](../AGENTS.md) |
@@ -85,4 +90,4 @@ Legend: ✅ Done · 🟡 Partial · 🔴 Not started / blocked
 
 ---
 
-*Last updated: implementation planning phase. Update this file when plans are approved or completed.*
+*Last updated: architecture documentation evolution (2026-06). Update when plans are approved or completed.*

@@ -177,7 +177,34 @@ The **`Workflow_Progression_Service`** (`modules/forms/engine/class-workflow-pro
 
 Court and workflow **selection** remains in `modules/routing/`. Case **progression** reads only from workflow JSON.
 
-## Validation
+## State machine (documented model)
+
+Workflow stages implement a deterministic state machine. The JSON graph is authoritative; engines must not hardcode transitions.
+
+| Concept | Source | Runtime |
+|---------|--------|---------|
+| States | `stages[]` + Plan 21 lifecycle milestones | `Workflow_Progression_Service`, lifecycle catalog |
+| Transitions | `internal.progression[]`, `internal.edges[]` | Progression service + event triggers |
+| Completion | Required facts + progression triggers | `Completion_Calculator`, package events |
+| Validation | `validate-workflows.php` | CI + activate hooks |
+| Prerequisites | Per progression entry | Fact + event checks |
+| Rollback | Not user-facing (MVP) | Future: compensating events |
+
+Full specification: [Workflow State Machine ADR](../../../docs/adr/ADR-002-workflow-state-machine.md) · [Platform Architecture](../../../docs/architecture/platform-architecture.md) §4
+
+## Event model (future direction)
+
+Lifecycle milestones (filed, served, answer received) are recorded as **procedural events** on the case. The Timeline Engine projects stages and deadlines from events + this workflow graph — conversation history is not the source of truth.
+
+See [Event Model ADR](../../../docs/adr/ADR-006-event-model.md) and Plan 21 lifecycle phases.
+
+## Architecture references
+
+| Topic | Document |
+|-------|----------|
+| Platform architecture | [docs/architecture/platform-architecture.md](../../../docs/architecture/platform-architecture.md) |
+| Rules specification | [docs/reference/rules.md](../../../docs/reference/rules.md) |
+| Guiding principles | [docs/architecture/guiding-principles.md](../../../docs/architecture/guiding-principles.md) |
 
 Run the validation script:
 

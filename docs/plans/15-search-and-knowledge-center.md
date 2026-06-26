@@ -11,6 +11,8 @@
 
 Public **search** across forms, workflows, and procedural topics plus an educational **Knowledge Center** — PRD Ch. 31–32.
 
+Architecture: Knowledge Center is part of the [Knowledge Layer](../architecture/platform-architecture.md) §7; complements future Legal Knowledge Graph without replacing workflow or forms repositories.
+
 ## Requirements reference
 
 - PRD Ch. 31 — Search System

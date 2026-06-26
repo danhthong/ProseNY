@@ -11,6 +11,8 @@
 
 Harden the **AI Procedural Assistant** so it explains forms, workflows, and deadlines within strict boundaries — never legal strategy, never overriding the Rules Engine.
 
+Architecture: [ADR-003 AI Boundary](../adr/ADR-003-ai-boundary.md) · [Guiding Principles](../architecture/guiding-principles.md) · `prose-core/docs/ai/system-prompt.md`
+
 ## Requirements reference
 
 - PRD Ch. 24 — AI Procedural Assistant

@@ -11,6 +11,8 @@
 
 Complete the **Workflow Engine** as the procedural source of truth: resolution, progression, node/edge graph, and stage transitions — all driven from JSON, not hardcoded PHP.
 
+Architecture: Implements the workflow state machine documented in [ADR-002](../adr/ADR-002-workflow-state-machine.md) and [Platform Architecture](../architecture/platform-architecture.md) §4.
+
 ## Requirements reference
 
 - PRD Ch. 16–17 — Workflow Node Library, standardized nodes

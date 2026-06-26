@@ -11,6 +11,8 @@
 
 After intake, guide users through **next procedural steps** — filing, service, conferences, motions — using deterministic guidance, not AI strategy.
 
+Architecture: Guidance content lives in the [Knowledge Layer](../architecture/platform-architecture.md) §7 — workflows reference knowledge; knowledge does not determine workflow. See [ADR-005](../adr/ADR-005-knowledge-layer.md).
+
 ## Requirements reference
 
 - PRD Ch. 24 — AI explains procedures; Rules Engine owns next steps

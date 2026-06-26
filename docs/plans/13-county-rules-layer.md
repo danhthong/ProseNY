@@ -11,6 +11,8 @@
 
 Apply **NYC county-specific** filing instructions, local rules, and procedural differences across all 5 boroughs.
 
+Architecture: County rules are [Knowledge Layer](../architecture/platform-architecture.md) content with instructional (not routing) effects — see [ADR-005](../adr/ADR-005-knowledge-layer.md) and [Rules Reference](../reference/rules.md) §4.
+
 ## Requirements reference
 
 - PRD Ch. 22 — County Rules Layer

@@ -11,6 +11,8 @@
 
 Track **current stage**, completed/pending tasks, deadlines, and upcoming hearings/conferences per case.
 
+Architecture: Timeline is a **projection** of workflow stages + procedural events + deadline rules — see [Platform Architecture](../architecture/platform-architecture.md) §5 and [ADR-006](../adr/ADR-006-event-model.md). Plan 21 extends this with lifecycle events.
+
 ## Requirements reference
 
 - PRD Ch. 19 — Timeline Engine

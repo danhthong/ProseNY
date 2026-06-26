@@ -7,6 +7,8 @@ Review this index first. Each plan is a self-contained file you can approve, rev
 **Rules Engine decides** court, workflow, required forms, and next steps.  
 **AI only** explains, collects facts, summarizes, and assists. Never hardcode workflow logic in PHP/JS when it belongs in workflow JSON or the database.
 
+See also: [Guiding Principles](../architecture/guiding-principles.md) · [Platform Architecture](../architecture/platform-architecture.md) · [ADRs](../adr/README.md)
+
 ## How to use these plans
 
 1. Read plans in **recommended order** (dependencies flow top → bottom).
@@ -89,6 +91,8 @@ From `docs/requires/` and `AGENTS.md`:
 
 ## Related docs
 
+- Architecture: [docs/architecture/](../architecture/README.md)
+- Reference specs: [docs/reference/](../reference/README.md)
 - Requirements: `docs/requires/`
 - UI specs: `docs/ui/`
 - Workflow repo README: `prose-core/docs/workflows/README.md`

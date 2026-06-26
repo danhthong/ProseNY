@@ -52,6 +52,8 @@ Structured outputs: stage, roadmap, forms, deadlines, next step
 AI explains only — never chooses court, workflow, or stage
 ```
 
+This plan implements the [Event Model ADR](../adr/ADR-006-event-model.md) incrementally (`lifecycle_events[]` on the Case aggregate). See [Platform Architecture](../architecture/platform-architecture.md) §4–5 and [Rules Reference](../reference/rules.md) §6 (lifecycle rules).
+
 ---
 
 ## Proposed phases

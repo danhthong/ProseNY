@@ -57,3 +57,14 @@ node_modules
 - Production-ready SaaS patterns
 
 Never hardcode workflow logic.
+
+## Architecture documentation
+
+| Document | Path |
+|----------|------|
+| Platform architecture | `docs/architecture/platform-architecture.md` |
+| Guiding principles | `docs/architecture/guiding-principles.md` |
+| Architecture decisions (ADR) | `docs/adr/` |
+| RFC process | `docs/rfc/README.md` |
+| Implementation plans | `docs/plans/README.md` |
+| Reference specs | `docs/reference/README.md` |

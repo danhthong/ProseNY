@@ -11,6 +11,8 @@
 
 Persist **cases, sessions, documents, and deadlines** in the database per PRD Ch. 21 — moving beyond localStorage-only MVP.
 
+Architecture: Implements persistence for the [Case Aggregate](../adr/ADR-007-case-aggregate.md) — `prose_cases` and related tables map the conceptual model without requiring a single JSON blob.
+
 ## Requirements reference
 
 - PRD Ch. 21 — Database Schema: Courts, Counties, Forms, WorkflowNodes, WorkflowEdges, Cases, Documents, Deadlines, Users

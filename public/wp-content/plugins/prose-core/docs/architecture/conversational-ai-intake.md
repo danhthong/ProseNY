@@ -1,5 +1,7 @@
 # Conversational AI Intake Engine
 
+Part of the Application Layer. Domain decisions are made before and after each AI call — see [ADR-003 AI Boundary](../../../../docs/adr/ADR-003-ai-boundary.md) and [Platform Architecture](../../../../docs/architecture/platform-architecture.md).
+
 ## Goal
 
 The chat must feel like talking to one knowledgeable legal intake specialist —
