@@ -210,6 +210,56 @@ final class Case_Profile {
 	}
 
 	/**
+	 * Resolved workflow key from profile or facts fallback.
+	 *
+	 * @return string
+	 */
+	public function workflow_key(): string {
+		if ( null !== $this->workflow && '' !== trim( $this->workflow ) ) {
+			return trim( $this->workflow );
+		}
+
+		$from_facts = $this->facts->get( 'workflow' );
+
+		return is_string( $from_facts ) ? trim( $from_facts ) : '';
+	}
+
+	/**
+	 * Plain fact map for rules engines and presenters.
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function plain_facts(): array {
+		return $this->facts->all();
+	}
+
+	/**
+	 * Issue slug from profile or facts.
+	 *
+	 * @return string
+	 */
+	public function issue_key(): string {
+		if ( null !== $this->issue && '' !== trim( $this->issue ) ) {
+			return sanitize_key( $this->issue );
+		}
+
+		$from_facts = $this->facts->get( 'issue' );
+
+		return is_string( $from_facts ) ? sanitize_key( $from_facts ) : '';
+	}
+
+	/**
+	 * County from facts.
+	 *
+	 * @return string
+	 */
+	public function county(): string {
+		$county = $this->facts->get( 'county' );
+
+		return is_string( $county ) ? trim( $county ) : '';
+	}
+
+	/**
 	 * Workflow confidence.
 	 *
 	 * @return float

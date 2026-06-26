@@ -574,6 +574,14 @@ final class Procedural_Roadmap_Presenter {
 			)
 			: null;
 
+		if ( ! empty( $lifecycle['learn_more'] ) && is_array( $lifecycle['learn_more'] ) ) {
+			$roadmap['learn_more'] = $lifecycle['learn_more'];
+		}
+
+		if ( ! empty( $lifecycle['branch_note'] ) ) {
+			$roadmap['branch_note'] = (string) $lifecycle['branch_note'];
+		}
+
 		return $roadmap;
 	}
 

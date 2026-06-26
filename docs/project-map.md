@@ -10,6 +10,7 @@ CourtFlow AI is a **procedural navigation platform** for NYC Divorce and Family 
 
 | Area | Path |
 |------|------|
+| **Stakeholder overview** | [docs/stakeholder-overview.md](./stakeholder-overview.md) |
 | **Platform architecture** | [docs/architecture/README.md](./architecture/README.md) |
 | Guiding principles | [docs/architecture/guiding-principles.md](./architecture/guiding-principles.md) |
 | Architecture decisions (ADR) | [docs/adr/README.md](./adr/README.md) |

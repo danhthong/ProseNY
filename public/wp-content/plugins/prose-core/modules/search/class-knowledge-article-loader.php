@@ -84,6 +84,69 @@ final class Knowledge_Article_Loader {
 	}
 
 	/**
+	 * Find a curated article by workflow and procedural stage slug.
+	 *
+	 * @param string $workflow Workflow key.
+	 * @param string $stage    Stage slug from article front matter (e.g. service, answer).
+	 * @return array<string, mixed>|null
+	 */
+	public function find_by_workflow_stage( string $workflow, string $stage ): ?array {
+		$workflow = trim( $workflow );
+		$stage    = sanitize_key( $stage );
+
+		if ( '' === $stage ) {
+			return null;
+		}
+
+		foreach ( $this->all() as $article ) {
+			$article_stage = sanitize_key( (string) ( $article['stage'] ?? '' ) );
+
+			if ( $article_stage !== $stage ) {
+				continue;
+			}
+
+			$article_workflow = trim( (string) ( $article['workflow'] ?? '' ) );
+
+			if ( '' !== $article_workflow && '' !== $workflow && $article_workflow !== $workflow ) {
+				if ( ! $this->workflows_share_family( $article_workflow, $workflow ) ) {
+					continue;
+				}
+			}
+
+			return $article;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Public URL for a knowledge article (filterable for theme overrides).
+	 *
+	 * @param array<string, mixed> $article Article record.
+	 * @return string
+	 */
+	public function public_url( array $article ): string {
+		$slug  = (string) ( $article['slug'] ?? '' );
+		$title = (string) ( $article['title'] ?? '' );
+
+		$default = home_url(
+			'/?' . http_build_query(
+				array(
+					's' => str_replace( '-', ' ', $slug ),
+				)
+			)
+		);
+
+		/**
+		 * Filter the public URL for a knowledge article.
+		 *
+		 * @param string               $url     Default URL.
+		 * @param array<string, mixed> $article Article record.
+		 */
+		return (string) apply_filters( 'prose_knowledge_article_url', $default, $article );
+	}
+
+	/**
 	 * Search articles by query and optional tags.
 	 *
 	 * @param string   $query Search query.
@@ -153,9 +216,19 @@ final class Knowledge_Article_Loader {
 		return trailingslashit(
 			(string) apply_filters(
 				'prose_knowledge_center_dir',
-				trailingslashit( dirname( PROSE_CORE_PATH, 3 ) ) . 'docs/knowledge-center'
+				$this->repo_docs_path( 'knowledge-center' )
 			)
 		);
+	}
+
+	/**
+	 * Repository docs path (app/docs/*), four levels above prose-core.
+	 *
+	 * @param string $segment Path under docs/ (e.g. knowledge-center).
+	 * @return string
+	 */
+	private function repo_docs_path( string $segment ): string {
+		return trailingslashit( dirname( PROSE_CORE_PATH, 4 ) ) . 'docs/' . trim( $segment, '/' );
 	}
 
 	/**
@@ -256,6 +329,8 @@ final class Knowledge_Article_Loader {
 			'title'         => (string) ( $meta['title'] ?? ucwords( str_replace( '-', ' ', $slug ) ) ),
 			'summary'       => (string) ( $meta['summary'] ?? wp_trim_words( $plain_content, 30, '…' ) ),
 			'workflow'      => (string) ( $meta['workflow'] ?? '' ),
+			'stage'         => sanitize_key( (string) ( $meta['stage'] ?? '' ) ),
+			'court'         => sanitize_key( (string) ( $meta['court'] ?? '' ) ),
 			'intake_prompt' => (string) ( $meta['intake_prompt'] ?? '' ),
 			'form_code'     => (string) ( $meta['form_code'] ?? '' ),
 			'source_url'    => (string) ( $meta['source_url'] ?? '' ),
@@ -265,6 +340,27 @@ final class Knowledge_Article_Loader {
 			'corpus'        => $corpus,
 			'path'          => $path,
 		);
+	}
+
+	/**
+	 * Whether two workflow keys belong to the same NYC divorce family.
+	 *
+	 * @param string $left  Workflow key.
+	 * @param string $right Workflow key.
+	 */
+	private function workflows_share_family( string $left, string $right ): bool {
+		if ( $left === $right ) {
+			return true;
+		}
+
+		$divorce = array(
+			'uncontested_divorce_no_children_nyc',
+			'uncontested_divorce_children_nyc',
+			'contested_divorce_nyc',
+			'default_divorce_nyc',
+		);
+
+		return in_array( $left, $divorce, true ) && in_array( $right, $divorce, true );
 	}
 
 	/**

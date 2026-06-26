@@ -52,4 +52,36 @@ class EligibilityPresenterTest extends TestCase {
 
 		$this->assertTrue( $blocked );
 	}
+
+	/**
+	 * Non-NYC county returns needs_more_info.
+	 */
+	public function test_non_nyc_county_needs_more_info(): void {
+		$presenter = new Eligibility_Presenter();
+		$result    = $presenter->evaluate(
+			array(
+				'county'                  => 'Albany',
+				'residency_qualification' => '1_year_state',
+			)
+		);
+
+		$this->assertSame( Eligibility_Presenter::STATUS_NEEDS_MORE_INFO, $result['status'] );
+	}
+
+	/**
+	 * DV concern still eligible with OP note.
+	 */
+	public function test_dv_concern_eligible_with_op_note(): void {
+		$presenter = new Eligibility_Presenter();
+		$result    = $presenter->evaluate(
+			array(
+				'county'                    => 'Queens',
+				'residency_qualification'   => '1_year_state',
+				'domestic_violence_concerns' => true,
+			)
+		);
+
+		$this->assertSame( Eligibility_Presenter::STATUS_ELIGIBLE, $result['status'] );
+		$this->assertStringContainsString( 'protection', strtolower( (string) ( $result['reason'] ?? '' ) ) );
+	}
 }

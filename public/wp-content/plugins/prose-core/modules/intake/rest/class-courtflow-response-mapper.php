@@ -15,6 +15,7 @@ use ProSe\Core\Guidance\Procedural_Roadmap_Presenter;
 use ProSe\Core\Intake\Case_Actions_Resolver;
 use ProSe\Core\Intake\Case_Lifecycle_Service;
 use ProSe\Core\Procedural\Procedural_Navigator;
+use ProSe\Core\Routing\Case_Profile;
 use ProSe\Core\Routing\Workflow_Catalog;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -119,9 +120,14 @@ final class Courtflow_Response_Mapper {
 	 */
 	public function refresh_session_roadmap( array &$session ): array {
 		$case_profile = is_array( $session['case_profile'] ?? null ) ? $session['case_profile'] : array();
+		$profile      = Case_Profile::from_array( $case_profile );
 		$context      = $this->build_context( $session );
 		$facts        = is_array( $context['facts']['case'] ?? null ) ? $context['facts']['case'] : array();
-		$workflow     = trim( (string) ( $case_profile['workflow'] ?? $facts['workflow'] ?? '' ) );
+		$workflow     = $profile->workflow_key();
+
+		if ( '' === $workflow && ! empty( $facts['workflow'] ) ) {
+			$workflow = trim( (string) $facts['workflow'] );
+		}
 		$actions      = is_array( $context['actions'] ?? null ) ? $context['actions'] : array();
 		$requirements = is_array( $context['requirements'] ?? null ) ? $context['requirements'] : array();
 		$intake_state = Intake_State::from_array(
@@ -206,7 +212,7 @@ final class Courtflow_Response_Mapper {
 		}
 
 		$case_profile = is_array( $session['case_profile'] ?? null ) ? $session['case_profile'] : array();
-		$facts        = is_array( $context['facts']['case'] ?? null ) ? $context['facts']['case'] : array();
+		$facts        = is_array( $case_profile['facts'] ?? null ) ? $case_profile['facts'] : array();
 		$actions      = is_array( $context['actions'] ?? null ) ? $context['actions'] : array();
 
 		$eligibility = $this->eligibility->evaluate( $facts );
@@ -334,7 +340,16 @@ final class Courtflow_Response_Mapper {
 		$resolved     = $this->fields->resolve( $intake_state, '' );
 		$missing      = $this->fields->missing_prioritized( $resolved['fields'], $intake_state );
 		$completion   = (int) ( $interpret['completion'] ?? $case_profile['progress'] ?? 0 );
-		$workflow     = trim( (string) ( $interpret['workflow'] ?? $case_profile['workflow'] ?? $resolved['workflow'] ?? '' ) );
+		$profile      = Case_Profile::from_array( $case_profile );
+		$workflow     = trim( (string) ( $interpret['workflow'] ?? '' ) );
+
+		if ( '' === $workflow ) {
+			$workflow = $profile->workflow_key();
+		}
+
+		if ( '' === $workflow ) {
+			$workflow = trim( (string) ( $resolved['workflow'] ?? '' ) );
+		}
 		$actions      = is_array( $session['actions'] ?? null ) ? $session['actions'] : array();
 
 		if ( empty( $actions ) ) {
@@ -741,15 +756,20 @@ final class Courtflow_Response_Mapper {
 			return array();
 		}
 
-		$facts    = is_array( $case_profile['facts'] ?? null ) ? $case_profile['facts'] : array();
-		$workflow = trim( (string) ( $actions['workflow'] ?? $interpret['workflow'] ?? $case_profile['workflow'] ?? '' ) );
+		$profile  = Case_Profile::from_array( $case_profile );
+		$facts    = $profile->plain_facts();
+		$workflow = trim( (string) ( $actions['workflow'] ?? $interpret['workflow'] ?? '' ) );
+
+		if ( '' === $workflow ) {
+			$workflow = $profile->workflow_key();
+		}
 
 		if ( '' === $workflow ) {
 			return array();
 		}
 
-		$issue = trim( (string) ( $actions['issue'] ?? $facts['issue'] ?? 'divorce' ) );
-		$county = trim( (string) ( $facts['county'] ?? $session['county'] ?? '' ) );
+		$issue  = trim( (string) ( $actions['issue'] ?? $profile->issue_key() ?: 'divorce' ) );
+		$county = $profile->county() ?: trim( (string) ( $session['county'] ?? '' ) );
 
 		$result = $this->navigator->navigate(
 			array(

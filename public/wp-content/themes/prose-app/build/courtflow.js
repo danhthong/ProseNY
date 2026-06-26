@@ -20,6 +20,7 @@
 		roadmap: null,
 		lifecycle: null,
 		eligibility: null,
+		matterMap: null,
 		messages: [],
 		currentNode: null,
 		documents: [],
@@ -561,12 +562,37 @@
 		if (!block || !list) return;
 
 		var routing = state.courtRouting || {};
+		var matterMap = state.matterMap || {};
 		var courts = Array.isArray(routing.courts) ? routing.courts.slice() : [];
 		if (!courts.length && routing.court) {
 			courts = [routing.court];
 		}
 
 		list.innerHTML = '';
+
+		if (matterMap.show && Array.isArray(matterMap.tracks) && matterMap.tracks.length) {
+			block.hidden = false;
+			matterMap.tracks.forEach(function (track) {
+				var li = document.createElement('li');
+				li.className = 'cf-courts-involved__item cf-courts-involved__item--track';
+				var label = track.label || track.id || '';
+				if (track.stage && track.stage !== 'parallel') {
+					label += ' (' + track.stage + ')';
+				}
+				li.textContent = label;
+				if (track.note) {
+					li.title = track.note;
+				}
+				list.appendChild(li);
+			});
+			if (note) {
+				var routingMessage = routing.routing_explanation || routing.routing_note || '';
+				note.hidden = !routingMessage;
+				note.textContent = routingMessage;
+			}
+			return;
+		}
+
 		if (!courts.length) {
 			block.hidden = true;
 			if (note) note.hidden = true;
@@ -937,6 +963,19 @@
 				'</p></div>';
 		}
 
+		if (roadmap.learn_more && roadmap.learn_more.title) {
+			html +=
+				'<p class="cf-roadmap__learn-more"><a href="' +
+				escapeAttr(roadmap.learn_more.url || '#') +
+				'" target="_blank" rel="noopener noreferrer">' +
+				escapeHtml(roadmap.learn_more.title) +
+				'</a></p>';
+		}
+
+		if (roadmap.branch_note) {
+			html += '<p class="cf-roadmap__branch-note">' + escapeHtml(roadmap.branch_note) + '</p>';
+		}
+
 		var confidence = roadmap.confidence_level || {};
 		if (confidence.label) {
 			html +=
@@ -1001,6 +1040,20 @@
 				'</div>';
 		}
 
+		if (lifecycle.branch_note) {
+			html += '<p class="cf-lifecycle__branch-note">' + escapeHtml(lifecycle.branch_note) + '</p>';
+		}
+
+		if (lifecycle.learn_more && lifecycle.learn_more.title) {
+			var learn = lifecycle.learn_more;
+			html +=
+				'<p class="cf-lifecycle__learn-more"><a href="' +
+				escapeAttr(learn.url || '#') +
+				'" target="_blank" rel="noopener noreferrer">' +
+				escapeHtml(learn.title) +
+				'</a></p>';
+		}
+
 		body.innerHTML = html;
 
 		if (actionsEl) {
@@ -1039,6 +1092,8 @@
 		})
 			.then(function (data) {
 				if (data.lifecycle) state.lifecycle = data.lifecycle;
+				if (data.matter_map) state.matterMap = data.matter_map;
+				if (data.roadmap) state.roadmap = data.roadmap;
 				if (data.roadmap) state.roadmap = data.roadmap;
 				renderLifecycleCard();
 				renderRoadmapCard();
@@ -1202,6 +1257,9 @@
 		}
 		if (data.lifecycle) {
 			state.lifecycle = data.lifecycle;
+		}
+		if (data.matter_map) {
+			state.matterMap = data.matter_map;
 		}
 		if (data.eligibility) {
 			state.eligibility = data.eligibility;

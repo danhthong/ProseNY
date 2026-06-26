@@ -399,7 +399,7 @@ final class Guidance_Repository {
 		 */
 		return (string) apply_filters(
 			'prose_county_rules_seed_path',
-			trailingslashit( dirname( PROSE_CORE_PATH, 3 ) ) . 'docs/county-rules/nyc.json'
+				trailingslashit( dirname( PROSE_CORE_PATH, 4 ) ) . 'docs/county-rules/nyc.json'
 		);
 	}
 

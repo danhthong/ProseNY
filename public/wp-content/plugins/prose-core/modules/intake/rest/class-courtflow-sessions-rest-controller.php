@@ -729,6 +729,7 @@ final class Courtflow_Sessions_Rest_Controller {
 			array(
 				'message'         => __( 'Case milestone recorded.', 'prose-core' ),
 				'lifecycle'       => $context['lifecycle'] ?? array(),
+				'matter_map'      => $context['matter_map'] ?? array(),
 				'roadmap'         => $roadmap_refresh['roadmap'] ?? null,
 				'roadmap_changed' => ! empty( $roadmap_refresh['changed'] ),
 			)

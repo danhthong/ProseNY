@@ -118,7 +118,15 @@ class GuidanceEngineTest extends TestCase {
 		$unknown    = $resolver->resolve( 'Westchester' );
 
 		$this->assertSame( 'Kings', $known['county_guidance']['county'] );
-		$this->assertSame( array(), $known['county_guidance']['filing_notes'] );
+		$this->assertNotEmpty( $known['county_guidance']['filing_notes'] );
+		$this->assertStringContainsString(
+			'Kings County',
+			(string) ( $known['county_guidance']['filing_notes'][0] ?? '' )
+		);
+		$this->assertStringContainsString(
+			'nycourts.gov',
+			(string) ( $known['county_guidance']['filing_notes'][0] ?? '' )
+		);
 		$this->assertSame( 'Westchester', $unknown['county_guidance']['county'] );
 		$this->assertSame( array(), $unknown['county_guidance']['special_requirements'] );
 	}

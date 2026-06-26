@@ -272,4 +272,38 @@ class CourtflowResponseMapperTest extends TestCase {
 		$this->assertTrue( $state['stage_context']['forms_visible'] );
 		$this->assertContains( 'UD-1', $state['required_forms'] );
 	}
+
+	/**
+	 * Divorce session state includes lifecycle and matter map payloads.
+	 */
+	public function test_divorce_session_includes_lifecycle_and_matter_map(): void {
+		$session = array(
+			'session_id'   => 'test-session',
+			'case_profile' => array(
+				'facts'    => array(
+					'issue'              => 'divorce',
+					'county'             => 'Queens',
+					'has_minor_children' => true,
+					'custody_dispute'    => true,
+				),
+				'workflow' => 'uncontested_divorce_children_nyc',
+				'progress' => 100,
+			),
+			'last_interpret' => array(
+				'completion' => 100,
+				'workflow'   => 'uncontested_divorce_children_nyc',
+			),
+			'actions' => array(
+				'intake_complete' => true,
+			),
+		);
+
+		$fields = $this->mapper->map_lifecycle_fields( $session );
+
+		$this->assertArrayHasKey( 'lifecycle', $fields );
+		$this->assertArrayHasKey( 'matter_map', $fields );
+		$this->assertTrue( $fields['lifecycle']['show'] );
+		$this->assertTrue( $fields['matter_map']['show'] );
+		$this->assertGreaterThan( 1, count( $fields['matter_map']['tracks'] ) );
+	}
 }

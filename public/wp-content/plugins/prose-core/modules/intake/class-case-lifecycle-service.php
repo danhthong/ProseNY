@@ -10,7 +10,9 @@ namespace ProSe\Core\Intake;
 use ProSe\Core\Forms\Classification\Vocabulary;
 use ProSe\Core\Forms\Engine\Case_Catalog;
 use ProSe\Core\Forms\Engine\Deadline_Catalog;
+use ProSe\Core\Routing\Case_Profile;
 use ProSe\Core\Routing\Workflow_Catalog;
+use ProSe\Core\Search\Knowledge_Article_Loader;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -52,12 +54,19 @@ final class Case_Lifecycle_Service {
 	private Workflow_Catalog $workflows;
 
 	/**
+	 * @var Knowledge_Article_Loader
+	 */
+	private Knowledge_Article_Loader $articles;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Workflow_Catalog|null $workflows Workflow catalog.
+	 * @param Workflow_Catalog|null         $workflows Workflow catalog.
+	 * @param Knowledge_Article_Loader|null $articles  Knowledge articles.
 	 */
-	public function __construct( ?Workflow_Catalog $workflows = null ) {
+	public function __construct( ?Workflow_Catalog $workflows = null, ?Knowledge_Article_Loader $articles = null ) {
 		$this->workflows = $workflows ?? new Workflow_Catalog();
+		$this->articles  = $articles ?? new Knowledge_Article_Loader();
 	}
 
 	/**
@@ -106,10 +115,11 @@ final class Case_Lifecycle_Service {
 	 * @return array<string, mixed>
 	 */
 	public function build( array $case_profile, array $context = array() ): array {
-		$facts         = is_array( $case_profile['facts'] ?? null ) ? $case_profile['facts'] : array();
-		$workflow      = trim( (string) ( $case_profile['workflow'] ?? $facts['workflow'] ?? '' ) );
+		$profile       = Case_Profile::from_array( $case_profile );
+		$facts         = $profile->plain_facts();
+		$workflow      = $profile->workflow_key();
 		$intake_ok     = ! empty( $context['intake_complete'] ) || ! empty( $case_profile['intake_complete'] );
-		$completion    = (int) ( $context['completion'] ?? $case_profile['progress'] ?? 0 );
+		$completion    = (int) ( $context['completion'] ?? $case_profile['progress'] ?? $profile->progress() );
 		$events        = $this->normalize_events( $case_profile );
 		$branch        = $this->resolve_branch( $workflow, $facts, $events );
 		$stage         = $this->resolve_stage( $workflow, $facts, $events, $intake_ok, $completion, $branch );
@@ -118,16 +128,20 @@ final class Case_Lifecycle_Service {
 		$checklist     = $this->build_checklist( $stage, $branch );
 		$next_actions  = $this->next_actions( $stage, $branch, $events );
 
+		$suggested_workflow = $this->suggested_branch_workflow( $branch, $workflow );
+
 		return array(
-			'show'              => $this->is_divorce_lifecycle( $workflow, $facts ),
-			'stage'             => $stage,
-			'branch'            => $branch,
-			'events'            => $events,
-			'milestones'        => $checklist,
-			'deadlines'         => $deadlines,
-			'next_actions'      => $next_actions,
-			'service_date'      => $service_date,
-			'suggested_workflow' => $this->suggested_branch_workflow( $branch, $workflow ),
+			'show'               => $this->is_divorce_lifecycle( $workflow, $facts ),
+			'stage'              => $stage,
+			'branch'             => $branch,
+			'events'             => $events,
+			'milestones'         => $checklist,
+			'deadlines'          => $deadlines,
+			'next_actions'       => $next_actions,
+			'service_date'       => $service_date,
+			'suggested_workflow' => $suggested_workflow,
+			'branch_note'        => $this->branch_note( $branch, $suggested_workflow, $workflow ),
+			'learn_more'         => $this->resolve_learn_more( $workflow, $stage ),
 		);
 	}
 
@@ -202,9 +216,10 @@ final class Case_Lifecycle_Service {
 	 * @return array<string, mixed>
 	 */
 	public function build_matter_map( array $case_profile ): array {
-		$facts    = is_array( $case_profile['facts'] ?? null ) ? $case_profile['facts'] : array();
-		$workflow = trim( (string) ( $case_profile['workflow'] ?? $facts['workflow'] ?? '' ) );
-		$issue    = sanitize_key( (string) ( $facts['issue'] ?? '' ) );
+		$profile  = Case_Profile::from_array( $case_profile );
+		$facts    = $profile->plain_facts();
+		$workflow = $profile->workflow_key();
+		$issue    = $profile->issue_key();
 
 		if ( ! $this->is_divorce_workflow( $workflow ) && 'divorce' !== $issue ) {
 			return array( 'show' => false, 'tracks' => array() );
@@ -693,6 +708,76 @@ final class Case_Lifecycle_Service {
 		$internal = is_array( $definition['internal'] ?? null ) ? $definition['internal'] : array();
 
 		return (string) ( $internal['workflow_enum'] ?? $definition['workflow_enum'] ?? '' );
+	}
+
+	/**
+	 * Informational branch note when lifecycle rules suggest another workflow track.
+	 *
+	 * @param string $branch             Resolved branch.
+	 * @param string $suggested_workflow Suggested workflow key.
+	 * @param string $workflow           Current workflow key.
+	 */
+	private function branch_note( string $branch, string $suggested_workflow, string $workflow ): string {
+		if ( '' === $branch || $suggested_workflow === $workflow ) {
+			return '';
+		}
+
+		if ( self::STAGE_DEFAULT_TRACK === $branch ) {
+			return __( 'Based on your milestones, the default judgment workflow may be relevant. This is informational only — not legal advice.', 'prose-core' );
+		}
+
+		if ( self::STAGE_CONTESTED_TRACK === $branch ) {
+			return __( 'Based on your milestones, a contested divorce track may apply. This is informational only — not legal advice.', 'prose-core' );
+		}
+
+		return '';
+	}
+
+	/**
+	 * Resolve a knowledge article link for the current lifecycle stage.
+	 *
+	 * @param string $workflow Workflow key.
+	 * @param string $stage    Lifecycle stage.
+	 * @return array<string, string>|null
+	 */
+	private function resolve_learn_more( string $workflow, string $stage ): ?array {
+		$knowledge_stage = $this->lifecycle_knowledge_stage( $stage );
+
+		if ( '' === $knowledge_stage ) {
+			return null;
+		}
+
+		$article = $this->articles->find_by_workflow_stage( $workflow, $knowledge_stage );
+
+		if ( null === $article ) {
+			return null;
+		}
+
+		return array(
+			'title'   => (string) ( $article['title'] ?? '' ),
+			'summary' => (string) ( $article['summary'] ?? '' ),
+			'slug'    => (string) ( $article['slug'] ?? '' ),
+			'url'     => $this->articles->public_url( $article ),
+		);
+	}
+
+	/**
+	 * Map lifecycle stage to knowledge article stage metadata.
+	 *
+	 * @param string $stage Lifecycle stage.
+	 */
+	private function lifecycle_knowledge_stage( string $stage ): string {
+		$map = array(
+			self::STAGE_SERVED            => 'service',
+			self::STAGE_AWAITING_ANSWER   => 'answer',
+			self::STAGE_DEFAULT_TRACK     => 'default',
+			self::STAGE_DISCOVERY         => 'discovery',
+			self::STAGE_SETTLEMENT        => 'settlement',
+			self::STAGE_JUDGMENT          => 'judgment',
+			self::STAGE_POST_JUDGMENT     => 'post_judgment',
+		);
+
+		return (string) ( $map[ $stage ] ?? '' );
 	}
 
 	/**

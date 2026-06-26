@@ -176,4 +176,89 @@ class ProceduralRoadmapPresenterTest extends TestCase {
 		$repeat = $this->presenter->resolve_with_change_detection( (string) $initial['fingerprint'], $input );
 		$this->assertFalse( $repeat['changed'] );
 	}
+
+	/**
+	 * Post-intake lifecycle overlay replaces intake roadmap steps.
+	 */
+	public function test_lifecycle_overlay_on_completed_intake(): void {
+		$lifecycle = array(
+			'show'       => true,
+			'stage'      => 'awaiting_answer',
+			'milestones' => array(
+				array( 'id' => 'filed', 'label' => 'Filed', 'status' => 'completed' ),
+				array( 'id' => 'served', 'label' => 'Served', 'status' => 'completed' ),
+				array( 'id' => 'awaiting_answer', 'label' => 'Answer', 'status' => 'current' ),
+			),
+			'next_actions' => array(),
+			'deadlines'    => array(),
+		);
+
+		$roadmap = $this->presenter->present(
+			array(
+				'issue'             => 'divorce',
+				'facts'             => array(
+					'issue'  => 'divorce',
+					'county' => 'Queens',
+				),
+				'workflow'          => 'contested_divorce_nyc',
+				'workflow_resolved' => true,
+				'intake_complete'   => true,
+				'completion'        => 100,
+				'lifecycle'         => $lifecycle,
+			)
+		);
+
+		$this->assertSame( 'awaiting_answer', $roadmap['lifecycle_stage'] );
+		$this->assertNotEmpty( $roadmap['current_focus']['title'] );
+		$this->assertSame( 'Answer', $roadmap['current_focus']['title'] );
+	}
+
+	/**
+	 * Fingerprint changes when lifecycle stage changes.
+	 */
+	public function test_fingerprint_changes_on_lifecycle_stage(): void {
+		$base = array(
+			'issue'             => 'divorce',
+			'facts'             => array(
+				'issue'  => 'divorce',
+				'county' => 'Queens',
+			),
+			'workflow'          => 'contested_divorce_nyc',
+			'workflow_resolved' => true,
+			'intake_complete'   => true,
+			'completion'        => 100,
+		);
+
+		$before = $this->presenter->present(
+			array_merge(
+				$base,
+				array(
+					'lifecycle' => array(
+						'show'       => true,
+						'stage'      => 'filed',
+						'milestones' => array(
+							array( 'id' => 'filed', 'label' => 'Filed', 'status' => 'current' ),
+						),
+					),
+				)
+			)
+		);
+
+		$after = $this->presenter->present(
+			array_merge(
+				$base,
+				array(
+					'lifecycle' => array(
+						'show'       => true,
+						'stage'      => 'served',
+						'milestones' => array(
+							array( 'id' => 'served', 'label' => 'Served', 'status' => 'current' ),
+						),
+					),
+				)
+			)
+		);
+
+		$this->assertNotSame( $before['fingerprint'], $after['fingerprint'] );
+	}
 }

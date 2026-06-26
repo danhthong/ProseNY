@@ -65,4 +65,24 @@ class FactStoreTest extends TestCase {
 		$this->assertArrayHasKey( 'candidate_workflows', $array );
 		$this->assertArrayHasKey( 'progress', $array );
 	}
+
+	/**
+	 * Workflow key falls back to facts when profile workflow is empty.
+	 */
+	public function test_workflow_key_falls_back_to_facts(): void {
+		$profile = Case_Profile::from_array(
+			array(
+				'facts' => array(
+					'workflow' => 'contested_divorce_nyc',
+					'issue'    => 'divorce',
+					'county'   => 'Queens',
+				),
+			)
+		);
+
+		$this->assertSame( 'contested_divorce_nyc', $profile->workflow_key() );
+		$this->assertSame( 'divorce', $profile->issue_key() );
+		$this->assertSame( 'Queens', $profile->county() );
+		$this->assertSame( array( 'workflow' => 'contested_divorce_nyc', 'issue' => 'divorce', 'county' => 'Queens' ), $profile->plain_facts() );
+	}
 }

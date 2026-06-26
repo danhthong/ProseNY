@@ -39,6 +39,18 @@ class KnowledgeLoaderTest extends TestCase {
 	}
 
 	/**
+	 * Find service article by workflow stage metadata.
+	 */
+	public function test_find_by_workflow_stage_service(): void {
+		$loader  = new Knowledge_Article_Loader();
+		$article = $loader->find_by_workflow_stage( 'contested_divorce_nyc', 'service' );
+
+		$this->assertNotNull( $article );
+		$this->assertSame( 'service', $article['stage'] ?? '' );
+		$this->assertStringContainsString( 'service', (string) ( $article['slug'] ?? '' ) );
+	}
+
+	/**
 	 * Context provider returns snippets for a form-code question.
 	 */
 	public function test_context_provider_form_question(): void {
