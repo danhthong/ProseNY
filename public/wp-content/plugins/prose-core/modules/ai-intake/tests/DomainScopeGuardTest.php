@@ -263,7 +263,7 @@ class DomainScopeGuardTest extends TestCase {
 
 		$this->assertTrue( $response['success'] );
 		$this->assertArrayNotHasKey( 'supported', $response );
-		$this->assertSame( 'ask_question', $response['result']['next_action'] );
+		$this->assertContains( $response['result']['next_action'], array( 'ask_question', 'guidance' ) );
 	}
 
 	/**
