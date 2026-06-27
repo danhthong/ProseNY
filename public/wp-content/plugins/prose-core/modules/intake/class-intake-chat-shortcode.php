@@ -13,6 +13,7 @@ namespace ProSe\Core\Intake;
 use ProSe\Core\Ai_Intake\Rest\AI_Intake_Rest_Controller;
 use ProSe\Core\Documents\Rest\Documents_Rest_Controller;
 use ProSe\Core\Loader;
+use ProSe\Core\PackageBuilder\Package_Preview_Shortcode;
 use ProSe\Core\PackageBuilder\Rest\Package_Builder_Rest_Controller;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -131,6 +132,7 @@ final class Intake_Chat_Shortcode {
 			array(
 				'title'       => __( 'Tell me about your situation', 'prose-core' ),
 				'placeholder' => __( 'Type your message here…', 'prose-core' ),
+				'layout'      => '',
 			),
 			is_array( $atts ) ? $atts : array(),
 			self::TAG
@@ -197,12 +199,132 @@ final class Intake_Chat_Shortcode {
 			self::$localized = true;
 		}
 
-		$placeholder = (string) $atts['placeholder'];
-		$title       = (string) $atts['title'];
+		$placeholder     = (string) $atts['placeholder'];
+		$title           = (string) $atts['title'];
+		$is_homepage     = 'homepage' === (string) $atts['layout'];
+		$input_id        = $is_homepage ? 'prose-intake-input-home' : 'prose-intake-input';
+		$section_classes = 'prose-intake' . ( $is_homepage ? ' prose-intake--homepage' : '' );
 
 		ob_start();
+
+		if ( $is_homepage ) {
+			self::render_homepage_open( $section_classes );
+			self::render_sidebar( false );
+			self::render_homepage_chat_open();
+		} else {
+			echo '<section class="' . esc_attr( $section_classes ) . '" data-prose-intake aria-live="polite">';
+		}
+
+		self::render_chat_header( $title, $is_homepage );
 		?>
-		<section class="prose-intake" data-prose-intake aria-live="polite">
+			<div class="prose-intake__transcript" data-prose-intake-transcript></div>
+		<?php
+
+		if ( ! $is_homepage ) {
+			self::render_inline_actions( true );
+		}
+
+		self::render_chat_form( $placeholder, $input_id );
+
+		if ( $is_homepage ) {
+			$footer = apply_filters( 'prose_intake_homepage_chat_footer', '' );
+			if ( is_string( $footer ) && '' !== $footer ) {
+				echo $footer; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			}
+			self::render_homepage_close();
+		} else {
+			echo '</section>';
+		}
+
+		return (string) ob_get_clean();
+	}
+
+	/**
+	 * Open homepage layout wrapper and left sidebar column.
+	 *
+	 * @param string $section_classes Root section class list.
+	 * @return void
+	 */
+	private static function render_homepage_open( string $section_classes ): void {
+		?>
+		<section class="<?php echo esc_attr( $section_classes ); ?>" data-prose-intake data-prose-intake-layout="homepage" aria-live="polite">
+			<div class="prose-homepage-layout">
+		<?php
+	}
+
+	/**
+	 * Render the left sidebar (Case Summary, Case Actions, package preview).
+	 *
+	 * @param bool $summary_hidden Whether the summary panel starts hidden.
+	 * @return void
+	 */
+	private static function render_sidebar( bool $summary_hidden ): void {
+		?>
+				<aside class="prose-homepage-layout__sidebar">
+					<div class="prose-intake__summary prose-intake__summary--sidebar" data-prose-intake-summary<?php echo $summary_hidden ? ' hidden' : ''; ?>>
+						<h4 class="prose-intake__summary-title"><?php esc_html_e( 'Case Summary', 'prose-core' ); ?></h4>
+						<ul class="prose-intake__summary-list" data-prose-intake-summary-list></ul>
+					</div>
+					<div class="prose-intake__actions" data-prose-intake-actions hidden>
+						<h3 class="prose-intake__actions-title"><?php esc_html_e( 'Case Actions', 'prose-core' ); ?></h3>
+						<div class="prose-intake__action-buttons">
+							<button type="button" class="prose-intake__action prose-intake__action--primary" data-prose-intake-get-documents hidden>
+								<?php esc_html_e( 'Get Documents', 'prose-core' ); ?>
+							</button>
+						</div>
+					</div>
+					<div class="prose-homepage-layout__package">
+						<?php
+						if ( class_exists( Package_Preview_Shortcode::class ) ) {
+							echo Package_Preview_Shortcode::render(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						}
+						?>
+					</div>
+				</aside>
+		<?php
+	}
+
+	/**
+	 * Open the homepage chat column and hero copy.
+	 *
+	 * @return void
+	 */
+	private static function render_homepage_chat_open(): void {
+		?>
+				<div class="prose-homepage-layout__chat">
+					<h1 class="prose-homepage-layout__hero">
+						<?php esc_html_e( 'How can I help you today?', 'prose-core' ); ?>
+					</h1>
+					<p class="prose-homepage-layout__subtitle">
+						<?php esc_html_e( 'Guided intake for NYC divorce and Family Court matters — Supreme Court matrimonial filings, custody, support, and orders of protection.', 'prose-core' ); ?>
+					</p>
+					<div class="prose-intake__chat-card">
+		<?php
+	}
+
+	/**
+	 * Close homepage layout wrappers.
+	 *
+	 * @return void
+	 */
+	private static function render_homepage_close(): void {
+		?>
+					</div>
+				</div>
+			</div>
+		</section>
+		<?php
+	}
+
+	/**
+	 * Render the widget header row.
+	 *
+	 * @param string $title       Widget title.
+	 * @param bool   $is_homepage Whether the homepage layout is active.
+	 * @return void
+	 */
+	private static function render_chat_header( string $title, bool $is_homepage ): void {
+		?>
 			<header class="prose-intake__header">
 				<h2 class="prose-intake__title"><?php echo esc_html( $title ); ?></h2>
 				<div class="prose-intake__header-actions">
@@ -214,12 +336,20 @@ final class Intake_Chat_Shortcode {
 					</button>
 				</div>
 			</header>
+		<?php
+	}
 
-			<div class="prose-intake__transcript" data-prose-intake-transcript></div>
-
+	/**
+	 * Render inline Case Actions block used by the default single-column layout.
+	 *
+	 * @param bool $summary_hidden Whether the summary panel starts hidden.
+	 * @return void
+	 */
+	private static function render_inline_actions( bool $summary_hidden ): void {
+		?>
 			<aside class="prose-intake__actions" data-prose-intake-actions hidden>
 				<h3 class="prose-intake__actions-title"><?php esc_html_e( 'Case Actions', 'prose-core' ); ?></h3>
-				<div class="prose-intake__summary" data-prose-intake-summary hidden>
+				<div class="prose-intake__summary" data-prose-intake-summary<?php echo $summary_hidden ? ' hidden' : ''; ?>>
 					<h4 class="prose-intake__summary-title"><?php esc_html_e( 'Case Summary', 'prose-core' ); ?></h4>
 					<ul class="prose-intake__summary-list" data-prose-intake-summary-list></ul>
 				</div>
@@ -232,7 +362,18 @@ final class Intake_Chat_Shortcode {
 					</button>
 				</div>
 			</aside>
+		<?php
+	}
 
+	/**
+	 * Render the message input form.
+	 *
+	 * @param string $placeholder Input placeholder.
+	 * @param string $input_id    Textarea id attribute.
+	 * @return void
+	 */
+	private static function render_chat_form( string $placeholder, string $input_id ): void {
+		?>
 			<form class="prose-intake__form" data-prose-intake-form>
 				<input
 					type="file"
@@ -249,9 +390,9 @@ final class Intake_Chat_Shortcode {
 				>
 					<?php esc_html_e( 'Upload', 'prose-core' ); ?>
 				</button>
-				<label class="screen-reader-text" for="prose-intake-input"><?php esc_html_e( 'Your message', 'prose-core' ); ?></label>
+				<label class="screen-reader-text" for="<?php echo esc_attr( $input_id ); ?>"><?php esc_html_e( 'Your message', 'prose-core' ); ?></label>
 				<textarea
-					id="prose-intake-input"
+					id="<?php echo esc_attr( $input_id ); ?>"
 					class="prose-intake__input"
 					name="message"
 					rows="1"
@@ -263,9 +404,6 @@ final class Intake_Chat_Shortcode {
 					<?php esc_html_e( 'Send', 'prose-core' ); ?>
 				</button>
 			</form>
-		</section>
 		<?php
-
-		return (string) ob_get_clean();
 	}
 }

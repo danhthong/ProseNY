@@ -24,6 +24,7 @@
 | 5 — Validation screenshot | ✅ Done | Dashboard frame `19:2` |
 | 6 — **Homepage components** | ✅ Done | Logo, NavLink (Default/Active), IconButton, SendButton, ChatInput, SuggestedPromptCard, Header / Desktop, Header / Mobile |
 | 7 — **Homepage screens (responsive)** | ✅ Done | Desktop 1440×1024 (`30:2`), Tablet 834×1112 (`31:52`), Mobile 390×844 (`32:102`), Mobile menu open (`34:138`) |
+| 7b — **Homepage two-column panels** | ✅ Done | **95% width**, **30% / 70%** split — left sidebar (Case Summary + Case Actions + Package), right chat column; WordPress implemented |
 | 8 — **Forms module** | ✅ Done | Forms Library + Form Details (PDF viewer **left**) + 7 components; MCP scripts in `app/docs/ui/figma-scripts/forms-module/` |
 
 ### Starter plan limitations encountered
@@ -280,10 +281,54 @@ Reference: `assets/67d1ef07-…-9a9e75507215.png` provided by the user.
 ### Screens (on `Homepage` page)
 | Frame | Size | Notes |
 |---|---|---|
-| Homepage / Desktop | 1440 × 1024 | Sticky header, centered **1200px** chat column, ChatInput, 2×2 prompts, privacy line |
-| Homepage / Tablet | 834 × 1112 | Centered 620-wide hero, narrower prompts |
-| Homepage / Mobile | 390 × 844 | Mobile header, stacked prompts, **ChatInput pinned at bottom** with top border |
+| Homepage / Desktop | 1440 × 1100 | Sticky header, **95% width** content, **30% / 70% split** — left sidebar, right chat column |
+| Homepage / Tablet | 834 × 1300 | **95% width**, same **30% / 70%** side-by-side |
+| Homepage / Mobile | 390 × 1800 | **95% width**, chat first, sidebar stacked below, input pinned bottom |
 | Homepage / Mobile (menu open) | 390 × 844 | 45% black backdrop + 300-wide right-side drawer with nav rows + Login/Register |
+
+### Two-column homepage spec (2026-06-27, revised)
+
+Full-page split below the site header — content uses **95% of viewport width** (2.5% margin each side):
+
+```
+┌────────────────────────── 95% of viewport ──────────────────────────┐
+│ LEFT 30%                         │ RIGHT 70% (+ 24px gap)            │
+│ Case Summary (always visible)    │ Hero, chat transcript, input      │
+│ Case Actions                     │ Prompt cards, privacy line          │
+│ Package Preview (.prose-package) │                                   │
+└──────────────────────────────────┴───────────────────────────────────┘
+```
+
+**Desktop (1440px frame):** content **1368px** (95%), left **410px** (30%), right **934px** (70%), side padding **36px**.
+
+**Tablet (834px frame):** content **792px** (95%), left **238px** (30%), right **530px** (70%), side padding **21px**.
+
+**Mobile (390px frame):** content **371px** (95%), side padding **10px**; chat section first, sidebar stacked below, input pinned bottom.
+
+**Left sidebar stack order** (top → bottom, each **100% column width**, `12px` gap):
+1. **Case Summary** — always visible
+2. **Case Actions** — Get Documents, etc.
+3. **Package Preview** (`.prose-package`) — under Case Actions
+
+**Mobile stack order** (top → bottom):
+1. Hero + chat transcript + prompt chips + privacy
+2. Case Summary → Case Actions → Package (full-width sidebar stack)
+3. ChatInput pinned to viewport bottom
+
+**New components** (on `Homepage / Components` page):
+
+| Component | Node ID | Maps to |
+|---|---|---|
+| Case Actions / Panel | `135:217` | `.prose-intake__actions` |
+| Package Preview / Panel | `135:218` | `.prose-package` |
+| Case Summary / Homepage | `135:219` | `.prose-intake__summary` (left sidebar, always visible) |
+
+**WordPress implementation** (live):
+- `themes/prose-app/front-page.php` — `[prose_intake_chat layout="homepage"]` at **95% width**
+- `plugins/prose-core/modules/intake/class-intake-chat-shortcode.php` — homepage layout with left sidebar + right chat column
+- `plugins/prose-core/modules/intake/assets/chat.css` — `grid-template-columns: 30% 1fr`, stack below 900px
+- `plugins/prose-core/modules/intake/assets/chat.js` — homepage keeps Case Summary always visible
+- `themes/prose-app/inc/courtflow/prompt-chips.php` — `prose_intake_homepage_chat_footer` filter (prompts + privacy)
 
 ### Tokens / styles used
 - Surfaces: `bg/canvas`, `bg/surface`

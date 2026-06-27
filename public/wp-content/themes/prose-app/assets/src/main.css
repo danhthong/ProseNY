@@ -234,8 +234,11 @@
 	@apply rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[13px] leading-5 text-slate-700;
 }
 
-	/* Homepage chat column — 1200px on 1440 desktop (Figma Homepage / Desktop). */
-	.prose-homepage-chat {
-		@apply w-full max-w-[1200px];
+	.prose-homepage-layout__privacy {
+		@apply mt-1 w-full;
+	}
+
+	.prose-homepage-layout__prompts {
+		@apply w-full max-w-none;
 	}
 }

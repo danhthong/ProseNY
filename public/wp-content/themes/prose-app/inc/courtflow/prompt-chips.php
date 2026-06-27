@@ -81,7 +81,7 @@ function render_prompt_chip_buttons(): void {
  */
 function render_prompt_chip_cards(): void {
 	?>
-	<div class="grid w-full max-w-[1200px] grid-cols-1 gap-3 md:grid-cols-2">
+	<div class="prose-homepage-layout__prompts grid w-full max-w-none grid-cols-1 gap-3 md:grid-cols-2">
 		<?php foreach ( prompt_chips() as $chip ) : ?>
 			<button
 				type="button"
@@ -113,3 +113,24 @@ function render_intake_disclaimer(): void {
 
 	echo str_replace( 'courtflow-disclaimer', 'courtflow-disclaimer cf-legal-notice', $html ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 }
+
+/**
+ * Render homepage footer content below the chat card (prompt chips + privacy).
+ *
+ * @return string
+ */
+function render_homepage_chat_footer(): string {
+	ob_start();
+	render_prompt_chip_cards();
+	?>
+	<div class="prose-homepage-layout__privacy flex items-center gap-1.5">
+		<svg class="size-[14px] text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+			<path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6z" />
+		</svg>
+		<span class="text-[13px] text-slate-500"><?php esc_html_e( 'Your conversations are private and secure.', 'prose-app' ); ?></span>
+	</div>
+	<?php
+	return (string) ob_get_clean();
+}
+
+add_filter( 'prose_intake_homepage_chat_footer', __NAMESPACE__ . '\\render_homepage_chat_footer' );

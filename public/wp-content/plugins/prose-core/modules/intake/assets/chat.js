@@ -97,9 +97,10 @@
 			return;
 		}
 
+		var isHomepageLayout = root.getAttribute( 'data-prose-intake-layout' ) === 'homepage';
 		var session = loadSession();
 		var busy = false;
-		var summaryVisible = false;
+		var summaryVisible = isHomepageLayout;
 		var actionsPinned = false;
 		var resumePending = false;
 		var isDashboardConversation = !!conversationIdFromUrl();
@@ -561,11 +562,15 @@
 			}
 
 			if ( toggleSummaryBtn ) {
-				toggleSummaryBtn.hidden = ! showPanel || ! ( actions.summary && actions.summary.length );
+				toggleSummaryBtn.hidden = isHomepageLayout || ! showPanel || ! ( actions.summary && actions.summary.length );
 			}
 
 			if ( showPanel && actions.summary && actions.summary.length ) {
 				renderSummary( actions.summary );
+			}
+
+			if ( isHomepageLayout && summaryPanel ) {
+				summaryPanel.hidden = false;
 			}
 
 			if ( actions.workflow ) {
@@ -813,6 +818,10 @@
 		 * Toggle case summary visibility.
 		 */
 		function toggleSummary() {
+			if ( isHomepageLayout ) {
+				return;
+			}
+
 			summaryVisible = ! summaryVisible;
 
 			if ( summaryPanel ) {
@@ -1112,7 +1121,7 @@
 				clearSession();
 				session = { conversation_id: '', case_profile: {}, conversation: [], state: {}, actions: {} };
 				isDashboardConversation = !!conversationIdFromUrl();
-				summaryVisible = false;
+				summaryVisible = isHomepageLayout;
 				actionsPinned = false;
 				document.dispatchEvent( new CustomEvent( 'prose:workflow-cleared', { detail: {} } ) );
 				transcript.innerHTML = '';
@@ -1125,7 +1134,10 @@
 					actionsPanel.hidden = true;
 				}
 				if ( summaryPanel ) {
-					summaryPanel.hidden = true;
+					summaryPanel.hidden = ! isHomepageLayout;
+					if ( isHomepageLayout && summaryList ) {
+						summaryList.innerHTML = '';
+					}
 				}
 				if ( getDocumentsBtn ) {
 					getDocumentsBtn.hidden = true;
