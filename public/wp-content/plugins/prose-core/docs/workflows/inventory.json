@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-06-27T08:22:47+00:00",
+    "generated_at": "2026-06-27T08:28:46+00:00",
     "total": 12,
     "supreme_court": 4,
     "family_court": 8,
@@ -1202,9 +1202,12 @@
                 "agreed divorce",
                 "we both agree",
                 "divorce without children",
-                "no children divorce"
+                "no children divorce",
+                "settlement agreement",
+                "already filed divorce"
             ],
             "entry_questions": [
+                "Has a divorce case already been started in a New York court?",
                 "Do you want a divorce?",
                 "Does your spouse agree to the divorce?",
                 "Do you have any children under 21?"
@@ -1222,6 +1225,28 @@
                 "property_division_terms"
             ],
             "required_fields": [
+                {
+                    "key": "existing_case",
+                    "type": "boolean",
+                    "required": false,
+                    "question": "Has a divorce case already been started in court?"
+                },
+                {
+                    "key": "case_status",
+                    "type": "string",
+                    "required": false,
+                    "enum": [
+                        "NOT_STARTED",
+                        "FILED",
+                        "SERVED",
+                        "READY_FOR_FINAL_PAPERS",
+                        "UNDER_REVIEW",
+                        "JUDGMENT_SIGNED",
+                        "NOTICE_OF_ENTRY_FILED",
+                        "CLOSED"
+                    ],
+                    "question": "What is the current status of your divorce case?"
+                },
                 {
                     "key": "county",
                     "type": "string",

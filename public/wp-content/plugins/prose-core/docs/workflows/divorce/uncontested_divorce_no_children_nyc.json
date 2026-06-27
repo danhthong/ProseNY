@@ -17,14 +17,34 @@
     "agreed divorce",
     "we both agree",
     "divorce without children",
-    "no children divorce"
+    "no children divorce",
+    "settlement agreement",
+    "already filed divorce"
   ],
   "entry_questions": [
+    "Has a divorce case already been started in a New York court?",
     "Do you want a divorce?",
     "Does your spouse agree to the divorce?",
     "Do you have any children under 21?"
   ],
-  "routing_rules": [],
+  "routing_rules": [
+    {
+      "condition": "marital_property_resolved=false",
+      "workflow": "contested_divorce_nyc"
+    },
+    {
+      "condition": "custody_dispute=true",
+      "workflow": "contested_divorce_nyc"
+    },
+    {
+      "condition": "support_dispute=true",
+      "workflow": "contested_divorce_nyc"
+    },
+    {
+      "condition": "domestic_violence_concerns=true",
+      "workflow": "family_offense_nyc"
+    }
+  ],
   "routing_priority": 90,
   "intake_priority": 90,
   "entry_conditions": [
@@ -34,6 +54,28 @@
     "Matrimonial action is uncontested"
   ],
   "required_fields": [
+    {
+      "key": "existing_case",
+      "type": "boolean",
+      "required": false,
+      "question": "Has a divorce case already been started in court?"
+    },
+    {
+      "key": "case_status",
+      "type": "string",
+      "required": false,
+      "enum": [
+        "NOT_STARTED",
+        "FILED",
+        "SERVED",
+        "READY_FOR_FINAL_PAPERS",
+        "UNDER_REVIEW",
+        "JUDGMENT_SIGNED",
+        "NOTICE_OF_ENTRY_FILED",
+        "CLOSED"
+      ],
+      "question": "What is the current status of your divorce case?"
+    },
     {
       "key": "county",
       "type": "string",
@@ -269,11 +311,21 @@
           "value": "PKG_JUDGMENT"
         }
       }
-    ]
+    ],
+    "case_status_node_map": {
+      "NOT_STARTED": "NODE_1001_DIVORCE_FILED",
+      "FILED": "NODE_1001_DIVORCE_FILED",
+      "SERVED": "NODE_1002_SERVICE_COMPLETE",
+      "READY_FOR_FINAL_PAPERS": "NODE_1010_JUDGMENT",
+      "UNDER_REVIEW": "NODE_1010_JUDGMENT",
+      "JUDGMENT_SIGNED": "NODE_1010_JUDGMENT",
+      "NOTICE_OF_ENTRY_FILED": "NODE_1010_JUDGMENT",
+      "CLOSED": "NODE_1010_JUDGMENT"
+    }
   },
   "source_references": [
     "https://www.nycourts.gov/courthelp/family/divorceStarting.shtml",
-    "https://www.nycourts.gov/divorce/divorce_withchildrenunder21.shtml",
+    "https://www.nycourts.gov/divorce/",
     "https://www.nycourts.gov/LegacyPDFS/divorce/COMPOSITE-UNCONTESTED-DIVORCE-FORMS.pdf"
   ]
 }
