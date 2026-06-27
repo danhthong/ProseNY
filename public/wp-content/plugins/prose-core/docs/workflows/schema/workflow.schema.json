@@ -129,7 +129,8 @@
               "properties": {
                 "code": { "type": "string" },
                 "internal_code": { "type": ["string", "null"] },
-                "title": { "type": "string" }
+                "title": { "type": "string" },
+                "required_when": { "type": "string" }
               }
             }
           }
@@ -153,7 +154,8 @@
               "properties": {
                 "code": { "type": "string" },
                 "internal_code": { "type": ["string", "null"] },
-                "title": { "type": "string" }
+                "title": { "type": "string" },
+                "required_when": { "type": "string" }
               }
             }
           }

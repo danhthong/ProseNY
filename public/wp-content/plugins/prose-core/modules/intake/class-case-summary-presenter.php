@@ -94,6 +94,7 @@ final class Case_Summary_Presenter {
 			),
 			'completed_stages'  => $completed,
 			'current_forms'     => $forms,
+			'skipped_forms'     => $this->normalize_skipped_forms( (array) ( $stage_context['skipped_forms'] ?? array() ) ),
 			'forms_visible'     => ! empty( $stage_context['forms_visible'] ),
 			'completion'        => (int) ( $input['completion'] ?? 0 ),
 			'key_facts'         => $this->key_facts( $facts ),
@@ -155,6 +156,26 @@ final class Case_Summary_Presenter {
 			}
 
 			$lines[] = __( 'Forms for the current stage:', 'prose-core' ) . ' ' . implode( '; ', $form_parts );
+		}
+
+		$skipped = is_array( $summary['skipped_forms'] ?? null ) ? $summary['skipped_forms'] : array();
+
+		if ( ! empty( $skipped ) ) {
+			$skip_parts = array();
+
+			foreach ( $skipped as $form ) {
+				$code   = (string) ( $form['code'] ?? '' );
+				$reason = trim( (string) ( $form['reason'] ?? '' ) );
+				$line   = $code;
+
+				if ( '' !== $reason ) {
+					$line .= ' — ' . $reason;
+				}
+
+				$skip_parts[] = $line;
+			}
+
+			$lines[] = __( 'Not required for your situation:', 'prose-core' ) . ' ' . implode( '; ', $skip_parts );
 		}
 
 		$key_facts = is_array( $summary['key_facts'] ?? null ) ? $summary['key_facts'] : array();
@@ -288,6 +309,35 @@ final class Case_Summary_Presenter {
 				'code'     => $code,
 				'title'    => trim( (string) ( $form['title'] ?? $code ) ),
 				'required' => ! empty( $form['required'] ),
+			);
+		}
+
+		return $out;
+	}
+
+	/**
+	 * @param array<int, array<string, mixed>> $forms Skipped forms.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function normalize_skipped_forms( array $forms ): array {
+		$out = array();
+
+		foreach ( $forms as $form ) {
+			if ( ! is_array( $form ) ) {
+				continue;
+			}
+
+			$code = trim( (string) ( $form['code'] ?? '' ) );
+
+			if ( '' === $code ) {
+				continue;
+			}
+
+			$out[] = array(
+				'code'      => $code,
+				'title'     => trim( (string) ( $form['title'] ?? $code ) ),
+				'reason'    => trim( (string) ( $form['reason'] ?? '' ) ),
+				'uncertain' => ! empty( $form['uncertain'] ),
 			);
 		}
 

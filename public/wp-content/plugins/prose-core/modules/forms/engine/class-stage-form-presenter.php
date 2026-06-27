@@ -183,7 +183,9 @@ final class Stage_Form_Presenter {
 		}
 
 		$stage_index   = array_search( $current_stage, $stages, true );
-		$stage_forms   = $this->build_stage_forms( $workflow, $current_stage, $context );
+		$partition     = $this->progression->partition_stage_forms( $workflow, $current_stage, $context );
+		$stage_forms   = $this->build_stage_forms( $partition['applicable'] );
+		$skipped_forms = $this->build_skipped_forms( $partition['skipped'] );
 		$guidance      = $this->guidance->read_stage( $current_stage );
 		$future_stages = $this->build_future_stages( $stages, $stage_index );
 		$merged        = $this->merged->status( $workflow, $current_stage, $context );
@@ -197,6 +199,7 @@ final class Stage_Form_Presenter {
 				'status'      => 'current',
 			),
 			'stage_forms'     => $stage_forms,
+			'skipped_forms'   => $skipped_forms,
 			'future_stages'   => $future_stages,
 			'next_action'     => $this->next_action( $current_stage, $guidance, $workflow ),
 			'stage_download'  => array(
@@ -346,6 +349,7 @@ final class Stage_Form_Presenter {
 			'forms_visible'   => false,
 			'current_stage'   => null,
 			'stage_forms'     => array(),
+			'skipped_forms'   => array(),
 			'future_stages'   => array(),
 			'next_action'     => array(
 				'type'    => 'assessment',
@@ -490,15 +494,13 @@ final class Stage_Form_Presenter {
 	}
 
 	/**
-	 * @param string               $workflow Workflow key.
-	 * @param string               $stage    Stage slug.
-	 * @param array<string, mixed> $context  Context.
+	 * @param array<int, array<string, mixed>> $forms Applicable form rows.
 	 * @return array<int, array<string, mixed>>
 	 */
-	private function build_stage_forms( string $workflow, string $stage, array $context ): array {
+	private function build_stage_forms( array $forms ): array {
 		$rows = array();
 
-		foreach ( $this->progression->get_stage_forms( $workflow, $stage, $context ) as $form ) {
+		foreach ( $forms as $form ) {
 			$code = (string) ( $form['code'] ?? '' );
 
 			$rows[] = array(
@@ -506,8 +508,30 @@ final class Stage_Form_Presenter {
 				'title'        => (string) ( $form['title'] ?? $code ),
 				'purpose'      => (string) ( $form['title'] ?? $code ),
 				'required'     => ! empty( $form['required'] ),
+				'applicable'   => true,
 				'url'          => $this->form_pages->resolve( $code ),
 				'download_url' => $this->form_download_url( $code ),
+			);
+		}
+
+		return $rows;
+	}
+
+	/**
+	 * @param array<int, array<string, mixed>> $forms Skipped form rows.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function build_skipped_forms( array $forms ): array {
+		$rows = array();
+
+		foreach ( $forms as $form ) {
+			$code = (string) ( $form['code'] ?? '' );
+
+			$rows[] = array(
+				'code'      => $code,
+				'title'     => (string) ( $form['title'] ?? $code ),
+				'reason'    => (string) ( $form['reason'] ?? '' ),
+				'uncertain' => ! empty( $form['uncertain'] ),
 			);
 		}
 

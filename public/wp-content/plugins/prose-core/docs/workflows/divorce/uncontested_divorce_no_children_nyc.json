@@ -178,12 +178,14 @@
         {
           "code": "UD-1",
           "internal_code": "UD-1",
-          "title": "Summons With Notice"
+          "title": "Summons With Notice",
+          "required_when": "always"
         },
         {
           "code": "UD-2",
           "internal_code": "UD-2",
-          "title": "Verified Complaint"
+          "title": "Verified Complaint",
+          "required_when": "always"
         }
       ]
     },
@@ -193,7 +195,8 @@
         {
           "code": "UD-3",
           "internal_code": "UD-3",
-          "title": "Affirmation of Service"
+          "title": "Affirmation of Service",
+          "required_when": "always"
         }
       ]
     },
@@ -203,42 +206,50 @@
         {
           "code": "UD-4",
           "internal_code": "UD-4",
-          "title": "Sworn Statement of Removal of Barriers to Remarriage"
+          "title": "Sworn Statement of Removal of Barriers to Remarriage",
+          "required_when": "religious_barrier_exists"
         },
         {
           "code": "UD-5",
           "internal_code": "UD-5",
-          "title": "Affirmation of Regularity"
+          "title": "Affirmation of Regularity",
+          "required_when": "always"
         },
         {
           "code": "UD-6",
           "internal_code": "UD-6",
-          "title": "Sworn Affirmation of Plaintiff"
+          "title": "Sworn Affirmation of Plaintiff",
+          "required_when": "always"
         },
         {
           "code": "UD-7",
           "internal_code": "UD-7",
-          "title": "Affirmation of Defendant"
+          "title": "Affirmation of Defendant",
+          "required_when": "defendant_executes_affirmation"
         },
         {
           "code": "UD-9",
           "internal_code": null,
-          "title": "Note of Issue"
+          "title": "Note of Issue",
+          "required_when": "always"
         },
         {
           "code": "UD-10",
           "internal_code": null,
-          "title": "Findings of Fact and Conclusions of Law"
+          "title": "Findings of Fact and Conclusions of Law",
+          "required_when": "always"
         },
         {
           "code": "UD-12",
           "internal_code": "UD-12",
-          "title": "Part 130 Certification"
+          "title": "Part 130 Certification",
+          "required_when": "always"
         },
         {
           "code": "UD-13",
           "internal_code": "RJI",
-          "title": "Request for Judicial Intervention"
+          "title": "Request for Judicial Intervention",
+          "required_when": "always"
         }
       ]
     },
@@ -248,12 +259,14 @@
         {
           "code": "UD-11",
           "internal_code": null,
-          "title": "Judgment of Divorce"
+          "title": "Judgment of Divorce",
+          "required_when": "court_approves_package"
         },
         {
           "code": "UD-14",
           "internal_code": null,
-          "title": "Notice of Entry"
+          "title": "Notice of Entry",
+          "required_when": "always"
         }
       ]
     }
@@ -265,12 +278,14 @@
         {
           "code": "UD-1a",
           "internal_code": null,
-          "title": "Summons (to be served with Verified Complaint)"
+          "title": "Summons (to be served with Verified Complaint)",
+          "required_when": "always"
         },
         {
           "code": "AUTO-ORDERS",
           "internal_code": null,
-          "title": "Notice of Automatic Orders"
+          "title": "Notice of Automatic Orders",
+          "required_when": "always"
         }
       ]
     }

@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-06-27T08:28:46+00:00",
+    "generated_at": "2026-06-27T08:57:18+00:00",
     "total": 12,
     "supreme_court": 4,
     "family_court": 8,
@@ -212,12 +212,15 @@
                 "husband refuses",
                 "spouse refuses",
                 "divorce trial",
-                "matrimonial action"
+                "matrimonial action",
+                "settlement agreement",
+                "already filed divorce"
             ],
             "entry_questions": [
+                "Has a divorce case already been started in a New York court?",
                 "Do you want a divorce?",
-                "Does your spouse disagree with the divorce or its terms?",
-                "Has your spouse filed an answer or retained an attorney?"
+                "Does your spouse disagree with the divorce or any of its terms?",
+                "Has your spouse filed an Answer or appeared in the case?"
             ],
             "routing_priority": 95,
             "intake_priority": 90,
@@ -241,6 +244,38 @@
                 "property_division_terms"
             ],
             "required_fields": [
+                {
+                    "key": "existing_case",
+                    "type": "boolean",
+                    "required": false,
+                    "question": "Has a divorce case already been started in court?"
+                },
+                {
+                    "key": "case_status",
+                    "type": "string",
+                    "required": false,
+                    "enum": [
+                        "NOT_STARTED",
+                        "FILED",
+                        "SERVED",
+                        "ANSWER_FILED",
+                        "PRELIMINARY_CONFERENCE",
+                        "DISCOVERY",
+                        "COMPLIANCE_CONFERENCE",
+                        "SETTLEMENT",
+                        "TRIAL",
+                        "JUDGMENT_SIGNED",
+                        "NOTICE_OF_ENTRY_FILED",
+                        "CLOSED"
+                    ],
+                    "question": "What is the current status of your divorce case?"
+                },
+                {
+                    "key": "spouse_responded",
+                    "type": "boolean",
+                    "required": false,
+                    "question": "Has your spouse filed an Answer?"
+                },
                 {
                     "key": "county",
                     "type": "string",
@@ -348,7 +383,6 @@
                 "UD-1",
                 "UD-2",
                 "UD-3",
-                "UD-5",
                 "UD-13",
                 "UD-9",
                 "UD-10",
@@ -485,12 +519,15 @@
                 "default judgment divorce",
                 "never responded",
                 "did not respond",
-                "spouse never responded"
+                "spouse never responded",
+                "settlement agreement",
+                "already filed divorce"
             ],
             "entry_questions": [
-                "Do you want a divorce?",
-                "Was your spouse served with divorce papers?",
-                "Did your spouse fail to respond within the required time?"
+                "Has a divorce case already been started in a New York court?",
+                "Was your spouse properly served with the divorce papers?",
+                "Did your spouse fail to answer or appear within the required time?",
+                "Do you have any children under 21?"
             ],
             "routing_priority": 85,
             "intake_priority": 90,
@@ -504,6 +541,29 @@
                 "judgment_of_divorce"
             ],
             "required_fields": [
+                {
+                    "key": "existing_case",
+                    "type": "boolean",
+                    "required": false,
+                    "question": "Has a divorce case already been started in court?"
+                },
+                {
+                    "key": "case_status",
+                    "type": "string",
+                    "required": false,
+                    "enum": [
+                        "NOT_STARTED",
+                        "FILED",
+                        "SERVED",
+                        "DEFAULT_ELIGIBLE",
+                        "READY_FOR_FINAL_PAPERS",
+                        "UNDER_REVIEW",
+                        "JUDGMENT_SIGNED",
+                        "NOTICE_OF_ENTRY_FILED",
+                        "CLOSED"
+                    ],
+                    "question": "What is the current status of your divorce case?"
+                },
                 {
                     "key": "county",
                     "type": "string",
@@ -587,6 +647,18 @@
                     "type": "integer",
                     "required": false,
                     "question": "How many children are involved?"
+                },
+                {
+                    "key": "spouse_responded",
+                    "type": "boolean",
+                    "required": false,
+                    "question": "Has the defendant served or filed an Answer?"
+                },
+                {
+                    "key": "service_method",
+                    "type": "string",
+                    "required": false,
+                    "question": "How was the defendant served?"
                 }
             ],
             "required_forms": [

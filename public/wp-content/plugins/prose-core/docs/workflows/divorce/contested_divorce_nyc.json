@@ -19,14 +19,26 @@
     "husband refuses",
     "spouse refuses",
     "divorce trial",
-    "matrimonial action"
+    "matrimonial action",
+    "settlement agreement",
+    "already filed divorce"
   ],
   "entry_questions": [
+    "Has a divorce case already been started in a New York court?",
     "Do you want a divorce?",
-    "Does your spouse disagree with the divorce or its terms?",
-    "Has your spouse filed an answer or retained an attorney?"
+    "Does your spouse disagree with the divorce or any of its terms?",
+    "Has your spouse filed an Answer or appeared in the case?"
   ],
-  "routing_rules": [],
+  "routing_rules": [
+    {
+      "condition": "spouse_responded=false",
+      "workflow": "default_divorce_nyc"
+    },
+    {
+      "condition": "domestic_violence_concerns=true",
+      "workflow": "family_offense_nyc"
+    }
+  ],
   "routing_priority": 95,
   "intake_priority": 90,
   "entry_conditions": [
@@ -35,6 +47,38 @@
     "Matrimonial action is contested"
   ],
   "required_fields": [
+    {
+      "key": "existing_case",
+      "type": "boolean",
+      "required": false,
+      "question": "Has a divorce case already been started in court?"
+    },
+    {
+      "key": "case_status",
+      "type": "string",
+      "required": false,
+      "enum": [
+        "NOT_STARTED",
+        "FILED",
+        "SERVED",
+        "ANSWER_FILED",
+        "PRELIMINARY_CONFERENCE",
+        "DISCOVERY",
+        "COMPLIANCE_CONFERENCE",
+        "SETTLEMENT",
+        "TRIAL",
+        "JUDGMENT_SIGNED",
+        "NOTICE_OF_ENTRY_FILED",
+        "CLOSED"
+      ],
+      "question": "What is the current status of your divorce case?"
+    },
+    {
+      "key": "spouse_responded",
+      "type": "boolean",
+      "required": false,
+      "question": "Has your spouse filed an Answer?"
+    },
     {
       "key": "county",
       "type": "string",
@@ -164,12 +208,14 @@
         {
           "code": "UD-1",
           "internal_code": "UD-1",
-          "title": "Summons With Notice"
+          "title": "Summons With Notice",
+          "required_when": "always"
         },
         {
           "code": "UD-2",
           "internal_code": "UD-2",
-          "title": "Verified Complaint"
+          "title": "Verified Complaint",
+          "required_when": "always"
         }
       ]
     },
@@ -179,19 +225,14 @@
         {
           "code": "UD-3",
           "internal_code": "UD-3",
-          "title": "Affirmation of Service"
+          "title": "Affirmation of Service",
+          "required_when": "always"
         }
       ]
     },
     {
       "stage": "answer",
-      "forms": [
-        {
-          "code": "UD-5",
-          "internal_code": "UD-5",
-          "title": "Answer"
-        }
-      ]
+      "forms": []
     },
     {
       "stage": "preliminary_conference",
@@ -199,7 +240,8 @@
         {
           "code": "UD-13",
           "internal_code": "RJI",
-          "title": "Request for Judicial Intervention"
+          "title": "Request for Judicial Intervention",
+          "required_when": "always"
         }
       ]
     },
@@ -221,7 +263,8 @@
         {
           "code": "UD-9",
           "internal_code": "NOI",
-          "title": "Note of Issue"
+          "title": "Note of Issue",
+          "required_when": "always"
         }
       ]
     },
@@ -231,17 +274,20 @@
         {
           "code": "UD-10",
           "internal_code": null,
-          "title": "Findings of Fact and Conclusions of Law"
+          "title": "Findings of Fact and Conclusions of Law",
+          "required_when": "always"
         },
         {
           "code": "UD-11",
           "internal_code": null,
-          "title": "Judgment of Divorce"
+          "title": "Judgment of Divorce",
+          "required_when": "court_approves_package"
         },
         {
           "code": "UD-14",
           "internal_code": null,
-          "title": "Notice of Entry"
+          "title": "Notice of Entry",
+          "required_when": "always"
         }
       ]
     }
@@ -253,17 +299,20 @@
         {
           "code": "UD-8(1)",
           "internal_code": "UD-8",
-          "title": "Annual Income Worksheet"
+          "title": "Annual Income Worksheet",
+          "required_when": "has_minor_children"
         },
         {
           "code": "UD-8(2)",
           "internal_code": null,
-          "title": "Maintenance Guidelines Worksheet"
+          "title": "Maintenance Guidelines Worksheet",
+          "required_when": "maintenance_requested"
         },
         {
           "code": "UD-8(3)",
           "internal_code": null,
-          "title": "Child Support Worksheet"
+          "title": "Child Support Worksheet",
+          "required_when": "has_minor_children"
         }
       ]
     }
@@ -374,11 +423,25 @@
           "value": "JUDGMENT_ENTERED"
         }
       }
-    ]
+    ],
+    "case_status_node_map": {
+      "NOT_STARTED": "NODE_1001_DIVORCE_FILED",
+      "FILED": "NODE_1001_DIVORCE_FILED",
+      "SERVED": "NODE_1002_SERVICE_COMPLETE",
+      "ANSWER_FILED": "NODE_1003_ANSWER_FILED",
+      "PRELIMINARY_CONFERENCE": "NODE_1005_PRELIMINARY_CONFERENCE",
+      "DISCOVERY": "NODE_1006_DISCOVERY",
+      "COMPLIANCE_CONFERENCE": "NODE_1007_COMPLIANCE_CONFERENCE",
+      "SETTLEMENT": "NODE_1008_SETTLEMENT",
+      "TRIAL": "NODE_1009_TRIAL",
+      "JUDGMENT_SIGNED": "NODE_1010_JUDGMENT",
+      "NOTICE_OF_ENTRY_FILED": "NODE_1010_JUDGMENT",
+      "CLOSED": "NODE_1010_JUDGMENT"
+    }
   },
   "source_references": [
     "https://www.nycourts.gov/courthelp/family/divorceStarting.shtml",
-    "https://www.nycourts.gov/LegacyPDFS/divorce/COMPOSITE-UNCONTESTED-DIVORCE-FORMS.pdf",
+    "https://www.nycourts.gov/divorce/",
     "https://www.nycourts.gov/matrimonial-practice-advisory-and-rules-committee/whats-new-matrimonial-legislation-court-rules-forms"
   ]
 }

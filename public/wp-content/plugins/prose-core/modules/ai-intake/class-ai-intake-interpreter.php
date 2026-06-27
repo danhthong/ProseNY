@@ -2125,6 +2125,30 @@ final class AI_Intake_Interpreter {
 			$lines[]    = '• ' . $code . ' — ' . $form_title . $suffix;
 		}
 
+		$skipped = (array) ( $stage_ctx['skipped_forms'] ?? array() );
+
+		if ( ! empty( $skipped ) ) {
+			$lines[] = '';
+			$lines[] = __( 'Forms not included for your situation:', 'prose-core' );
+
+			foreach ( $skipped as $form ) {
+				$code   = trim( (string) ( $form['code'] ?? '' ) );
+				$reason = trim( (string) ( $form['reason'] ?? '' ) );
+
+				if ( '' === $code ) {
+					continue;
+				}
+
+				$line = '• ' . $code;
+
+				if ( '' !== $reason ) {
+					$line .= ' — ' . $reason;
+				}
+
+				$lines[] = $line;
+			}
+		}
+
 		$lines[] = '';
 		$lines[] = __( 'Once these documents are completed and filed, the court can review your case and determine whether it is ready for a Judgment of Divorce.', 'prose-core' );
 		$lines[] = '';

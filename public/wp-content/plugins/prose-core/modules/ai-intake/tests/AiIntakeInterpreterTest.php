@@ -666,6 +666,7 @@ class AiIntakeInterpreterTest extends TestCase {
 		$this->assertStringContainsString( 'UD-5', $reply );
 		$this->assertStringContainsString( 'UD-9', $reply );
 		$this->assertStringContainsString( '(if applicable)', $reply );
+		$this->assertStringContainsString( 'Forms not included for your situation', $reply );
 		$this->assertStringContainsString( 'UD-4', $reply );
 		$this->assertStringNotContainsString( 'Moving you to the', $reply );
 		$this->assertStringNotContainsString( 'including the Note of Issue and Request for Judicial Intervention', $reply );

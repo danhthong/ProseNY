@@ -33,12 +33,24 @@ final class Workflow_Progression_Service {
 	private Workflow_Catalog $catalog;
 
 	/**
+	 * Form applicability evaluator.
+	 *
+	 * @var Workflow_Form_Applicability_Service
+	 */
+	private Workflow_Form_Applicability_Service $applicability;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Workflow_Catalog|null $catalog Workflow catalog.
+	 * @param Workflow_Catalog|null                    $catalog       Workflow catalog.
+	 * @param Workflow_Form_Applicability_Service|null $applicability Applicability service.
 	 */
-	public function __construct( ?Workflow_Catalog $catalog = null ) {
-		$this->catalog = $catalog ?? new Workflow_Catalog();
+	public function __construct(
+		?Workflow_Catalog $catalog = null,
+		?Workflow_Form_Applicability_Service $applicability = null
+	) {
+		$this->catalog       = $catalog ?? new Workflow_Catalog();
+		$this->applicability = $applicability ?? new Workflow_Form_Applicability_Service();
 	}
 
 	/**
@@ -287,13 +299,31 @@ final class Workflow_Progression_Service {
 	 * @return array<int, array{code: string, title: string, required: bool}>
 	 */
 	public function get_stage_forms( string $workflow_enum_or_key, string $stage_slug, array $context = array() ): array {
+		$partition = $this->partition_stage_forms( $workflow_enum_or_key, $stage_slug, $context );
+
+		return $partition['applicable'];
+	}
+
+	/**
+	 * Applicable and skipped forms for a stage.
+	 *
+	 * @param string               $workflow_enum_or_key Enum or key.
+	 * @param string               $stage_slug           Stage slug.
+	 * @param array<string, mixed> $context              Context.
+	 * @return array{applicable: array<int, array<string, mixed>>, skipped: array<int, array<string, mixed>>}
+	 */
+	public function partition_stage_forms( string $workflow_enum_or_key, string $stage_slug, array $context = array() ): array {
 		$definition = $this->definition( $workflow_enum_or_key, $context );
 
 		if ( null === $definition ) {
-			return array();
+			return array(
+				'applicable' => array(),
+				'skipped'    => array(),
+			);
 		}
 
-		$rows = array();
+		$workflow_key = (string) ( $definition['workflow'] ?? $workflow_enum_or_key );
+		$rows         = array();
 
 		foreach ( array( 'required_forms', 'optional_forms' ) as $bucket ) {
 			$required = 'required_forms' === $bucket;
@@ -311,15 +341,16 @@ final class Workflow_Progression_Service {
 					}
 
 					$rows[] = array(
-						'code'     => $code,
-						'title'    => (string) ( $form['title'] ?? $code ),
-						'required' => $required,
+						'code'          => $code,
+						'title'         => (string) ( $form['title'] ?? $code ),
+						'required'      => $required,
+						'required_when' => trim( (string) ( $form['required_when'] ?? ( $required ? 'always' : '' ) ) ),
 					);
 				}
 			}
 		}
 
-		return $rows;
+		return $this->applicability->partition_stage_forms( $rows, $workflow_key, $stage_slug, $context );
 	}
 
 	/**

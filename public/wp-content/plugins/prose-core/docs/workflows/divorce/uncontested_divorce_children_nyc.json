@@ -212,12 +212,14 @@
         {
           "code": "UD-1",
           "internal_code": "UD-1",
-          "title": "Summons With Notice"
+          "title": "Summons With Notice",
+          "required_when": "always"
         },
         {
           "code": "UD-2",
           "internal_code": "UD-2",
-          "title": "Verified Complaint"
+          "title": "Verified Complaint",
+          "required_when": "always"
         }
       ]
     },
@@ -227,7 +229,8 @@
         {
           "code": "UD-3",
           "internal_code": "UD-3",
-          "title": "Affirmation of Service"
+          "title": "Affirmation of Service",
+          "required_when": "always"
         }
       ]
     },
@@ -237,62 +240,74 @@
         {
           "code": "UD-4",
           "internal_code": "UD-4",
-          "title": "Sworn Statement of Removal of Barriers to Remarriage"
+          "title": "Sworn Statement of Removal of Barriers to Remarriage",
+          "required_when": "religious_barrier_exists"
         },
         {
           "code": "UD-5",
           "internal_code": "UD-5",
-          "title": "Affirmation of Regularity"
+          "title": "Affirmation of Regularity",
+          "required_when": "always"
         },
         {
           "code": "UD-6",
           "internal_code": "UD-6",
-          "title": "Sworn Affirmation of Plaintiff"
+          "title": "Sworn Affirmation of Plaintiff",
+          "required_when": "always"
         },
         {
           "code": "UD-7",
           "internal_code": "UD-7",
-          "title": "Affirmation of Defendant"
+          "title": "Affirmation of Defendant",
+          "required_when": "defendant_executes_affirmation"
         },
         {
           "code": "UD-8(1)",
           "internal_code": "UD-8",
-          "title": "Annual Income Worksheet"
+          "title": "Annual Income Worksheet",
+          "required_when": "has_minor_children"
         },
         {
           "code": "UD-8(2)",
           "internal_code": null,
-          "title": "Maintenance Guidelines Worksheet"
+          "title": "Maintenance Guidelines Worksheet",
+          "required_when": "maintenance_requested"
         },
         {
           "code": "UD-8(3)",
           "internal_code": null,
-          "title": "Child Support Worksheet"
+          "title": "Child Support Worksheet",
+          "required_when": "has_minor_children"
         },
         {
           "code": "UD-8a",
           "internal_code": null,
-          "title": "Support Collection Unit Information Sheet"
+          "title": "Support Collection Unit Information Sheet",
+          "required_when": "has_minor_children"
         },
         {
           "code": "UD-9",
           "internal_code": null,
-          "title": "Note of Issue"
+          "title": "Note of Issue",
+          "required_when": "always"
         },
         {
           "code": "UD-10",
           "internal_code": null,
-          "title": "Findings of Fact and Conclusions of Law"
+          "title": "Findings of Fact and Conclusions of Law",
+          "required_when": "always"
         },
         {
           "code": "UD-12",
           "internal_code": "UD-12",
-          "title": "Part 130 Certification"
+          "title": "Part 130 Certification",
+          "required_when": "always"
         },
         {
           "code": "UD-13",
           "internal_code": "RJI",
-          "title": "Request for Judicial Intervention"
+          "title": "Request for Judicial Intervention",
+          "required_when": "always"
         }
       ]
     },
@@ -302,12 +317,14 @@
         {
           "code": "UD-11",
           "internal_code": null,
-          "title": "Judgment of Divorce"
+          "title": "Judgment of Divorce",
+          "required_when": "court_approves_package"
         },
         {
           "code": "UD-14",
           "internal_code": null,
-          "title": "Notice of Entry"
+          "title": "Notice of Entry",
+          "required_when": "always"
         }
       ]
     }
@@ -319,12 +336,14 @@
         {
           "code": "UD-8b",
           "internal_code": null,
-          "title": "Qualified Medical Child Support Order (QMCSO)"
+          "title": "Qualified Medical Child Support Order (QMCSO)",
+          "required_when": "qmsco_required"
         },
         {
           "code": "LDSS-5258",
           "internal_code": null,
-          "title": "Enrollment for Child Support Services"
+          "title": "Enrollment for Child Support Services",
+          "required_when": "child_support_services_enrollment"
         }
       ]
     }
