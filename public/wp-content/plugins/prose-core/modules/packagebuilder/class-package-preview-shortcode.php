@@ -129,6 +129,8 @@ final class Package_Preview_Shortcode {
 						'error'      => __( 'Could not load your package. Please try again.', 'prose-core' ),
 						'noPdf'      => __( 'Blank forms for this matter are not available to download yet.', 'prose-core' ),
 						'viewForm'   => __( 'View form details', 'prose-core' ),
+						'locked'     => __( 'locked', 'prose-core' ),
+						'completed'  => __( 'completed', 'prose-core' ),
 					),
 				)
 			);

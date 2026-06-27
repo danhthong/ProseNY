@@ -58,10 +58,62 @@
 
 .prose-package__stage {
 	margin-bottom: 14px;
+	border: 1px solid #f1f5f9;
+	border-radius: 8px;
+	overflow: hidden;
+}
+
+.prose-package__stage--current {
+	border-color: #c7d2fe;
+	background: #f8fafc;
+}
+
+.prose-package__stage--locked .prose-package__stage-label {
+	color: #94a3b8;
+}
+
+.prose-package__stage--completed .prose-package__stage-label {
+	color: #64748b;
+}
+
+.prose-package__stage-toggle {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	width: 100%;
+	margin: 0;
+	padding: 10px 12px;
+	border: 0;
+	background: transparent;
+	cursor: pointer;
+	text-align: left;
+	font: inherit;
+}
+
+.prose-package__stage-toggle:focus-visible {
+	outline: 2px solid #6366f1;
+	outline-offset: -2px;
+}
+
+.prose-package__stage--current .prose-package__stage-toggle {
+	cursor: default;
+}
+
+.prose-package__stage-chevron {
+	flex: none;
+	font-size: 16px;
+	font-weight: 700;
+	color: #64748b;
+	line-height: 1;
+}
+
+.prose-package__stage-body {
+	padding: 0 12px 8px;
 }
 
 .prose-package__stage-label {
-	margin: 0 0 6px;
+	margin: 0;
 	font-size: 12px;
 	font-weight: 700;
 	text-transform: uppercase;

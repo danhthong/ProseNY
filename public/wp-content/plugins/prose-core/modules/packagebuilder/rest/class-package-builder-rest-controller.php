@@ -197,6 +197,14 @@ final class Package_Builder_Rest_Controller {
 					return \sanitize_key( (string) $value );
 				},
 			),
+			'procedural_node' => array(
+				'type'              => 'string',
+				'required'          => false,
+				'default'           => '',
+				'sanitize_callback' => static function ( $value ): string {
+					return sanitize_text_field( (string) $value );
+				},
+			),
 		);
 	}
 
@@ -333,6 +341,8 @@ final class Package_Builder_Rest_Controller {
 			'workflow'        => (string) $request->get_param( 'workflow' ),
 			'facts'           => is_array( $facts ) ? $facts : array(),
 			'package_type'    => (string) $request->get_param( 'package_type' ),
+			'stage'           => sanitize_key( (string) $request->get_param( 'stage' ) ),
+			'procedural_node' => sanitize_text_field( (string) $request->get_param( 'procedural_node' ) ),
 		);
 	}
 }

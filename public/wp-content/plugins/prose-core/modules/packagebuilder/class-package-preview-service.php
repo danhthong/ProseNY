@@ -147,39 +147,39 @@ final class Package_Preview_Service {
 			? (string) ( $stage_context['current_stage']['id'] ?? '' )
 			: '';
 
-		foreach ( $stages as $label => $stage_row ) {
-			if ( $label === $current_stage ) {
-				$stages[ $label ]['status'] = 'current';
-				continue;
-			}
+		$stages = $this->finalize_stage_statuses( $stages, $current_stage, $workflow_key, $facts );
 
-			$stages[ $label ]['status'] = 'locked';
-			$stages[ $label ]['forms']  = array();
-		}
-
-		if ( '' !== $current_stage && isset( $stages[ $current_stage ] ) ) {
+		if ( '' !== $current_stage ) {
 			$required_count = 0;
 			$optional_count = 0;
 			$ready_count    = 0;
 			$missing_count  = 0;
 
-			foreach ( (array) ( $stages[ $current_stage ]['forms'] ?? array() ) as $form ) {
-				$requirement = (string) ( $form['requirement'] ?? 'required' );
-				$ready       = ! empty( $form['generation_ready'] );
+			foreach ( $stages as $stage_row ) {
+				if ( 'current' !== ( $stage_row['status'] ?? '' ) ) {
+					continue;
+				}
 
-				if ( 'optional' === $requirement ) {
-					++$optional_count;
-				} else {
-					++$required_count;
+				foreach ( (array) ( $stage_row['forms'] ?? array() ) as $form ) {
+					$requirement = (string) ( $form['requirement'] ?? 'required' );
+					$ready       = ! empty( $form['generation_ready'] );
 
-					if ( ! $ready ) {
-						++$missing_count;
+					if ( 'optional' === $requirement ) {
+						++$optional_count;
+					} else {
+						++$required_count;
+
+						if ( ! $ready ) {
+							++$missing_count;
+						}
+					}
+
+					if ( $ready ) {
+						++$ready_count;
 					}
 				}
 
-				if ( $ready ) {
-					++$ready_count;
-				}
+				break;
 			}
 		}
 
@@ -198,7 +198,7 @@ final class Package_Preview_Service {
 				'ready'    => $ready_count,
 				'missing'  => $missing_count,
 			),
-			'stages'            => array_values( $stages ),
+			'stages'            => $stages,
 			'stage_context'     => $stage_context,
 			'validation_errors' => is_array( $manifest['validation_errors'] ?? null ) ? $manifest['validation_errors'] : array(),
 			'blank_pdf'         => $this->merged->status( $workflow_key, $blank_stage, $facts ),
@@ -237,5 +237,54 @@ final class Package_Preview_Service {
 		$map = ( new Workflow_Progression_Service() )->stage_node_map( $workflow_key, $facts );
 
 		return isset( $map[ $stage_slug ] ) ? (string) $map[ $stage_slug ] : '';
+	}
+
+	/**
+	 * Assign current/completed/locked status and order stages for the UI.
+	 *
+	 * Forms remain on every stage so the preview can toggle sections; counts still
+	 * reflect only the current procedural step.
+	 *
+	 * @param array<string, array<string, mixed>> $stages         Stage rows keyed by slug.
+	 * @param string                              $current_stage  Active stage slug.
+	 * @param string                              $workflow_key   Workflow key.
+	 * @param array<string, mixed>                $facts          Plain facts.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function finalize_stage_statuses( array $stages, string $current_stage, string $workflow_key, array $facts ): array {
+		$order         = ( new Workflow_Progression_Service() )->get_stages( $workflow_key, $facts );
+		$current_index = array_search( $current_stage, $order, true );
+
+		foreach ( $stages as $label => $stage_row ) {
+			$index = array_search( $label, $order, true );
+
+			if ( $label === $current_stage ) {
+				$stages[ $label ]['status'] = 'current';
+			} elseif ( false !== $current_index && false !== $index && $index < $current_index ) {
+				$stages[ $label ]['status'] = 'completed';
+			} else {
+				$stages[ $label ]['status'] = 'locked';
+			}
+		}
+
+		$ordered = array();
+		$seen    = array();
+
+		foreach ( $order as $stage_slug ) {
+			if ( ! isset( $stages[ $stage_slug ] ) ) {
+				continue;
+			}
+
+			$ordered[]               = $stages[ $stage_slug ];
+			$seen[ $stage_slug ] = true;
+		}
+
+		foreach ( $stages as $label => $stage_row ) {
+			if ( empty( $seen[ $label ] ) ) {
+				$ordered[] = $stage_row;
+			}
+		}
+
+		return $ordered;
 	}
 }

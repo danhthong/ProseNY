@@ -154,6 +154,52 @@ class PackageBuilderTest extends TestCase {
 	}
 
 	/**
+	 * Preview honors procedural_node and lists service forms for the active step.
+	 */
+	public function test_preview_service_stage_forms_with_procedural_node(): void {
+		$preview = ( new Package_Preview_Service( $this->builder ) )->preview(
+			array(
+				'workflow'        => self::WORKFLOW,
+				'procedural_node' => 'NODE_1002_SERVICE_COMPLETE',
+				'facts'           => array(
+					'spouse_agrees' => true,
+					'children'      => true,
+					'child_count'   => 1,
+					'county'        => 'Kings',
+				),
+			)
+		);
+
+		$this->assertSame( 'service', $preview['stage_context']['current_stage']['id'] ?? '' );
+
+		$current = null;
+
+		foreach ( $preview['stages'] as $stage ) {
+			if ( 'current' === ( $stage['status'] ?? '' ) ) {
+				$current = $stage;
+				break;
+			}
+		}
+
+		$this->assertIsArray( $current );
+		$codes = array_column( (array) ( $current['forms'] ?? array() ), 'code' );
+		$this->assertContains( 'UD-3', $codes );
+		$this->assertNotContains( 'UD-1', $codes );
+
+		$commencement = null;
+
+		foreach ( $preview['stages'] as $stage ) {
+			if ( 'commencement' === ( $stage['stage'] ?? '' ) ) {
+				$commencement = $stage;
+				break;
+			}
+		}
+
+		$this->assertSame( 'completed', $commencement['status'] ?? '' );
+		$this->assertNotEmpty( $commencement['forms'] ?? array(), 'Completed stages keep forms for UI toggling.' );
+	}
+
+	/**
 	 * ZIP writer produces an archive when assets are available.
 	 */
 	public function test_zip_writer_builds_archive(): void {

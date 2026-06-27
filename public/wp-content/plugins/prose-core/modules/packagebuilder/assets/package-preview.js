@@ -23,6 +23,8 @@
 	};
 
 	var lastInput = null;
+	var lastData = null;
+	var expandedStages = {};
 
 	function el( tag, className, text ) {
 		var node = document.createElement( tag );
@@ -38,6 +40,26 @@
 	function setStatus( status ) {
 		els.status.className = 'prose-package__status prose-package__status--' + status;
 		els.status.textContent = 'ready' === status ? ( strings.ready || 'Ready' ) : ( strings.pending || 'Preparing' );
+	}
+
+	function stageStatusSuffix( status ) {
+		if ( 'locked' === status ) {
+			return strings.locked || 'locked';
+		}
+
+		if ( 'completed' === status ) {
+			return strings.completed || 'completed';
+		}
+
+		return '';
+	}
+
+	function isStageExpanded( stage ) {
+		if ( 'current' === stage.status ) {
+			return true;
+		}
+
+		return !!expandedStages[ stage.stage ];
 	}
 
 	function renderForm( form ) {
@@ -77,7 +99,63 @@
 		return row;
 	}
 
+	function renderStages( data ) {
+		els.stages.innerHTML = '';
+
+		( data.stages || [] ).forEach( function ( stage ) {
+			var block = el( 'div', 'prose-package__stage' );
+			var expanded = isStageExpanded( stage );
+			var status = stage.status || '';
+
+			if ( 'locked' === status ) {
+				block.classList.add( 'prose-package__stage--locked' );
+			} else if ( 'current' === status ) {
+				block.classList.add( 'prose-package__stage--current' );
+			} else if ( 'completed' === status ) {
+				block.classList.add( 'prose-package__stage--completed' );
+			}
+
+			if ( stage.stage ) {
+				var toggle = el( 'button', 'prose-package__stage-toggle' );
+				toggle.type = 'button';
+				toggle.setAttribute( 'aria-expanded', expanded ? 'true' : 'false' );
+
+				var label = stage.stage.replace( /_/g, ' ' );
+				var suffix = stageStatusSuffix( status );
+
+				if ( suffix ) {
+					label += ' (' + suffix + ')';
+				}
+
+				toggle.appendChild( el( 'span', 'prose-package__stage-label', label ) );
+				toggle.appendChild( el( 'span', 'prose-package__stage-chevron', expanded ? '−' : '+' ) );
+
+				toggle.addEventListener( 'click', function () {
+					if ( 'current' === status ) {
+						return;
+					}
+
+					expandedStages[ stage.stage ] = ! expandedStages[ stage.stage ];
+					renderStages( data );
+				} );
+
+				block.appendChild( toggle );
+			}
+
+			var body = el( 'div', 'prose-package__stage-body' );
+			body.hidden = ! expanded;
+
+			( stage.forms || [] ).forEach( function ( form ) {
+				body.appendChild( renderForm( form ) );
+			} );
+
+			block.appendChild( body );
+			els.stages.appendChild( block );
+		} );
+	}
+
 	function render( data ) {
+		lastData = data;
 		root.hidden = false;
 
 		if ( els.title && data.workflow_title ) {
@@ -91,26 +169,7 @@
 			( counts.optional || 0 ) + ' optional · ' +
 			( counts.ready || 0 ) + ' ready';
 
-		els.stages.innerHTML = '';
-		( data.stages || [] ).forEach( function ( stage ) {
-			var block = el( 'div', 'prose-package__stage' );
-			if ( 'locked' === stage.status ) {
-				block.classList.add( 'prose-package__stage--locked' );
-			} else if ( 'current' === stage.status ) {
-				block.classList.add( 'prose-package__stage--current' );
-			}
-			if ( stage.stage ) {
-				var label = stage.stage.replace( /_/g, ' ' );
-				if ( 'locked' === stage.status ) {
-					label += ' (locked)';
-				}
-				block.appendChild( el( 'p', 'prose-package__stage-label', label ) );
-			}
-			( stage.forms || [] ).forEach( function ( form ) {
-				block.appendChild( renderForm( form ) );
-			} );
-			els.stages.appendChild( block );
-		} );
+		renderStages( data );
 
 		if ( els.download ) {
 			// Document downloads are handled by the intake Case Actions panel.
@@ -143,8 +202,23 @@
 		if ( ! input || ! input.workflow ) {
 			return;
 		}
+
+		var previousStage = lastData && lastData.stage_context && lastData.stage_context.current_stage
+			? lastData.stage_context.current_stage.id
+			: '';
+		var nextStage = input.stage || '';
+
 		lastInput = input;
-		request( cfg.restUrl, input, render );
+
+		request( cfg.restUrl, input, function ( data ) {
+			var advancedStage = nextStage && nextStage !== previousStage;
+
+			if ( advancedStage ) {
+				expandedStages = {};
+			}
+
+			render( data );
+		} );
 	}
 
 	if ( els.download ) {
@@ -211,6 +285,8 @@
 	// resolves (or resets the conversation).
 	document.addEventListener( 'prose:workflow-cleared', function () {
 		lastInput = null;
+		lastData = null;
+		expandedStages = {};
 		root.hidden = true;
 		if ( els.download ) {
 			els.download.hidden = true;
