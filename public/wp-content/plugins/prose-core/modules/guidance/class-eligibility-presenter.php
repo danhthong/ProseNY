@@ -30,6 +30,14 @@ final class Eligibility_Presenter {
 		$county = trim( (string) ( $facts['county'] ?? '' ) );
 		$qual   = sanitize_key( (string) ( $facts['residency_qualification'] ?? '' ) );
 
+		if ( in_array( $qual, array( 'none', 'not_met', 'ineligible' ), true ) ) {
+			return $this->result(
+				self::STATUS_LIKELY_INELIGIBLE,
+				__( 'Based on the information provided, New York residency requirements may not be met. You may wish to verify eligibility with the court or a legal resource before filing.', 'prose-core' ),
+				array()
+			);
+		}
+
 		if ( '' === $county ) {
 			return $this->result(
 				self::STATUS_NEEDS_MORE_INFO,
@@ -43,14 +51,6 @@ final class Eligibility_Presenter {
 				self::STATUS_NEEDS_MORE_INFO,
 				__( 'New York residency should be confirmed before recommending a filing county.', 'prose-core' ),
 				array( 'residency_qualification' )
-			);
-		}
-
-		if ( in_array( $qual, array( 'none', 'not_met', 'ineligible' ), true ) ) {
-			return $this->result(
-				self::STATUS_LIKELY_INELIGIBLE,
-				__( 'Based on the information provided, New York residency requirements may not be met. You may wish to verify eligibility with the court or a legal resource before filing.', 'prose-core' ),
-				array()
 			);
 		}
 

@@ -348,6 +348,95 @@ class IntakeAgentTest extends TestCase {
 	}
 
 	/**
+	 * Bulk intake message captures marriage year from natural phrasing.
+	 */
+	public function test_bulk_message_extracts_married_year(): void {
+		$result = $this->agent->process(
+			'Resident 5 years in Brooklyn; married 2016; one child; agreement on all issues.'
+		);
+
+		$this->assertSame( '2016-01-01', $result['case_profile']['facts']['marriage_date'] ?? null );
+	}
+
+	/**
+	 * DD/MM/YYYY answer fills pending marriage_date.
+	 */
+	public function test_pending_marriage_date_accepts_dd_mm_yyyy(): void {
+		$turn1 = $this->agent->process( 'I want a divorce and we have one child.' );
+		$turn2 = $this->agent->process( 'Brooklyn', $turn1['case_profile'] );
+
+		$profile = $turn2['case_profile'];
+		$profile['pending_field'] = 'marriage_date';
+
+		$turn3 = $this->agent->process( '21/12/2016', $profile );
+
+		$this->assertSame( '2016-12-21', $turn3['case_profile']['facts']['marriage_date'] ?? null );
+		$this->assertNotContains( 'marriage_date', $turn3['missing_fields'] );
+	}
+
+	/**
+	 * Queens answer to pending marriage_location does not overwrite filing county.
+	 */
+	public function test_pending_marriage_location_accepts_borough(): void {
+		$profile = array(
+			'workflow'      => 'uncontested_divorce_children_nyc',
+			'pending_field' => 'marriage_location',
+			'facts'         => array(
+				'county'        => 'Kings',
+				'marriage_date' => '2016-12-21',
+				'child_count'   => 1,
+				'spouse_agrees' => true,
+			),
+		);
+
+		$result = $this->agent->process( 'queens', $profile );
+
+		$this->assertSame( 'Queens, NY', $result['case_profile']['facts']['marriage_location'] ?? null );
+		$this->assertSame( 'Kings', $result['case_profile']['facts']['county'] ?? null );
+		$this->assertNotContains( 'marriage_location', $result['missing_fields'] );
+	}
+
+	/**
+	 * Ambiguous openers still receive a clarifying question (never blank).
+	 */
+	public function test_ambiguous_opener_returns_clarifying_question(): void {
+		$result = $this->agent->process( 'We own two houses.' );
+
+		$this->assertNotSame( '', trim( (string) $result['next_question'] ) );
+	}
+
+	/**
+	 * Spouse refusal routes to contested divorce after children are answered.
+	 */
+	public function test_contested_divorce_when_spouse_refuses(): void {
+		$turn1 = $this->agent->process( 'I want a divorce but my wife refuses.' );
+		$turn2 = $this->agent->process( 'No children.', $turn1['case_profile'] );
+
+		$this->assertSame( 'contested_divorce_nyc', $turn2['workflow'] );
+	}
+
+	/**
+	 * Residency duration must not be mistaken for a child count.
+	 */
+	public function test_residency_months_not_parsed_as_children(): void {
+		$turn1 = $this->agent->process( 'I want a divorce.' );
+		$turn2 = $this->agent->process( 'I have only lived here 2 months.', $turn1['case_profile'] );
+
+		$this->assertSame( 'ineligible', $turn2['case_profile']['facts']['residency_qualification'] ?? null );
+		$this->assertNotTrue( $turn2['case_profile']['facts']['has_minor_children'] ?? null );
+	}
+
+	/**
+	 * Default divorce opening resolves workflow.
+	 */
+	public function test_default_divorce_never_responded_opener(): void {
+		$result = $this->agent->process( 'My spouse never responded.' );
+
+		$this->assertSame( 'default_divorce_nyc', $result['workflow'] );
+		$this->assertNotSame( '', trim( (string) $result['next_question'] ) );
+	}
+
+	/**
 	 * Every response carries a conversation id.
 	 */
 	public function test_every_response_has_conversation_id(): void {

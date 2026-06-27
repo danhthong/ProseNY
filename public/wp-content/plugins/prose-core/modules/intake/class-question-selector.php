@@ -36,6 +36,11 @@ final class Question_Selector {
 	);
 
 	/**
+	 * Fallback when routing cannot determine issue or workflow yet.
+	 */
+	private const FALLBACK_QUESTION = 'What legal matter can I help you with today? For example, divorce, custody, child support, or an order of protection.';
+
+	/**
 	 * Select the next question.
 	 *
 	 * @param array<int, array<string, mixed>> $required_fields    Workflow required_fields.
@@ -107,8 +112,8 @@ final class Question_Selector {
 		}
 
 		return array(
-			'field'    => '',
-			'question' => '',
+			'field'    => 'issue_clarification',
+			'question' => self::FALLBACK_QUESTION,
 		);
 	}
 }

@@ -26,6 +26,7 @@ class RoutingEngineTest extends TestCase {
 	 * Set up.
 	 */
 	protected function setUp(): void {
+		\ProSe\Core\Routing\Workflow_Catalog::reset_cache();
 		$this->engine = new Routing_Engine();
 	}
 
@@ -126,6 +127,48 @@ class RoutingEngineTest extends TestCase {
 	}
 
 	/**
+	 * Default divorce resolves from colloquial no-response phrasing.
+	 */
+	public function test_default_divorce_never_responded_phrase(): void {
+		$result = $this->engine->route( 'My spouse never responded.' );
+
+		$this->assertSame( 'divorce', $result->issue() );
+		$this->assertSame( 'default_divorce_nyc', $result->workflow() );
+	}
+
+	/**
+	 * Contested divorce resolves when spouse refuses.
+	 */
+	public function test_contested_divorce_spouse_refuses(): void {
+		$result = $this->engine->route(
+			'I want a divorce but my wife refuses.',
+			array( 'children' => false, 'spouse_agrees' => false )
+		);
+
+		$this->assertSame( 'contested_divorce_nyc', $result->workflow() );
+	}
+
+	/**
+	 * Family offense resolves from safety language.
+	 */
+	public function test_family_offense_afraid_of_spouse(): void {
+		$result = $this->engine->route( "I'm afraid of my spouse." );
+
+		$this->assertSame( 'family_offense', $result->issue() );
+		$this->assertSame( 'family_offense_nyc', $result->workflow() );
+	}
+
+	/**
+	 * Child support modification resolves from modify-support phrasing.
+	 */
+	public function test_child_support_modify_phrase(): void {
+		$result = $this->engine->route( 'I need to modify support.' );
+
+		$this->assertSame( 'child_support', $result->issue() );
+		$this->assertSame( 'child_support_nyc', $result->workflow() );
+	}
+
+	/**
 	 * Family offense workflow.
 	 */
 	public function test_family_offense(): void {
@@ -221,6 +264,29 @@ class RoutingEngineTest extends TestCase {
 		$this->assertSame( 'divorce', $result->issue() );
 		$this->assertSame( 'supreme_court', $result->court() );
 		$this->assertSame( 'uncontested_divorce_no_children_nyc', $result->workflow() );
+	}
+
+	/**
+	 * Borough follow-ups retain the resolved workflow mid-intake.
+	 */
+	public function test_route_profile_retains_workflow_on_borough_answer(): void {
+		$profile = Case_Profile::from_array(
+			array(
+				'issue'    => 'divorce',
+				'court'    => 'supreme_court',
+				'workflow' => 'uncontested_divorce_children_nyc',
+				'facts'    => array(
+					'county'        => 'Kings',
+					'marriage_date' => '2016-12-21',
+					'child_count'   => 1,
+				),
+			)
+		);
+
+		$result = $this->engine->route_profile( 'queens', $profile );
+
+		$this->assertSame( 'uncontested_divorce_children_nyc', $result->workflow() );
+		$this->assertSame( 'uncontested_divorce_children_nyc', $profile->workflow() );
 	}
 
 	/**

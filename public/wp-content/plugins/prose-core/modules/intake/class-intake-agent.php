@@ -194,6 +194,21 @@ final class Intake_Agent {
 			}
 		}
 
+		// 2b) Capture pending workflow field answers before routing re-evaluates
+		//     the turn (e.g. "Queens" for marriage_location must not be lost).
+		if ( '' !== $pending_field && ! $this->is_discriminator_field( $pending_field ) && ! $children_changed ) {
+			$pending_type = $this->field_type( $this->required_fields_for( $prior_workflow ), $pending_field );
+
+			if ( $this->message_answers_field( $message, $pending_field, $pending_type ) ) {
+				$pre = $this->non_empty( $this->extractor->infer_pending_answer( $message, $pending_field, $pending_type ) );
+
+				if ( ! empty( $pre ) ) {
+					$profile->facts()->merge( $pre );
+					$extracted = array_merge( $extracted, $pre );
+				}
+			}
+		}
+
 		// 3) Keep child discriminators consistent so routing follows the count.
 		$this->reconcile_child_facts( $profile->facts() );
 
@@ -614,7 +629,23 @@ final class Intake_Agent {
 	 * @return bool
 	 */
 	private function message_answers_field( string $message, string $field, ?string $type ): bool {
-		unset( $field );
+		if ( in_array( $field, array( 'children', 'has_minor_children' ), true ) ) {
+			$normalized = strtolower( trim( $message ) );
+
+			if ( $this->extractor->strict_value( $message, 'boolean' ) !== null ) {
+				return true;
+			}
+
+			if ( preg_match( '/\bno children\b|\bwithout children\b|\bno kids\b|\bchildless\b/', $normalized ) ) {
+				return true;
+			}
+
+			if ( preg_match( '/\b\d+\s+(?:children|child|kids|kid)\b/', $normalized ) ) {
+				return true;
+			}
+
+			return false;
+		}
 
 		if ( in_array( $type, array( 'date', 'integer', 'boolean' ), true ) ) {
 			return null !== $this->extractor->strict_value( $message, $type );

@@ -117,7 +117,7 @@ final class Fact_Extractor {
 
 		$county = $this->extract_county( $normalized );
 
-		if ( null !== $county ) {
+		if ( null !== $county && ! $this->should_defer_county_to_marriage_location( $message, $keys, $existing_facts ) ) {
 			$facts['county'] = $county;
 		}
 
@@ -126,6 +126,20 @@ final class Fact_Extractor {
 
 			if ( null !== $has_children ) {
 				$facts['has_minor_children'] = $has_children;
+			}
+		}
+
+		$residency = $this->extract_residency_qualification( $normalized );
+
+		if ( null !== $residency ) {
+			$facts['residency_qualification'] = $residency;
+		}
+
+		if ( isset( $keys['marriage_date'] ) || isset( $keys['separation_date'] ) ) {
+			foreach ( Date_Parser::extract_marriage_and_separation( $message ) as $key => $value ) {
+				if ( isset( $keys[ $key ] ) && ! isset( $facts[ $key ] ) ) {
+					$facts[ $key ] = $value;
+				}
 			}
 		}
 
@@ -171,9 +185,9 @@ final class Fact_Extractor {
 				return null === $value ? array() : array( $field_key => $value );
 
 			case 'date':
-				$value = $this->parse_date( $trimmed );
+				$value = Date_Parser::parse( $trimmed );
 
-				return array( $field_key => ( null !== $value ? $value : $trimmed ) );
+				return null !== $value ? array( $field_key => $value ) : array();
 
 			case 'array':
 				return array( $field_key => $this->parse_list( $trimmed ) );
@@ -183,6 +197,12 @@ final class Fact_Extractor {
 					$county = $this->extract_county( $normalized );
 
 					return array( $field_key => ( null !== $county ? $county : $trimmed ) );
+				}
+
+				if ( 'marriage_location' === $field_key ) {
+					$place = $this->format_place_answer( $trimmed );
+
+					return array( $field_key => null !== $place ? $place : $trimmed );
 				}
 
 				return array( $field_key => $trimmed );
@@ -197,15 +217,59 @@ final class Fact_Extractor {
 			}
 		}
 
+		if ( 'marriage_location' === $field_key ) {
+			$place = $this->format_place_answer( $trimmed );
+
+			return array( $field_key => null !== $place ? $place : $trimmed );
+		}
+
+		if ( in_array( $field_key, array( 'marriage_date', 'separation_date' ), true ) ) {
+			$parsed = Date_Parser::parse( $trimmed );
+
+			return null !== $parsed ? array( $field_key => $parsed ) : array();
+		}
+
 		$boolean = $this->parse_boolean( $normalized );
 
-		if ( null !== $boolean ) {
+		if ( null !== $boolean && $this->is_boolean_discriminator( $field_key ) ) {
 			return array( $field_key => $boolean );
+		}
+
+		if ( $this->is_children_discriminator( $field_key ) ) {
+			$residency = $this->extract_residency_qualification( $normalized );
+
+			if ( null !== $residency ) {
+				return array( 'residency_qualification' => $residency );
+			}
+
+			$child_count = $this->extract_child_count( $normalized );
+
+			if ( null !== $child_count ) {
+				return array(
+					'child_count'         => $child_count,
+					'has_minor_children'  => $child_count > 0,
+					'children'            => $child_count > 0,
+				);
+			}
+
+			if ( $this->is_zero_count_answer( $normalized, 'child_count' ) ) {
+				return array(
+					'child_count'        => 0,
+					'has_minor_children' => false,
+					'children'           => false,
+				);
+			}
+
+			return array();
 		}
 
 		$integer = $this->parse_integer( $normalized );
 
-		if ( null !== $integer ) {
+		if ( null !== $integer && 'child_count' === $field_key ) {
+			return array( $field_key => $integer );
+		}
+
+		if ( null !== $integer && ! $this->looks_like_residency_duration( $normalized ) ) {
 			return array( $field_key => $integer );
 		}
 
@@ -317,14 +381,8 @@ final class Fact_Extractor {
 			return true;
 		}
 
-		if ( array_key_exists( 'children', $existing_facts ) && is_bool( $existing_facts['children'] ) ) {
-			return $existing_facts['children'];
-		}
-
-		if ( isset( $existing_facts['child_count'] ) && is_numeric( $existing_facts['child_count'] ) ) {
-			return (int) $existing_facts['child_count'] > 0;
-		}
-
+		// Do not re-emit children discriminators on unrelated short answers
+		// (e.g. "Queens" for marriage_location) when child_count is already known.
 		return null;
 	}
 
@@ -350,6 +408,85 @@ final class Fact_Extractor {
 	}
 
 	/**
+	 * Format a short place answer for marriage/separation location fields.
+	 *
+	 * @param string $message Raw user message.
+	 * @return string|null
+	 */
+	public function format_place_answer( string $message ): ?string {
+		$trimmed = trim( $message );
+
+		if ( '' === $trimmed ) {
+			return null;
+		}
+
+		$normalized = $this->catalog->normalize_text( $trimmed );
+		$county     = $this->extract_county( $normalized );
+
+		if ( null === $county ) {
+			return $trimmed;
+		}
+
+		$labels = array(
+			'Kings'     => 'Brooklyn',
+			'New York'  => 'Manhattan',
+			'Richmond'  => 'Staten Island',
+			'Queens'    => 'Queens',
+			'Bronx'     => 'Bronx',
+		);
+
+		$label = $labels[ $county ] ?? $county;
+
+		if ( preg_match( '/\b(?:ny|new york|n\.?y\.?)\b/i', $trimmed ) || str_contains( $trimmed, ',' ) ) {
+			return $trimmed;
+		}
+
+		return $label . ', NY';
+	}
+
+	/**
+	 * Whether a short message is only a place name (not a filing-county answer).
+	 *
+	 * @param string $message Raw message.
+	 * @return bool
+	 */
+	public function looks_like_place_only_answer( string $message ): bool {
+		$trimmed = trim( $message );
+
+		if ( '' === $trimmed || str_contains( $trimmed, '?' ) || strlen( $trimmed ) > 60 ) {
+			return false;
+		}
+
+		$normalized = $this->catalog->normalize_text( $trimmed );
+
+		if ( null !== $this->extract_county( $normalized ) ) {
+			return true;
+		}
+
+		return (bool) preg_match( '/^[a-z][a-z\s\',.-]{1,50}$/i', $trimmed );
+	}
+
+	/**
+	 * Whether a borough/county token should fill marriage_location instead of county.
+	 *
+	 * @param string                            $message         User message.
+	 * @param array<string, string>             $keys            Required field keys.
+	 * @param array<string, mixed>              $existing_facts  Known facts.
+	 * @return bool
+	 */
+	private function should_defer_county_to_marriage_location( string $message, array $keys, array $existing_facts ): bool {
+		if ( ! isset( $keys['marriage_location'] ) ) {
+			return false;
+		}
+
+		if ( empty( $existing_facts['county'] ) ) {
+			return false;
+		}
+
+		return $this->looks_like_place_only_answer( $message );
+	}
+
+	/**
 	 * Extract an NYC county from normalized text.
 	 *
 	 * @param string $normalized Normalized text.
@@ -372,6 +509,10 @@ final class Fact_Extractor {
 	 * @return int|null
 	 */
 	private function parse_integer( string $normalized ): ?int {
+		if ( $this->looks_like_residency_duration( $normalized ) ) {
+			return null;
+		}
+
 		if ( preg_match( '/\b(\d+)\b/', $normalized, $matches ) ) {
 			return (int) $matches[1];
 		}
@@ -414,21 +555,7 @@ final class Fact_Extractor {
 	 * @return string|null
 	 */
 	private function parse_date( string $text ): ?string {
-		if ( preg_match( '/\b(\d{4})-(\d{1,2})-(\d{1,2})\b/', $text, $m ) ) {
-			return sprintf( '%04d-%02d-%02d', (int) $m[1], (int) $m[2], (int) $m[3] );
-		}
-
-		if ( preg_match( '#\b(\d{1,2})/(\d{1,2})/(\d{4})\b#', $text, $m ) ) {
-			return sprintf( '%04d-%02d-%02d', (int) $m[3], (int) $m[1], (int) $m[2] );
-		}
-
-		$timestamp = strtotime( $text );
-
-		if ( false !== $timestamp && preg_match( '/\b[a-zA-Z]{3,}\b.*\b\d{4}\b/', $text ) ) {
-			return gmdate( 'Y-m-d', $timestamp );
-		}
-
-		return null;
+		return Date_Parser::parse( $text );
 	}
 
 	/**
@@ -450,6 +577,88 @@ final class Fact_Extractor {
 		}
 
 		return $items;
+	}
+
+	/**
+	 * Whether the message describes a residency duration (not a child count).
+	 *
+	 * @param string $normalized Normalized text.
+	 * @return bool
+	 */
+	private function looks_like_residency_duration( string $normalized ): bool {
+		if ( str_contains( $normalized, 'just moved' ) ) {
+			return true;
+		}
+
+		if ( ! preg_match( '/\b\d+\s+(?:month|year)s?\b/', $normalized ) ) {
+			return false;
+		}
+
+		return (bool) preg_match(
+			'/\b(?:lived|living|resident|residency|moved|here|new york|ny|only)\b/',
+			$normalized
+		);
+	}
+
+	/**
+	 * Map residency duration phrases to qualification keys.
+	 *
+	 * @param string $normalized Normalized text.
+	 * @return string|null
+	 */
+	private function extract_residency_qualification( string $normalized ): ?string {
+		if ( ! preg_match( '/\b(?:lived|living|resident|residency|moved|here|new york|ny)\b/', $normalized )
+			&& ! str_contains( $normalized, 'just moved' ) ) {
+			return null;
+		}
+
+		if ( str_contains( $normalized, 'just moved' ) ) {
+			return 'ineligible';
+		}
+
+		if ( preg_match( '/\b(\d+)\s+months?\b/', $normalized, $matches ) ) {
+			return (int) $matches[1] < 12 ? 'ineligible' : 'not_met';
+		}
+
+		if ( preg_match( '/\b(\d+)\s+years?\b/', $normalized, $matches ) ) {
+			$years = (int) $matches[1];
+
+			if ( $years >= 2 ) {
+				return '2_year_state';
+			}
+
+			if ( $years >= 1 ) {
+				return '1_year_state';
+			}
+
+			return 'ineligible';
+		}
+
+		return null;
+	}
+
+	/**
+	 * Whether a pending field is a yes/no routing discriminator.
+	 *
+	 * @param string $field_key Field key.
+	 * @return bool
+	 */
+	private function is_boolean_discriminator( string $field_key ): bool {
+		return in_array(
+			$field_key,
+			array( 'children', 'has_minor_children', 'spouse_agrees', 'spouse_responded', 'marital_property_resolved', 'protection_needed', 'active_divorce' ),
+			true
+		);
+	}
+
+	/**
+	 * Whether a pending field is the children routing discriminator.
+	 *
+	 * @param string $field_key Field key.
+	 * @return bool
+	 */
+	private function is_children_discriminator( string $field_key ): bool {
+		return in_array( $field_key, array( 'children', 'has_minor_children' ), true );
 	}
 
 	/**

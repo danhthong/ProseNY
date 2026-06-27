@@ -10,6 +10,7 @@
 
 namespace ProSe\Core\Ai_Intake;
 
+use ProSe\Core\Intake\Date_Parser;
 use ProSe\Core\Routing\Workflow_Catalog;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -108,6 +109,18 @@ final class Domain_Scope_Guard {
 
 		// Mid-intake fact answers (dates, names, residency) rarely repeat "divorce" keywords.
 		if ( $this->has_active_intake( $state, $conversation ) && empty( $out_of_scope ) ) {
+			$supported_score = max( $supported_score, Supported_Issue_Catalog::CONFIDENCE_THRESHOLD );
+		}
+
+		if ( $this->has_active_intake( $state, $conversation ) && $this->looks_like_date_answer( $message ) ) {
+			$out_of_scope    = array_values(
+				array_filter(
+					$out_of_scope,
+					static function ( string $label ): bool {
+						return 'general knowledge' !== $label;
+					}
+				)
+			);
 			$supported_score = max( $supported_score, Supported_Issue_Catalog::CONFIDENCE_THRESHOLD );
 		}
 
@@ -226,6 +239,18 @@ final class Domain_Scope_Guard {
 			return strlen( $text ) <= 160;
 		}
 
+		if ( \ProSe\Core\Users\User_Intake_Context::message_asks_about_account( $text ) ) {
+			return true;
+		}
+
+		if ( $this->looks_like_date_answer( $text ) ) {
+			return true;
+		}
+
+		if ( preg_match( '/\b(?:birthday|birth\s*date|date\s+of\s+birth|dob|born)\b/i', $text ) ) {
+			return true;
+		}
+
 		if ( preg_match( '/^\d{1,2}$/', $text ) ) {
 			return true;
 		}
@@ -283,7 +308,7 @@ final class Domain_Scope_Guard {
 	private function off_topic_pattern_labels( string $text ): array {
 		$labels = array();
 
-		if ( preg_match( '/\b\d+\s*[\+\-\*\/x]\s*\d+\b/', $text ) ) {
+		if ( ! Date_Parser::contains_slash_date( $text ) && preg_match( '/\b\d+\s*[\+\-\*\/x]\s*\d+\b/', $text ) ) {
 			$labels[] = 'general knowledge';
 		}
 
@@ -302,6 +327,34 @@ final class Domain_Scope_Guard {
 		}
 
 		return $labels;
+	}
+
+	/**
+	 * Whether a message is a standalone date answer (common mid-intake).
+	 *
+	 * @param string $text Raw or normalized message text.
+	 * @return bool
+	 */
+	private function looks_like_date_answer( string $text ): bool {
+		$trimmed = trim( $text );
+
+		if ( '' === $trimmed ) {
+			return false;
+		}
+
+		if ( preg_match( '#^\d{1,2}[/-]\d{1,2}[/-]\d{4}$#', $trimmed ) ) {
+			return true;
+		}
+
+		if ( preg_match( '/^\d{4}-\d{1,2}-\d{1,2}$/', $trimmed ) ) {
+			return true;
+		}
+
+		if ( Date_Parser::contains_slash_date( $trimmed ) ) {
+			return true;
+		}
+
+		return null !== Date_Parser::parse( $trimmed );
 	}
 
 	/**

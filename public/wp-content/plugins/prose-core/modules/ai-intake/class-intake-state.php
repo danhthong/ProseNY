@@ -7,6 +7,8 @@
 
 namespace ProSe\Core\Ai_Intake;
 
+use ProSe\Core\Intake\Date_Parser;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -188,7 +190,8 @@ final class Intake_State {
 
 			$existing = $this->facts[ $key ] ?? null;
 
-			if ( null !== $existing && ! empty( $existing['confirmed'] ) && ! $allow_correction ) {
+			if ( null !== $existing && ! empty( $existing['confirmed'] ) && ! $allow_correction
+				&& ! $this->is_year_only_date_upgrade( $key, $existing['value'], $value ) ) {
 				continue;
 			}
 
@@ -230,6 +233,27 @@ final class Intake_State {
 		}
 
 		return (string) $a === (string) $b;
+	}
+
+	/**
+	 * Whether a new date value should replace a year-only placeholder.
+	 *
+	 * @param string $key      Field key.
+	 * @param mixed  $existing Existing value.
+	 * @param mixed  $value    New value.
+	 * @return bool
+	 */
+	private function is_year_only_date_upgrade( string $key, $existing, $value ): bool {
+		if ( ! in_array( $key, array( 'marriage_date', 'separation_date' ), true ) ) {
+			return false;
+		}
+
+		if ( ! is_string( $existing ) || ! is_string( $value ) ) {
+			return false;
+		}
+
+		return Date_Parser::is_year_only_placeholder( $existing )
+			&& ! Date_Parser::is_year_only_placeholder( $value );
 	}
 
 	/**
@@ -303,6 +327,13 @@ final class Intake_State {
 		$fact = $this->get_fact( $key );
 
 		if ( null === $fact ) {
+			return false;
+		}
+
+		$value = $fact['value'];
+
+		if ( is_string( $value ) && in_array( $key, array( 'marriage_date', 'separation_date' ), true )
+			&& \ProSe\Core\Intake\Date_Parser::is_year_only_placeholder( $value ) ) {
 			return false;
 		}
 

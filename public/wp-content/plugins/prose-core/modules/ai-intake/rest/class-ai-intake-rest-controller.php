@@ -12,6 +12,7 @@ use ProSe\Core\Intake\Case_Actions_Resolver;
 use ProSe\Core\Loader;
 use ProSe\Core\Security\Rate_Limiter;
 use ProSe\Core\Users\Conversation_Persistence;
+use ProSe\Core\Users\User_Intake_Context;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -157,6 +158,10 @@ final class AI_Intake_Rest_Controller {
 
 		if ( is_array( $case_profile ) ) {
 			$state['case_profile'] = $case_profile;
+		}
+
+		if ( ! isset( $state['user_context'] ) || ! is_array( $state['user_context'] ) ) {
+			$state['user_context'] = User_Intake_Context::for_current_user();
 		}
 
 		$conversation = is_array( $conversation ) ? $conversation : array();

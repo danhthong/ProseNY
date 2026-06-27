@@ -145,13 +145,29 @@ final class Stub_Ai_Provider implements Ai_Provider_Interface {
 		}
 
 		if ( preg_match( '/\b(queens|kings|brooklyn|bronx|manhattan|staten island|richmond)\b/i', $message, $m ) ) {
-			$updates['county'] = array(
-				'value'      => $this->normalize_county( $m[1] ),
-				'confidence' => 0.98,
-			);
+			$borough = $this->normalize_county( $m[1] );
+
+			if ( 'marriage_location' === $pending ) {
+				$place = ( new \ProSe\Core\Intake\Fact_Extractor() )->format_place_answer( $m[1] );
+				$updates['marriage_location'] = array(
+					'value'      => null !== $place ? $place : $borough,
+					'confidence' => 0.95,
+				);
+			} else {
+				$updates['county'] = array(
+					'value'      => $borough,
+					'confidence' => 0.98,
+				);
+			}
 		} elseif ( 'county' === $pending && '' !== $normalized ) {
 			$updates['county'] = array(
 				'value'      => $this->normalize_county( $normalized ),
+				'confidence' => 0.95,
+			);
+		} elseif ( 'marriage_location' === $pending && '' !== $normalized ) {
+			$place = ( new \ProSe\Core\Intake\Fact_Extractor() )->format_place_answer( $message );
+			$updates['marriage_location'] = array(
+				'value'      => null !== $place ? $place : ucwords( $normalized ),
 				'confidence' => 0.95,
 			);
 		}
@@ -229,6 +245,41 @@ final class Stub_Ai_Provider implements Ai_Provider_Interface {
 			);
 		}
 
+		if ( \ProSe\Core\Users\User_Intake_Context::message_asks_about_account( $message ) ) {
+			$user_context = is_array( $context['user_context'] ?? null ) ? $context['user_context'] : array();
+			$name         = trim( (string) ( $user_context['display_name'] ?? '' ) );
+			$reply        = '' !== $name
+				? sprintf( 'Yes — I have you as %s on file from your account.', $name )
+				: "I don't have your name on file yet.";
+
+			return wp_json_encode(
+				array(
+					'fact_updates'       => array(),
+					'intent'             => 'account_meta',
+					'confidence'         => 0.95,
+					'conversation_reply' => $reply,
+				)
+			);
+		}
+
+		$child_birth = \ProSe\Core\Intake\Date_Parser::extract_child_birth_date( $message );
+
+		if ( null !== $child_birth ) {
+			return wp_json_encode(
+				array(
+					'fact_updates'       => array(
+						'child_birth_dates' => array(
+							'value'      => $child_birth,
+							'confidence' => 0.95,
+						),
+					),
+					'intent'             => 'answer_question',
+					'confidence'         => 0.95,
+					'conversation_reply' => 'Thanks, I have noted that birth date.',
+				)
+			);
+		}
+
 		return wp_json_encode(
 			array(
 				'fact_updates'       => $updates,
@@ -278,8 +329,12 @@ final class Stub_Ai_Provider implements Ai_Provider_Interface {
 	 * @return string
 	 */
 	private function stub_reply( array $updates, array $context ): string {
+		$user_context = is_array( $context['user_context'] ?? null ) ? $context['user_context'] : array();
+		$first        = trim( (string) ( $user_context['first_name'] ?? '' ) );
+		$thanks       = '' !== $first ? 'Thanks, ' . $first . '.' : 'Thanks, I have noted that.';
+
 		if ( ! empty( $updates ) ) {
-			return 'Thanks, I have noted that. Could you tell me a bit more about your situation so I can help further?';
+			return $thanks . ' Could you tell me a bit more about your situation so I can help further?';
 		}
 
 		return 'Could you tell me a little more about your legal matter so I can point you in the right direction?';

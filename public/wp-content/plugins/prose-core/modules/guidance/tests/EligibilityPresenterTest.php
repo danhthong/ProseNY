@@ -69,6 +69,20 @@ class EligibilityPresenterTest extends TestCase {
 	}
 
 	/**
+	 * Ineligible residency is flagged even when county is unknown.
+	 */
+	public function test_ineligible_residency_without_county(): void {
+		$presenter = new Eligibility_Presenter();
+		$result    = $presenter->evaluate(
+			array(
+				'residency_qualification' => 'ineligible',
+			)
+		);
+
+		$this->assertSame( Eligibility_Presenter::STATUS_LIKELY_INELIGIBLE, $result['status'] );
+	}
+
+	/**
 	 * DV concern still eligible with OP note.
 	 */
 	public function test_dv_concern_eligible_with_op_note(): void {

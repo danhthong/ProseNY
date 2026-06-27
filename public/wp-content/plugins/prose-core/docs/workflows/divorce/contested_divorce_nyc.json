@@ -15,6 +15,9 @@
     "contested divorce",
     "divorce dispute",
     "spouse will not agree",
+    "wife refuses",
+    "husband refuses",
+    "spouse refuses",
     "divorce trial",
     "matrimonial action"
   ],
@@ -72,7 +75,7 @@
       "key": "marriage_location",
       "type": "string",
       "required": true,
-      "question": "Where were you married (city and state or country)?"
+      "question": "Where were you married? (NYC borough or city and state — e.g. Queens, NY)"
     },
     {
       "key": "marriage_date",

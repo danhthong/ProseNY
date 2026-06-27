@@ -118,6 +118,11 @@ final class Completion_Calculator {
 			return false;
 		}
 
+		if ( is_string( $value ) && in_array( $key, array( 'marriage_date', 'separation_date' ), true )
+			&& Date_Parser::is_year_only_placeholder( $value ) ) {
+			return false;
+		}
+
 		return true;
 	}
 

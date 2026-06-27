@@ -10,7 +10,9 @@
     "support order",
     "support payments",
     "pay child support",
-    "collect child support"
+    "collect child support",
+    "modify support",
+    "modify child support"
   ],
   "entry_questions": [
     "Are you seeking child support?",

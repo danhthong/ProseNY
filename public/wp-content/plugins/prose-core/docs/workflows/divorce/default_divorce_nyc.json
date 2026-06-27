@@ -15,7 +15,10 @@
     "default divorce",
     "no answer",
     "defendant did not respond",
-    "default judgment divorce"
+    "default judgment divorce",
+    "never responded",
+    "did not respond",
+    "spouse never responded"
   ],
   "entry_questions": [
     "Do you want a divorce?",
@@ -72,7 +75,7 @@
       "key": "marriage_location",
       "type": "string",
       "required": true,
-      "question": "Where were you married (city and state or country)?"
+      "question": "Where were you married? (NYC borough or city and state — e.g. Queens, NY)"
     },
     {
       "key": "marriage_date",

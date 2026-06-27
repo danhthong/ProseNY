@@ -377,6 +377,89 @@ class AiIntakeInterpreterTest extends TestCase {
 	}
 
 	/**
+	 * DD/MM/YYYY follow-up fills marriage_date when that field is pending.
+	 */
+	public function test_marriage_date_dd_mm_yyyy_pending_answer(): void {
+		$extractor = new \ProSe\Core\Ai_Intake\Fact_Extractor();
+		$state     = Intake_State::from_array(
+			array(
+				'pending_field' => 'marriage_date',
+				'facts'         => array(
+					'issue' => array( 'value' => 'divorce', 'confidence' => 0.95, 'confirmed' => true ),
+				),
+			)
+		);
+		$provider  = new Stub_Ai_Provider();
+		$catalog   = new Workflow_Catalog();
+		$workflow  = $catalog->by_key( 'uncontested_divorce_children_nyc' );
+		$defs      = is_array( $workflow ) ? ( $workflow['required_fields'] ?? array() ) : array();
+
+		$result = $extractor->extract( '21/12/2016', $state, $defs, array( 'summary' => '', 'recent' => array() ), $provider );
+
+		$this->assertArrayHasKey( 'marriage_date', $result['updates'] );
+		$this->assertSame( '2016-12-21', $result['updates']['marriage_date']['value'] );
+	}
+
+	/**
+	 * Bulk message with married year plus later full date upgrades marriage_date.
+	 */
+	public function test_bulk_married_year_then_full_date(): void {
+		$bulk = 'Resident 5 years in Brooklyn; married 2016; one child; agreement on all issues.';
+
+		$first = $this->interpreter->interpret( $bulk );
+		$facts = $first['state']['facts'] ?? array();
+
+		$this->assertArrayHasKey( 'marriage_date', $facts );
+
+		$second = $this->interpreter->interpret(
+			'21/12/2016',
+			$first['state'] ?? array(),
+			array(
+				array( 'role' => 'user', 'content' => $bulk ),
+				array( 'role' => 'assistant', 'content' => 'Thanks for sharing.' ),
+			)
+		);
+
+		$this->assertSame( '2016-12-21', $second['state']['facts']['marriage_date']['value'] ?? null );
+		$this->assertNotContains( 'marriage_date', $second['missing_fields'] ?? array() );
+	}
+
+	/**
+	 * Borough answer after marriage date fills marriage_location, not filing county.
+	 */
+	public function test_queens_after_marriage_date_fills_marriage_location(): void {
+		$state = Intake_State::from_array(
+			array(
+				'workflow'      => 'uncontested_divorce_children_nyc',
+				'pending_field' => 'marriage_location',
+				'facts'         => array(
+					'county'        => array( 'value' => 'Kings', 'confidence' => 0.95, 'confirmed' => true ),
+					'marriage_date' => array( 'value' => '2016-12-21', 'confidence' => 0.95, 'confirmed' => true ),
+					'child_count'   => array( 'value' => 1, 'confidence' => 0.95, 'confirmed' => true ),
+					'spouse_agrees' => array( 'value' => true, 'confidence' => 0.95, 'confirmed' => true ),
+				),
+			)
+		);
+
+		$result = $this->interpreter->interpret(
+			'queens',
+			$state->to_array(),
+			array(
+				array( 'role' => 'user', 'content' => 'I need a divorce in Brooklyn with one child.' ),
+				array( 'role' => 'assistant', 'content' => 'Where were you married (city and state or country)?' ),
+			)
+		);
+
+		$this->assertSame( 'Queens, NY', $result['state']['facts']['marriage_location']['value'] ?? null );
+		$this->assertSame( 'Kings', $result['state']['facts']['county']['value'] ?? null );
+		$this->assertNotContains( 'marriage_location', array_column( $result['missing_fields'] ?? array(), 'field' ) );
+		$this->assertDoesNotMatchRegularExpression(
+			'/where were you married|city and state or country/i',
+			(string) ( $result['question'] ?? '' )
+		);
+	}
+
+	/**
 	 * Mid-intake blank PDF request keeps gathering facts (documents via Case Actions later).
 	 */
 	public function test_blank_pdf_request_keeps_gathering_mid_intake(): void {
@@ -413,5 +496,57 @@ class AiIntakeInterpreterTest extends TestCase {
 		$this->assertContains( $result['next_action'] ?? '', array( 'ask_question', 'guidance' ) );
 		$this->assertNotSame( 'error', $result['next_action'] ?? '' );
 		$this->assertNotEmpty( $result['question'] ?? '' );
+	}
+
+	/**
+	 * Signed-in user context prefills name fields and personalizes replies.
+	 */
+	public function test_logged_in_user_context_prefills_name(): void {
+		$state = array(
+			'user_context' => array(
+				'logged_in'    => true,
+				'user_id'      => 42,
+				'display_name' => 'Maria Lopez',
+				'first_name'   => 'Maria',
+				'email'        => 'maria@example.com',
+			),
+			'facts'        => array(),
+		);
+
+		$result = $this->interpreter->interpret( 'I need a divorce', $state );
+		$facts  = $result['state']['facts'] ?? array();
+
+		$this->assertSame( 'Maria Lopez', $facts['plaintiff_information']['value'] ?? null );
+		$this->assertStringContainsString( 'Maria', (string) ( $result['question'] ?? '' ) );
+	}
+
+	/**
+	 * "Do you know my name?" should answer directly, not dump filing guidance.
+	 */
+	public function test_logged_in_user_name_question_is_answered(): void {
+		$state = array(
+			'user_context' => array(
+				'logged_in'    => true,
+				'user_id'      => 42,
+				'display_name' => 'Maria Lopez',
+				'first_name'   => 'Maria',
+				'email'        => 'maria@example.com',
+			),
+			'workflow'     => 'uncontested_divorce_children_nyc',
+			'facts'        => array(
+				'plaintiff_information' => array( 'value' => 'Maria Lopez', 'confidence' => 0.92, 'confirmed' => true ),
+				'separation_date'       => array( 'value' => '2025-12-20', 'confidence' => 0.95, 'confirmed' => true ),
+				'spouse_agrees'         => array( 'value' => true, 'confidence' => 0.95, 'confirmed' => true ),
+				'child_count'           => array( 'value' => 1, 'confidence' => 0.95, 'confirmed' => true ),
+				'county'                => array( 'value' => 'Queens', 'confidence' => 0.95, 'confirmed' => true ),
+			),
+		);
+
+		$result = $this->interpreter->interpret( 'do you know my name?', $state );
+		$reply  = (string) ( $result['question'] ?? '' );
+
+		$this->assertStringContainsString( 'Maria Lopez', $reply );
+		$this->assertStringNotContainsString( 'Summons With Notice', $reply );
+		$this->assertNotSame( 'guidance', $result['next_action'] ?? '' );
 	}
 }

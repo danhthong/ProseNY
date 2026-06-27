@@ -13,6 +13,7 @@ use ProSe\Core\Intake\Completion_Calculator;
 use ProSe\Core\Intake\Document_Request_Detector;
 use ProSe\Core\Procedural\Procedural_Navigator;
 use ProSe\Core\Search\Knowledge_Context_Provider;
+use ProSe\Core\Users\User_Intake_Context;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -194,6 +195,9 @@ final class AI_Intake_Interpreter {
 			$intake->import_case_profile( $state['case_profile'] );
 		}
 
+		$user_context = $this->resolve_user_context( $state );
+		$this->apply_logged_in_user_facts( $intake, $user_context );
+
 		if ( '' === $intake->conversation_id() ) {
 			$intake->set_conversation_id( $this->generate_conversation_id() );
 		}
@@ -275,6 +279,16 @@ final class AI_Intake_Interpreter {
 		$missing_pre  = $this->fields_provider->missing_prioritized( $resolved_pre['fields'], $intake );
 		$workflow_pre = $intake->workflow();
 		$was_complete = empty( $missing_pre ) && null !== $workflow_pre && '' !== $workflow_pre;
+		$prefilled    = $this->apply_message_prefill( $message, $intake, $resolved_pre );
+
+		if ( ! empty( $prefilled ) ) {
+			$this->sync_child_facts( $intake );
+			$resolved_pre = $this->fields_provider->resolve( $intake, $message );
+			$missing_pre  = $this->fields_provider->missing_prioritized( $resolved_pre['fields'], $intake );
+			$workflow_pre = $intake->workflow();
+			$was_complete = empty( $missing_pre ) && null !== $workflow_pre && '' !== $workflow_pre;
+		}
+
 		$missing_ai   = $this->conversation_missing( $missing_pre, $workflow_pre );
 		$stage_pre    = $this->stage_context( $workflow_pre, $intake, null !== $workflow_pre && '' !== $workflow_pre );
 		$brief_pre    = $this->resolve_filing_brief( $workflow_pre, $intake, $stage_pre );
@@ -320,6 +334,7 @@ final class AI_Intake_Interpreter {
 				'guidance_brief_sent'   => $brief_sent,
 				'procedural_roadmap'    => $roadmap_pre,
 				'reference_knowledge'   => $this->knowledge_context->for_message( $message, $workflow_pre, null ),
+				'user_context'          => $user_context,
 			),
 			$this->provider,
 			$this->logger
@@ -345,6 +360,12 @@ final class AI_Intake_Interpreter {
 		$stage_ctx    = $this->stage_context( $workflow, $intake, $has_workflow );
 		$filing_brief = $this->resolve_filing_brief( $workflow, $intake, $stage_ctx );
 		$brief_extra  = array();
+		$account_reply = $this->build_account_meta_reply( $message, $user_context, $intake );
+
+		if ( '' !== $account_reply ) {
+			$reply = $account_reply;
+		}
+
 		$reply        = $this->apply_filing_brief_reply(
 			$reply,
 			$filing_brief,
@@ -353,6 +374,11 @@ final class AI_Intake_Interpreter {
 			! empty( $stage_ctx['forms_visible'] ),
 			$brief_extra
 		);
+		$reply        = $this->reconcile_reply_after_intake( $reply, $applied, $missing );
+
+		if ( ! User_Intake_Context::message_asks_about_account( $message ) ) {
+			$reply = $this->reconcile_reply_for_logged_in_user( $reply, $user_context, $intake );
+		}
 
 		// --- Escalation safety net (repeated genuine uncertainty) ---
 		$escalation = $this->escalation->detect( $message, $intake, $turn['raw_confidence'] );
@@ -640,6 +666,103 @@ final class AI_Intake_Interpreter {
 		$index = function_exists( 'wp_rand' ) ? wp_rand( 0, count( $templates ) - 1 ) : array_rand( $templates );
 
 		return sprintf( $templates[ $index ], $title );
+	}
+
+	/**
+	 * Apply deterministic fact extraction before the conversational model runs.
+	 *
+	 * Ensures short answers (dates, NYC boroughs) are in intake_state so the model
+	 * does not acknowledge a fact and still ask for it again in the same turn.
+	 *
+	 * @param string               $message  User message.
+	 * @param Intake_State         $intake   Intake state.
+	 * @param array<string, mixed> $resolved Resolved field context.
+	 * @return array<string, array{value: mixed, confidence: float, confirmed?: bool}>
+	 */
+	private function apply_message_prefill( string $message, Intake_State $intake, array $resolved ): array {
+		$defs = $resolved['extraction_defs'] ?? $resolved['required_field_defs'] ?? array();
+
+		if ( ! is_array( $defs ) || array() === $defs ) {
+			return array();
+		}
+
+		$processed = $this->extractor->process_raw(
+			array(),
+			0.0,
+			'converse',
+			$message,
+			$defs,
+			$intake
+		);
+
+		return $intake->merge_updates( $processed['updates'], $this->is_correction_message( $message ) );
+	}
+
+	/**
+	 * Strip stale follow-up questions when facts were just stored.
+	 *
+	 * @param string                                                            $reply   Model reply.
+	 * @param array<string, array{value: mixed, confidence: float, confirmed?: bool}> $applied Applied updates.
+	 * @param array<int, array<string, mixed>>                                  $missing Missing fields after merge.
+	 * @return string
+	 */
+	private function reconcile_reply_after_intake( string $reply, array $applied, array $missing ): string {
+		$reply = trim( $reply );
+
+		if ( '' === $reply || empty( $applied ) ) {
+			return $reply;
+		}
+
+		$missing_keys = array_map(
+			static function ( array $field ): string {
+				return (string) ( $field['field'] ?? '' );
+			},
+			$missing
+		);
+
+		foreach ( array_keys( $applied ) as $key ) {
+			if ( in_array( $key, $missing_keys, true ) ) {
+				continue;
+			}
+
+			if ( ! $this->reply_reasks_field( $reply, (string) $key ) ) {
+				continue;
+			}
+
+			$ack = preg_split( '/\?\s*/', $reply, 2 )[0] ?? $reply;
+			$ack = trim( (string) $ack );
+			$next = $this->build_gathering_fallback( $missing );
+
+			if ( '' === $next ) {
+				return '' !== $ack ? $ack . '.' : $reply;
+			}
+
+			return ( '' !== $ack ? rtrim( $ack, '.' ) . '. ' : '' ) . $next;
+		}
+
+		return $reply;
+	}
+
+	/**
+	 * Whether a conversational reply still asks for a field that was just filled.
+	 *
+	 * @param string $reply     Reply text.
+	 * @param string $field_key Field key.
+	 * @return bool
+	 */
+	private function reply_reasks_field( string $reply, string $field_key ): bool {
+		$patterns = array(
+			'marriage_location' => '/where were you married|city and state or country|marriage location/i',
+			'marriage_date'     => '/when were you married|what date were you married|date were you married/i',
+			'separation_date'   => '/when did you separate|date of separation|separation date/i',
+			'county'            => '/which county|what county|county (?:will you|do you) file/i',
+		);
+
+		if ( ! isset( $patterns[ $field_key ] ) ) {
+			return false;
+		}
+
+		return (bool) preg_match( $patterns[ $field_key ], $reply );
 	}
 
 	/**
@@ -1052,13 +1175,17 @@ final class AI_Intake_Interpreter {
 			return $reply;
 		}
 
+		if ( User_Intake_Context::message_asks_about_account( $message ) ) {
+			return $reply;
+		}
+
 		$resolver  = new Filing_Guidance_Brief_Resolver();
 		$formatted = $resolver->format( $brief );
 
 		if ( ! $already_sent ) {
-			$profile_extra['guidance_brief_delivered'] = true;
+			if ( '' === trim( $reply ) ) {
+				$profile_extra['guidance_brief_delivered'] = true;
 
-			if ( '' === $reply || $this->reply_only_asks_optional_fields( $reply ) ) {
 				return $formatted;
 			}
 
@@ -1135,5 +1262,178 @@ final class AI_Intake_Interpreter {
 		$data[8] = chr( ( ord( $data[8] ) & 0x3f ) | 0x80 );
 
 		return vsprintf( '%s%s-%s-%s-%s-%s%s%s', str_split( bin2hex( $data ), 4 ) );
+	}
+
+	/**
+	 * Resolve signed-in user context from state or the current WordPress session.
+	 *
+	 * @param array<string, mixed> $state Interpreter state.
+	 * @return array<string, mixed>
+	 */
+	private function resolve_user_context( array $state ): array {
+		if ( isset( $state['user_context'] ) && is_array( $state['user_context'] ) ) {
+			return array_merge( User_Intake_Context::guest(), $state['user_context'] );
+		}
+
+		return User_Intake_Context::for_current_user();
+	}
+
+	/**
+	 * Prefill plaintiff/petitioner name fields from a signed-in account.
+	 *
+	 * @param Intake_State           $intake       Intake state.
+	 * @param array<string, mixed>   $user_context User context.
+	 * @return void
+	 */
+	private function apply_logged_in_user_facts( Intake_State $intake, array $user_context ): void {
+		if ( empty( $user_context['logged_in'] ) ) {
+			return;
+		}
+
+		$display = trim( (string) ( $user_context['display_name'] ?? '' ) );
+
+		if ( '' === $display ) {
+			return;
+		}
+
+		$updates = array();
+
+		foreach ( User_Intake_Context::name_field_keys() as $key ) {
+			if ( $intake->is_filled( $key ) ) {
+				continue;
+			}
+
+			$updates[ $key ] = array(
+				'value'      => $display,
+				'confidence' => 0.92,
+			);
+		}
+
+		if ( ! empty( $updates ) ) {
+			$intake->merge_updates( $updates );
+		}
+	}
+
+	/**
+	 * Build a direct reply when the user asks what name is on file.
+	 *
+	 * @param string               $message      User message.
+	 * @param array<string, mixed> $user_context User context.
+	 * @param Intake_State         $intake       Intake state.
+	 * @return string
+	 */
+	private function build_account_meta_reply( string $message, array $user_context, Intake_State $intake ): string {
+		if ( ! User_Intake_Context::message_asks_about_account( $message ) ) {
+			return '';
+		}
+
+		$known_name = $this->resolve_known_user_name( $user_context, $intake );
+
+		if ( empty( $user_context['logged_in'] ) ) {
+			if ( '' !== $known_name ) {
+				return sprintf(
+					/* translators: %s: name on file in the current intake */
+					__( 'Yes — I have you as %s in this case so far. Sign in to link your account name automatically.', 'prose-core' ),
+					$known_name
+				);
+			}
+
+			return __( "I don't have your name on file yet. Share your legal name whenever you're ready.", 'prose-core' );
+		}
+
+		if ( '' === $known_name ) {
+			return __( "You're signed in, but I don't have your name saved yet. What name should I use on your court forms?", 'prose-core' );
+		}
+
+		return sprintf(
+			/* translators: %s: account or intake name */
+			__( 'Yes — I have you as %s on file from your account. Tell me if that is not your full legal name for court papers.', 'prose-core' ),
+			$known_name
+		);
+	}
+
+	/**
+	 * Resolve the best-known user name from intake facts or account context.
+	 *
+	 * @param array<string, mixed> $user_context User context.
+	 * @param Intake_State         $intake       Intake state.
+	 * @return string
+	 */
+	private function resolve_known_user_name( array $user_context, Intake_State $intake ): string {
+		foreach ( User_Intake_Context::name_field_keys() as $key ) {
+			$fact = $intake->get_fact( $key );
+
+			if ( null === $fact || ! is_string( $fact['value'] ) ) {
+				continue;
+			}
+
+			$name = trim( $fact['value'] );
+
+			if ( '' !== $name ) {
+				return $name;
+			}
+		}
+
+		return trim( (string) ( $user_context['display_name'] ?? '' ) );
+	}
+
+	/**
+	 * Remove stale name/contact asks when the account name is already on file.
+	 *
+	 * @param string               $reply        Assistant reply.
+	 * @param array<string, mixed> $user_context User context.
+	 * @param Intake_State         $intake       Intake state.
+	 * @return string
+	 */
+	private function reconcile_reply_for_logged_in_user( string $reply, array $user_context, Intake_State $intake ): string {
+		$reply = trim( $reply );
+
+		if ( '' === $reply || empty( $user_context['logged_in'] ) ) {
+			return $reply;
+		}
+
+		$has_name = false;
+
+		foreach ( User_Intake_Context::name_field_keys() as $key ) {
+			if ( $intake->is_filled( $key ) ) {
+				$has_name = true;
+				break;
+			}
+		}
+
+		if ( ! $has_name || ! preg_match( '/full legal name|contact information|your legal name/i', $reply ) ) {
+			return $reply;
+		}
+
+		$sentences = preg_split( '/(?<=[.!?])\s+/', $reply );
+
+		if ( ! is_array( $sentences ) ) {
+			return $reply;
+		}
+
+		$kept = array();
+
+		foreach ( $sentences as $sentence ) {
+			$sentence = trim( (string) $sentence );
+
+			if ( '' === $sentence ) {
+				continue;
+			}
+
+			if ( preg_match( '/full legal name|contact information|your legal name/i', $sentence ) ) {
+				if ( preg_match( '/\b(have you as|on file|from your account)\b/i', $sentence ) ) {
+					$kept[] = $sentence;
+				}
+				continue;
+			}
+
+			$kept[] = $sentence;
+		}
+
+		if ( empty( $kept ) ) {
+			return $reply;
+		}
+
+		return trim( implode( ' ', $kept ) );
 	}
 }

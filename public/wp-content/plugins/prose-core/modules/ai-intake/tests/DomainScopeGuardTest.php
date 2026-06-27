@@ -77,6 +77,105 @@ class DomainScopeGuardTest extends TestCase {
 	}
 
 	/**
+	 * Slash-form dates during active intake are not treated as math homework.
+	 */
+	public function test_allows_slash_date_during_active_intake(): void {
+		$conversation = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Resident 5 years in Brooklyn; married 2016; one child; agreement on all issues.',
+			),
+		);
+		$state        = array(
+			'workflow'      => 'uncontested_divorce_children_nyc',
+			'pending_field' => 'marriage_date',
+		);
+
+		foreach ( array( '21/12/2016', '12/21/2016' ) as $message ) {
+			$result = $this->guard->assess( $message, $state, $conversation );
+
+			$this->assertTrue( $result['supported'], 'Expected supported for ' . $message );
+			$this->assertNotContains( 'general knowledge', $result['out_of_scope_topics'] );
+		}
+	}
+
+	/**
+	 * Service accepts marriage date follow-ups in DD/MM and MM/DD formats.
+	 */
+	public function test_service_accepts_marriage_date_follow_up_formats(): void {
+		$provider = new Stub_Ai_Provider();
+		$service  = new AI_Intake_Service( $provider );
+
+		$bulk         = $service->interpret( 'Resident 5 years in Brooklyn; married 2016; one child; agreement on all issues.' );
+		$state        = $bulk['result']['state'] ?? array();
+		$conversation = array(
+			array(
+				'role'    => 'user',
+				'content' => 'Resident 5 years in Brooklyn; married 2016; one child; agreement on all issues.',
+			),
+			array(
+				'role'    => 'assistant',
+				'content' => 'Thanks for sharing.',
+			),
+		);
+
+		$result = $service->interpret( '21/12/2016', $state, $conversation );
+
+		$this->assertTrue( $result['supported'] ?? true );
+		$this->assertNotSame( 'domain_restricted', $result['result']['next_action'] ?? '' );
+		$this->assertSame( '2016-12-21', $result['result']['state']['facts']['marriage_date']['value'] ?? null );
+	}
+
+	/**
+	 * Embedded child birthday dates during active intake are not treated as math homework.
+	 */
+	public function test_allows_embedded_child_birthday_during_active_intake(): void {
+		$conversation = array(
+			array(
+				'role'    => 'user',
+				'content' => 'My children as Thiens D',
+			),
+		);
+		$state        = array(
+			'workflow' => 'uncontested_divorce_children_nyc',
+			'facts'    => array(
+				'child_names' => array( 'value' => 'Thiens D', 'confidence' => 0.95, 'confirmed' => true ),
+			),
+		);
+
+		$result = $this->guard->assess( 'my kid birthday is 27/05/2019', $state, $conversation );
+
+		$this->assertTrue( $result['supported'] );
+		$this->assertNotContains( 'general knowledge', $result['out_of_scope_topics'] );
+	}
+
+	/**
+	 * Service accepts embedded child birthday during divorce intake.
+	 */
+	public function test_service_accepts_embedded_child_birthday(): void {
+		$provider = new Stub_Ai_Provider();
+		$service  = new AI_Intake_Service( $provider );
+		$state    = array(
+			'workflow' => 'uncontested_divorce_children_nyc',
+			'facts'    => array(
+				'child_names' => array( 'value' => 'Thiens D', 'confidence' => 0.95, 'confirmed' => true ),
+			),
+		);
+		$conversation = array(
+			array(
+				'role'    => 'user',
+				'content' => 'My children as Thiens D',
+			),
+		);
+
+		$result = $service->interpret( 'my kid birthday is 27/05/2019', $state, $conversation );
+
+		$this->assertTrue( $result['supported'] ?? true );
+		$this->assertNotSame( 'domain_restricted', $result['result']['next_action'] ?? '' );
+		$this->assertSame( '2019-05-27', $result['result']['state']['facts']['child_birth_dates']['value'] ?? null );
+	}
+
+	/**
 	 * Active intake bypasses the guard for short answers.
 	 */
 	public function test_bypasses_when_pending_field_set(): void {

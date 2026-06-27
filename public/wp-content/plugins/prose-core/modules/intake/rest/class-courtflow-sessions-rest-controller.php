@@ -22,6 +22,7 @@ use ProSe\Core\Users\Auth_Gate;
 use ProSe\Core\Users\Conversation_Persistence;
 use ProSe\Core\Users\Database\Repositories\User_Document_Repository;
 use ProSe\Core\Users\Entitlements;
+use ProSe\Core\Users\User_Intake_Context;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -907,6 +908,8 @@ final class Courtflow_Sessions_Rest_Controller {
 		if ( ! empty( $session['conversation_id'] ) ) {
 			$state['conversation_id'] = (string) $session['conversation_id'];
 		}
+
+		$state['user_context'] = User_Intake_Context::for_current_user();
 
 		return $state;
 	}

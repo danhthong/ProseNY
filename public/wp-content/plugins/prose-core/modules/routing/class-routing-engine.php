@@ -125,6 +125,7 @@ final class Routing_Engine {
 	public function route_profile( string $text, Case_Profile $profile ): Routing_Result {
 		$prior_issue               = $profile->issue();
 		$prior_court               = $profile->court();
+		$prior_workflow            = $profile->workflow();
 		$prior_candidate_workflows = $profile->candidate_workflows();
 
 		$facts = $profile->facts();
@@ -155,6 +156,13 @@ final class Routing_Engine {
 		$confidence          = (float) $workflow_resolution['confidence'];
 		$candidate_workflows = (array) $workflow_resolution['candidate_workflows'];
 		$missing_fields      = array();
+
+		// Short follow-up answers (e.g. "Queens", a date) carry no workflow signal.
+		// Retain the session workflow so mid-intake replies do not reset routing.
+		if ( ( null === $workflow || '' === $workflow ) && null !== $prior_workflow && '' !== $prior_workflow ) {
+			$workflow   = $prior_workflow;
+			$confidence = max( $confidence, (float) $profile->workflow_confidence() );
+		}
 
 		if ( null === $workflow || '' === $workflow ) {
 			if ( empty( $candidate_workflows ) && null !== $issue ) {

@@ -295,6 +295,15 @@ final class Fact_Extractor {
 			$low['child_count'] = $low['children_count'];
 		}
 
+		if (
+			isset( $updates['county'] )
+			&& 'marriage_location' === $pending_field
+			&& ! isset( $updates['marriage_location'] )
+		) {
+			$updates['marriage_location'] = $updates['county'];
+			unset( $updates['county'] );
+		}
+
 		return array( $updates, $low );
 	}
 
@@ -327,6 +336,8 @@ final class Fact_Extractor {
 	 * @return array{key: string, value: mixed, confidence: float}|null
 	 */
 	private function normalize_update_entry( string $key, $update, string $pending_field ): ?array {
+		$key = $this->resolve_pending_field_key( $key, $pending_field );
+
 		if ( is_array( $update ) && array_key_exists( 'value', $update ) ) {
 			$value      = $this->normalize_value( $key, $update['value'], $pending_field );
 			$confidence = (float) ( $update['confidence'] ?? 0.9 );
@@ -349,6 +360,21 @@ final class Fact_Extractor {
 	}
 
 	/**
+	 * Map model field keys onto the pending intake slot when appropriate.
+	 *
+	 * @param string $key           Field key from the model.
+	 * @param string $pending_field Pending field hint.
+	 * @return string
+	 */
+	private function resolve_pending_field_key( string $key, string $pending_field ): string {
+		if ( 'county' === $key && 'marriage_location' === $pending_field ) {
+			return 'marriage_location';
+		}
+
+		return $key;
+	}
+
+	/**
 	 * Supplement LLM extraction with deterministic pattern matching.
 	 *
 	 * @param string                           $message       User message.
@@ -364,28 +390,41 @@ final class Fact_Extractor {
 		$deterministic = new \ProSe\Core\Intake\Fact_Extractor();
 
 		foreach ( $deterministic->extract( $message, $required_defs, $state->plain_facts() ) as $key => $value ) {
-			if ( isset( $updates[ $key ] ) || $state->is_filled( $key ) ) {
+			if ( isset( $updates[ $key ] ) || ( $state->is_filled( $key ) && ! $this->is_date_upgrade( $state, $key, $value ) ) ) {
 				continue;
 			}
 
 			$updates[ $key ] = array(
 				'value'      => $value,
-				'confidence' => 0.95,
+				'confidence' => in_array( $key, array( 'marriage_date', 'separation_date' ), true )
+					? \ProSe\Core\Intake\Date_Parser::confidence_for( (string) $value )
+					: 0.95,
 			);
 		}
 
-		foreach ( $this->extract_contextual_dates( $message, $required_defs ) as $key => $value ) {
-			if ( isset( $updates[ $key ] ) || $state->is_filled( $key ) ) {
+		foreach ( $this->extract_contextual_dates( $message, $required_defs, $state->pending_field() ) as $key => $value ) {
+			if ( isset( $updates[ $key ] ) || ( $state->is_filled( $key ) && ! $this->is_date_upgrade( $state, $key, $value ) ) ) {
 				continue;
 			}
 
 			$updates[ $key ] = array(
 				'value'      => $value,
-				'confidence' => 0.95,
+				'confidence' => \ProSe\Core\Intake\Date_Parser::confidence_for( $value ),
 			);
 		}
 
 		foreach ( $this->extract_contextual_booleans( $message ) as $key => $value ) {
+			if ( isset( $updates[ $key ] ) || $state->is_filled( $key ) ) {
+				continue;
+			}
+
+			$updates[ $key ] = array(
+				'value'      => $value,
+				'confidence' => 0.95,
+			);
+		}
+
+		foreach ( $this->extract_contextual_pending_strings( $message, $required_defs, $state ) as $key => $value ) {
 			if ( isset( $updates[ $key ] ) || $state->is_filled( $key ) ) {
 				continue;
 			}
@@ -431,31 +470,148 @@ final class Fact_Extractor {
 	 *
 	 * @param string                           $message       Message.
 	 * @param array<int, array<string, mixed>> $required_defs Required defs.
+	 * @param string                           $pending_field Pending field key.
 	 * @return array<string, string>
 	 */
-	private function extract_contextual_dates( string $message, array $required_defs ): array {
+	private function extract_contextual_dates( string $message, array $required_defs, string $pending_field = '' ): array {
 		$keys  = $this->field_keys( $required_defs );
 		$facts = array();
 
-		if ( ( empty( $keys ) || isset( $keys['marriage_date'] ) )
-			&& preg_match( '/\b(?:were married|got married|married)\s+on\s+([^.;]+?)(?:\.|;|$|\s+we\b|\s+and\b)/i', $message, $matches ) ) {
-			$parsed = $this->parse_date( trim( $matches[1] ) );
+		$needs_marriage   = empty( $keys ) || isset( $keys['marriage_date'] );
+		$needs_separation = empty( $keys ) || isset( $keys['separation_date'] );
 
-			if ( null !== $parsed ) {
-				$facts['marriage_date'] = $parsed;
+		if ( $needs_marriage ) {
+			foreach ( \ProSe\Core\Intake\Date_Parser::extract_marriage_and_separation( $message ) as $key => $value ) {
+				if ( 'marriage_date' === $key ) {
+					$facts['marriage_date'] = $value;
+				}
+			}
+
+			if ( ! isset( $facts['marriage_date'] ) && 'marriage_date' === $pending_field ) {
+				$parsed = \ProSe\Core\Intake\Date_Parser::parse( trim( $message ) );
+
+				if ( null !== $parsed ) {
+					$facts['marriage_date'] = $parsed;
+				}
 			}
 		}
 
-		if ( ( empty( $keys ) || isset( $keys['separation_date'] ) )
-			&& preg_match( '/\b(?:separated|separation)\s+(?:on|since)\s+([^.;]+?)(?:\.|;|$|\s+and\b)/i', $message, $matches ) ) {
-			$parsed = $this->parse_date( trim( $matches[1] ) );
+		if ( $needs_separation && ! isset( $facts['separation_date'] ) ) {
+			foreach ( \ProSe\Core\Intake\Date_Parser::extract_marriage_and_separation( $message ) as $key => $value ) {
+				if ( 'separation_date' === $key ) {
+					$facts['separation_date'] = $value;
+				}
+			}
 
-			if ( null !== $parsed ) {
-				$facts['separation_date'] = $parsed;
+			if ( ! isset( $facts['separation_date'] ) && 'separation_date' === $pending_field ) {
+				$parsed = \ProSe\Core\Intake\Date_Parser::parse( trim( $message ) );
+
+				if ( null !== $parsed ) {
+					$facts['separation_date'] = $parsed;
+				}
+			}
+		}
+
+		$needs_child_birth = empty( $keys ) || isset( $keys['child_birth_dates'] ) || isset( $keys['child_birth_date'] );
+
+		if ( $needs_child_birth ) {
+			$child_birth = \ProSe\Core\Intake\Date_Parser::extract_child_birth_date( $message );
+
+			if ( null !== $child_birth ) {
+				if ( isset( $keys['child_birth_date'] ) ) {
+					$facts['child_birth_date'] = $child_birth;
+				} else {
+					$facts['child_birth_dates'] = $child_birth;
+				}
 			}
 		}
 
 		return $facts;
+	}
+
+	/**
+	 * Extract direct answers to pending string fields (e.g. marriage location).
+	 *
+	 * @param string                           $message       Message.
+	 * @param array<int, array<string, mixed>> $required_defs Required defs.
+	 * @param Intake_State                     $state         Intake state.
+	 * @return array<string, string>
+	 */
+	private function extract_contextual_pending_strings( string $message, array $required_defs, Intake_State $state ): array {
+		$keys    = $this->field_keys( $required_defs );
+		$facts   = array();
+		$pending = $state->pending_field();
+		$targets = array( 'marriage_location', 'grounds_for_divorce', 'residency_qualification' );
+
+		$deterministic = new \ProSe\Core\Intake\Fact_Extractor();
+
+		if ( '' !== $pending && in_array( $pending, $targets, true ) && isset( $keys[ $pending ] ) && ! $state->is_filled( $pending ) ) {
+			$type     = $this->field_type_from_defs( $required_defs, $pending );
+			$inferred = $deterministic->infer_pending_answer( $message, $pending, $type );
+
+			if ( isset( $inferred[ $pending ] ) && is_string( $inferred[ $pending ] ) && '' !== trim( $inferred[ $pending ] ) ) {
+				$facts[ $pending ] = $inferred[ $pending ];
+			}
+		}
+
+		if (
+			! isset( $facts['marriage_location'] )
+			&& isset( $keys['marriage_location'] )
+			&& ! $state->is_filled( 'marriage_location' )
+			&& $state->is_filled( 'county' )
+			&& $deterministic->looks_like_place_only_answer( $message )
+		) {
+			$inferred = $deterministic->infer_pending_answer( $message, 'marriage_location', 'string' );
+
+			if ( isset( $inferred['marriage_location'] ) ) {
+				$facts['marriage_location'] = $inferred['marriage_location'];
+			}
+		}
+
+		return $facts;
+	}
+
+	/**
+	 * Resolve a field type from required field definitions.
+	 *
+	 * @param array<int, array<string, mixed>> $required_defs Required defs.
+	 * @param string                           $field_key     Field key.
+	 * @return string|null
+	 */
+	private function field_type_from_defs( array $required_defs, string $field_key ): ?string {
+		foreach ( $required_defs as $field ) {
+			if ( ! is_array( $field ) ) {
+				continue;
+			}
+
+			if ( (string) ( $field['key'] ?? '' ) === $field_key ) {
+				$type = (string) ( $field['type'] ?? 'string' );
+
+				return '' !== $type ? $type : 'string';
+			}
+		}
+
+		return null;
+	}
+
+	/**
+	 * Whether a deterministic date should replace a year-only placeholder.
+	 *
+	 * @param Intake_State $state Intake state.
+	 * @param string       $key   Field key.
+	 * @param mixed        $value New value.
+	 * @return bool
+	 */
+	private function is_date_upgrade( Intake_State $state, string $key, $value ): bool {
+		if ( ! in_array( $key, array( 'marriage_date', 'separation_date' ), true ) || ! is_string( $value ) ) {
+			return false;
+		}
+
+		$existing = $state->plain_facts()[ $key ] ?? null;
+
+		return is_string( $existing )
+			&& \ProSe\Core\Intake\Date_Parser::is_year_only_placeholder( $existing )
+			&& ! \ProSe\Core\Intake\Date_Parser::is_year_only_placeholder( $value );
 	}
 
 	/**
@@ -507,23 +663,7 @@ final class Fact_Extractor {
 	 * @return string|null
 	 */
 	private function parse_date( string $text ): ?string {
-		$text = trim( $text );
-
-		if ( preg_match( '/\b(\d{4})-(\d{1,2})-(\d{1,2})\b/', $text, $m ) ) {
-			return sprintf( '%04d-%02d-%02d', (int) $m[1], (int) $m[2], (int) $m[3] );
-		}
-
-		if ( preg_match( '#\b(\d{1,2})/(\d{1,2})/(\d{4})\b#', $text, $m ) ) {
-			return sprintf( '%04d-%02d-%02d', (int) $m[3], (int) $m[1], (int) $m[2] );
-		}
-
-		$timestamp = strtotime( $text );
-
-		if ( false !== $timestamp ) {
-			return gmdate( 'Y-m-d', $timestamp );
-		}
-
-		return null;
+		return \ProSe\Core\Intake\Date_Parser::parse( $text );
 	}
 
 	/**
@@ -567,6 +707,12 @@ final class Fact_Extractor {
 
 		if ( 'county' === $key || ( 'county' === $pending_field && is_string( $value ) ) ) {
 			return $this->normalize_county( (string) $value );
+		}
+
+		if ( 'marriage_location' === $key || ( 'marriage_location' === $pending_field && is_string( $value ) ) ) {
+			$formatted = ( new \ProSe\Core\Intake\Fact_Extractor() )->format_place_answer( (string) $value );
+
+			return null !== $formatted ? $formatted : (string) $value;
 		}
 
 		if ( in_array( $key, array( 'child_count', 'children_count' ), true ) ) {

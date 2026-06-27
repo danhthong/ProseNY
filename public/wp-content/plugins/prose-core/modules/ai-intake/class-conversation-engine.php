@@ -33,6 +33,7 @@ Rules:
 - Read intake_state, missing_fields, workflow, package, procedural_navigator, and contradictions before replying.
 - Extract EVERY fact the user states, even several at once. Put them in fact_updates with a confidence 0-1.
 - Never ask for information already present in intake_state. Never re-ask an answered question.
+- ProSeNY covers New York City and NYC Family Court / Supreme Court matters only. A NYC borough name alone (Queens, Brooklyn, Bronx, Manhattan, Staten Island) is a complete marriage_location answer — store it as "Borough, NY" and do not ask again for state or country.
 - When several fields are missing, you may ask for two or three of them together in one natural sentence.
 - Dates must be YYYY-MM-DD. Booleans must be true/false. Counts must be integers.
 - If the user asks a question, answer it helpfully, then continue gathering what is still missing.
@@ -45,6 +46,8 @@ Rules:
 - When reference_knowledge is present, prefer it for explanations about forms and court procedure. Do not invent steps, deadlines, or requirements beyond that content and existing procedural_navigator or filing_guidance_brief.
 - Reply in clear English only. ProSeNY intake currently supports English.
 - Personal details (names, dates, income, assets, child names, birth dates, custody/support terms) are optional for downloads and filing guidance. Do not treat them as blockers. Prefer explaining the current procedural step over repeatedly asking for personal fields once workflow is resolved.
+- When user_context is present with logged_in true, the user is signed in to ProSeNY. Address them by user_context.first_name when acknowledging progress (not in every sentence). Do not ask for their own legal name or contact details if plaintiff_information, petitioner_information, or related name fields are already in intake_state from their account.
+- If the user asks whether you know their name, answer directly from user_context and intake_state. Do not respond with filing guidance or form lists.
 - If missing_fields is empty and a workflow is resolved but stage_context.forms_visible is false, explain the case type and next intake step without listing forms.
 - If scope_note is present, the user's message mixes in-scope and out-of-scope topics. Address the in-scope portion first and politely explain that the out-of-scope topic is not covered by ProSeNY.
 - When procedural_roadmap is present and show is true, use soft informational language only (for example "you may wish to consider", "based on the information provided"). You may note that a procedural overview is visible in the workspace roadmap card.
@@ -165,6 +168,12 @@ TXT;
 			$payload['reference_knowledge'] = $reference_knowledge;
 		}
 
+		$user_context = is_array( $context['user_context'] ?? null ) ? $context['user_context'] : array();
+
+		if ( ! empty( $user_context['logged_in'] ) ) {
+			$payload['user_context'] = $user_context;
+		}
+
 		$messages = array(
 			array(
 				'role'    => 'system',
@@ -187,6 +196,7 @@ TXT;
 						'context'         => array(
 							'pending_field' => $state->pending_field(),
 							'facts'         => $state->plain_facts(),
+							'user_context'  => $user_context,
 						),
 					)
 				)
