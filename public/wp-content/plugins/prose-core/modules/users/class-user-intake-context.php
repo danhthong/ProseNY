@@ -86,6 +86,31 @@ final class User_Intake_Context {
 	}
 
 	/**
+	 * Whether a display name is a generic placeholder unsuitable for court forms.
+	 *
+	 * @param string $display_name Account display name.
+	 * @return bool
+	 */
+	public static function is_placeholder_display_name( string $display_name ): bool {
+		$normalized = strtolower( trim( $display_name ) );
+
+		if ( '' === $normalized ) {
+			return true;
+		}
+
+		$placeholders = array(
+			'admin',
+			'administrator',
+			'user',
+			'test',
+			'demo',
+			'editor',
+		);
+
+		return in_array( $normalized, $placeholders, true );
+	}
+
+	/**
 	 * Intake field keys that should be prefilled from the account name.
 	 *
 	 * @return string[]

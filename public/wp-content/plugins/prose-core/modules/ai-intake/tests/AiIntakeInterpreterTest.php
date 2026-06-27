@@ -171,7 +171,7 @@ class AiIntakeInterpreterTest extends TestCase {
 		);
 
 		$detector = new Escalation_Detector();
-		$result   = $detector->detect( "I don't know", $state, 0.3 );
+		$result   = $detector->detect( "I don't know", $state, 0.3, false );
 
 		$this->assertTrue( $result['needs_review'] );
 	}
@@ -518,6 +518,282 @@ class AiIntakeInterpreterTest extends TestCase {
 
 		$this->assertSame( 'Maria Lopez', $facts['plaintiff_information']['value'] ?? null );
 		$this->assertStringContainsString( 'Maria', (string) ( $result['question'] ?? '' ) );
+	}
+
+	/**
+	 * Placeholder account names must not prefill plaintiff fields.
+	 */
+	public function test_placeholder_account_name_is_not_prefilled(): void {
+		$state = array(
+			'user_context' => array(
+				'logged_in'    => true,
+				'user_id'      => 1,
+				'display_name' => 'admin',
+				'first_name'   => '',
+				'email'        => 'admin@example.com',
+			),
+			'facts'        => array(),
+		);
+
+		$result = $this->interpreter->interpret( 'I need a divorce', $state );
+		$facts  = $result['state']['facts'] ?? array();
+
+		$this->assertArrayNotHasKey( 'plaintiff_information', $facts );
+		$this->assertArrayNotHasKey( 'plaintiff_name', $facts );
+	}
+
+	/**
+	 * Divorce intake stays on divorce workflow when custody is part of settlement facts.
+	 */
+	public function test_divorce_session_retains_workflow_when_custody_settlement_mentioned(): void {
+		$turn1 = $this->interpreter->interpret( 'I need to file for divorce in New York City' );
+
+		$turn2 = $this->interpreter->interpret(
+			'We have one child who is 10 years old. My spouse agrees to the divorce. We have already agreed on custody, child support, and how to divide our property. No divorce case has been filed yet.',
+			$turn1['state'] ?? array()
+		);
+
+		$this->assertSame( 'uncontested_divorce_children_nyc', $turn2['workflow'] ?? '' );
+		$this->assertSame( 'divorce', $turn2['state']['issue'] ?? '' );
+	}
+
+	/**
+	 * Divorce form codes are rejected when the session is on a custody workflow.
+	 */
+	public function test_ud_form_blocked_on_custody_workflow(): void {
+		$state = array(
+			'workflow'     => 'custody_nyc',
+			'issue'        => 'custody',
+			'court'        => 'family_court',
+			'case_profile' => array(
+				'workflow' => 'custody_nyc',
+				'issue'    => 'custody',
+			),
+			'facts'        => array(
+				'child_count' => array(
+					'value'      => 1,
+					'confidence' => 0.95,
+					'confirmed'  => true,
+				),
+			),
+		);
+
+		$result = $this->interpreter->interpret( 'ud-1a', $state );
+
+		$this->assertSame( 'ask_question', $result['next_action'] ?? '' );
+		$this->assertStringContainsString( 'not part of your current matter', (string) ( $result['question'] ?? '' ) );
+	}
+
+	/**
+	 * Stage-advance requests move within the current divorce workflow.
+	 */
+	public function test_stage_advance_moves_divorce_workflow_forward(): void {
+		$state = array(
+			'workflow'     => 'uncontested_divorce_children_nyc',
+			'issue'        => 'divorce',
+			'court'        => 'supreme_court',
+			'case_profile' => array(
+				'workflow'                 => 'uncontested_divorce_children_nyc',
+				'issue'                    => 'divorce',
+				'guidance_brief_delivered' => true,
+				'procedural_node'          => '',
+			),
+			'facts'        => array(
+				'spouse_agrees' => array(
+					'value'      => true,
+					'confidence' => 0.95,
+					'confirmed'  => true,
+				),
+				'child_count'   => array(
+					'value'      => 1,
+					'confidence' => 0.95,
+					'confirmed'  => true,
+				),
+				'county'        => array(
+					'value'      => 'Queens',
+					'confidence' => 0.95,
+					'confirmed'  => true,
+				),
+			),
+		);
+
+		$result = $this->interpreter->interpret( 'i need to move to new stage', $state );
+
+		$this->assertSame( 'guidance', $result['next_action'] ?? '' );
+		$this->assertSame( 'uncontested_divorce_children_nyc', $result['workflow'] ?? '' );
+		$this->assertStringContainsString( 'Service', (string) ( $result['question'] ?? '' ) );
+		$this->assertNotEmpty( $result['case_profile']['procedural_node'] ?? '' );
+	}
+
+	/**
+	 * Calendar stage advance uses conditional final-papers language for uncontested divorce.
+	 */
+	public function test_calendar_stage_advance_message_uses_conditional_form_language(): void {
+		$state = array(
+			'workflow'     => 'uncontested_divorce_children_nyc',
+			'issue'        => 'divorce',
+			'court'        => 'supreme_court',
+			'case_profile' => array(
+				'workflow'                 => 'uncontested_divorce_children_nyc',
+				'issue'                    => 'divorce',
+				'guidance_brief_delivered' => true,
+				'procedural_node'          => 'NODE_1002_SERVICE_COMPLETE',
+			),
+			'facts'        => array(
+				'spouse_agrees' => array(
+					'value'      => true,
+					'confidence' => 0.95,
+					'confirmed'  => true,
+				),
+				'child_count'   => array(
+					'value'      => 1,
+					'confidence' => 0.95,
+					'confirmed'  => true,
+				),
+				'county'        => array(
+					'value'      => 'Queens',
+					'confidence' => 0.95,
+					'confirmed'  => true,
+				),
+			),
+		);
+
+		$result = $this->interpreter->interpret( 'move to the next stage', $state );
+		$reply  = (string) ( $result['question'] ?? '' );
+
+		$this->assertStringContainsString( 'Final Papers & Calendar', $reply );
+		$this->assertStringContainsString( 'Typical forms at this stage may include', $reply );
+		$this->assertStringContainsString( 'UD-5', $reply );
+		$this->assertStringContainsString( 'UD-9', $reply );
+		$this->assertStringContainsString( '(if applicable)', $reply );
+		$this->assertStringContainsString( 'UD-4', $reply );
+		$this->assertStringNotContainsString( 'Moving you to the', $reply );
+		$this->assertStringNotContainsString( 'including the Note of Issue and Request for Judicial Intervention', $reply );
+	}
+
+	/**
+	 * Calendar-stage form questions should list current-stage forms, not commencement papers.
+	 */
+	public function test_calendar_stage_form_question_lists_current_stage_forms(): void {
+		$state = array(
+			'workflow'     => 'uncontested_divorce_children_nyc',
+			'issue'        => 'divorce',
+			'court'        => 'supreme_court',
+			'case_profile' => array(
+				'workflow'                 => 'uncontested_divorce_children_nyc',
+				'issue'                    => 'divorce',
+				'guidance_brief_delivered' => true,
+				'procedural_node'          => 'NODE_1010_JUDGMENT',
+			),
+			'facts'        => array(
+				'spouse_agrees' => array(
+					'value'      => true,
+					'confidence' => 0.95,
+					'confirmed'  => true,
+				),
+				'child_count'   => array(
+					'value'      => 1,
+					'confidence' => 0.95,
+					'confirmed'  => true,
+				),
+				'county'        => array(
+					'value'      => 'Queens',
+					'confidence' => 0.95,
+					'confirmed'  => true,
+				),
+			),
+		);
+
+		$result = $this->interpreter->interpret( 'which forms need for this state?', $state );
+		$reply  = (string) ( $result['question'] ?? '' );
+
+		$this->assertStringContainsString( 'UD-4', $reply );
+		$this->assertStringContainsString( 'Final Papers & Calendar', $reply );
+		$this->assertStringNotContainsString( 'UD-1', $reply );
+		$this->assertStringNotContainsString( 'UD-2', $reply );
+
+		$summary = (string) ( $result['state']['conversation_summary'] ?? '' );
+		$this->assertStringNotContainsString( 'Case Summary', $summary );
+		$this->assertStringNotContainsString( 'Current procedural stage', $summary );
+	}
+
+	/**
+	 * Conversation summary should not grow a nested Case Summary block each turn.
+	 */
+	public function test_conversation_summary_stays_fact_notes_only(): void {
+		$state = array(
+			'workflow'              => 'uncontested_divorce_children_nyc',
+			'conversation_summary'  => "Case Summary\nCurrent procedural stage: Service\n\nConversation notes: county: Queens",
+			'case_profile'          => array(
+				'workflow'        => 'uncontested_divorce_children_nyc',
+				'procedural_node' => 'NODE_1002_SERVICE_COMPLETE',
+			),
+			'facts'                 => array(
+				'spouse_agrees' => array( 'value' => true, 'confidence' => 0.95, 'confirmed' => true ),
+				'child_count'   => array( 'value' => 1, 'confidence' => 0.95, 'confirmed' => true ),
+				'county'        => array( 'value' => 'Queens', 'confidence' => 0.95, 'confirmed' => true ),
+			),
+		);
+
+		$result  = $this->interpreter->interpret( 'thanks', $state );
+		$summary = (string) ( $result['state']['conversation_summary'] ?? '' );
+
+		$this->assertStringNotContainsString( 'Case Summary', $summary );
+		$this->assertStringContainsString( 'county: Queens', $summary );
+	}
+
+	/**
+	 * Procedural questions after workflow resolve should not trigger team handoff.
+	 */
+	public function test_guidance_question_after_workflow_does_not_escalate(): void {
+		$state = array(
+			'workflow'              => 'uncontested_divorce_children_nyc',
+			'pending_field'         => 'marriage_date',
+			'clarification_attempts' => array( 'marriage_date' => 3 ),
+			'case_profile'          => array(
+				'workflow'                 => 'uncontested_divorce_children_nyc',
+				'guidance_brief_delivered' => true,
+				'procedural_node'          => 'NODE_1010_JUDGMENT',
+			),
+			'facts'                 => array(
+				'spouse_agrees' => array( 'value' => true, 'confidence' => 0.95, 'confirmed' => true ),
+				'child_count'   => array( 'value' => 1, 'confidence' => 0.95, 'confirmed' => true ),
+				'county'        => array( 'value' => 'Queens', 'confidence' => 0.95, 'confirmed' => true ),
+			),
+		);
+
+		$result = $this->interpreter->interpret( 'what need to do now?', $state );
+
+		$this->assertNotSame( 'needs_review', $result['next_action'] ?? '' );
+		$this->assertFalse( $result['needs_review'] ?? false );
+		$this->assertStringNotContainsString( 'team member may follow up', (string) ( $result['question'] ?? '' ) );
+		$this->assertStringContainsString( 'final submission', strtolower( (string) ( $result['question'] ?? '' ) ) );
+	}
+
+	/**
+	 * Filed uncontested case with settlement should advance to service guidance.
+	 */
+	public function test_filed_settlement_case_advances_to_service_guidance(): void {
+		$turn1 = $this->interpreter->interpret( 'I need to file for divorce in New York City' );
+
+		$result = $this->interpreter->interpret(
+			'We have one child under 21. We both agree to the divorce and already signed a settlement agreement. I filed the divorce papers in Brooklyn about two weeks ago.',
+			$turn1['state'] ?? array(),
+			array(
+				array( 'role' => 'user', 'content' => 'I need to file for divorce in New York City' ),
+				array( 'role' => 'assistant', 'content' => 'Do you have any children under 21?' ),
+			)
+		);
+
+		$reply = (string) ( $result['question'] ?? '' );
+
+		$this->assertSame( 'NODE_1002_SERVICE_COMPLETE', $result['case_profile']['procedural_node'] ?? '' );
+		$this->assertSame( 'service', $result['case_profile']['roadmap']['current_stage']['id'] ?? '' );
+		$this->assertStringNotContainsString( 'How a new divorce case usually starts', $reply );
+		$this->assertStringNotContainsString( 'UD-1', $reply );
+		$this->assertStringContainsString( 'serve', strtolower( $reply ) );
+		$this->assertTrue( $result['state']['facts']['active_divorce']['value'] ?? false );
+		$this->assertTrue( $result['state']['facts']['marital_property_resolved']['value'] ?? false );
 	}
 
 	/**

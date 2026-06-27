@@ -142,6 +142,8 @@ final class Routing_Engine {
 			$issue = $prior_issue;
 		}
 
+		$issue = $this->retain_primary_matter_issue( $issue, $prior_issue, $text );
+
 		$issue = $this->prefer_active_divorce_family_issue( $issue, $text, $facts );
 
 		$court = $this->court_resolver->resolve( $issue, $signals );
@@ -163,6 +165,8 @@ final class Routing_Engine {
 			$workflow   = $prior_workflow;
 			$confidence = max( $confidence, (float) $profile->workflow_confidence() );
 		}
+
+		$workflow = $this->retain_primary_matter_workflow( $workflow, $prior_workflow, $issue );
 
 		if ( null === $workflow || '' === $workflow ) {
 			if ( empty( $candidate_workflows ) && null !== $issue ) {
@@ -254,6 +258,41 @@ final class Routing_Engine {
 	}
 
 	/**
+	 * Keep divorce as the primary matter when follow-ups mention custody or support
+	 * as part of settlement — unless the user is starting a standalone Family Court case.
+	 *
+	 * @param string|null $issue       Newly resolved issue.
+	 * @param string|null $prior_issue Session issue.
+	 * @param string      $text        User message.
+	 * @return string|null
+	 */
+	private function retain_primary_matter_issue( ?string $issue, ?string $prior_issue, string $text ): ?string {
+		if ( null === $prior_issue || '' === $prior_issue ) {
+			return $issue;
+		}
+
+		if ( null === $issue || '' === $issue ) {
+			return $issue;
+		}
+
+		if ( 'divorce' !== $this->base_issue( $prior_issue ) ) {
+			return $issue;
+		}
+
+		$new_base = $this->base_issue( $issue );
+
+		if ( ! in_array( $new_base, array( 'custody', 'visitation', 'child_support' ), true ) ) {
+			return $issue;
+		}
+
+		if ( $this->message_seeks_standalone_family_matter( $text, $new_base ) ) {
+			return $issue;
+		}
+
+		return $prior_issue;
+	}
+
+	/**
 	 * When an active divorce is known, prefer the family-court issue the user is asking about
 	 * so routing_rules can redirect into the Supreme Court divorce workflow.
 	 *
@@ -278,5 +317,97 @@ final class Routing_Engine {
 		}
 
 		return $issue;
+	}
+
+	/**
+	 * Prevent a resolved divorce workflow from flipping to Family Court on ancillary keywords.
+	 *
+	 * @param string|null $workflow       Newly resolved workflow.
+	 * @param string|null $prior_workflow Session workflow.
+	 * @param string|null $issue          Retained issue.
+	 * @return string|null
+	 */
+	private function retain_primary_matter_workflow( ?string $workflow, ?string $prior_workflow, ?string $issue ): ?string {
+		if ( null === $prior_workflow || '' === $prior_workflow ) {
+			return $workflow;
+		}
+
+		if ( null === $issue || 'divorce' !== $this->base_issue( $issue ) ) {
+			return $workflow;
+		}
+
+		if ( ! str_contains( $prior_workflow, 'divorce' ) ) {
+			return $workflow;
+		}
+
+		if ( null === $workflow || '' === $workflow ) {
+			return $prior_workflow;
+		}
+
+		if ( str_contains( $workflow, 'divorce' ) ) {
+			return $workflow;
+		}
+
+		return $prior_workflow;
+	}
+
+	/**
+	 * Whether the user is explicitly seeking a standalone Family Court matter.
+	 *
+	 * @param string $text         User message.
+	 * @param string $family_issue Resolved family-court issue.
+	 * @return bool
+	 */
+	private function message_seeks_standalone_family_matter( string $text, string $family_issue ): bool {
+		$normalized = strtolower( trim( $text ) );
+
+		if ( '' === $normalized ) {
+			return false;
+		}
+
+		// Clarifying that no case is filed yet is part of divorce intake, not a pivot away from it.
+		if ( preg_match( '/\b(?:no|not)\s+(?:divorce\s+)?case\s+has\s+been\s+filed\b/', $normalized )
+			|| preg_match( '/\b(?:not|never)\s+filed\s+yet\b/', $normalized )
+			|| preg_match( '/\bnever\s+filed\b/', $normalized ) ) {
+			return false;
+		}
+
+		$standalone_phrases = array(
+			'only custody',
+			'just custody',
+			'custody only',
+			'only child support',
+			'only support',
+			'separate custody',
+			'family court custody',
+			'family court support',
+			'not divorce',
+			'without divorce',
+			'not getting divorced',
+			'without getting divorced',
+			'modify custody',
+			'change custody',
+			'petition for custody',
+			'file for custody',
+			'custody case',
+			'child support case',
+			'file for child support',
+		);
+
+		foreach ( $standalone_phrases as $phrase ) {
+			if ( str_contains( $normalized, $phrase ) ) {
+				return true;
+			}
+		}
+
+		if ( 'custody' === $family_issue && preg_match( '/\b(?:help|file|petition).{0,40}\bcustody\b/', $normalized ) ) {
+			return ! preg_match( '/\bdivorce\b/', $normalized );
+		}
+
+		if ( 'child_support' === $family_issue && preg_match( '/\b(?:help|file|petition).{0,40}\bchild support\b/', $normalized ) ) {
+			return ! preg_match( '/\bdivorce\b/', $normalized );
+		}
+
+		return false;
 	}
 }

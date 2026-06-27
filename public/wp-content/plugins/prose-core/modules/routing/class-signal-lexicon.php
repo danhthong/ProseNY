@@ -34,6 +34,8 @@ final class Signal_Lexicon {
 		'without children'              => array( 'fact' => 'children', 'value' => false ),
 		'agree on everything'           => array( 'fact' => 'spouse_agrees', 'value' => true ),
 		'reached an agreement'          => array( 'fact' => 'spouse_agrees', 'value' => true ),
+		'settlement agreement'          => array( 'fact' => 'marital_property_resolved', 'value' => true ),
+		'signed a settlement agreement' => array( 'fact' => 'marital_property_resolved', 'value' => true ),
 		'we settled during discovery'   => array( 'fact' => 'spouse_agrees', 'value' => true ),
 		'spouse agrees'                 => array( 'fact' => 'spouse_agrees', 'value' => true ),
 		'we both agree'                 => array( 'fact' => 'spouse_agrees', 'value' => true ),
@@ -61,6 +63,9 @@ final class Signal_Lexicon {
 		'divorce case'                  => array( 'fact' => 'active_divorce', 'value' => true ),
 		'already in a divorce'          => array( 'fact' => 'active_divorce', 'value' => true ),
 		'in a divorce'                  => array( 'fact' => 'active_divorce', 'value' => true ),
+		'filed the divorce papers'      => array( 'fact' => 'active_divorce', 'value' => true ),
+		'filed divorce papers'          => array( 'fact' => 'active_divorce', 'value' => true ),
+		'filed the papers'              => array( 'fact' => 'active_divorce', 'value' => true ),
 	);
 
 	/**
@@ -112,6 +117,15 @@ final class Signal_Lexicon {
 			if ( str_contains( $normalized, $cue ) ) {
 				$facts[ $mapping['fact'] ] = $mapping['value'];
 			}
+		}
+
+		if ( preg_match(
+			'/\b(?:no|not|never|hasn t|haven t|has not|have not|without)\s+(?:an?\s+)?(?:active\s+)?divorce(?:\s+case)?\b/',
+			$normalized
+		) || preg_match( '/\b(?:no|not)\s+(?:divorce\s+)?case\s+has\s+been\s+filed\b/', $normalized )
+			|| preg_match( '/\b(?:not|never)\s+filed\s+yet\b/', $normalized )
+			|| preg_match( '/\bnever\s+filed\b/', $normalized ) ) {
+			$facts['active_divorce'] = false;
 		}
 
 		if ( str_contains( $normalized, 'threatened' )

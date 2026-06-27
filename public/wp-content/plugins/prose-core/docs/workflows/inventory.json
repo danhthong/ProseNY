@@ -1,5 +1,5 @@
 {
-    "generated_at": "2026-06-19T06:46:08+00:00",
+    "generated_at": "2026-06-27T08:22:47+00:00",
     "total": 12,
     "supreme_court": 4,
     "family_court": 8,
@@ -107,7 +107,9 @@
                 "support order",
                 "support payments",
                 "pay child support",
-                "collect child support"
+                "collect child support",
+                "modify support",
+                "modify child support"
             ],
             "entry_questions": [
                 "Are you seeking child support?",
@@ -206,6 +208,9 @@
                 "contested divorce",
                 "divorce dispute",
                 "spouse will not agree",
+                "wife refuses",
+                "husband refuses",
+                "spouse refuses",
                 "divorce trial",
                 "matrimonial action"
             ],
@@ -241,6 +246,42 @@
                     "type": "string",
                     "required": true,
                     "question": "In which NYC county are you filing?"
+                },
+                {
+                    "key": "prior_court_cases",
+                    "type": "array",
+                    "required": false,
+                    "question": "Are there prior court cases involving you and your spouse?"
+                },
+                {
+                    "key": "domestic_violence_concerns",
+                    "type": "boolean",
+                    "required": false,
+                    "question": "Are there domestic violence or safety concerns?"
+                },
+                {
+                    "key": "support_dispute",
+                    "type": "boolean",
+                    "required": false,
+                    "question": "Is child or spousal support disputed?"
+                },
+                {
+                    "key": "custody_dispute",
+                    "type": "boolean",
+                    "required": false,
+                    "question": "Is custody disputed?"
+                },
+                {
+                    "key": "residency_qualification",
+                    "type": "string",
+                    "required": true,
+                    "question": "Which New York residency basis applies (1-year state, 2-year state, or other)?"
+                },
+                {
+                    "key": "marriage_location",
+                    "type": "string",
+                    "required": true,
+                    "question": "Where were you married? (NYC borough or city and state \u2014 e.g. Queens, NY)"
                 },
                 {
                     "key": "marriage_date",
@@ -441,7 +482,10 @@
                 "default divorce",
                 "no answer",
                 "defendant did not respond",
-                "default judgment divorce"
+                "default judgment divorce",
+                "never responded",
+                "did not respond",
+                "spouse never responded"
             ],
             "entry_questions": [
                 "Do you want a divorce?",
@@ -465,6 +509,42 @@
                     "type": "string",
                     "required": true,
                     "question": "In which NYC county are you filing?"
+                },
+                {
+                    "key": "prior_court_cases",
+                    "type": "array",
+                    "required": false,
+                    "question": "Are there prior court cases involving you and your spouse?"
+                },
+                {
+                    "key": "domestic_violence_concerns",
+                    "type": "boolean",
+                    "required": false,
+                    "question": "Are there domestic violence or safety concerns?"
+                },
+                {
+                    "key": "support_dispute",
+                    "type": "boolean",
+                    "required": false,
+                    "question": "Is child or spousal support disputed?"
+                },
+                {
+                    "key": "custody_dispute",
+                    "type": "boolean",
+                    "required": false,
+                    "question": "Is custody disputed?"
+                },
+                {
+                    "key": "residency_qualification",
+                    "type": "string",
+                    "required": true,
+                    "question": "Which New York residency basis applies (1-year state, 2-year state, or other)?"
+                },
+                {
+                    "key": "marriage_location",
+                    "type": "string",
+                    "required": true,
+                    "question": "Where were you married? (NYC borough or city and state \u2014 e.g. Queens, NY)"
                 },
                 {
                     "key": "marriage_date",
@@ -545,7 +625,10 @@
                 "domestic violence",
                 "abuse",
                 "harassment",
-                "assault by family member"
+                "assault by family member",
+                "afraid of my spouse",
+                "afraid of",
+                "afraid"
             ],
             "entry_questions": [
                 "Has a family or household member harmed or threatened you?",
@@ -902,9 +985,12 @@
                 "divorce with children",
                 "uncontested divorce with children",
                 "divorce and custody",
-                "divorce and child support"
+                "divorce and child support",
+                "settlement agreement",
+                "already filed divorce"
             ],
             "entry_questions": [
+                "Has a divorce case already been started in a New York court?",
                 "Do you want a divorce?",
                 "Does your spouse agree to the divorce?",
                 "Do you have children under 21?"
@@ -925,10 +1011,67 @@
             ],
             "required_fields": [
                 {
+                    "key": "existing_case",
+                    "type": "boolean",
+                    "required": false,
+                    "question": "Has a divorce case already been started in court?"
+                },
+                {
+                    "key": "case_status",
+                    "type": "string",
+                    "required": false,
+                    "enum": [
+                        "NOT_STARTED",
+                        "FILED",
+                        "SERVED",
+                        "READY_FOR_CALENDAR",
+                        "UNDER_REVIEW",
+                        "JUDGMENT_ENTERED",
+                        "CLOSED"
+                    ],
+                    "question": "What is the current status of your divorce case?"
+                },
+                {
                     "key": "county",
                     "type": "string",
                     "required": true,
                     "question": "In which NYC county are you filing?"
+                },
+                {
+                    "key": "prior_court_cases",
+                    "type": "array",
+                    "required": false,
+                    "question": "Are there prior court cases involving you and your spouse?"
+                },
+                {
+                    "key": "domestic_violence_concerns",
+                    "type": "boolean",
+                    "required": false,
+                    "question": "Are there domestic violence or safety concerns?"
+                },
+                {
+                    "key": "support_dispute",
+                    "type": "boolean",
+                    "required": false,
+                    "question": "Is child or spousal support disputed?"
+                },
+                {
+                    "key": "custody_dispute",
+                    "type": "boolean",
+                    "required": false,
+                    "question": "Is custody disputed?"
+                },
+                {
+                    "key": "residency_qualification",
+                    "type": "string",
+                    "required": true,
+                    "question": "Which New York residency basis applies (1-year state, 2-year state, or other)?"
+                },
+                {
+                    "key": "marriage_location",
+                    "type": "string",
+                    "required": true,
+                    "question": "Where were you married? (NYC borough or city and state \u2014 e.g. Queens, NY)"
                 },
                 {
                     "key": "marriage_date",
@@ -1086,6 +1229,42 @@
                     "question": "In which NYC county are you filing?"
                 },
                 {
+                    "key": "prior_court_cases",
+                    "type": "array",
+                    "required": false,
+                    "question": "Are there prior court cases involving you and your spouse?"
+                },
+                {
+                    "key": "domestic_violence_concerns",
+                    "type": "boolean",
+                    "required": false,
+                    "question": "Are there domestic violence or safety concerns?"
+                },
+                {
+                    "key": "support_dispute",
+                    "type": "boolean",
+                    "required": false,
+                    "question": "Is child or spousal support disputed?"
+                },
+                {
+                    "key": "custody_dispute",
+                    "type": "boolean",
+                    "required": false,
+                    "question": "Is custody disputed?"
+                },
+                {
+                    "key": "residency_qualification",
+                    "type": "string",
+                    "required": true,
+                    "question": "Which New York residency basis applies (1-year state, 2-year state, or other)?"
+                },
+                {
+                    "key": "marriage_location",
+                    "type": "string",
+                    "required": true,
+                    "question": "Where were you married? (NYC borough or city and state \u2014 e.g. Queens, NY)"
+                },
+                {
                     "key": "marriage_date",
                     "type": "date",
                     "required": true,
@@ -1142,7 +1321,8 @@
                 "UD-13",
                 "UD-11",
                 "UD-14",
-                "UD-1a"
+                "UD-1a",
+                "AUTO-ORDERS"
             ],
             "supporting_documents": [
                 "marriage_certificate",

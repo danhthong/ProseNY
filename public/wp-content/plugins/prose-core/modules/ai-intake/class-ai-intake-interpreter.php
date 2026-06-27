@@ -9,7 +9,9 @@ namespace ProSe\Core\Ai_Intake;
 
 use ProSe\Core\Guidance\Filing_Guidance_Brief_Resolver;
 use ProSe\Core\Guidance\Procedural_Roadmap_Presenter;
+use ProSe\Core\Intake\Case_Summary_Presenter;
 use ProSe\Core\Intake\Completion_Calculator;
+use ProSe\Core\Intake\Procedural_State_Inferrer;
 use ProSe\Core\Intake\Document_Request_Detector;
 use ProSe\Core\Procedural\Procedural_Navigator;
 use ProSe\Core\Search\Knowledge_Context_Provider;
@@ -130,6 +132,13 @@ final class AI_Intake_Interpreter {
 	private Knowledge_Context_Provider $knowledge_context;
 
 	/**
+	 * Procedural state inferrer.
+	 *
+	 * @var Procedural_State_Inferrer
+	 */
+	private Procedural_State_Inferrer $procedural_state;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Ai_Provider_Interface|null      $provider         Provider override.
@@ -178,6 +187,7 @@ final class AI_Intake_Interpreter {
 		$this->documents       = $documents ?? new Document_Request_Detector();
 		$this->roadmap_presenter = $roadmap_presenter ?? new Procedural_Roadmap_Presenter();
 		$this->knowledge_context = $knowledge_context ?? new Knowledge_Context_Provider();
+		$this->procedural_state  = new Procedural_State_Inferrer();
 	}
 
 	/**
@@ -198,12 +208,22 @@ final class AI_Intake_Interpreter {
 		$user_context = $this->resolve_user_context( $state );
 		$this->apply_logged_in_user_facts( $intake, $user_context );
 
+		$case_profile    = is_array( $state['case_profile'] ?? null ) ? $state['case_profile'] : array();
+		$procedural_node = trim( (string) ( $case_profile['procedural_node'] ?? '' ) );
+
 		if ( '' === $intake->conversation_id() ) {
 			$intake->set_conversation_id( $this->generate_conversation_id() );
 		}
 
 		if ( '' === $intake->conversation_summary() ) {
 			$intake->set_conversation_summary( $this->memory->fallback_summary( $intake ) );
+		} else {
+			$summary_presenter = new Case_Summary_Presenter();
+			$conversation_notes = $summary_presenter->extract_conversation_notes( $intake->conversation_summary() );
+
+			if ( $conversation_notes !== $intake->conversation_summary() ) {
+				$intake->set_conversation_summary( $conversation_notes );
+			}
 		}
 
 		$matter_switch = new \ProSe\Core\Intake\Matter_Switch();
@@ -227,13 +247,33 @@ final class AI_Intake_Interpreter {
 			}
 		}
 
+		if ( $this->is_stage_advance_request( $message ) ) {
+			$advance = $this->attempt_stage_advance( $intake, $case_profile, $procedural_node );
+
+			if ( null !== $advance ) {
+				return $advance;
+			}
+		}
+
 		// Direct path: the user wants blank forms and does not want to answer
 		// intake questions. Blank forms need no facts — only which packet/forms.
 		// The AI never decides forms here; routing and the forms catalog do.
 		$direct = $this->detect_direct_request( $message );
 
 		if ( ! empty( $direct['codes'] ) ) {
-			$download = $this->merge_forms( $direct['codes'] );
+			if ( null === $intake->workflow() || '' === $intake->workflow() ) {
+				$this->fields_provider->resolve( $intake, $message );
+			}
+
+			$workflow_for_forms = $intake->workflow();
+			$allowed_codes      = $this->filter_form_codes_for_workflow( $direct['codes'], $workflow_for_forms );
+
+			if ( null !== $workflow_for_forms && '' !== $workflow_for_forms && empty( $allowed_codes ) ) {
+				return $this->build_mismatched_forms_result( $intake, $direct['codes'], $workflow_for_forms );
+			}
+
+			$codes_to_merge = ! empty( $allowed_codes ) ? $allowed_codes : $direct['codes'];
+			$download       = $this->merge_forms( $codes_to_merge );
 
 			if ( ! empty( $download['success'] ) ) {
 				return $this->build_direct_forms_result( $intake, $download );
@@ -289,8 +329,13 @@ final class AI_Intake_Interpreter {
 			$was_complete = empty( $missing_pre ) && null !== $workflow_pre && '' !== $workflow_pre;
 		}
 
+		$this->apply_supplemental_case_state( $message, $intake, $procedural_node, $workflow_pre );
+		$resolved_pre = $this->fields_provider->resolve( $intake, $message );
+		$missing_pre  = $this->fields_provider->missing_prioritized( $resolved_pre['fields'], $intake );
+		$workflow_pre = $intake->workflow();
+
 		$missing_ai   = $this->conversation_missing( $missing_pre, $workflow_pre );
-		$stage_pre    = $this->stage_context( $workflow_pre, $intake, null !== $workflow_pre && '' !== $workflow_pre );
+		$stage_pre    = $this->stage_context( $workflow_pre, $intake, null !== $workflow_pre && '' !== $workflow_pre, $procedural_node );
 		$brief_pre    = $this->resolve_filing_brief( $workflow_pre, $intake, $stage_pre );
 		$brief_sent   = ! empty( $state['case_profile']['guidance_brief_delivered'] );
 
@@ -311,6 +356,23 @@ final class AI_Intake_Interpreter {
 			)
 		);
 
+		$case_profile_for_summary = is_array( $state['case_profile'] ?? null ) ? $state['case_profile'] : array();
+		$roadmap_for_summary      = is_array( $case_profile_for_summary['roadmap'] ?? null ) ? $case_profile_for_summary['roadmap'] : $roadmap_pre;
+		$summary_presenter        = new Case_Summary_Presenter();
+		$case_summary             = $summary_presenter->build(
+			array(
+				'workflow'        => (string) ( $workflow_pre ?? '' ),
+				'facts'           => $intake->plain_facts(),
+				'stage_context'   => $stage_pre,
+				'roadmap'         => $roadmap_for_summary,
+				'procedural_node' => $procedural_node,
+				'completion'      => $completion_pre,
+				'court'           => (string) ( $intake->court() ?? $case_profile_for_summary['court'] ?? '' ),
+				'issue'           => (string) ( $intake->issue() ?? $case_profile_for_summary['issue'] ?? '' ),
+			)
+		);
+		$conversation_notes       = $memory_ctx['summary'];
+
 		// --- Single conversational OpenAI call: extract facts + write reply ---
 		$scope_note = isset( $state['scope_note'] ) && is_string( $state['scope_note'] ) ? trim( $state['scope_note'] ) : '';
 
@@ -325,7 +387,8 @@ final class AI_Intake_Interpreter {
 				'package'               => $this->package_context( $missing_ai, $completion_pre, $workflow_pre ),
 				'completion'            => $completion_pre,
 				'contradictions'        => $this->consistency->check( $intake ),
-				'summary'               => $memory_ctx['summary'],
+				'summary'               => $conversation_notes,
+				'case_summary'          => $case_summary,
 				'recent'                => $memory_ctx['recent'],
 				'scope_note'            => $scope_note,
 				'procedural_navigator'  => $this->procedural_navigator_context( $intake, $workflow_pre ),
@@ -342,6 +405,7 @@ final class AI_Intake_Interpreter {
 
 		$applied = $intake->merge_updates( $turn['updates'], $this->is_correction_message( $message ) );
 		$this->sync_child_facts( $intake );
+		$this->apply_supplemental_case_state( $message, $intake, $procedural_node );
 
 		// --- Deterministic post-resolve with the new facts (authoritative) ---
 		$resolved       = $this->fields_provider->resolve( $intake, $message );
@@ -357,7 +421,7 @@ final class AI_Intake_Interpreter {
 		$reply        = trim( (string) $turn['reply'] );
 		$workflow     = $intake->workflow();
 		$has_workflow = null !== $workflow && '' !== $workflow;
-		$stage_ctx    = $this->stage_context( $workflow, $intake, $has_workflow );
+		$stage_ctx    = $this->stage_context( $workflow, $intake, $has_workflow, $procedural_node );
 		$filing_brief = $this->resolve_filing_brief( $workflow, $intake, $stage_ctx );
 		$brief_extra  = array();
 		$account_reply = $this->build_account_meta_reply( $message, $user_context, $intake );
@@ -372,18 +436,26 @@ final class AI_Intake_Interpreter {
 			$brief_sent,
 			$message,
 			! empty( $stage_ctx['forms_visible'] ),
+			$stage_ctx,
+			$intake,
 			$brief_extra
 		);
+		$reply        = $this->reconcile_stale_commencement_brief( $reply, $stage_ctx, $intake->plain_facts(), $message );
+		$reply        = $this->reconcile_case_state_statement_reply( $reply, $stage_ctx, $intake->plain_facts(), $message );
+		$reply        = $this->reconcile_stage_forms_reply( $message, $reply, $stage_ctx, $workflow );
+		$reply        = $this->reconcile_procedural_guidance_reply( $message, $reply, $stage_ctx, $has_workflow );
 		$reply        = $this->reconcile_reply_after_intake( $reply, $applied, $missing );
 
 		if ( ! User_Intake_Context::message_asks_about_account( $message ) ) {
 			$reply = $this->reconcile_reply_for_logged_in_user( $reply, $user_context, $intake );
 		}
 
-		// --- Escalation safety net (repeated genuine uncertainty) ---
-		$escalation = $this->escalation->detect( $message, $intake, $turn['raw_confidence'] );
+		// --- Escalation safety net (repeated genuine uncertainty during routing only) ---
+		$escalation = $this->escalation->detect( $message, $intake, $turn['raw_confidence'], $has_workflow );
 
 		if ( $escalation['needs_review'] ) {
+			$handoff = __( 'We need a little more help with your intake. A team member may follow up.', 'prose-core' );
+
 			return $this->build_result(
 				$intake,
 				$applied,
@@ -392,7 +464,7 @@ final class AI_Intake_Interpreter {
 				array(),
 				'needs_review',
 				'needs_review',
-				'' !== $reply ? $reply : __( 'Thanks for sharing. A member of our team can help you from here.', 'prose-core' ),
+				$handoff,
 				$turn['raw_confidence'],
 				true,
 				$completion_pct,
@@ -411,7 +483,13 @@ final class AI_Intake_Interpreter {
 			}
 		}
 
-		$pending_hint = ! empty( $missing ) ? (string) $missing[0]['field'] : '';
+		$pending_hint = '';
+
+		if ( ! $has_workflow && ! empty( $missing ) ) {
+			$pending_hint = (string) $missing[0]['field'];
+		} elseif ( $has_workflow ) {
+			$intake->set_pending_field( '' );
+		}
 		$next_action  = ! empty( $brief_extra['guidance_brief_delivered'] ) ? 'guidance' : 'ask_question';
 		$intent       = ! empty( $brief_extra['guidance_brief_delivered'] ) ? 'guidance' : 'gathering';
 
@@ -447,7 +525,13 @@ final class AI_Intake_Interpreter {
 			false,
 			$completion_pct,
 			$pending_hint,
-			array_merge( $brief_extra, $roadmap_extra )
+			array_merge(
+				$brief_extra,
+				$roadmap_extra,
+				array(
+					'procedural_node' => (string) ( $stage_ctx['procedural_node'] ?? $procedural_node ),
+				)
+			)
 		);
 
 		$result['roadmap_changed'] = ! empty( $roadmap_resolution['changed'] );
@@ -489,7 +573,7 @@ final class AI_Intake_Interpreter {
 		$stage_context = null;
 
 		if ( null !== $intake ) {
-			$stage_context = $this->stage_context( $workflow, $intake, $complete );
+			$stage_context = $this->stage_context( $workflow, $intake, $complete, '' );
 		}
 
 		return array(
@@ -512,7 +596,7 @@ final class AI_Intake_Interpreter {
 	 * @param bool         $complete Whether intake is complete.
 	 * @return array<string, mixed>
 	 */
-	private function stage_context( ?string $workflow, Intake_State $intake, bool $complete ): array {
+	private function stage_context( ?string $workflow, Intake_State $intake, bool $complete, string $current_node = '' ): array {
 		if ( null === $workflow || '' === $workflow ) {
 			return array(
 				'forms_visible' => false,
@@ -525,6 +609,7 @@ final class AI_Intake_Interpreter {
 				'facts'           => $intake->plain_facts(),
 				'intake_complete' => $complete || ( null !== $workflow && '' !== $workflow ),
 				'issue'           => (string) ( $intake->plain_facts()['issue'] ?? 'divorce' ),
+				'current_node'    => $current_node,
 			)
 		);
 	}
@@ -572,7 +657,7 @@ final class AI_Intake_Interpreter {
 			'intake_complete'       => empty( $missing ) && null !== $workflow && '' !== $workflow,
 			'candidate_workflows'   => $candidates,
 			'routing_status'        => (string) ( $resolved['routing_status'] ?? '' ),
-			'procedural_node'       => (string) ( $stage_ctx['current_stage']['id'] ?? '' ),
+			'procedural_node'       => (string) ( $stage_ctx['procedural_node'] ?? $stage_ctx['current_stage']['id'] ?? '' ),
 		);
 	}
 
@@ -696,6 +781,153 @@ final class AI_Intake_Interpreter {
 		);
 
 		return $intake->merge_updates( $processed['updates'], $this->is_correction_message( $message ) );
+	}
+
+	/**
+	 * Merge lexicon cues and advance procedural node from case-state statements.
+	 *
+	 * @param string       $message         User message.
+	 * @param Intake_State $intake          Intake state.
+	 * @param string       $procedural_node Current node (updated by reference).
+	 * @param string|null  $workflow        Workflow key hint.
+	 * @return void
+	 */
+	private function apply_supplemental_case_state(
+		string $message,
+		Intake_State $intake,
+		string &$procedural_node,
+		?string $workflow = null
+	): void {
+		$plain   = $intake->plain_facts();
+		$updates = $this->procedural_state->supplemental_fact_updates( $message, $plain );
+
+		if ( ! empty( $updates ) ) {
+			$intake->merge_updates( $updates, $this->is_correction_message( $message ) );
+			$this->sync_child_facts( $intake );
+			$plain = $intake->plain_facts();
+		}
+
+		$workflow = null !== $workflow ? trim( $workflow ) : trim( (string) ( $intake->workflow() ?? '' ) );
+
+		if ( '' === $workflow ) {
+			return;
+		}
+
+		$procedural_node = $this->procedural_state->infer_procedural_node(
+			$workflow,
+			$procedural_node,
+			$plain,
+			$message
+		);
+	}
+
+	/**
+	 * Replace stale commencement filing briefs when the case is already underway.
+	 *
+	 * @param string               $reply     Assistant reply.
+	 * @param array<string, mixed> $stage_ctx Stage context.
+	 * @param array<string, mixed> $facts     Plain facts.
+	 * @param string               $message   User message.
+	 * @return string
+	 */
+	private function reconcile_stale_commencement_brief(
+		string $reply,
+		array $stage_ctx,
+		array $facts,
+		string $message
+	): string {
+		$reply = trim( $reply );
+
+		if ( '' === $reply || ! $this->procedural_state->case_already_filed( $facts, $message ) ) {
+			return $reply;
+		}
+
+		$stage_id = sanitize_key( (string) ( $stage_ctx['current_stage']['id'] ?? '' ) );
+
+		if ( 'commencement' === $stage_id ) {
+			return $reply;
+		}
+
+		$reply_lc = strtolower( $reply );
+
+		foreach ( array(
+			'how a new divorce case usually starts',
+			'summons with notice (form ud-1)',
+			'option 1 — summons with notice',
+			'option 1 - summons with notice',
+			'verified complaint (ud-2)',
+		) as $marker ) {
+			if ( str_contains( $reply_lc, $marker ) ) {
+				$next = trim( (string) ( $stage_ctx['next_action']['message'] ?? '' ) );
+
+				return '' !== $next ? $next : $reply;
+			}
+		}
+
+		return $reply;
+	}
+
+	/**
+	 * @param string $reply Assistant reply.
+	 * @return bool
+	 */
+	private function reply_contains_commencement_brief( string $reply ): bool {
+		$reply_lc = strtolower( $reply );
+
+		foreach ( array(
+			'how a new divorce case usually starts',
+			'summons with notice (form ud-1)',
+			'verified complaint (ud-2)',
+		) as $marker ) {
+			if ( str_contains( $reply_lc, $marker ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * When the user states the case is already filed, answer with the current stage guidance.
+	 *
+	 * @param string               $reply     Assistant reply.
+	 * @param array<string, mixed> $stage_ctx Stage context.
+	 * @param array<string, mixed> $facts     Plain facts.
+	 * @param string               $message   User message.
+	 * @return string
+	 */
+	private function reconcile_case_state_statement_reply(
+		string $reply,
+		array $stage_ctx,
+		array $facts,
+		string $message
+	): string {
+		if ( ! $this->procedural_state->case_already_filed( $facts, $message ) ) {
+			return $reply;
+		}
+
+		if ( ! $this->reply_is_generic_gathering_prompt( $reply )
+			&& ! $this->reply_contains_commencement_brief( $reply ) ) {
+			return $reply;
+		}
+
+		$next = trim( (string) ( $stage_ctx['next_action']['message'] ?? '' ) );
+
+		if ( '' === $next ) {
+			return $reply;
+		}
+
+		$stage_title = trim( (string) ( $stage_ctx['current_stage']['title'] ?? '' ) );
+		$lead        = __( 'Thanks for sharing those details.', 'prose-core' ) . ' '
+			. __( 'Because you have already filed the divorce papers, the case is now in the service stage.', 'prose-core' );
+
+		if ( '' !== $stage_title ) {
+			/* translators: %s: procedural stage title. */
+			$lead = __( 'Thanks for sharing those details.', 'prose-core' ) . ' '
+				. sprintf( __( 'Your case appears to be at the %s stage.', 'prose-core' ), $stage_title );
+		}
+
+		return $lead . ' ' . $next;
 	}
 
 	/**
@@ -1160,6 +1392,8 @@ final class AI_Intake_Interpreter {
 	 * @param bool                 $already_sent  Brief already delivered.
 	 * @param string               $message       User message.
 	 * @param bool                 $forms_visible Forms are visible.
+	 * @param array<string, mixed> $stage_ctx     Current stage context.
+	 * @param Intake_State         $intake        Intake state.
 	 * @param array<string, mixed> $profile_extra Case profile extras (by reference).
 	 * @return string
 	 */
@@ -1169,6 +1403,8 @@ final class AI_Intake_Interpreter {
 		bool $already_sent,
 		string $message,
 		bool $forms_visible,
+		array $stage_ctx,
+		Intake_State $intake,
 		array &$profile_extra
 	): string {
 		if ( ! $forms_visible || ! is_array( $brief ) ) {
@@ -1176,6 +1412,29 @@ final class AI_Intake_Interpreter {
 		}
 
 		if ( User_Intake_Context::message_asks_about_account( $message ) ) {
+			return $reply;
+		}
+
+		if ( $this->message_asks_current_stage_forms( $message ) ) {
+			return $reply;
+		}
+
+		if ( $this->procedural_state->case_already_filed( $intake->plain_facts(), $message ) ) {
+			if ( '' === trim( $reply ) ) {
+				$profile_extra['guidance_brief_delivered'] = true;
+				$next                                      = trim( (string) ( $stage_ctx['next_action']['message'] ?? '' ) );
+
+				if ( '' !== $next ) {
+					return $next;
+				}
+			}
+
+			return $reply;
+		}
+
+		$stage_id = sanitize_key( (string) ( $stage_ctx['current_stage']['id'] ?? '' ) );
+
+		if ( 'commencement' !== $stage_id && '' !== $stage_id ) {
 			return $reply;
 		}
 
@@ -1197,6 +1456,201 @@ final class AI_Intake_Interpreter {
 		}
 
 		return $reply;
+	}
+
+	/**
+	 * Whether the user is asking which forms apply at the current procedural stage.
+	 *
+	 * @param string $message User message.
+	 * @return bool
+	 */
+	private function message_asks_current_stage_forms( string $message ): bool {
+		$text = strtolower( trim( $message ) );
+
+		foreach ( array(
+			'which form',
+			'what form',
+			'which forms',
+			'what forms',
+			'forms for this stage',
+			'forms for this step',
+			'forms for this state',
+			'forms do i need',
+			'forms need for',
+			'forms at this stage',
+		) as $phrase ) {
+			if ( str_contains( $text, $phrase ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Replace commencement or empty replies when the user asks about current-stage forms.
+	 *
+	 * @param string               $message   User message.
+	 * @param string               $reply     Model reply.
+	 * @param array<string, mixed> $stage_ctx Stage context.
+	 * @param string|null          $workflow  Workflow key.
+	 * @return string
+	 */
+	private function reconcile_stage_forms_reply( string $message, string $reply, array $stage_ctx, ?string $workflow ): string {
+		if ( ! $this->message_asks_current_stage_forms( $message ) ) {
+			return $reply;
+		}
+
+		if ( empty( $stage_ctx['forms_visible'] ) ) {
+			return $reply;
+		}
+
+		$forms = (array) ( $stage_ctx['stage_forms'] ?? array() );
+
+		if ( empty( $forms ) ) {
+			return $reply;
+		}
+
+		$stage_id = sanitize_key( (string) ( $stage_ctx['current_stage']['id'] ?? '' ) );
+		$reply_lc = strtolower( $reply );
+
+		$mentions_wrong_stage_forms = 'commencement' !== $stage_id && (
+			str_contains( $reply_lc, 'ud-1' )
+			|| str_contains( $reply_lc, 'ud-2' )
+			|| str_contains( $reply_lc, 'summons with notice' )
+		);
+
+		if ( ! $mentions_wrong_stage_forms && strlen( $reply ) >= 200 && $this->reply_mentions_current_forms( $reply, $forms ) ) {
+			return $reply;
+		}
+
+		unset( $workflow );
+
+		return $this->format_stage_forms_reply( $stage_ctx );
+	}
+
+	/**
+	 * @param string                             $reply Assistant reply.
+	 * @param array<int, array<string, mixed>>   $forms Stage forms.
+	 * @return bool
+	 */
+	private function reply_mentions_current_forms( string $reply, array $forms ): bool {
+		$reply_lc = strtolower( $reply );
+
+		foreach ( $forms as $form ) {
+			$code = strtolower( trim( (string) ( $form['code'] ?? '' ) ) );
+
+			if ( '' !== $code && str_contains( $reply_lc, $code ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Deterministic form list for the user's current procedural stage.
+	 *
+	 * @param array<string, mixed> $stage_ctx Stage context.
+	 * @return string
+	 */
+	private function format_stage_forms_reply( array $stage_ctx ): string {
+		$stage_id = sanitize_key( (string) ( $stage_ctx['current_stage']['id'] ?? '' ) );
+
+		if ( 'calendar' === $stage_id ) {
+			return $this->format_calendar_stage_advance_message( $stage_ctx );
+		}
+
+		$title = trim( (string) ( $stage_ctx['current_stage']['title'] ?? '' ) );
+
+		if ( '' === $title ) {
+			$title = ucwords( str_replace( '_', ' ', $stage_id ) );
+		}
+
+		$message = sprintf(
+			/* translators: %s: procedural stage title. */
+			__( 'For the %s stage, typical forms may include:', 'prose-core' ),
+			$title
+		);
+
+		$form_lines = array();
+
+		foreach ( (array) ( $stage_ctx['stage_forms'] ?? array() ) as $form ) {
+			$code = trim( (string) ( $form['code'] ?? '' ) );
+
+			if ( '' === $code ) {
+				continue;
+			}
+
+			$form_title   = trim( (string) ( $form['title'] ?? $code ) );
+			$form_lines[] = '• ' . $code . ' — ' . $form_title;
+		}
+
+		if ( ! empty( $form_lines ) ) {
+			$message .= "\n\n" . implode( "\n", $form_lines );
+		}
+
+		$message .= "\n\n" . __( 'Informational guidance only — not legal advice.', 'prose-core' );
+
+		return $message;
+	}
+
+	/**
+	 * Answer next-step questions from stage context when workflow is resolved.
+	 *
+	 * @param string               $message      User message.
+	 * @param string               $reply        Model reply.
+	 * @param array<string, mixed> $stage_ctx    Stage context.
+	 * @param bool                 $has_workflow Workflow resolved.
+	 * @return string
+	 */
+	private function reconcile_procedural_guidance_reply(
+		string $message,
+		string $reply,
+		array $stage_ctx,
+		bool $has_workflow
+	): string {
+		if ( ! $has_workflow || ! $this->message_requests_guidance( $message ) ) {
+			return $reply;
+		}
+
+		if ( empty( $stage_ctx['forms_visible'] ) ) {
+			return $reply;
+		}
+
+		$next = trim( (string) ( $stage_ctx['next_action']['message'] ?? '' ) );
+
+		if ( '' === $next ) {
+			return $reply;
+		}
+
+		if ( $this->reply_is_generic_gathering_prompt( $reply ) || $this->reply_only_asks_optional_fields( $reply ) ) {
+			return $next;
+		}
+
+		return $reply;
+	}
+
+	/**
+	 * Whether the model returned a generic continue-intake prompt instead of guidance.
+	 *
+	 * @param string $reply Assistant reply.
+	 * @return bool
+	 */
+	private function reply_is_generic_gathering_prompt( string $reply ): bool {
+		$text = strtolower( trim( $reply ) );
+
+		foreach ( array(
+			'could you tell me a little more about your legal matter',
+			'could you tell me a bit more about your situation',
+			'tell me more about your situation',
+		) as $phrase ) {
+			if ( str_contains( $text, $phrase ) ) {
+				return true;
+			}
+		}
+
+		return strlen( $reply ) < 80;
 	}
 
 	/**
@@ -1227,6 +1681,11 @@ final class AI_Intake_Interpreter {
 			'how to file',
 			'what happens next',
 			'what do i do next',
+			'what do i need to do',
+			'what need to do',
+			'what should i do',
+			'what now',
+			'need to do now',
 			'next step',
 			'next steps',
 			'how to start',
@@ -1292,7 +1751,7 @@ final class AI_Intake_Interpreter {
 
 		$display = trim( (string) ( $user_context['display_name'] ?? '' ) );
 
-		if ( '' === $display ) {
+		if ( '' === $display || User_Intake_Context::is_placeholder_display_name( $display ) ) {
 			return;
 		}
 
@@ -1435,5 +1894,353 @@ final class AI_Intake_Interpreter {
 		}
 
 		return trim( implode( ' ', $kept ) );
+	}
+
+	/**
+	 * Whether the user is asking to advance within the current procedural workflow.
+	 *
+	 * @param string $message User message.
+	 * @return bool
+	 */
+	private function is_stage_advance_request( string $message ): bool {
+		$text = strtolower( trim( $message ) );
+
+		if ( '' === $text ) {
+			return false;
+		}
+
+		$patterns = array(
+			'/\b(?:move|go|advance|proceed|continue)\s+(?:to\s+)?(?:the\s+)?(?:next|new)\s+stage\b/',
+			'/\bnext\s+stage\b/',
+			'/\bnew\s+stage\b/',
+			'/\bmove\s+to\s+the\s+next\s+step\b/',
+		);
+
+		foreach ( $patterns as $pattern ) {
+			if ( preg_match( $pattern, $text ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Advance the procedural stage within the current workflow.
+	 *
+	 * @param Intake_State           $intake          Intake state.
+	 * @param array<string, mixed>   $case_profile    Case profile extras.
+	 * @param string                 $procedural_node Current procedural node.
+	 * @return array<string, mixed>|null
+	 */
+	private function attempt_stage_advance( Intake_State $intake, array $case_profile, string $procedural_node ): ?array {
+		$workflow = $intake->workflow();
+
+		if ( null === $workflow || '' === $workflow ) {
+			return null;
+		}
+
+		$presenter = new \ProSe\Core\Forms\Engine\Stage_Form_Presenter();
+		$facts     = $intake->plain_facts();
+		$stage_ctx = $presenter->present(
+			array(
+				'workflow'        => $workflow,
+				'facts'           => $facts,
+				'intake_complete'   => true,
+				'issue'           => (string) ( $intake->issue() ?? 'divorce' ),
+				'current_node'    => $procedural_node,
+			)
+		);
+
+		if ( empty( $stage_ctx['forms_visible'] ) ) {
+			$resolved   = $this->fields_provider->resolve( $intake, '' );
+			$missing    = $this->fields_provider->missing_prioritized( $resolved['fields'], $intake );
+			$completion = $this->completion->calculate(
+				$resolved['required_field_defs'],
+				$intake->plain_facts()
+			);
+
+			return $this->build_result(
+				$intake,
+				array(),
+				$missing,
+				array(),
+				array(),
+				'gathering',
+				'ask_question',
+				__( 'Complete the current intake details before advancing to the next procedural stage.', 'prose-core' ),
+				1.0,
+				false,
+				$completion,
+				! empty( $missing ) ? (string) $missing[0]['field'] : '',
+				array(
+					'procedural_node' => $procedural_node,
+				)
+			);
+		}
+
+		$current_stage = (string) ( $stage_ctx['current_stage']['id'] ?? '' );
+		$current_node  = (string) ( $stage_ctx['procedural_node'] ?? $procedural_node );
+
+		if ( '' === $current_stage ) {
+			return null;
+		}
+
+		$advanced_node = $presenter->advance_after_stage( $workflow, $current_node, $current_stage, $facts );
+
+		if ( $advanced_node === $current_node ) {
+			return $this->build_result(
+				$intake,
+				array(),
+				array(),
+				array(),
+				array(),
+				'guidance',
+				'guidance',
+				__( 'You are already at the latest available stage for your case. Complete the current step or tell me what you need next.', 'prose-core' ),
+				1.0,
+				false,
+				(int) ( $case_profile['progress'] ?? 0 ),
+				'',
+				array(
+					'procedural_node' => $current_node,
+				)
+			);
+		}
+
+		$next_ctx = $presenter->present(
+			array(
+				'workflow'        => $workflow,
+				'facts'           => $facts,
+				'intake_complete'   => true,
+				'issue'           => (string) ( $intake->issue() ?? 'divorce' ),
+				'current_node'    => $advanced_node,
+			)
+		);
+
+		$resolved   = $this->fields_provider->resolve( $intake, '' );
+		$missing    = $this->fields_provider->missing_prioritized( $resolved['fields'], $intake );
+		$completion = $this->completion->calculate(
+			$resolved['required_field_defs'],
+			$intake->plain_facts()
+		);
+
+		return $this->build_result(
+			$intake,
+			array(),
+			$missing,
+			array(),
+			array(),
+			'guidance',
+			'guidance',
+			$this->format_stage_advance_message( $next_ctx, $workflow ),
+			1.0,
+			false,
+			$completion,
+			! empty( $missing ) ? (string) $missing[0]['field'] : '',
+			array(
+				'procedural_node'          => $advanced_node,
+				'guidance_brief_delivered' => (bool) ( $case_profile['guidance_brief_delivered'] ?? false ),
+			)
+		);
+	}
+
+	/**
+	 * @param array<string, mixed> $stage_ctx Stage context.
+	 * @param string               $workflow  Workflow key.
+	 * @return string
+	 */
+	private function format_stage_advance_message( array $stage_ctx, string $workflow ): string {
+		$stage_id = sanitize_key( (string) ( $stage_ctx['current_stage']['id'] ?? '' ) );
+
+		if ( 'calendar' === $stage_id && $this->is_uncontested_divorce_workflow( $workflow ) ) {
+			return $this->format_calendar_stage_advance_message( $stage_ctx );
+		}
+
+		$title = trim( (string) ( $stage_ctx['current_stage']['title'] ?? '' ) );
+		$desc  = trim( (string) ( $stage_ctx['current_stage']['description'] ?? '' ) );
+
+		if ( '' === $title ) {
+			$title = ucwords( str_replace( '_', ' ', (string) ( $stage_ctx['current_stage']['id'] ?? 'next stage' ) ) );
+		}
+
+		$message = sprintf(
+			/* translators: %s: procedural stage title. */
+			__( 'Moving you to the %s stage.', 'prose-core' ),
+			$title
+		);
+
+		if ( '' !== $desc ) {
+			$message .= ' ' . $desc;
+		}
+
+		$form_lines = array();
+
+		foreach ( (array) ( $stage_ctx['stage_forms'] ?? array() ) as $form ) {
+			$code = trim( (string) ( $form['code'] ?? '' ) );
+
+			if ( '' === $code ) {
+				continue;
+			}
+
+			$form_title = trim( (string) ( $form['title'] ?? $code ) );
+			$form_lines[] = '• ' . $code . ' — ' . $form_title;
+		}
+
+		if ( ! empty( $form_lines ) ) {
+			$message .= "\n\n" . implode( "\n", $form_lines );
+		}
+
+		$message .= "\n\n" . __( 'Informational guidance only — not legal advice.', 'prose-core' );
+
+		return $message;
+	}
+
+	/**
+	 * Calendar-stage transition copy for NYC uncontested divorce workflows.
+	 *
+	 * @param array<string, mixed> $stage_ctx Stage context.
+	 * @return string
+	 */
+	private function format_calendar_stage_advance_message( array $stage_ctx ): string {
+		$lines   = array();
+		$lines[] = __( 'Final Papers & Calendar', 'prose-core' );
+		$lines[] = '';
+		$lines[] = __( 'You\'re ready to prepare the Final Papers that are submitted to the court for review before a judgment of divorce can be issued.', 'prose-core' );
+		$lines[] = '';
+		$lines[] = __( 'Based on the information you\'ve provided, the system will prepare the required final submission forms. Some forms are mandatory for every case, while others are included only if they apply to your circumstances (for example, if you have children, are requesting child support, or the marriage was performed by clergy).', 'prose-core' );
+		$lines[] = '';
+		$lines[] = __( 'Typical forms at this stage may include:', 'prose-core' );
+		$lines[] = '';
+
+		foreach ( (array) ( $stage_ctx['stage_forms'] ?? array() ) as $form ) {
+			$code = trim( (string) ( $form['code'] ?? '' ) );
+
+			if ( '' === $code ) {
+				continue;
+			}
+
+			$form_title = trim( (string) ( $form['title'] ?? $code ) );
+			$suffix     = $this->calendar_form_applicability_suffix( $code, ! empty( $form['required'] ) );
+			$lines[]    = '• ' . $code . ' — ' . $form_title . $suffix;
+		}
+
+		$lines[] = '';
+		$lines[] = __( 'Once these documents are completed and filed, the court can review your case and determine whether it is ready for a Judgment of Divorce.', 'prose-core' );
+		$lines[] = '';
+		$lines[] = __( 'Informational guidance only — not legal advice.', 'prose-core' );
+
+		return implode( "\n", $lines );
+	}
+
+	/**
+	 * @param string $code              Form code.
+	 * @param bool   $workflow_required Whether the workflow marks the form required.
+	 * @return string
+	 */
+	private function calendar_form_applicability_suffix( string $code, bool $workflow_required ): string {
+		if ( ! $workflow_required ) {
+			return ' ' . __( '(if applicable)', 'prose-core' );
+		}
+
+		$conditional_required = array(
+			'UD-4',
+			'UD-7',
+			'UD-8(1)',
+			'UD-8(2)',
+			'UD-8(3)',
+			'UD-8a',
+		);
+
+		foreach ( $conditional_required as $conditional_code ) {
+			if ( 0 === strcasecmp( $code, $conditional_code ) ) {
+				return ' ' . __( '(if applicable)', 'prose-core' );
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * @param string $workflow Workflow key.
+	 * @return bool
+	 */
+	private function is_uncontested_divorce_workflow( string $workflow ): bool {
+		return str_starts_with( $workflow, 'uncontested_divorce_' );
+	}
+
+	/**
+	 * @param array<int, string> $codes    Requested form codes.
+	 * @param string|null        $workflow Workflow key.
+	 * @return array<int, string>
+	 */
+	private function filter_form_codes_for_workflow( array $codes, ?string $workflow ): array {
+		if ( null === $workflow || '' === $workflow ) {
+			return $codes;
+		}
+
+		$allowed = array_map(
+			'strtoupper',
+			$this->form_codes_allowed_for_workflow( $workflow )
+		);
+
+		if ( empty( $allowed ) ) {
+			return array();
+		}
+
+		return array_values(
+			array_filter(
+				$codes,
+				static function ( string $code ) use ( $allowed ): bool {
+					return in_array( strtoupper( $code ), $allowed, true );
+				}
+			)
+		);
+	}
+
+	/**
+	 * @param string $workflow Workflow key.
+	 * @return array<int, string>
+	 */
+	private function form_codes_allowed_for_workflow( string $workflow ): array {
+		$definition = $this->workflows->by_key( $workflow );
+
+		if ( ! is_array( $definition ) ) {
+			return array();
+		}
+
+		return $this->workflows->required_form_codes( $definition );
+	}
+
+	/**
+	 * @param Intake_State         $intake   Intake state.
+	 * @param array<int, string>   $codes    Requested codes.
+	 * @param string               $workflow Current workflow.
+	 * @return array<string, mixed>
+	 */
+	private function build_mismatched_forms_result( Intake_State $intake, array $codes, string $workflow ): array {
+		$title = ucwords( str_replace( array( '_', '-' ), ' ', $workflow ) );
+		$title = trim( str_ireplace( array( ' Nyc', ' Ny' ), '', $title ) );
+
+		$message = sprintf(
+			/* translators: 1: comma-separated form codes, 2: human-readable workflow title. */
+			__( 'Those forms (%1$s) are not part of your current matter (%2$s). Tell me your filing county or use Get Documents for the forms tied to this case.', 'prose-core' ),
+			implode( ', ', $codes ),
+			$title
+		);
+
+		return $this->build_result(
+			$intake,
+			array(),
+			array(),
+			array(),
+			array(),
+			'request_forms',
+			'ask_question',
+			$message,
+			1.0,
+			false,
+			0
+		);
 	}
 }

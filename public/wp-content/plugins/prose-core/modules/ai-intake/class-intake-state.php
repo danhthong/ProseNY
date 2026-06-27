@@ -421,6 +421,20 @@ final class Intake_State {
 	}
 
 	/**
+	 * @return string|null
+	 */
+	public function issue(): ?string {
+		return $this->issue;
+	}
+
+	/**
+	 * @return string|null
+	 */
+	public function court(): ?string {
+		return $this->court;
+	}
+
+	/**
 	 * @param string|null $workflow Workflow key.
 	 * @return void
 	 */

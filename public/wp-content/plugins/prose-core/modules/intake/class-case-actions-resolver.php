@@ -106,6 +106,7 @@ final class Case_Actions_Resolver {
 		$workflow_resolved = ! empty( $routing_status['resolved'] );
 		$case_known        = $workflow_resolved || '' !== $issue || $this->has_case_signals( $facts );
 		$intake_complete   = $this->is_intake_complete( $workflow_resolved, $completion, $intent, $missing );
+		$procedural_node   = trim( (string) ( $case_profile['procedural_node'] ?? '' ) );
 		$stage_context     = $this->stage_presenter->present(
 			array(
 				'workflow'        => $workflow,
@@ -113,6 +114,7 @@ final class Case_Actions_Resolver {
 				'intake_complete' => $workflow_resolved,
 				'issue'           => $issue,
 				'routing_missing' => $routing_missing,
+				'current_node'    => $procedural_node,
 			)
 		);
 		$current_stage     = is_array( $stage_context['current_stage'] ?? null )
@@ -151,6 +153,32 @@ final class Case_Actions_Resolver {
 			);
 		$court_routing   = $this->build_court_routing( $case_profile, $interpret_result );
 
+		$case_summary_rows = array();
+		$roadmap           = is_array( $case_profile['roadmap'] ?? null ) ? $case_profile['roadmap'] : array();
+
+		if ( $workflow_resolved && ! empty( $stage_context['forms_visible'] ) ) {
+			$presenter         = new Case_Summary_Presenter();
+			$case_summary_rows = $presenter->to_action_rows(
+				$presenter->build(
+					array(
+						'workflow'        => $workflow,
+						'facts'           => $facts,
+						'stage_context'   => $stage_context,
+						'roadmap'         => $roadmap,
+						'procedural_node' => $procedural_node,
+						'completion'      => $completion,
+						'court'           => (string) ( $case_profile['court'] ?? '' ),
+						'issue'           => $issue,
+					)
+				)
+			);
+		}
+
+		$summary_rows = array_merge(
+			$case_summary_rows,
+			$this->build_summary( $workflow, $facts, $package_id, $package_label, $issue, $court_routing )
+		);
+
 		return array(
 			'case_known'          => $case_known,
 			'intake_complete'     => $intake_complete,
@@ -168,7 +196,7 @@ final class Case_Actions_Resolver {
 			'workflow_title'      => $this->workflow_title( $workflow ),
 			'court_routing'       => $court_routing,
 			'stage_context'       => $stage_context,
-			'summary'             => $this->build_summary( $workflow, $facts, $package_id, $package_label, $issue, $court_routing ),
+			'summary'             => $summary_rows,
 		);
 	}
 

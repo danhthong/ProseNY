@@ -161,6 +161,52 @@
 		}
 	} );
 
+	document.addEventListener( 'prose:package-sync', function ( e ) {
+		if ( e && e.detail ) {
+			preview( e.detail );
+		}
+	} );
+
+	document.addEventListener( 'prose:stage-advanced', function ( e ) {
+		if ( e && e.detail ) {
+			preview( e.detail );
+		}
+	} );
+
+	function bootstrapFromStoredSession() {
+		var storageKey = cfg.storageKey || 'prose_intake_session';
+
+		try {
+			var raw = localStorage.getItem( storageKey );
+
+			if ( ! raw ) {
+				return;
+			}
+
+			var parsed = JSON.parse( raw );
+			var profile = parsed.case_profile && typeof parsed.case_profile === 'object' ? parsed.case_profile : {};
+			var actions = parsed.actions && typeof parsed.actions === 'object' ? parsed.actions : {};
+			var ctx = actions.stage_context || {};
+			var workflow = profile.workflow || actions.workflow || '';
+
+			if ( ! workflow ) {
+				return;
+			}
+
+			preview( {
+				conversation_id: parsed.conversation_id || '',
+				workflow: workflow,
+				facts: profile.facts || {},
+				procedural_node: profile.procedural_node || ctx.procedural_node || '',
+				stage: ( ctx.current_stage && ctx.current_stage.id ) || ''
+			} );
+		} catch ( err ) {
+			// Ignore malformed session payloads.
+		}
+	}
+
+	bootstrapFromStoredSession();
+
 	// Hide the stale package when the user changes matters before the new one
 	// resolves (or resets the conversation).
 	document.addEventListener( 'prose:workflow-cleared', function () {

@@ -241,9 +241,20 @@ final class Package_Builder_Rest_Controller {
 		$workflow = (string) $input['workflow'];
 		$facts    = is_array( $input['facts'] ) ? $input['facts'] : array();
 		$stage    = sanitize_key( (string) $request->get_param( 'stage' ) );
+		$node     = sanitize_text_field( (string) $request->get_param( 'procedural_node' ) );
 
-		if ( '' === $stage && $this->stage_gating_enabled() ) {
-			$stage = $this->resolve_current_stage( $workflow, $facts );
+		if ( $this->stage_gating_enabled() ) {
+			$node = trim( $node );
+
+			if ( '' !== $node ) {
+				$resolved = $this->resolve_current_stage( $workflow, $facts, $node );
+
+				if ( '' !== $resolved ) {
+					$stage = $resolved;
+				}
+			} elseif ( '' === $stage ) {
+				$stage = $this->resolve_current_stage( $workflow, $facts, '' );
+			}
 		}
 
 		if ( $this->stage_gating_enabled() && '' === $stage ) {
@@ -278,9 +289,10 @@ final class Package_Builder_Rest_Controller {
 	 *
 	 * @param string               $workflow Workflow key.
 	 * @param array<string, mixed> $facts    Plain facts.
+	 * @param string               $node     Optional procedural node.
 	 * @return string Stage slug or empty string.
 	 */
-	private function resolve_current_stage( string $workflow, array $facts ): string {
+	private function resolve_current_stage( string $workflow, array $facts, string $node = '' ): string {
 		if ( '' === $workflow ) {
 			return '';
 		}
@@ -290,6 +302,7 @@ final class Package_Builder_Rest_Controller {
 				'workflow'        => $workflow,
 				'facts'           => $facts,
 				'intake_complete' => true,
+				'current_node'    => $node,
 			)
 		);
 

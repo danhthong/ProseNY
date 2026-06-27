@@ -120,7 +120,7 @@ final class Case_Lifecycle_Service {
 		$workflow      = $profile->workflow_key();
 		$intake_ok     = ! empty( $context['intake_complete'] ) || ! empty( $case_profile['intake_complete'] );
 		$completion    = (int) ( $context['completion'] ?? $case_profile['progress'] ?? $profile->progress() );
-		$events        = $this->normalize_events( $case_profile );
+		$events        = $this->normalize_events( $this->with_inferred_procedural_events( $case_profile ) );
 		$branch        = $this->resolve_branch( $workflow, $facts, $events );
 		$stage         = $this->resolve_stage( $workflow, $facts, $events, $intake_ok, $completion, $branch );
 		$service_date  = $this->service_date( $events, $facts );
@@ -210,6 +210,44 @@ final class Case_Lifecycle_Service {
 	}
 
 	/**
+	 * Append lifecycle events when missing (used after stage completion).
+	 *
+	 * @param array<string, mixed> $case_profile Case profile.
+	 * @param string[]             $event_types    Event keys to ensure.
+	 * @param array<string, mixed> $meta           Optional metadata.
+	 * @return array<string, mixed>
+	 */
+	public function append_events_if_missing( array $case_profile, array $event_types, array $meta = array() ): array {
+		$events = $this->normalize_events( $case_profile );
+		$known  = array_map(
+			static function ( array $row ): string {
+				return (string) ( $row['event'] ?? '' );
+			},
+			$events
+		);
+
+		foreach ( $event_types as $event ) {
+			$event = sanitize_key( (string) $event );
+
+			if ( '' === $event || in_array( $event, $known, true ) ) {
+				continue;
+			}
+
+			$events[] = array(
+				'event'       => $event,
+				'date'        => '',
+				'recorded_at' => gmdate( 'c' ),
+				'source'      => 'procedural',
+				'meta'        => $meta,
+			);
+		}
+
+		$case_profile['lifecycle_events'] = $events;
+
+		return $case_profile;
+	}
+
+	/**
 	 * Build dual-court matter map when divorce overlaps family court issues.
 	 *
 	 * @param array<string, mixed> $case_profile Case profile.
@@ -275,6 +313,42 @@ final class Case_Lifecycle_Service {
 		return array(
 			'show'   => count( $tracks ) > 1,
 			'tracks' => $tracks,
+		);
+	}
+
+	/**
+	 * Infer lifecycle events from persisted procedural node (read-only).
+	 *
+	 * @param array<string, mixed> $case_profile Case profile.
+	 * @return array<string, mixed>
+	 */
+	private function with_inferred_procedural_events( array $case_profile ): array {
+		$node = trim( (string) ( $case_profile['procedural_node'] ?? '' ) );
+
+		if ( '' === $node ) {
+			return $case_profile;
+		}
+
+		$inferred = array( self::EVENT_FORMS_GENERATED );
+
+		if ( in_array(
+			$node,
+			array(
+				Vocabulary::NODE_1002_SERVICE_COMPLETE,
+				Vocabulary::NODE_1003_ANSWER_FILED,
+			),
+			true
+		) ) {
+			$inferred[] = self::EVENT_FILED;
+		}
+
+		return $this->append_events_if_missing(
+			$case_profile,
+			$inferred,
+			array(
+				'procedural_node' => $node,
+				'inferred'        => true,
+			)
 		);
 	}
 

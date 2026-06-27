@@ -34,6 +34,11 @@ final class Intake_Rest_Controller {
 	public const ROUTE_ACTIONS = '/case/actions';
 
 	/**
+	 * Complete current procedural stage after form download.
+	 */
+	public const ROUTE_COMPLETE_STAGE = '/case/complete-stage';
+
+	/**
 	 * Intake agent.
 	 *
 	 * @var Intake_Agent
@@ -48,14 +53,27 @@ final class Intake_Rest_Controller {
 	private Case_Actions_Resolver $actions;
 
 	/**
+	 * Procedural stage completer.
+	 *
+	 * @var Procedural_Stage_Completer
+	 */
+	private Procedural_Stage_Completer $stage_completer;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Intake_Agent|null             $agent   Intake agent.
-	 * @param Case_Actions_Resolver|null    $actions Case actions resolver.
+	 * @param Intake_Agent|null                  $agent           Intake agent.
+	 * @param Case_Actions_Resolver|null         $actions         Case actions resolver.
+	 * @param Procedural_Stage_Completer|null    $stage_completer Stage completer.
 	 */
-	public function __construct( ?Intake_Agent $agent = null, ?Case_Actions_Resolver $actions = null ) {
-		$this->agent   = $agent ?? new Intake_Agent();
-		$this->actions = $actions ?? new Case_Actions_Resolver();
+	public function __construct(
+		?Intake_Agent $agent = null,
+		?Case_Actions_Resolver $actions = null,
+		?Procedural_Stage_Completer $stage_completer = null
+	) {
+		$this->agent           = $agent ?? new Intake_Agent();
+		$this->actions         = $actions ?? new Case_Actions_Resolver();
+		$this->stage_completer = $stage_completer ?? new Procedural_Stage_Completer();
 	}
 
 	/**
@@ -114,6 +132,27 @@ final class Intake_Rest_Controller {
 				),
 			)
 		);
+
+		register_rest_route(
+			self::NAMESPACE,
+			self::ROUTE_COMPLETE_STAGE,
+			array(
+				'methods'             => \WP_REST_Server::CREATABLE,
+				'callback'            => array( $this, 'handle_complete_stage' ),
+				'permission_callback' => '__return_true',
+				'args'                => array(
+					'case_profile' => array(
+						'type'     => 'object',
+						'required' => true,
+					),
+					'conversation_id' => array(
+						'type'              => 'string',
+						'required'          => false,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -156,6 +195,41 @@ final class Intake_Rest_Controller {
 			array(
 				'success' => true,
 				'actions' => $this->actions->resolve( $case_profile ),
+			)
+		);
+	}
+
+	/**
+	 * Handle POST /case/complete-stage — advance after document download.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response
+	 */
+	public function handle_complete_stage( \WP_REST_Request $request ): \WP_REST_Response {
+		$case_profile = $request->get_param( 'case_profile' );
+
+		if ( ! is_array( $case_profile ) ) {
+			$case_profile = array();
+		}
+
+		$result = $this->stage_completer->complete_current_stage(
+			$case_profile,
+			(string) $request->get_param( 'conversation_id' )
+		);
+
+		if ( is_wp_error( $result ) ) {
+			return rest_ensure_response(
+				array(
+					'success' => false,
+					'message' => $result->get_error_message(),
+				)
+			)->set_status( (int) ( $result->get_error_data()['status'] ?? 400 ) );
+		}
+
+		return rest_ensure_response(
+			array_merge(
+				array( 'success' => true ),
+				$result
 			)
 		);
 	}

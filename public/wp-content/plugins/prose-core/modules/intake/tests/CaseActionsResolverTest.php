@@ -197,4 +197,56 @@ class CaseActionsResolverTest extends TestCase {
 		$this->assertNotEmpty( $actions['package_id'] );
 		$this->assertNotEmpty( $actions['summary'] );
 	}
+
+	/**
+	 * Stored procedural node selects the matching stage forms.
+	 */
+	public function test_procedural_node_selects_service_stage_forms(): void {
+		$resolver = new Case_Actions_Resolver();
+		$actions  = $resolver->resolve(
+			array(
+				'workflow'        => 'uncontested_divorce_children_nyc',
+				'procedural_node' => 'NODE_1002_SERVICE_COMPLETE',
+				'facts'           => array(
+					'county'        => 'Queens',
+					'spouse_agrees' => true,
+					'children'      => true,
+					'child_count'   => 1,
+				),
+				'progress' => 40,
+			)
+		);
+
+		$this->assertSame( 'service', $actions['stage_context']['current_stage']['id'] ?? '' );
+		$codes = array_column( $actions['stage_context']['stage_forms'] ?? array(), 'code' );
+		$this->assertContains( 'UD-3', $codes );
+		$this->assertNotContains( 'UD-1', $codes );
+	}
+
+	/**
+	 * Case summary panel includes current procedural stage rows.
+	 */
+	public function test_summary_includes_current_stage_rows(): void {
+		$resolver = new Case_Actions_Resolver();
+		$actions  = $resolver->resolve(
+			array(
+				'workflow'        => 'uncontested_divorce_children_nyc',
+				'procedural_node' => 'NODE_1010_JUDGMENT',
+				'court'           => 'supreme_court',
+				'issue'           => 'divorce',
+				'facts'           => array(
+					'county'        => 'Queens',
+					'spouse_agrees' => true,
+					'children'      => true,
+					'child_count'   => 1,
+				),
+				'progress' => 80,
+			)
+		);
+
+		$labels = array_column( $actions['summary'] ?? array(), 'label' );
+
+		$this->assertContains( 'Current stage', $labels );
+		$this->assertContains( 'Forms for this step', $labels );
+	}
 }

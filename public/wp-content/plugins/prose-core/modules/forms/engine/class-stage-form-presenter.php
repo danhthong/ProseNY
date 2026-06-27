@@ -575,7 +575,7 @@ final class Stage_Form_Presenter {
 			case 'answer':
 				return __( 'Your spouse may file a response. Watch for the response deadline or default procedures.', 'prose-core' );
 			case 'calendar':
-				return __( 'Prepare the final calendar and submission forms for your uncontested divorce.', 'prose-core' );
+				return __( 'Prepare the complete final submission package for court review before judgment.', 'prose-core' );
 			case 'judgment':
 				return __( 'Submit the judgment package for court review and entry.', 'prose-core' );
 			default:

@@ -12,6 +12,7 @@
 namespace ProSe\Core\PackageBuilder;
 
 use ProSe\Core\Forms\Engine\Stage_Form_Presenter;
+use ProSe\Core\Forms\Engine\Workflow_Progression_Service;
 use ProSe\Core\Forms\Form_Page_Resolver;
 use ProSe\Core\Routing\Workflow_Catalog;
 
@@ -125,13 +126,21 @@ final class Package_Preview_Service {
 			);
 		}
 
-		$workflow_key  = (string) ( $manifest['workflow'] ?? '' );
-		$facts         = is_array( $input['facts'] ?? null ) ? $input['facts'] : array();
-		$stage_context = ( new Stage_Form_Presenter() )->present(
+		$workflow_key    = (string) ( $manifest['workflow'] ?? '' );
+		$facts           = is_array( $input['facts'] ?? null ) ? $input['facts'] : array();
+		$procedural_node = trim( (string) ( $input['procedural_node'] ?? '' ) );
+		$stage_hint      = sanitize_key( (string) ( $input['stage'] ?? '' ) );
+
+		if ( '' === $procedural_node && '' !== $stage_hint && '' !== $workflow_key ) {
+			$procedural_node = $this->node_for_stage( $workflow_key, $stage_hint, $facts );
+		}
+
+		$stage_context   = ( new Stage_Form_Presenter() )->present(
 			array(
 				'workflow'        => $workflow_key,
 				'facts'           => $facts,
 				'intake_complete' => true,
+				'current_node'    => $procedural_node,
 			)
 		);
 		$current_stage = is_array( $stage_context['current_stage'] ?? null )
@@ -214,5 +223,19 @@ final class Package_Preview_Service {
 		}
 
 		return ucwords( str_replace( '_', ' ', $workflow_key ) );
+	}
+
+	/**
+	 * Map a stage slug to its procedural node when the node was not persisted.
+	 *
+	 * @param string               $workflow_key Workflow key.
+	 * @param string               $stage_slug   Stage slug.
+	 * @param array<string, mixed> $facts        Facts.
+	 * @return string
+	 */
+	private function node_for_stage( string $workflow_key, string $stage_slug, array $facts ): string {
+		$map = ( new Workflow_Progression_Service() )->stage_node_map( $workflow_key, $facts );
+
+		return isset( $map[ $stage_slug ] ) ? (string) $map[ $stage_slug ] : '';
 	}
 }

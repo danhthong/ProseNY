@@ -1,11 +1,11 @@
 {
     "id": "calendar",
-    "title": "Final Papers and Calendar",
-    "description": "Prepare the final submission forms, including the Note of Issue and Request for Judicial Intervention, before judgment.",
+    "title": "Final Papers & Calendar",
+    "description": "Prepare the complete final submission package for court review before a judgment of divorce can be issued. Some forms are mandatory for every case; others apply only to your circumstances.",
     "tips": [
-        "Complete all sworn statements and affirmations required for an uncontested divorce.",
-        "File the Note of Issue when your case is ready for the court's review.",
-        "Request judicial intervention when your county requires it for the next conference or review."
+        "Complete sworn statements and affirmations that apply to your case before filing the final package.",
+        "Include child support, maintenance, or religious-barrier forms only when they apply to your situation.",
+        "File the full final submission when your papers are complete so the court can review the case for judgment."
     ],
     "warnings": [
         "Incomplete final papers are a common reason for court rejection."

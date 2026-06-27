@@ -49,4 +49,12 @@ class UserIntakeContextTest extends TestCase {
 		$this->assertTrue( User_Intake_Context::message_asks_about_account( 'do you know my name?' ) );
 		$this->assertFalse( User_Intake_Context::message_asks_about_account( 'I need a divorce' ) );
 	}
+
+	/**
+	 * Placeholder display names are rejected for intake prefill.
+	 */
+	public function test_placeholder_display_name(): void {
+		$this->assertTrue( User_Intake_Context::is_placeholder_display_name( 'admin' ) );
+		$this->assertFalse( User_Intake_Context::is_placeholder_display_name( 'Maria Lopez' ) );
+	}
 }

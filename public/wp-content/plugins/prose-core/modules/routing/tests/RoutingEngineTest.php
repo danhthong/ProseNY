@@ -315,6 +315,28 @@ class RoutingEngineTest extends TestCase {
 	}
 
 	/**
+	 * Custody settlement language during divorce intake keeps Supreme Court divorce routing.
+	 */
+	public function test_divorce_retained_when_custody_mentioned_in_settlement(): void {
+		$profile = Case_Profile::from_array(
+			array(
+				'issue' => 'divorce',
+				'court' => 'supreme_court',
+				'facts' => array(),
+			)
+		);
+
+		$result = $this->engine->route_profile(
+			'We have one child who is 10 years old. My spouse agrees to the divorce. We have already agreed on custody, child support, and how to divide our property. No divorce case has been filed yet.',
+			$profile
+		);
+
+		$this->assertSame( 'divorce', $result->issue() );
+		$this->assertSame( 'uncontested_divorce_children_nyc', $result->workflow() );
+		$this->assertSame( 'supreme_court', $result->court() );
+	}
+
+	/**
 	 * Active divorce redirects standalone custody to Supreme Court divorce workflow.
 	 */
 	public function test_active_divorce_custody_routes_to_supreme(): void {

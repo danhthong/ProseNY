@@ -7,6 +7,8 @@
 
 namespace ProSe\Core\Ai_Intake;
 
+use ProSe\Core\Intake\Case_Summary_Presenter;
+
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
@@ -51,9 +53,10 @@ final class Conversation_Memory {
 	 */
 	public function context( Intake_State $state, array $conversation ): array {
 		$recent = array_slice( $conversation, -self::RECENT_MESSAGE_COUNT );
+		$notes  = ( new Case_Summary_Presenter() )->extract_conversation_notes( $state->conversation_summary() );
 
 		return array(
-			'summary'    => $state->conversation_summary(),
+			'summary'    => $notes,
 			'recent'     => $recent,
 			'turn_count' => count( $conversation ),
 		);
@@ -80,6 +83,9 @@ final class Conversation_Memory {
 			return;
 		}
 
+		$presenter = new Case_Summary_Presenter();
+		$notes     = $presenter->extract_conversation_notes( $state->conversation_summary() );
+
 		$messages = array(
 			array(
 				'role'    => 'system',
@@ -90,7 +96,7 @@ final class Conversation_Memory {
 				'content' => wp_json_encode(
 					array(
 						'task'             => 'summarize_confirmed_facts',
-						'current_summary'  => $state->conversation_summary(),
+						'current_summary'  => $notes,
 						'confirmed_facts'  => $state->plain_facts(),
 						'recent_messages'  => array_slice( $conversation, -self::RECENT_MESSAGE_COUNT ),
 					)
@@ -113,7 +119,9 @@ final class Conversation_Memory {
 			$parsed = json_decode( $response['content'], true );
 
 			if ( is_array( $parsed ) && ! empty( $parsed['summary'] ) ) {
-				$state->set_conversation_summary( (string) $parsed['summary'] );
+				$state->set_conversation_summary(
+					$presenter->extract_conversation_notes( (string) $parsed['summary'] )
+				);
 			}
 
 			if ( null !== $logger ) {

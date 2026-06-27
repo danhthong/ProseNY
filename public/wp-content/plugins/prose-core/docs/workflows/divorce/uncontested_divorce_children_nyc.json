@@ -18,14 +18,30 @@
     "divorce with children",
     "uncontested divorce with children",
     "divorce and custody",
-    "divorce and child support"
+    "divorce and child support",
+    "settlement agreement",
+    "already filed divorce"
   ],
   "entry_questions": [
+    "Has a divorce case already been started in a New York court?",
     "Do you want a divorce?",
     "Does your spouse agree to the divorce?",
     "Do you have children under 21?"
   ],
-  "routing_rules": [],
+  "routing_rules": [
+    {
+      "condition": "custody_dispute=true",
+      "workflow": "contested_divorce_nyc"
+    },
+    {
+      "condition": "support_dispute=true",
+      "workflow": "contested_divorce_nyc"
+    },
+    {
+      "condition": "domestic_violence_concerns=true",
+      "workflow": "family_offense_nyc"
+    }
+  ],
   "routing_priority": 100,
   "intake_priority": 90,
   "entry_conditions": [
@@ -35,6 +51,27 @@
     "Matrimonial action is uncontested"
   ],
   "required_fields": [
+    {
+      "key": "existing_case",
+      "type": "boolean",
+      "required": false,
+      "question": "Has a divorce case already been started in court?"
+    },
+    {
+      "key": "case_status",
+      "type": "string",
+      "required": false,
+      "enum": [
+        "NOT_STARTED",
+        "FILED",
+        "SERVED",
+        "READY_FOR_CALENDAR",
+        "UNDER_REVIEW",
+        "JUDGMENT_ENTERED",
+        "CLOSED"
+      ],
+      "question": "What is the current status of your divorce case?"
+    },
     {
       "key": "county",
       "type": "string",
@@ -335,7 +372,16 @@
           "value": "PKG_JUDGMENT"
         }
       }
-    ]
+    ],
+    "case_status_node_map": {
+      "NOT_STARTED": "NODE_1001_DIVORCE_FILED",
+      "FILED": "NODE_1001_DIVORCE_FILED",
+      "SERVED": "NODE_1002_SERVICE_COMPLETE",
+      "READY_FOR_CALENDAR": "NODE_1010_JUDGMENT",
+      "UNDER_REVIEW": "NODE_1010_JUDGMENT",
+      "JUDGMENT_ENTERED": "NODE_1010_JUDGMENT",
+      "CLOSED": "NODE_1010_JUDGMENT"
+    }
   },
   "source_references": [
     "https://www.nycourts.gov/courthelp/family/divorceStarting.shtml",

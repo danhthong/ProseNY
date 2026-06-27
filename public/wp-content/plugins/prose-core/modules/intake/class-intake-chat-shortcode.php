@@ -152,6 +152,7 @@ final class Intake_Chat_Shortcode {
 				array(
 					'restUrl'      => esc_url_raw( rest_url( $route ) ),
 					'actionsUrl'   => esc_url_raw( rest_url( Intake_Rest_Controller::NAMESPACE . Intake_Rest_Controller::ROUTE_ACTIONS ) ),
+					'completeStageUrl' => esc_url_raw( rest_url( Intake_Rest_Controller::NAMESPACE . Intake_Rest_Controller::ROUTE_COMPLETE_STAGE ) ),
 					'mergedPdfUrl' => esc_url_raw( rest_url( Package_Builder_Rest_Controller::NAMESPACE . Package_Builder_Rest_Controller::ROUTE_MERGED_PDF ) ),
 					'documentsUploadUrl' => esc_url_raw( rest_url( Documents_Rest_Controller::NAMESPACE . Documents_Rest_Controller::ROUTE_UPLOAD ) ),
 					'maxUploadBytes' => Documents_Rest_Controller::MAX_UPLOAD_BYTES,
@@ -163,6 +164,7 @@ final class Intake_Chat_Shortcode {
 					'strings'        => array(
 						'sending'         => __( 'Thinking…', 'prose-core' ),
 						'error'           => __( 'Something went wrong. Please try again.', 'prose-core' ),
+						'review'          => __( 'We need a little more help with your intake. A team member may follow up.', 'prose-core' ),
 						'complete'        => __( 'Based on the information you\'ve provided, I identified the appropriate filing package for your case. You can review the next steps below or download the required court forms.', 'prose-core' ),
 						'greeting'        => __( 'How can I help with your legal matter today?', 'prose-core' ),
 						'reset'           => __( 'Start over', 'prose-core' ),

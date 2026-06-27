@@ -38,12 +38,28 @@ final class Escalation_Detector {
 	/**
 	 * Detect whether intake should be escalated.
 	 *
-	 * @param string       $message          Latest user message.
-	 * @param Intake_State $state            Intake state.
-	 * @param float        $latest_confidence Latest extraction confidence.
+	 * Escalation applies only during early routing intake — not after a workflow
+	 * is resolved and the user is in self-serve procedural guidance.
+	 *
+	 * @param string       $message            Latest user message.
+	 * @param Intake_State $state              Intake state.
+	 * @param float        $latest_confidence  Latest extraction confidence.
+	 * @param bool         $workflow_resolved  Whether routing has resolved a workflow.
 	 * @return array{needs_review: bool, reason: string}
 	 */
-	public function detect( string $message, Intake_State $state, float $latest_confidence = 1.0 ): array {
+	public function detect(
+		string $message,
+		Intake_State $state,
+		float $latest_confidence = 1.0,
+		bool $workflow_resolved = false
+	): array {
+		if ( $workflow_resolved || $this->is_guidance_question( $message ) ) {
+			return array(
+				'needs_review' => false,
+				'reason'       => '',
+			);
+		}
+
 		$pending = $state->pending_field();
 
 		if ( $this->is_uncertain_message( $message ) ) {
@@ -90,6 +106,41 @@ final class Escalation_Detector {
 	private function is_uncertain_message( string $message ): bool {
 		foreach ( self::UNCERTAINTY_PATTERNS as $pattern ) {
 			if ( preg_match( $pattern, $message ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Procedural / next-step questions are not intake clarification failures.
+	 *
+	 * @param string $message User message.
+	 * @return bool
+	 */
+	private function is_guidance_question( string $message ): bool {
+		$text = strtolower( trim( $message ) );
+
+		foreach ( array(
+			'how do i file',
+			'how to file',
+			'what happens next',
+			'what do i do next',
+			'what do i need to do',
+			'what need to do',
+			'what should i do',
+			'what now',
+			'need to do now',
+			'next step',
+			'next steps',
+			'how to start',
+			'which form',
+			'what form',
+			'which forms',
+			'what forms',
+		) as $phrase ) {
+			if ( str_contains( $text, $phrase ) ) {
 				return true;
 			}
 		}

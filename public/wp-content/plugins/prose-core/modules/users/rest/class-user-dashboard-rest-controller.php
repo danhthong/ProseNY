@@ -8,6 +8,7 @@
 namespace ProSe\Core\Users\Rest;
 
 use ProSe\Core\Forms\Database\Repositories\Case_Repository;
+use ProSe\Core\Forms\Engine\Stage_Form_Presenter;
 use ProSe\Core\Guidance\Eligibility_Presenter;
 use ProSe\Core\Guidance\Procedural_Roadmap_Presenter;
 use ProSe\Core\Intake\Case_Lifecycle_Service;
@@ -314,6 +315,7 @@ final class User_Dashboard_Rest_Controller {
 	private function build_case_progress( array $conversations, $active_case, string $resume_url ): array {
 		$roadmap = null;
 		$url     = $resume_url;
+		$profile = array();
 
 		foreach ( $conversations as $conversation ) {
 			if ( empty( $conversation['session_id'] ) ) {
@@ -335,12 +337,19 @@ final class User_Dashboard_Rest_Controller {
 
 			if ( is_array( $candidate ) && ! empty( $candidate['show'] ) ) {
 				$roadmap = $candidate;
+				$profile = $case_profile;
 				$url     = (string) ( $conversation['resume_url'] ?? $resume_url );
 				break;
 			}
+
+			if ( null === $roadmap && '' !== trim( (string) ( $case_profile['workflow'] ?? '' ) ) ) {
+				$roadmap = $this->roadmap_from_profile( $case_profile );
+				$profile = $case_profile;
+				$url     = (string) ( $conversation['resume_url'] ?? $resume_url );
+			}
 		}
 
-		if ( ! is_array( $roadmap ) ) {
+		if ( ! is_array( $roadmap ) || empty( $roadmap['show'] ) ) {
 			return array( 'show' => false );
 		}
 
@@ -348,6 +357,8 @@ final class User_Dashboard_Rest_Controller {
 
 		if ( is_array( $active_case ) && isset( $active_case['progress_percentage'] ) ) {
 			$summary['progress_percentage'] = (int) $active_case['progress_percentage'];
+		} elseif ( isset( $profile['progress'] ) ) {
+			$summary['progress_percentage'] = (int) $profile['progress'];
 		}
 
 		return $summary;
@@ -382,8 +393,11 @@ final class User_Dashboard_Rest_Controller {
 			$lifecycle    = $this->lifecycle_service->build(
 				$case_profile,
 				array(
-					'intake_complete' => ! empty( $actions['intake_complete'] ),
-					'completion'      => (int) ( $case_progress['progress_percentage'] ?? 0 ),
+					'intake_complete' => ! empty( $actions['intake_complete'] ) || ! empty( $case_profile['workflow'] ),
+					'completion'      => max(
+						(int) ( $case_profile['progress'] ?? 0 ),
+						(int) ( $case_progress['progress_percentage'] ?? 0 )
+					),
 				)
 			);
 
@@ -466,6 +480,47 @@ final class User_Dashboard_Rest_Controller {
 		$description = trim( (string) ( $definition['description'] ?? '' ) );
 
 		return '' !== $description ? $description : $workflow_key;
+	}
+
+	/**
+	 * Rebuild a dashboard roadmap from a stored case profile when roadmap is missing.
+	 *
+	 * @param array<string, mixed> $case_profile Case profile snapshot.
+	 * @return array<string, mixed>
+	 */
+	private function roadmap_from_profile( array $case_profile ): array {
+		$workflow = trim( (string) ( $case_profile['workflow'] ?? '' ) );
+
+		if ( '' === $workflow ) {
+			return array( 'show' => false );
+		}
+
+		$facts = is_array( $case_profile['facts'] ?? null ) ? $case_profile['facts'] : array();
+		$node  = trim( (string) ( $case_profile['procedural_node'] ?? '' ) );
+		$stage = ( new Stage_Form_Presenter() )->present(
+			array(
+				'workflow'        => $workflow,
+				'facts'           => $facts,
+				'intake_complete'   => true,
+				'issue'           => (string) ( $case_profile['issue'] ?? $facts['issue'] ?? 'divorce' ),
+				'current_node'    => $node,
+			)
+		);
+
+		return $this->roadmap_presenter->present(
+			array(
+				'issue'                => (string) ( $case_profile['issue'] ?? $facts['issue'] ?? 'divorce' ),
+				'facts'                => $facts,
+				'workflow'             => $workflow,
+				'completion'           => (int) ( $case_profile['progress'] ?? 0 ),
+				'missing_fields'       => array(),
+				'stage_context'        => $stage,
+				'procedural_navigator' => array(),
+				'workflow_resolved'    => true,
+				'intake_complete'      => true,
+				'procedural_node'      => $node,
+			)
+		);
 	}
 
 	/**

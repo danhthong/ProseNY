@@ -198,12 +198,13 @@
 				if ( session.actions.case_known || session.actions.show_documents ) {
 					actionsPinned = true;
 				}
-				updateActionsPanel( session.actions );
 
-				if ( ! canDownloadDocuments( session.actions ) && ( session.actions.workflow || ( session.case_profile && session.case_profile.workflow ) ) ) {
+				if ( actionsStaleForProfile( session.case_profile, session.actions ) || ( session.case_profile && session.case_profile.workflow ) ) {
 					refreshActions();
+				} else {
+					updateActionsPanel( session.actions );
 				}
-			} else if ( history.length ) {
+			} else if ( history.length || ( session.case_profile && session.case_profile.workflow ) ) {
 				refreshActions();
 			}
 
@@ -341,23 +342,74 @@
 		}
 
 		/**
-		 * Notify the package preview widget when intake is complete and a workflow
-		 * is resolved — for form list display only (not download).
-		 *
-		 * @param {string} workflow Workflow key.
+		 * Sync the document package preview card with the current procedural step.
 		 */
-		function announceWorkflowPreview( workflow ) {
+		function syncPackagePreview() {
+			var profile = session.case_profile || {};
+			var actions = session.actions || {};
+			var ctx = actions.stage_context || {};
+			var workflow = actions.workflow || profile.workflow || '';
+
 			if ( ! workflow ) {
 				return;
 			}
 
-			document.dispatchEvent( new CustomEvent( 'prose:workflow-resolved', {
-				detail: {
-					conversation_id: session.conversation_id,
-					workflow: workflow,
-					preview_only: true
-				}
-			} ) );
+			var detail = {
+				conversation_id: session.conversation_id,
+				workflow: workflow,
+				facts: profile.facts || {},
+				procedural_node: profile.procedural_node || ctx.procedural_node || '',
+				stage: ( ctx.current_stage && ctx.current_stage.id ) || '',
+				preview_only: true
+			};
+
+			if ( window.ProsePackagePreview && typeof window.ProsePackagePreview.show === 'function' ) {
+				window.ProsePackagePreview.show( detail );
+			}
+
+			document.dispatchEvent( new CustomEvent( 'prose:package-sync', { detail: detail } ) );
+		}
+
+		/**
+		 * @deprecated Use syncPackagePreview().
+		 * @param {string} workflow Workflow key.
+		 */
+		function announceWorkflowPreview( workflow ) {
+			if ( workflow && session.actions && ! session.actions.workflow ) {
+				session.actions.workflow = workflow;
+			}
+			syncPackagePreview();
+		}
+
+		/**
+		 * Whether stored actions lag behind the case profile procedural node.
+		 *
+		 * @param {Object} profile Case profile.
+		 * @param {Object} actions Case actions.
+		 * @return {boolean}
+		 */
+		function actionsStaleForProfile( profile, actions ) {
+			if ( ! profile || ! profile.procedural_node ) {
+				return false;
+			}
+
+			var ctx = ( actions && actions.stage_context ) || {};
+			var actionNode = ctx.procedural_node || '';
+			var stageId = ( ctx.current_stage && ctx.current_stage.id ) || '';
+
+			if ( actionNode && actionNode !== profile.procedural_node ) {
+				return true;
+			}
+
+			if ( 'NODE_1002_SERVICE_COMPLETE' === profile.procedural_node && 'service' !== stageId ) {
+				return true;
+			}
+
+			if ( 'NODE_1001_DIVORCE_FILED' === profile.procedural_node && 'commencement' !== stageId && '' !== stageId ) {
+				return false;
+			}
+
+			return false;
 		}
 
 		/**
@@ -471,6 +523,20 @@
 				session.case_profile.workflow = actions.workflow;
 			}
 
+			var profileNode = session.case_profile && session.case_profile.procedural_node;
+			var actionNode = actions.stage_context && actions.stage_context.procedural_node;
+
+			if ( profileNode && actionNode && profileNode !== actionNode ) {
+				syncPackagePreview();
+				refreshActions();
+				return;
+			}
+
+			if ( actionNode && ! profileNode ) {
+				session.case_profile = session.case_profile || {};
+				session.case_profile.procedural_node = actionNode;
+			}
+
 			var showActions = !!( actions.case_known || actions.show_documents || actions.workflow );
 
 			if ( showActions ) {
@@ -503,7 +569,7 @@
 			}
 
 			if ( actions.workflow ) {
-				announceWorkflowPreview( actions.workflow );
+				syncPackagePreview();
 			}
 		}
 
@@ -594,6 +660,7 @@
 				.then( function ( data ) {
 					if ( data && data.actions ) {
 						updateActionsPanel( data.actions );
+						syncPackagePreview();
 						saveSession( session.conversation_id, session.case_profile, session.conversation, session.state, session.actions );
 					}
 				} )
@@ -634,9 +701,15 @@
 			}
 
 			var actions = session.actions || {};
+			var profile = session.case_profile || {};
 			var stageContext = actions.stage_context || {};
-			var currentStage = stageContext.current_stage || {};
-			var stage = currentStage.id || '';
+			var proceduralNode = profile.procedural_node || stageContext.procedural_node || '';
+			var stage = '';
+
+			if ( ! proceduralNode ) {
+				var currentStage = stageContext.current_stage || {};
+				stage = currentStage.id || '';
+			}
 
 			return fetch( CONFIG.mergedPdfUrl, {
 				method: 'POST',
@@ -647,8 +720,9 @@
 				body: JSON.stringify( {
 					workflow: workflow,
 					stage: stage,
+					procedural_node: proceduralNode,
 					conversation_id: session.conversation_id || '',
-					facts: ( session.case_profile && session.case_profile.facts ) || {}
+					facts: profile.facts || {}
 				} )
 			} )
 				.then( function ( res ) {
@@ -657,7 +731,10 @@
 				.then( function ( data ) {
 					if ( data && data.success && data.download_url ) {
 						openDownload( data.download_url );
-					} else if ( getDocumentsBtn ) {
+						return completeStageAfterDownload();
+					}
+
+					if ( getDocumentsBtn ) {
 						getDocumentsBtn.textContent = STRINGS.downloadError || 'Documents are not available for download yet.';
 					}
 				} )
@@ -666,6 +743,70 @@
 						getDocumentsBtn.textContent = STRINGS.downloadError || 'Documents are not available for download yet.';
 					}
 				} );
+		}
+
+		/**
+		 * Advance procedural stage after a successful document download.
+		 *
+		 * @return {Promise<void>}
+		 */
+		function completeStageAfterDownload() {
+			if ( ! CONFIG.completeStageUrl ) {
+				return Promise.resolve();
+			}
+
+			return fetch( CONFIG.completeStageUrl, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-WP-Nonce': CONFIG.nonce || ''
+				},
+				body: JSON.stringify( {
+					case_profile: session.case_profile || {},
+					conversation_id: session.conversation_id || ''
+				} )
+			} )
+				.then( function ( res ) {
+					return res.json();
+				} )
+				.then( function ( data ) {
+					if ( ! data || ! data.success ) {
+						return;
+					}
+
+					if ( data.case_profile ) {
+						session.case_profile = data.case_profile;
+					}
+
+					if ( data.actions ) {
+						updateActionsPanel( data.actions );
+					} else {
+						refreshActions();
+					}
+
+					saveSession(
+						session.conversation_id,
+						session.case_profile,
+						session.conversation,
+						session.state,
+						session.actions
+					);
+
+					if ( data.advanced ) {
+						document.dispatchEvent( new CustomEvent( 'prose:stage-advanced', {
+							detail: {
+								conversation_id: session.conversation_id,
+								workflow: ( session.actions && session.actions.workflow ) || ( session.case_profile && session.case_profile.workflow ) || '',
+								facts: ( session.case_profile && session.case_profile.facts ) || {},
+								procedural_node: ( session.case_profile && session.case_profile.procedural_node ) || '',
+								stage: ( session.actions && session.actions.stage_context && session.actions.stage_context.current_stage )
+									? session.actions.stage_context.current_stage.id
+									: ''
+							}
+						} ) );
+					}
+				} )
+				.catch( function () {} );
 		}
 
 		/**
@@ -743,16 +884,24 @@
 					var completion = data.completion != null ? data.completion : ( result.completion || 0 );
 					session.case_profile.progress = completion;
 
+					var question = ( data.next_question || result.question || '' ).trim();
+					var nextAction = ( data.next_action || result.next_action || '' ).trim();
+					var needsReview = result.needs_review === true || result.next_action === 'needs_review';
+					var reviewText = STRINGS.review || 'We need a little more help with your intake. A team member may follow up.';
+					var assistantText = needsReview ? ( question || reviewText ) : question;
+
 					if ( CONFIG.useAi ) {
 						session.conversation = session.conversation || [];
 						session.conversation.push( { role: 'user', content: message } );
-						var agentText = ( data.next_question || result.question || '' ).trim();
-						if ( agentText ) {
-							session.conversation.push( { role: 'assistant', content: agentText } );
+						if ( assistantText ) {
+							session.conversation.push( { role: 'assistant', content: assistantText } );
 						}
 					}
 
-					if ( data.actions ) {
+					if ( session.case_profile && session.case_profile.procedural_node ) {
+						syncPackagePreview();
+						refreshActions();
+					} else if ( data.actions ) {
 						updateActionsPanel( data.actions );
 					} else {
 						refreshActions();
@@ -761,10 +910,6 @@
 					saveSession( session.conversation_id, session.case_profile, session.conversation, session.state, session.actions );
 					setCompletion( completion );
 					updateExportVisibility();
-
-					var question = ( data.next_question || result.question || '' ).trim();
-					var nextAction = ( data.next_action || result.next_action || '' ).trim();
-					var needsReview = result.needs_review === true || result.next_action === 'needs_review';
 					var justCompleted = 'intake_complete' === result.intent || 'intake_complete' === data.intent;
 					var isGuidance = 'guidance' === nextAction || 'complete_intake' === nextAction || 'guidance' === result.intent;
 					var formsReady = !!( data.actions && data.actions.stage_context && data.actions.stage_context.forms_visible );
@@ -772,7 +917,7 @@
 					var isComplete = justCompleted || isGuidance || formsReady;
 
 					if ( needsReview ) {
-						thinking.textContent = STRINGS.review || 'We need a little more help with your intake. A team member may follow up.';
+						thinking.textContent = assistantText || reviewText;
 						thinking.classList.add( 'prose-intake__bubble--complete' );
 						input.disabled = true;
 					} else if ( apiFailed ) {
