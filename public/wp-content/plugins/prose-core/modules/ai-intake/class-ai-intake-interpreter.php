@@ -2133,6 +2133,10 @@ final class AI_Intake_Interpreter {
 		$lines[] = '';
 
 		foreach ( (array) ( $stage_ctx['stage_forms'] ?? array() ) as $form ) {
+			if ( ! empty( $form['uncertain'] ) ) {
+				continue;
+			}
+
 			$code = trim( (string) ( $form['code'] ?? '' ) );
 
 			if ( '' === $code ) {

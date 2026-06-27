@@ -16,7 +16,10 @@
     "Are you trying to establish who the legal father of a child is?",
     "Is there an active divorce case?"
   ],
-  "routing_rules": [],
+  "routing_rules": [
+    { "condition": "acknowledgment_of_parentage_signed=true", "workflow": "child_support_nyc" },
+    { "condition": "existing_order_of_filiation=true", "workflow": "child_support_nyc" }
+  ],
   "routing_priority": 40,
   "intake_priority": 40,
   "entry_conditions": [
@@ -30,7 +33,10 @@
     { "key": "child_birth_date", "type": "date", "required": true, "question": "What is the child's date of birth?" },
     { "key": "petitioner_information", "type": "string", "required": true, "question": "What is your full legal name and contact information?" },
     { "key": "respondent_information", "type": "string", "required": true, "question": "What is the alleged father's full legal name and contact information?" },
-    { "key": "mother_information", "type": "string", "required": true, "question": "What is the mother's full legal name and contact information?" }
+    { "key": "mother_information", "type": "string", "required": true, "question": "What is the mother's full legal name and contact information?" },
+    { "key": "acknowledgment_of_parentage_signed", "type": "boolean", "required": false, "question": "Has an Acknowledgment of Parentage already been signed?" },
+    { "key": "genetic_testing_completed", "type": "boolean", "required": false, "question": "Has genetic testing already been completed?" },
+    { "key": "existing_order_of_filiation", "type": "boolean", "required": false, "question": "Has a court already entered an Order of Filiation?" }
   ],
   "stages": [
     "petition",

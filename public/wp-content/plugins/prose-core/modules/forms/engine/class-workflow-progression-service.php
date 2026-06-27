@@ -301,16 +301,16 @@ final class Workflow_Progression_Service {
 	public function get_stage_forms( string $workflow_enum_or_key, string $stage_slug, array $context = array() ): array {
 		$partition = $this->partition_stage_forms( $workflow_enum_or_key, $stage_slug, $context );
 
-		return $partition['applicable'];
+		return array_merge( $partition['applicable'], $partition['pending'] );
 	}
 
 	/**
-	 * Applicable and skipped forms for a stage.
+	 * Applicable, pending, and skipped forms for a stage.
 	 *
 	 * @param string               $workflow_enum_or_key Enum or key.
 	 * @param string               $stage_slug           Stage slug.
 	 * @param array<string, mixed> $context              Context.
-	 * @return array{applicable: array<int, array<string, mixed>>, skipped: array<int, array<string, mixed>>}
+	 * @return array{applicable: array<int, array<string, mixed>>, pending: array<int, array<string, mixed>>, skipped: array<int, array<string, mixed>>}
 	 */
 	public function partition_stage_forms( string $workflow_enum_or_key, string $stage_slug, array $context = array() ): array {
 		$definition = $this->definition( $workflow_enum_or_key, $context );
@@ -318,6 +318,7 @@ final class Workflow_Progression_Service {
 		if ( null === $definition ) {
 			return array(
 				'applicable' => array(),
+				'pending'    => array(),
 				'skipped'    => array(),
 			);
 		}

@@ -76,10 +76,11 @@ final class Workflow_Form_Applicability_Service {
 	 * @param string                           $workflow Workflow key.
 	 * @param string                           $stage    Stage slug.
 	 * @param array<string, mixed>             $context  Facts.
-	 * @return array{applicable: array<int, array<string, mixed>>, skipped: array<int, array<string, mixed>>}
+	 * @return array{applicable: array<int, array<string, mixed>>, pending: array<int, array<string, mixed>>, skipped: array<int, array<string, mixed>>}
 	 */
 	public function partition_stage_forms( array $forms, string $workflow, string $stage, array $context = array() ): array {
 		$applicable = array();
+		$pending    = array();
 		$skipped    = array();
 
 		foreach ( $forms as $form ) {
@@ -109,6 +110,16 @@ final class Workflow_Form_Applicability_Service {
 				continue;
 			}
 
+			if ( $result['uncertain'] ) {
+				$pending[] = array_merge(
+					$row,
+					array(
+						'reason' => $result['reason'],
+					)
+				);
+				continue;
+			}
+
 			$skipped[] = array_merge(
 				$row,
 				array(
@@ -119,6 +130,7 @@ final class Workflow_Form_Applicability_Service {
 
 		return array(
 			'applicable' => $applicable,
+			'pending'    => $pending,
 			'skipped'    => $skipped,
 		);
 	}
@@ -172,6 +184,10 @@ final class Workflow_Form_Applicability_Service {
 
 		if ( 'child_support_services_enrollment' === $token ) {
 			return $this->evaluate_child_support_enrollment( $context );
+		}
+
+		if ( in_array( $token, array( 'existing_order_exists', 'existing_support_order', 'support_agreement_exists', 'address_confidentiality_requested', 'prior_family_court_case' ), true ) ) {
+			return $this->evaluate_boolean_fact( $token, $context );
 		}
 
 		if ( in_array( $token, array( 'final_papers_ready', 'court_approves_package' ), true ) ) {
@@ -423,6 +439,78 @@ final class Workflow_Form_Applicability_Service {
 				is_bool( $expected ) ? ( $expected ? 'true' : 'false' ) : (string) $expected
 			)
 		);
+	}
+
+	/**
+	 * @param string               $key     Fact key.
+	 * @param array<string, mixed> $context Facts.
+	 * @return array{applicable: bool, uncertain: bool, reason: string}
+	 */
+	private function evaluate_boolean_fact( string $key, array $context ): array {
+		$value = $this->resolve_boolean_fact( $key, $context );
+
+		if ( null === $value ) {
+			return $this->uncertain(
+				sprintf(
+					/* translators: %s: fact key */
+					__( 'More information is needed to determine whether this form applies (%s).', 'prose-core' ),
+					$key
+				)
+			);
+		}
+
+		if ( $value ) {
+			return $this->include_form();
+		}
+
+		return $this->skip(
+			sprintf(
+				/* translators: %s: fact key */
+				__( 'This form does not apply because %s is not true for your case.', 'prose-core' ),
+				$key
+			)
+		);
+	}
+
+	/**
+	 * @param string               $key     Fact key.
+	 * @param array<string, mixed> $context Facts.
+	 * @return bool|null
+	 */
+	private function resolve_boolean_fact( string $key, array $context ): ?bool {
+		if ( array_key_exists( $key, $context ) ) {
+			return $this->to_bool( $context[ $key ] );
+		}
+
+		if ( 'existing_order_exists' === $key ) {
+			if ( array_key_exists( 'existing_orders', $context ) ) {
+				$orders = $context['existing_orders'];
+
+				if ( is_array( $orders ) ) {
+					return count( $orders ) > 0;
+				}
+
+				return $this->to_bool( $orders );
+			}
+
+			return null;
+		}
+
+		if ( 'existing_support_order' === $key ) {
+			if ( array_key_exists( 'existing_orders', $context ) ) {
+				$orders = $context['existing_orders'];
+
+				if ( is_array( $orders ) ) {
+					return count( $orders ) > 0;
+				}
+
+				return $this->to_bool( $orders );
+			}
+
+			return null;
+		}
+
+		return null;
 	}
 
 	/**

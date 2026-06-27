@@ -20,7 +20,9 @@
     "Are you seeking protection from that person?",
     "What is your relationship to that person?"
   ],
-  "routing_rules": [],
+  "routing_rules": [
+    { "condition": "immediate_danger=true", "workflow": "family_offense_nyc" }
+  ],
   "routing_priority": 80,
   "intake_priority": 95,
   "entry_conditions": [
@@ -35,7 +37,9 @@
     { "key": "relationship_to_respondent", "type": "string", "required": true, "question": "What is your relationship to that person?" },
     { "key": "incident_description", "type": "string", "required": true, "question": "What happened? Please describe the incident(s)." },
     { "key": "incident_date", "type": "date", "required": true, "question": "When did the most recent incident occur?" },
-    { "key": "minor_children_involved", "type": "boolean", "required": true, "question": "Are any children involved or in need of protection?" }
+    { "key": "minor_children_involved", "type": "boolean", "required": true, "question": "Are any children involved or in need of protection?" },
+    { "key": "immediate_danger", "type": "boolean", "required": true, "question": "Are you in immediate danger?" },
+    { "key": "existing_order_of_protection", "type": "boolean", "required": false, "question": "Is there already an Order of Protection involving the respondent?" }
   ],
   "stages": [
     "petition",
@@ -61,7 +65,7 @@
     {
       "stage": "petition",
       "forms": [
-        { "code": "GF-21", "internal_code": null, "title": "Request for Address Confidentiality" }
+        { "code": "GF-21", "internal_code": null, "title": "Request for Address Confidentiality", "required_when": "address_confidentiality_requested" }
       ]
     }
   ],

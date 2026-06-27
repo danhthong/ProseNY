@@ -30,7 +30,8 @@
     { "key": "child_birth_date", "type": "date", "required": true, "question": "What is the child's date of birth?" },
     { "key": "petitioner_information", "type": "string", "required": true, "question": "What is your full legal name and contact information?" },
     { "key": "adoption_type", "type": "string", "required": true, "question": "Is this an agency or private-placement adoption?" },
-    { "key": "agency_name", "type": "string", "required": false, "question": "If an agency adoption, what is the name of the agency?" }
+    { "key": "agency_name", "type": "string", "required": false, "question": "If an agency adoption, what is the name of the agency?" },
+    { "key": "prior_family_court_case", "type": "boolean", "required": false, "question": "Has there been a prior Family Court or adoption proceeding involving this child?" }
   ],
   "stages": [
     "petition",
@@ -46,8 +47,8 @@
     {
       "stage": "petition",
       "forms": [
-        { "code": "1-A", "internal_code": null, "title": "Petition for Adoption (Agency)" },
-        { "code": "1-C", "internal_code": null, "title": "Petition for Adoption (Private-Placement)" }
+        { "code": "1-A", "internal_code": null, "title": "Petition for Adoption (Agency)", "required_when": "adoption_type=agency" },
+        { "code": "1-C", "internal_code": null, "title": "Petition for Adoption (Private-Placement)", "required_when": "adoption_type=private_placement" }
       ]
     }
   ],
@@ -55,7 +56,7 @@
     {
       "stage": "petition",
       "forms": [
-        { "code": "1-E", "internal_code": null, "title": "Affirmation Regarding Prior Court Jurisdiction" }
+        { "code": "1-E", "internal_code": null, "title": "Affirmation Regarding Prior Court Jurisdiction", "required_when": "prior_family_court_case" }
       ]
     }
   ],

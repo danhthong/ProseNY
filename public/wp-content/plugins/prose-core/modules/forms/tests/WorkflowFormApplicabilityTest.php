@@ -171,4 +171,67 @@ class WorkflowFormApplicabilityTest extends TestCase {
 		$this->assertContains( 'UD-8(3)', $codes );
 		$this->assertContains( 'UD-8a', $codes );
 	}
+
+	/**
+	 * Adoption petition forms remain downloadable before adoption_type is known.
+	 */
+	public function test_adoption_forms_available_before_type_known(): void {
+		$result = $this->service->evaluate(
+			array(
+				'code'          => '1-A',
+				'required_when' => 'adoption_type=agency',
+			),
+			'adoption_nyc',
+			'petition',
+			array()
+		);
+
+		$this->assertFalse( $result['applicable'] );
+		$this->assertTrue( $result['uncertain'] );
+
+		$progression = new Workflow_Progression_Service();
+		$partition   = $progression->partition_stage_forms( 'adoption_nyc', 'petition', array() );
+		$codes       = array_column(
+			array_merge( $partition['applicable'], $partition['pending'] ),
+			'code'
+		);
+
+		$this->assertContains( '1-A', $codes );
+		$this->assertContains( '1-C', $codes );
+	}
+
+	/**
+	 * Modification forms require an existing order.
+	 */
+	public function test_gf40_skipped_without_existing_order(): void {
+		$result = $this->service->evaluate(
+			array(
+				'code'          => 'GF-40',
+				'required_when' => 'existing_order_exists',
+			),
+			'custody_nyc',
+			'modification',
+			array( 'existing_orders' => array() )
+		);
+
+		$this->assertFalse( $result['applicable'] );
+		$this->assertStringContainsString( 'existing_order_exists', $result['reason'] );
+	}
+
+	/**
+	 * Agency adoption petition is excluded for private-placement cases.
+	 */
+	public function test_adoption_agency_form_skipped_for_private_placement(): void {
+		$result = $this->service->evaluate(
+			array(
+				'code'          => '1-A',
+				'required_when' => 'adoption_type=agency',
+			),
+			'adoption_nyc',
+			'petition',
+			array( 'adoption_type' => 'private_placement' )
+		);
+
+		$this->assertFalse( $result['applicable'] );
+	}
 }

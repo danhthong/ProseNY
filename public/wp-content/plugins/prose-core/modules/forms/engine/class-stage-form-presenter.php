@@ -184,8 +184,11 @@ final class Stage_Form_Presenter {
 
 		$stage_index   = array_search( $current_stage, $stages, true );
 		$partition     = $this->progression->partition_stage_forms( $workflow, $current_stage, $context );
-		$stage_forms   = $this->build_stage_forms( $partition['applicable'] );
-		$skipped_forms = $this->build_skipped_forms( $partition['skipped'] );
+		$offerable     = array_merge( $partition['applicable'], $partition['pending'] );
+		$stage_forms   = $this->build_stage_forms( $offerable );
+		$skipped_forms = $this->build_skipped_forms(
+			array_merge( $partition['skipped'], $partition['pending'] )
+		);
 		$guidance      = $this->guidance->read_stage( $current_stage );
 		$future_stages = $this->build_future_stages( $stages, $stage_index );
 		$merged        = $this->merged->status( $workflow, $current_stage, $context );
@@ -508,7 +511,8 @@ final class Stage_Form_Presenter {
 				'title'        => (string) ( $form['title'] ?? $code ),
 				'purpose'      => (string) ( $form['title'] ?? $code ),
 				'required'     => ! empty( $form['required'] ),
-				'applicable'   => true,
+				'applicable'   => empty( $form['uncertain'] ),
+				'uncertain'    => ! empty( $form['uncertain'] ),
 				'url'          => $this->form_pages->resolve( $code ),
 				'download_url' => $this->form_download_url( $code ),
 			);

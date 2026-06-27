@@ -17,7 +17,10 @@
     "Is the person you need protection from a family or household member?",
     "Are you in immediate danger?"
   ],
-  "routing_rules": [],
+  "routing_rules": [
+    { "condition": "immediate_danger=true", "workflow": "order_of_protection_nyc" },
+    { "condition": "existing_order_of_protection=true", "workflow": "family_offense_nyc" }
+  ],
   "routing_priority": 85,
   "intake_priority": 100,
   "entry_conditions": [
@@ -26,6 +29,8 @@
     "Proceeding is commenced via a family offense petition"
   ],
   "required_fields": [
+    { "key": "immediate_danger", "type": "boolean", "required": true, "question": "Are you in immediate danger?" },
+    { "key": "existing_order_of_protection", "type": "boolean", "required": false, "question": "Is there already an Order of Protection involving the respondent?" },
     { "key": "county", "type": "string", "required": true, "question": "In which NYC county are you filing?" },
     { "key": "petitioner_information", "type": "string", "required": true, "question": "What is your full legal name and contact information?" },
     { "key": "respondent_information", "type": "string", "required": true, "question": "What is the name and contact information of the person you need protection from?" },

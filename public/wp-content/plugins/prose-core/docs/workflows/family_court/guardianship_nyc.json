@@ -30,7 +30,8 @@
     { "key": "child_birth_date", "type": "date", "required": true, "question": "What is the child's date of birth?" },
     { "key": "petitioner_information", "type": "string", "required": true, "question": "What is your full legal name and contact information?" },
     { "key": "parents_information", "type": "string", "required": true, "question": "What is the name and contact information of the child's parents?" },
-    { "key": "guardianship_type", "type": "string", "required": true, "question": "What type of guardianship are you seeking?" }
+    { "key": "guardianship_type", "type": "string", "required": true, "question": "What type of guardianship are you seeking?" },
+    { "key": "existing_guardianship_order", "type": "boolean", "required": false, "question": "Is there already a guardianship order for this child?" }
   ],
   "stages": [
     "petition",
@@ -54,8 +55,8 @@
     {
       "stage": "petition",
       "forms": [
-        { "code": "6-1c", "internal_code": null, "title": "Petition for Kinship Guardian" },
-        { "code": "6-8", "internal_code": null, "title": "Petition for Appointment of Standby Guardian" }
+        { "code": "6-1c", "internal_code": null, "title": "Petition for Kinship Guardian", "required_when": "guardianship_type=kinship" },
+        { "code": "6-8", "internal_code": null, "title": "Petition for Appointment of Standby Guardian", "required_when": "guardianship_type=standby" }
       ]
     }
   ],

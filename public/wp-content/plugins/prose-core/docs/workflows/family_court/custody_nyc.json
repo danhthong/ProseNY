@@ -65,19 +65,19 @@
     {
       "stage": "modification",
       "forms": [
-        { "code": "GF-40", "internal_code": null, "title": "Petition for Modification of Custody/Visitation Order" }
+        { "code": "GF-40", "internal_code": null, "title": "Petition for Modification of Custody/Visitation Order", "required_when": "existing_order_exists" }
       ]
     },
     {
       "stage": "violation",
       "forms": [
-        { "code": "GF-41", "internal_code": null, "title": "Petition for Violation of Custody/Visitation Order" }
+        { "code": "GF-41", "internal_code": null, "title": "Petition for Violation of Custody/Visitation Order", "required_when": "existing_order_exists" }
       ]
     },
     {
       "stage": "enforcement",
       "forms": [
-        { "code": "GF-41", "internal_code": null, "title": "Petition for Violation of Custody/Visitation Order" }
+        { "code": "GF-41", "internal_code": null, "title": "Petition for Violation of Custody/Visitation Order", "required_when": "existing_order_exists" }
       ]
     }
   ],
@@ -85,7 +85,7 @@
     {
       "stage": "petition",
       "forms": [
-        { "code": "GF-21", "internal_code": null, "title": "Request for Address Confidentiality" }
+        { "code": "GF-21", "internal_code": null, "title": "Request for Address Confidentiality", "required_when": "address_confidentiality_requested" }
       ]
     }
   ],

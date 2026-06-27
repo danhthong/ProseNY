@@ -43,7 +43,8 @@
     { "key": "petitioner_information", "type": "string", "required": true, "question": "What is your full legal name and contact information?" },
     { "key": "respondent_information", "type": "string", "required": true, "question": "What is the other parent's full legal name and contact information?" },
     { "key": "income", "type": "string", "required": true, "question": "What is the income of each parent?" },
-    { "key": "existing_orders", "type": "array", "required": false, "question": "Are there any existing support orders?" }
+    { "key": "existing_orders", "type": "array", "required": false, "question": "Are there any existing support orders?" },
+    { "key": "support_agreement_exists", "type": "boolean", "required": false, "question": "Do you already have a written child support agreement?" }
   ],
   "stages": [
     "petition",
@@ -66,13 +67,13 @@
     {
       "stage": "modification",
       "forms": [
-        { "code": "4-11", "internal_code": null, "title": "Petition for Modification of Child Support Order" }
+        { "code": "4-11", "internal_code": null, "title": "Petition for Modification of Child Support Order", "required_when": "existing_support_order" }
       ]
     },
     {
       "stage": "enforcement",
       "forms": [
-        { "code": "4-12", "internal_code": null, "title": "Petition for Violation of Support Order" }
+        { "code": "4-12", "internal_code": null, "title": "Petition for Violation of Support Order", "required_when": "existing_support_order" }
       ]
     }
   ],
@@ -80,7 +81,7 @@
     {
       "stage": "petition",
       "forms": [
-        { "code": "4-1", "internal_code": null, "title": "Petition for Order Upon Support Agreement" }
+        { "code": "4-1", "internal_code": null, "title": "Petition for Order Upon Support Agreement", "required_when": "support_agreement_exists" }
       ]
     }
   ],
