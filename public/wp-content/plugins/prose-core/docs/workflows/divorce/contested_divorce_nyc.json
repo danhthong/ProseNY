@@ -31,10 +31,6 @@
   ],
   "routing_rules": [
     {
-      "condition": "spouse_responded=false",
-      "workflow": "default_divorce_nyc"
-    },
-    {
       "condition": "domestic_violence_concerns=true",
       "workflow": "family_offense_nyc"
     }

@@ -135,11 +135,13 @@ final class Fact_Extractor {
 			$facts['residency_qualification'] = $residency;
 		}
 
-		if ( isset( $keys['marriage_date'] ) || isset( $keys['separation_date'] ) ) {
-			foreach ( Date_Parser::extract_marriage_and_separation( $message ) as $key => $value ) {
-				if ( isset( $keys[ $key ] ) && ! isset( $facts[ $key ] ) ) {
-					$facts[ $key ] = $value;
-				}
+		foreach ( Date_Parser::extract_marriage_and_separation( $message ) as $key => $value ) {
+			if ( isset( $facts[ $key ] ) || isset( $existing_facts[ $key ] ) ) {
+				continue;
+			}
+
+			if ( empty( $required_fields ) || isset( $keys[ $key ] ) ) {
+				$facts[ $key ] = $value;
 			}
 		}
 
@@ -229,12 +231,6 @@ final class Fact_Extractor {
 			return null !== $parsed ? array( $field_key => $parsed ) : array();
 		}
 
-		$boolean = $this->parse_boolean( $normalized );
-
-		if ( null !== $boolean && $this->is_boolean_discriminator( $field_key ) ) {
-			return array( $field_key => $boolean );
-		}
-
 		if ( $this->is_children_discriminator( $field_key ) ) {
 			$residency = $this->extract_residency_qualification( $normalized );
 
@@ -246,9 +242,9 @@ final class Fact_Extractor {
 
 			if ( null !== $child_count ) {
 				return array(
-					'child_count'         => $child_count,
-					'has_minor_children'  => $child_count > 0,
-					'children'            => $child_count > 0,
+					'child_count'        => $child_count,
+					'has_minor_children' => $child_count > 0,
+					'children'           => $child_count > 0,
 				);
 			}
 
@@ -261,6 +257,12 @@ final class Fact_Extractor {
 			}
 
 			return array();
+		}
+
+		$boolean = $this->parse_boolean( $normalized );
+
+		if ( null !== $boolean && $this->is_boolean_discriminator( $field_key ) ) {
+			return array( $field_key => $boolean );
 		}
 
 		$integer = $this->parse_integer( $normalized );

@@ -58,7 +58,7 @@ final class Date_Parser {
 			$year = (int) $matches[1];
 
 			if ( $year >= 1900 && $year <= 2100 ) {
-				return sprintf( '%04d-01-01', $year );
+				return sprintf( '%04d-07-01', $year );
 			}
 		}
 
@@ -80,8 +80,16 @@ final class Date_Parser {
 	public static function extract_marriage_and_separation( string $message ): array {
 		$facts = array();
 
-		if ( preg_match( '/\b(?:were married|got married|married)\s+(?:on\s+)?([^.;,]+?)(?:\.|;|,|$|\s+and\b|\s+we\b)/i', $message, $matches ) ) {
+		if ( preg_match( '/\b(?:were married|got married|married)\s+(?:on\s+)?([A-Za-z]+\s+\d{1,2},\s*\d{4})\b/i', $message, $matches ) ) {
 			$parsed = self::parse( trim( $matches[1] ) );
+
+			if ( null !== $parsed ) {
+				$facts['marriage_date'] = $parsed;
+			}
+		}
+
+		if ( ! isset( $facts['marriage_date'] ) && preg_match( '/\b(?:were married|got married|married)\s+(?:on\s+)?([^.;]+?)(?:\.|;|$|\s+and\b|\s+we\b)/i', $message, $matches ) ) {
+			$parsed = self::parse( self::normalize_date_fragment( trim( $matches[1] ) ) );
 
 			if ( null !== $parsed ) {
 				$facts['marriage_date'] = $parsed;
@@ -113,6 +121,22 @@ final class Date_Parser {
 		}
 
 		return $facts;
+	}
+
+	/**
+	 * Trim trailing location phrases from a captured date fragment.
+	 *
+	 * @param string $text Captured phrase.
+	 * @return string
+	 */
+	private static function normalize_date_fragment( string $text ): string {
+		$text = trim( $text );
+
+		if ( preg_match( '/^(.+?\d{4})(?:\s+in\b.*)?$/i', $text, $matches ) ) {
+			return trim( $matches[1] );
+		}
+
+		return $text;
 	}
 
 	/**
@@ -167,13 +191,13 @@ final class Date_Parser {
 	}
 
 	/**
-	 * Whether a stored date is only a year placeholder (YYYY-01-01).
+	 * Whether a stored date is only a year placeholder (YYYY-07-01).
 	 *
 	 * @param string $ymd Date string.
 	 * @return bool
 	 */
 	public static function is_year_only_placeholder( string $ymd ): bool {
-		return (bool) preg_match( '/^\d{4}-01-01$/', trim( $ymd ) );
+		return (bool) preg_match( '/^\d{4}-07-01$/', trim( $ymd ) );
 	}
 
 	/**

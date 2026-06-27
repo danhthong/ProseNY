@@ -290,7 +290,7 @@ final class Workflow_Resolver {
 
 		if ( $store->has( 'children' ) ) {
 			$has_children = (bool) $store->get( 'children' );
-			$filtered     = $this->filter_divorce_children( $filtered, $has_children );
+			$filtered     = $this->filter_divorce_children( $filtered, $has_children, $store );
 		}
 
 		if ( $store->has( 'spouse_agrees' ) ) {
@@ -327,14 +327,23 @@ final class Workflow_Resolver {
 	 *
 	 * @param array<string, array<string, mixed>> $candidates   Candidates.
 	 * @param bool                                $has_children Has children.
+	 * @param Fact_Store                          $store        Facts.
 	 * @return array<string, array<string, mixed>>
 	 */
-	private function filter_divorce_children( array $candidates, bool $has_children ): array {
-		$with    = array( 'uncontested_divorce_children_nyc', 'contested_divorce_nyc' );
-		$without = array( 'uncontested_divorce_no_children_nyc' );
+	private function filter_divorce_children( array $candidates, bool $has_children, Fact_Store $store ): array {
+		$spouse_disputes = $store->has( 'spouse_agrees' ) && false === (bool) $store->get( 'spouse_agrees' );
 
-		$allowed = $has_children ? $with : $without;
-		$result  = array();
+		if ( $has_children ) {
+			$allowed = $spouse_disputes
+				? array( 'contested_divorce_nyc' )
+				: array( 'uncontested_divorce_children_nyc' );
+		} else {
+			$allowed = $spouse_disputes
+				? array( 'contested_divorce_nyc' )
+				: array( 'uncontested_divorce_no_children_nyc' );
+		}
+
+		$result = array();
 
 		foreach ( $candidates as $key => $workflow ) {
 			if ( in_array( $key, $allowed, true ) || ! str_contains( $key, 'divorce' ) ) {

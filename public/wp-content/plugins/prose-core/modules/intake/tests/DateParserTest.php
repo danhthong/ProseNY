@@ -31,11 +31,23 @@ class DateParserTest extends TestCase {
 	 * Year-only anchor.
 	 */
 	public function test_parse_year_only(): void {
-		$this->assertSame( '2016-01-01', Date_Parser::parse( '2016' ) );
-		$this->assertTrue( Date_Parser::is_year_only_placeholder( '2016-01-01' ) );
+		$this->assertSame( '2016-07-01', Date_Parser::parse( '2016' ) );
+		$this->assertTrue( Date_Parser::is_year_only_placeholder( '2016-07-01' ) );
+		$this->assertFalse( Date_Parser::is_year_only_placeholder( '2016-01-01' ) );
 		$this->assertFalse( Date_Parser::is_year_only_placeholder( '2016-12-21' ) );
-		$this->assertSame( 0.82, Date_Parser::confidence_for( '2016-01-01' ) );
+		$this->assertSame( 0.82, Date_Parser::confidence_for( '2016-07-01' ) );
 		$this->assertSame( 0.95, Date_Parser::confidence_for( '2016-12-21' ) );
+	}
+
+	/**
+	 * Natural-language month day with year.
+	 */
+	public function test_extract_month_day_year_marriage_date(): void {
+		$facts = Date_Parser::extract_marriage_and_separation(
+			'We were married on June 15, 2015 in Queens.'
+		);
+
+		$this->assertSame( '2015-06-15', $facts['marriage_date'] ?? null );
 	}
 
 	/**
@@ -46,7 +58,7 @@ class DateParserTest extends TestCase {
 			'Resident 5 years in Brooklyn; married 2016; one child; agreement on all issues.'
 		);
 
-		$this->assertSame( '2016-01-01', $facts['marriage_date'] ?? null );
+		$this->assertSame( '2016-07-01', $facts['marriage_date'] ?? null );
 	}
 
 	/**

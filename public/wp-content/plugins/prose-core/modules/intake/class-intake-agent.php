@@ -185,7 +185,7 @@ final class Intake_Agent {
 		// 2) Pending discriminator answer (bare "yes"/"no"/number) influences
 		//    routing. Only for discriminator questions, never for free-text or
 		//    date fields, so a correction is not forced into the wrong slot.
-		if ( '' !== $pending_field && $this->is_discriminator_field( $pending_field ) && ! $children_changed ) {
+		if ( '' !== $pending_field && $this->is_discriminator_field( $pending_field ) && ! $children_changed && ! $this->pending_field_already_filled( $pending_field, $profile->facts() ) ) {
 			$pre = $this->non_empty( $this->extractor->infer_pending_answer( $message, $pending_field, null ) );
 
 			if ( ! empty( $pre ) ) {
@@ -196,7 +196,7 @@ final class Intake_Agent {
 
 		// 2b) Capture pending workflow field answers before routing re-evaluates
 		//     the turn (e.g. "Queens" for marriage_location must not be lost).
-		if ( '' !== $pending_field && ! $this->is_discriminator_field( $pending_field ) && ! $children_changed ) {
+		if ( '' !== $pending_field && ! $this->is_discriminator_field( $pending_field ) && ! $children_changed && ! $this->pending_field_already_filled( $pending_field, $profile->facts() ) ) {
 			$pending_type = $this->field_type( $this->required_fields_for( $prior_workflow ), $pending_field );
 
 			if ( $this->message_answers_field( $message, $pending_field, $pending_type ) ) {
@@ -239,7 +239,7 @@ final class Intake_Agent {
 		// 6) Typed refinement of the pending answer — only when the message
 		//    genuinely answers that field (guards against capturing corrections
 		//    like "sorry i have two kids" as a date or a name).
-		if ( '' !== $pending_field && ! $children_changed ) {
+		if ( '' !== $pending_field && ! $children_changed && ! $this->pending_field_already_filled( $pending_field, $profile->facts() ) ) {
 			$type = $this->field_type( $required_fields, $pending_field );
 
 			if ( $this->message_answers_field( $message, $pending_field, $type ) ) {
@@ -582,6 +582,35 @@ final class Intake_Agent {
 			array( 'children', 'has_minor_children', 'child_count', 'spouse_agrees', 'spouse_responded', 'active_divorce', 'protection_needed', 'is_default' ),
 			true
 		);
+	}
+
+	/**
+	 * Whether a pending field already holds a usable value.
+	 *
+	 * @param string                           $field Field key.
+	 * @param \ProSe\Core\Routing\Fact_Store   $facts Fact store.
+	 * @return bool
+	 */
+	private function pending_field_already_filled( string $field, \ProSe\Core\Routing\Fact_Store $facts ): bool {
+		if ( ! $facts->has( $field ) ) {
+			return false;
+		}
+
+		$value = $facts->get( $field );
+
+		if ( null === $value ) {
+			return false;
+		}
+
+		if ( is_string( $value ) && '' === trim( $value ) ) {
+			return false;
+		}
+
+		if ( is_array( $value ) && array() === $value ) {
+			return false;
+		}
+
+		return true;
 	}
 
 	/**

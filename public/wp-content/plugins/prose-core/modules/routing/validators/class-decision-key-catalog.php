@@ -19,6 +19,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Decision_Key_Catalog {
 
 	/**
+	 * Preferred order for divorce routing discriminators.
+	 *
+	 * @var array<string, int>
+	 */
+	private const DIVORCE_KEY_ORDER = array(
+		'children'                    => 10,
+		'spouse_agrees'               => 20,
+		'marital_property_resolved'   => 30,
+		'spouse_responded'            => 40,
+		'custody_dispute'             => 50,
+		'support_dispute'             => 60,
+		'domestic_violence_concerns'  => 70,
+	);
+
+	/**
 	 * Workflow catalog.
 	 *
 	 * @var Workflow_Catalog
@@ -61,8 +76,23 @@ final class Decision_Key_Catalog {
 		}
 
 		$keys = array_merge( $keys, $this->fallback_keys( $candidate_keys ) );
+		$keys = array_values( array_unique( $keys ) );
 
-		return array_values( array_unique( $keys ) );
+		usort(
+			$keys,
+			static function ( string $left, string $right ): int {
+				$left_order  = self::DIVORCE_KEY_ORDER[ $left ] ?? 1000;
+				$right_order = self::DIVORCE_KEY_ORDER[ $right ] ?? 1000;
+
+				if ( $left_order === $right_order ) {
+					return strcmp( $left, $right );
+				}
+
+				return $left_order <=> $right_order;
+			}
+		);
+
+		return $keys;
 	}
 
 	/**

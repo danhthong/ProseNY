@@ -373,14 +373,7 @@ final class Case_Summary_Presenter {
 				break;
 			}
 
-			$guidance = $this->guidance->read_stage( (string) $stage );
-			$label    = trim( (string) ( $guidance['title'] ?? '' ) );
-
-			if ( '' === $label ) {
-				$label = ucwords( str_replace( '_', ' ', (string) $stage ) );
-			}
-
-			$labels[] = $label;
+			$labels[] = ucwords( str_replace( '_', ' ', (string) $stage ) );
 		}
 
 		return $labels;

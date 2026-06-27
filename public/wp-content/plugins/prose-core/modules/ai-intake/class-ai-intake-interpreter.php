@@ -490,8 +490,16 @@ final class AI_Intake_Interpreter {
 		} elseif ( $has_workflow ) {
 			$intake->set_pending_field( '' );
 		}
-		$next_action  = ! empty( $brief_extra['guidance_brief_delivered'] ) ? 'guidance' : 'ask_question';
-		$intent       = ! empty( $brief_extra['guidance_brief_delivered'] ) ? 'guidance' : 'gathering';
+		if ( $has_workflow && empty( $this->conversation_missing( $missing, $workflow ) ) && $completion_pct >= 100 ) {
+			$intent      = 'intake_complete';
+			$next_action = 'complete_intake';
+		} elseif ( ! empty( $brief_extra['guidance_brief_delivered'] ) ) {
+			$intent      = 'guidance';
+			$next_action = 'guidance';
+		} else {
+			$intent      = 'gathering';
+			$next_action = 'ask_question';
+		}
 
 		$stored_fingerprint = (string) ( $state['case_profile']['roadmap_fingerprint'] ?? '' );
 		$roadmap_resolution = $this->roadmap_presenter->resolve_with_change_detection(
@@ -1505,13 +1513,20 @@ final class AI_Intake_Interpreter {
 			return $reply;
 		}
 
+		$stage_id    = sanitize_key( (string) ( $stage_ctx['current_stage']['id'] ?? '' ) );
+		$stage_title = strtolower( trim( (string) ( $stage_ctx['current_stage']['title'] ?? '' ) ) );
+		$next_type   = sanitize_key( (string) ( $stage_ctx['next_action']['type'] ?? '' ) );
+
+		if ( 'calendar' === $stage_id || 'stage_calendar' === $next_type || str_contains( $stage_title, 'final papers' ) ) {
+			return $this->format_calendar_stage_advance_message( $stage_ctx );
+		}
+
 		$forms = (array) ( $stage_ctx['stage_forms'] ?? array() );
 
 		if ( empty( $forms ) ) {
 			return $reply;
 		}
 
-		$stage_id = sanitize_key( (string) ( $stage_ctx['current_stage']['id'] ?? '' ) );
 		$reply_lc = strtolower( $reply );
 
 		$mentions_wrong_stage_forms = 'commencement' !== $stage_id && (
@@ -1610,6 +1625,10 @@ final class AI_Intake_Interpreter {
 		array $stage_ctx,
 		bool $has_workflow
 	): string {
+		if ( $this->message_asks_current_stage_forms( $message ) ) {
+			return $reply;
+		}
+
 		if ( ! $has_workflow || ! $this->message_requests_guidance( $message ) ) {
 			return $reply;
 		}

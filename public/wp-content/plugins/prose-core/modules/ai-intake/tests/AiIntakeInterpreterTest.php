@@ -708,10 +708,10 @@ class AiIntakeInterpreterTest extends TestCase {
 		$result = $this->interpreter->interpret( 'which forms need for this state?', $state );
 		$reply  = (string) ( $result['question'] ?? '' );
 
-		$this->assertStringContainsString( 'UD-4', $reply );
+		$this->assertMatchesRegularExpression( '/\bUD-4\b/', $reply );
 		$this->assertStringContainsString( 'Final Papers & Calendar', $reply );
-		$this->assertStringNotContainsString( 'UD-1', $reply );
-		$this->assertStringNotContainsString( 'UD-2', $reply );
+		$this->assertDoesNotMatchRegularExpression( '/\bUD-1\b/', $reply );
+		$this->assertDoesNotMatchRegularExpression( '/\bUD-2\b/', $reply );
 
 		$summary = (string) ( $result['state']['conversation_summary'] ?? '' );
 		$this->assertStringNotContainsString( 'Case Summary', $summary );

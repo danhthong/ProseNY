@@ -214,6 +214,7 @@ class IntakeAgentTest extends TestCase {
 				'custody_arrangement'       => 'joint',
 				'child_support_terms'       => 'agreed',
 				'marital_property_resolved' => true,
+				'spouse_agrees'             => true,
 			)
 		);
 
@@ -355,7 +356,7 @@ class IntakeAgentTest extends TestCase {
 			'Resident 5 years in Brooklyn; married 2016; one child; agreement on all issues.'
 		);
 
-		$this->assertSame( '2016-01-01', $result['case_profile']['facts']['marriage_date'] ?? null );
+		$this->assertSame( '2016-07-01', $result['case_profile']['facts']['marriage_date'] ?? null );
 	}
 
 	/**
