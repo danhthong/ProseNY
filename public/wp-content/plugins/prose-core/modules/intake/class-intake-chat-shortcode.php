@@ -184,6 +184,10 @@ final class Intake_Chat_Shortcode {
 						'uploadedFile'    => __( 'Uploaded document:', 'prose-core' ),
 						'documentIdentifiedPrefix' => __( 'This looks like a', 'prose-core' ),
 						'documentUnknown' => __( 'I could not automatically identify this document from the PDF. I will ask a few questions to figure out what kind of papers you received.', 'prose-core' ),
+						'exportDebug'     => __( 'Export debug', 'prose-core' ),
+						'exportCopied'    => __( 'Copied to clipboard', 'prose-core' ),
+						'exportDownloaded' => __( 'Debug export downloaded', 'prose-core' ),
+						'exportError'     => __( 'Could not export conversation.', 'prose-core' ),
 					),
 				)
 			);
@@ -199,9 +203,14 @@ final class Intake_Chat_Shortcode {
 		<section class="prose-intake" data-prose-intake aria-live="polite">
 			<header class="prose-intake__header">
 				<h2 class="prose-intake__title"><?php echo esc_html( $title ); ?></h2>
-				<button type="button" class="prose-intake__reset" data-prose-intake-reset>
-					<?php esc_html_e( 'Start over', 'prose-core' ); ?>
-				</button>
+				<div class="prose-intake__header-actions">
+					<button type="button" class="prose-intake__export" data-prose-intake-export hidden>
+						<?php esc_html_e( 'Export debug', 'prose-core' ); ?>
+					</button>
+					<button type="button" class="prose-intake__reset" data-prose-intake-reset>
+						<?php esc_html_e( 'Start over', 'prose-core' ); ?>
+					</button>
+				</div>
 			</header>
 
 			<div class="prose-intake__transcript" data-prose-intake-transcript></div>

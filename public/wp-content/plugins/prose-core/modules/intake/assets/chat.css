@@ -48,7 +48,15 @@
 	color: #0f172a;
 }
 
-.prose-intake__reset {
+.prose-intake__header-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.prose-intake__reset,
+.prose-intake__export {
 	appearance: none;
 	border: 1px solid #e2e8f0;
 	background: #f8fafc;
@@ -60,9 +68,21 @@
 	cursor: pointer;
 }
 
-.prose-intake__reset:hover {
+.prose-intake__export {
+	border-color: #cbd5e1;
+	color: #334155;
+}
+
+.prose-intake__reset:hover,
+.prose-intake__export:hover {
 	background: #f1f5f9;
 	color: #0f172a;
+}
+
+.prose-intake__export.is-success {
+	border-color: #86efac;
+	background: #f0fdf4;
+	color: #166534;
 }
 
 .prose-intake__progress {

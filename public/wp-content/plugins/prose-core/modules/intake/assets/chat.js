@@ -81,6 +81,7 @@
 		var input = root.querySelector( '[data-prose-intake-input]' );
 		var sendBtn = root.querySelector( '[data-prose-intake-send]' );
 		var resetBtn = root.querySelector( '[data-prose-intake-reset]' );
+		var exportBtn = root.querySelector( '[data-prose-intake-export]' );
 		var progress = root.querySelector( '[data-prose-intake-progress]' );
 		var completionText = root.querySelector( '[data-prose-intake-completion-text]' );
 		var completionBar = root.querySelector( '[data-prose-intake-completion-bar]' );
@@ -101,6 +102,7 @@
 		var summaryVisible = false;
 		var actionsPinned = false;
 		var resumePending = false;
+		var isDashboardConversation = !!conversationIdFromUrl();
 
 		/**
 		 * Read conversation_id from the URL for dashboard resume links.
@@ -149,6 +151,7 @@
 					session.state = data.state && typeof data.state === 'object' ? data.state : {};
 					session.actions = data.actions && typeof data.actions === 'object' ? data.actions : {};
 					session.conversation = Array.isArray( data.conversation ) ? data.conversation : [];
+					isDashboardConversation = true;
 
 					saveSession(
 						session.conversation_id,
@@ -203,6 +206,117 @@
 			} else if ( history.length ) {
 				refreshActions();
 			}
+
+			updateExportVisibility();
+		}
+
+		/**
+		 * Show the debug export control only for dashboard-resumed conversations.
+		 *
+		 * @return {void}
+		 */
+		function updateExportVisibility() {
+			if ( ! exportBtn ) {
+				return;
+			}
+
+			exportBtn.hidden = ! ( CONFIG.loggedIn && isDashboardConversation );
+		}
+
+		/**
+		 * Build a debug payload from the current session for sharing or download.
+		 *
+		 * @return {Object}
+		 */
+		function buildDebugExport() {
+			return {
+				exported_at: new Date().toISOString(),
+				page_url: window.location.href,
+				conversation_id: session.conversation_id || '',
+				conversation: Array.isArray( session.conversation ) ? session.conversation : [],
+				case_profile: session.case_profile || {},
+				state: session.state || {},
+				actions: session.actions || {},
+			};
+		}
+
+		/**
+		 * Copy text to the clipboard when supported.
+		 *
+		 * @param {string} text Text to copy.
+		 * @return {Promise<void>}
+		 */
+		function copyText( text ) {
+			if ( navigator.clipboard && navigator.clipboard.writeText ) {
+				return navigator.clipboard.writeText( text );
+			}
+
+			return new Promise( function ( resolve, reject ) {
+				try {
+					var textarea = document.createElement( 'textarea' );
+					textarea.value = text;
+					textarea.setAttribute( 'readonly', '' );
+					textarea.style.position = 'absolute';
+					textarea.style.left = '-9999px';
+					document.body.appendChild( textarea );
+					textarea.select();
+					document.execCommand( 'copy' );
+					document.body.removeChild( textarea );
+					resolve();
+				} catch ( err ) {
+					reject( err );
+				}
+			} );
+		}
+
+		/**
+		 * Download the current session as JSON and copy it to the clipboard.
+		 *
+		 * @return {void}
+		 */
+		function exportDebugConversation() {
+			if ( ! exportBtn ) {
+				return;
+			}
+
+			var payload = buildDebugExport();
+			var json = JSON.stringify( payload, null, 2 );
+			var originalLabel = exportBtn.textContent;
+			var filename = 'prose-intake-debug-' + ( session.conversation_id || 'session' ) + '.json';
+
+			function showFeedback( message, isError ) {
+				exportBtn.textContent = message;
+				exportBtn.classList.toggle( 'is-success', ! isError );
+
+				window.setTimeout( function () {
+					exportBtn.textContent = originalLabel;
+					exportBtn.classList.remove( 'is-success' );
+				}, 2200 );
+			}
+
+			try {
+				var blob = new Blob( [ json ], { type: 'application/json' } );
+				var url = window.URL.createObjectURL( blob );
+				var link = document.createElement( 'a' );
+				link.href = url;
+				link.download = filename;
+				link.style.display = 'none';
+				document.body.appendChild( link );
+				link.click();
+				document.body.removeChild( link );
+				window.URL.revokeObjectURL( url );
+			} catch ( downloadErr ) {
+				showFeedback( STRINGS.exportError || 'Could not export conversation.', true );
+				return;
+			}
+
+			copyText( json )
+				.then( function () {
+					showFeedback( STRINGS.exportCopied || 'Copied to clipboard' );
+				} )
+				.catch( function () {
+					showFeedback( STRINGS.exportDownloaded || 'Debug export downloaded' );
+				} );
 		}
 
 		/**
@@ -646,6 +760,7 @@
 
 					saveSession( session.conversation_id, session.case_profile, session.conversation, session.state, session.actions );
 					setCompletion( completion );
+					updateExportVisibility();
 
 					var question = ( data.next_question || result.question || '' ).trim();
 					var nextAction = ( data.next_action || result.next_action || '' ).trim();
@@ -851,6 +966,7 @@
 			resetBtn.addEventListener( 'click', function () {
 				clearSession();
 				session = { conversation_id: '', case_profile: {}, conversation: [], state: {}, actions: {} };
+				isDashboardConversation = !!conversationIdFromUrl();
 				summaryVisible = false;
 				actionsPinned = false;
 				document.dispatchEvent( new CustomEvent( 'prose:workflow-cleared', { detail: {} } ) );
@@ -873,8 +989,13 @@
 					toggleSummaryBtn.hidden = true;
 				}
 				addBubble( 'agent', STRINGS.greeting || 'How can I help with your legal matter today?' );
+				updateExportVisibility();
 				input.focus();
 			} );
+		}
+
+		if ( exportBtn ) {
+			exportBtn.addEventListener( 'click', exportDebugConversation );
 		}
 
 		document.querySelectorAll( '[data-prose-intake-prompt]' ).forEach( function ( el ) {
