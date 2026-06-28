@@ -13,6 +13,92 @@
 	var STRINGS = CONFIG.strings || {};
 
 	/**
+	 * Clear the persisted intake session.
+	 *
+	 * @return {void}
+	 */
+	function clearSession() {
+		try {
+			window.localStorage.removeItem( STORAGE_KEY );
+		} catch ( e ) {}
+	}
+
+	/**
+	 * Whether the logout reset cookie is present.
+	 *
+	 * @return {boolean}
+	 */
+	function hasLogoutResetCookie() {
+		try {
+			return document.cookie.split( ';' ).some( function ( part ) {
+				return part.trim().indexOf( 'prose_clear_intake=1' ) === 0;
+			} );
+		} catch ( e ) {
+			return false;
+		}
+	}
+
+	/**
+	 * Expire the logout reset cookie after the session is cleared.
+	 *
+	 * @return {void}
+	 */
+	function clearLogoutResetCookie() {
+		var path = CONFIG.cookiePath || '/';
+
+		try {
+			document.cookie = 'prose_clear_intake=; Max-Age=0; path=' + path;
+		} catch ( e ) {}
+	}
+
+	/**
+	 * Clear intake storage when the visitor logged out or switched accounts.
+	 *
+	 * @return {boolean} Whether storage was cleared.
+	 */
+	function clearSessionIfAuthChanged() {
+		if ( hasLogoutResetCookie() ) {
+			clearSession();
+			clearLogoutResetCookie();
+			return true;
+		}
+
+		var currentUserId = CONFIG.userId || 0;
+
+		try {
+			var raw = window.localStorage.getItem( STORAGE_KEY );
+
+			if ( ! raw ) {
+				return false;
+			}
+
+			var parsed = JSON.parse( raw );
+
+			if ( ! parsed || typeof parsed !== 'object' ) {
+				return false;
+			}
+
+			var storedUserId = parsed.user_id != null ? parseInt( parsed.user_id, 10 ) : 0;
+
+			if ( isNaN( storedUserId ) ) {
+				storedUserId = 0;
+			}
+
+			if ( ( 0 === currentUserId && storedUserId > 0 ) ||
+				( currentUserId > 0 && storedUserId > 0 && storedUserId !== currentUserId ) ) {
+				clearSession();
+				return true;
+			}
+		} catch ( e ) {}
+
+		return false;
+	}
+
+	if ( clearSessionIfAuthChanged() ) {
+		document.dispatchEvent( new CustomEvent( 'prose:workflow-cleared', { detail: {} } ) );
+	}
+
+	/**
 	 * Read the persisted session ({ conversation_id, case_profile, conversation, state, actions }).
 	 *
 	 * @return {{conversation_id: string, case_profile: Object, conversation: Array, state: Object, actions: Object}}
@@ -55,18 +141,10 @@
 					case_profile: caseProfile,
 					conversation: conversation || [],
 					state: state || {},
-					actions: actions || {}
+					actions: actions || {},
+					user_id: CONFIG.userId || 0
 				} )
 			);
-		} catch ( e ) {}
-	}
-
-	/**
-	 * Clear the session.
-	 */
-	function clearSession() {
-		try {
-			window.localStorage.removeItem( STORAGE_KEY );
 		} catch ( e ) {}
 	}
 

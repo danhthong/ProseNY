@@ -7,6 +7,80 @@
 		return;
 	}
 
+	var storageKey = cfg.storageKey || 'prose_intake_session';
+
+	function clearStoredSession() {
+		try {
+			window.localStorage.removeItem( storageKey );
+		} catch ( err ) {
+			// Ignore storage failures.
+		}
+	}
+
+	function hasLogoutResetCookie() {
+		try {
+			return document.cookie.split( ';' ).some( function ( part ) {
+				return part.trim().indexOf( 'prose_clear_intake=1' ) === 0;
+			} );
+		} catch ( err ) {
+			return false;
+		}
+	}
+
+	function clearLogoutResetCookie() {
+		var path = cfg.cookiePath || '/';
+
+		try {
+			document.cookie = 'prose_clear_intake=; Max-Age=0; path=' + path;
+		} catch ( err ) {
+			// Ignore cookie failures.
+		}
+	}
+
+	function clearSessionIfAuthChanged() {
+		if ( hasLogoutResetCookie() ) {
+			clearStoredSession();
+			clearLogoutResetCookie();
+			return true;
+		}
+
+		var currentUserId = cfg.userId || 0;
+
+		try {
+			var raw = window.localStorage.getItem( storageKey );
+
+			if ( ! raw ) {
+				return false;
+			}
+
+			var parsed = JSON.parse( raw );
+
+			if ( ! parsed || typeof parsed !== 'object' ) {
+				return false;
+			}
+
+			var storedUserId = parsed.user_id != null ? parseInt( parsed.user_id, 10 ) : 0;
+
+			if ( isNaN( storedUserId ) ) {
+				storedUserId = 0;
+			}
+
+			if ( ( 0 === currentUserId && storedUserId > 0 ) ||
+				( currentUserId > 0 && storedUserId > 0 && storedUserId !== currentUserId ) ) {
+				clearStoredSession();
+				return true;
+			}
+		} catch ( err ) {
+			// Ignore malformed session payloads.
+		}
+
+		return false;
+	}
+
+	if ( clearSessionIfAuthChanged() ) {
+		document.dispatchEvent( new CustomEvent( 'prose:workflow-cleared', { detail: {} } ) );
+	}
+
 	var root = document.querySelector( '[data-prose-package]' );
 
 	if ( ! root ) {
@@ -248,10 +322,17 @@
 	} );
 
 	function bootstrapFromStoredSession() {
-		var storageKey = cfg.storageKey || 'prose_intake_session';
+		if ( clearSessionIfAuthChanged() ) {
+			if ( root ) {
+				root.hidden = true;
+			}
+			return;
+		}
+
+		var storageKeyLocal = cfg.storageKey || 'prose_intake_session';
 
 		try {
-			var raw = localStorage.getItem( storageKey );
+			var raw = localStorage.getItem( storageKeyLocal );
 
 			if ( ! raw ) {
 				return;

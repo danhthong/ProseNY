@@ -117,6 +117,8 @@ final class Package_Preview_Shortcode {
 					'mergedUrl'  => esc_url_raw( rest_url( Package_Builder_Rest_Controller::NAMESPACE . Package_Builder_Rest_Controller::ROUTE_MERGED_PDF ) ),
 					'nonce'      => wp_create_nonce( 'wp_rest' ),
 					'storageKey' => 'prose_intake_session',
+					'userId'     => get_current_user_id(),
+					'cookiePath' => COOKIEPATH ? COOKIEPATH : '/',
 					'strings'    => array(
 						'heading'    => __( 'Your document package', 'prose-core' ),
 						'required'   => __( 'Required', 'prose-core' ),

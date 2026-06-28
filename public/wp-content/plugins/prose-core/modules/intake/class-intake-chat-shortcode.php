@@ -70,6 +70,31 @@ final class Intake_Chat_Shortcode {
 	public function register( Loader $loader ): void {
 		$loader->add_action( 'init', $this, 'register_shortcode' );
 		$loader->add_action( 'wp_enqueue_scripts', $this, 'register_assets' );
+		$loader->add_action( 'wp_logout', $this, 'flag_intake_session_reset' );
+	}
+
+	/**
+	 * Mark the browser intake session for clearing after logout.
+	 *
+	 * localStorage survives WordPress logout redirects; a short-lived cookie tells
+	 * the widget to wipe the stored conversation on the next page load.
+	 *
+	 * @return void
+	 */
+	public function flag_intake_session_reset(): void {
+		if ( headers_sent() ) {
+			return;
+		}
+
+		setcookie(
+			'prose_clear_intake',
+			'1',
+			time() + 600,
+			COOKIEPATH ? COOKIEPATH : '/',
+			COOKIE_DOMAIN,
+			is_ssl(),
+			false
+		);
 	}
 
 	/**
@@ -160,6 +185,8 @@ final class Intake_Chat_Shortcode {
 					'maxUploadBytes' => Documents_Rest_Controller::MAX_UPLOAD_BYTES,
 					'useAi'          => $use_ai,
 					'loggedIn'       => is_user_logged_in(),
+					'userId'         => get_current_user_id(),
+					'cookiePath'     => COOKIEPATH ? COOKIEPATH : '/',
 					'conversationRestUrl' => esc_url_raw( rest_url( 'prose/v1/me/conversations/session/' ) ),
 					'nonce'          => wp_create_nonce( 'wp_rest' ),
 					'storageKey'     => 'prose_intake_session',
