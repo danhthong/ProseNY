@@ -425,6 +425,10 @@
 	box-sizing: border-box;
 }
 
+.prose-homepage-layout__prompts[hidden] {
+	display: none !important;
+}
+
 .prose-homepage-layout__hero {
 	margin: 0;
 	font-size: 32px;

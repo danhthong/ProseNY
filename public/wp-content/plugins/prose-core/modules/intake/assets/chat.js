@@ -171,6 +171,28 @@
 		}
 
 		/**
+		 * Show homepage suggestion cards only before the user starts chatting.
+		 *
+		 * @return {void}
+		 */
+		function updateHomepagePromptsVisibility() {
+			if ( ! isHomepageLayout ) {
+				return;
+			}
+
+			var prompts = root.querySelector( '.prose-homepage-layout__prompts' );
+
+			if ( ! prompts ) {
+				return;
+			}
+
+			var history = Array.isArray( session.conversation ) ? session.conversation : [];
+			var started = history.length > 0 || !!transcript.querySelector( '.prose-intake__bubble--user' );
+
+			prompts.hidden = started;
+		}
+
+		/**
 		 * Paint transcript and action panel from the current session.
 		 *
 		 * @return {void}
@@ -210,6 +232,7 @@
 			}
 
 			updateExportVisibility();
+			updateHomepagePromptsVisibility();
 		}
 
 		/**
@@ -855,6 +878,7 @@
 
 			if ( ! options.skipUserBubble ) {
 				addBubble( 'user', message );
+				updateHomepagePromptsVisibility();
 			}
 			var thinking = addBubble( 'agent', STRINGS.sending || 'Thinking…' );
 
@@ -1147,6 +1171,7 @@
 				}
 				addBubble( 'agent', STRINGS.greeting || 'How can I help with your legal matter today?' );
 				updateExportVisibility();
+				updateHomepagePromptsVisibility();
 				input.focus();
 			} );
 		}

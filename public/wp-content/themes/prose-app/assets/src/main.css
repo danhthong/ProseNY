@@ -241,4 +241,8 @@
 	.prose-homepage-layout__prompts {
 		@apply w-full max-w-none;
 	}
+
+	.prose-homepage-layout__prompts[hidden] {
+		display: none !important;
+	}
 }
