@@ -290,6 +290,17 @@
   ],
   "optional_forms": [
     {
+      "stage": "commencement",
+      "forms": [
+        {
+          "code": "UD-1a",
+          "internal_code": null,
+          "title": "Summons (to be served with Verified Complaint)",
+          "required_when": "always"
+        }
+      ]
+    },
+    {
       "stage": "discovery",
       "forms": [
         {

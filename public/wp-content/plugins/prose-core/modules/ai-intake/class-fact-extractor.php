@@ -435,6 +435,23 @@ final class Fact_Extractor {
 			);
 		}
 
+		$pending = $state->pending_field();
+
+		if ( '' !== $pending && ! $state->is_filled( $pending ) ) {
+			$pending_type = $this->field_type_from_defs( $required_defs, $pending );
+
+			foreach ( $deterministic->infer_pending_answer( $message, $pending, $pending_type ) as $key => $value ) {
+				if ( isset( $updates[ $key ] ) || $state->is_filled( $key ) ) {
+					continue;
+				}
+
+				$updates[ $key ] = array(
+					'value'      => $value,
+					'confidence' => 0.98,
+				);
+			}
+		}
+
 		if (
 			(
 				preg_match( '/\b(?:wife|husband|spouse)\s+agrees?\b/i', $message )

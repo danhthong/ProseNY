@@ -444,7 +444,7 @@ final class AI_Intake_Interpreter {
 		$reply        = $this->reconcile_case_state_statement_reply( $reply, $stage_ctx, $intake->plain_facts(), $message );
 		$reply        = $this->reconcile_stage_forms_reply( $message, $reply, $stage_ctx, $workflow );
 		$reply        = $this->reconcile_procedural_guidance_reply( $message, $reply, $stage_ctx, $has_workflow );
-		$reply        = $this->reconcile_reply_after_intake( $reply, $applied, $missing );
+		$reply        = $this->reconcile_reply_after_intake( $reply, $applied, $missing, $workflow );
 
 		if ( ! User_Intake_Context::message_asks_about_account( $message ) ) {
 			$reply = $this->reconcile_reply_for_logged_in_user( $reply, $user_context, $intake );
@@ -479,7 +479,7 @@ final class AI_Intake_Interpreter {
 				$reply = (string) ( $contradictions[0]['message'] ?? '' );
 			}
 			if ( '' === $reply ) {
-				$reply = $this->build_gathering_fallback( $missing );
+				$reply = $this->build_gathering_fallback( $missing, $workflow );
 			}
 		}
 
@@ -490,9 +490,21 @@ final class AI_Intake_Interpreter {
 		} elseif ( $has_workflow ) {
 			$intake->set_pending_field( '' );
 		}
-		if ( $has_workflow && empty( $this->conversation_missing( $missing, $workflow ) ) && $completion_pct >= 100 ) {
-			$intent      = 'intake_complete';
-			$next_action = 'complete_intake';
+
+		$conversation_missing = $this->conversation_missing( $missing, $workflow );
+		$account_turn           = User_Intake_Context::message_asks_about_account( $message ) && '' !== $account_reply;
+
+		if ( $account_turn ) {
+			$intent      = 'gathering';
+			$next_action = 'ask_question';
+		} elseif ( $has_workflow && empty( $conversation_missing ) ) {
+			if ( $completion_pct >= 100 ) {
+				$intent      = 'intake_complete';
+				$next_action = 'complete_intake';
+			} else {
+				$intent      = 'guidance';
+				$next_action = 'guidance';
+			}
 		} elseif ( ! empty( $brief_extra['guidance_brief_delivered'] ) ) {
 			$intent      = 'guidance';
 			$next_action = 'guidance';
@@ -946,18 +958,19 @@ final class AI_Intake_Interpreter {
 	 * @param array<int, array<string, mixed>>                                  $missing Missing fields after merge.
 	 * @return string
 	 */
-	private function reconcile_reply_after_intake( string $reply, array $applied, array $missing ): string {
+	private function reconcile_reply_after_intake( string $reply, array $applied, array $missing, ?string $workflow ): string {
 		$reply = trim( $reply );
 
 		if ( '' === $reply || empty( $applied ) ) {
 			return $reply;
 		}
 
-		$missing_keys = array_map(
+		$conversation_missing = $this->conversation_missing( $missing, $workflow );
+		$missing_keys         = array_map(
 			static function ( array $field ): string {
 				return (string) ( $field['field'] ?? '' );
 			},
-			$missing
+			$conversation_missing
 		);
 
 		foreach ( array_keys( $applied ) as $key ) {
@@ -971,7 +984,7 @@ final class AI_Intake_Interpreter {
 
 			$ack = preg_split( '/\?\s*/', $reply, 2 )[0] ?? $reply;
 			$ack = trim( (string) $ack );
-			$next = $this->build_gathering_fallback( $missing );
+			$next = $this->build_gathering_fallback( $conversation_missing, $workflow );
 
 			if ( '' === $next ) {
 				return '' !== $ack ? $ack . '.' : $reply;
@@ -1008,11 +1021,14 @@ final class AI_Intake_Interpreter {
 	/**
 	 * Deterministic gathering message when the model returns no reply.
 	 *
-	 * @param array<int, array<string, mixed>> $missing Missing fields.
+	 * @param array<int, array<string, mixed>> $missing  Missing fields.
+	 * @param string|null                      $workflow Resolved workflow key.
 	 * @return string
 	 */
-	private function build_gathering_fallback( array $missing ): string {
-		foreach ( $missing as $field ) {
+	private function build_gathering_fallback( array $missing, ?string $workflow = null ): string {
+		$conversation = $this->conversation_missing( $missing, $workflow );
+
+		foreach ( $conversation as $field ) {
 			$question = trim( (string) ( $field['question'] ?? '' ) );
 
 			if ( '' !== $question ) {
@@ -1319,56 +1335,12 @@ final class AI_Intake_Interpreter {
 	}
 
 	/**
-	 * Personal intake fields that do not block routing, downloads, or filing guidance.
-	 *
-	 * @var string[]
-	 */
-	private const OPTIONAL_CONVERSATION_FIELDS = array(
-		'marriage_date',
-		'separation_date',
-		'grounds_for_divorce',
-		'plaintiff_information',
-		'defendant_information',
-		'petitioner_information',
-		'respondent_information',
-		'has_minor_children',
-		'child_count',
-		'child_names',
-		'child_birth_dates',
-		'child_name',
-		'child_birth_date',
-		'custody_arrangement',
-		'visitation_arrangement',
-		'child_support_terms',
-		'existing_orders',
-		'assets',
-		'debts',
-		'income',
-		'spouse_name',
-		'plaintiff_name',
-		'defendant_name',
-	);
-
-	/**
 	 * @param array<int, array<string, mixed>> $missing  Missing fields.
 	 * @param string|null                        $workflow Workflow key.
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function conversation_missing( array $missing, ?string $workflow ): array {
-		if ( null === $workflow || '' === $workflow ) {
-			return $missing;
-		}
-
-		return array_values(
-			array_filter(
-				$missing,
-				function ( array $field ): bool {
-					$key = (string) ( $field['field'] ?? '' );
-
-					return '' !== $key && ! in_array( $key, self::OPTIONAL_CONVERSATION_FIELDS, true );
-				}
-			)
-		);
+		return $this->fields_provider->conversation_missing_fields( $missing, $workflow );
 	}
 
 	/**

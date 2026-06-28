@@ -8,6 +8,7 @@
 namespace ProSe\Core\Intake;
 
 use ProSe\Core\Forms\Engine\Workflow_Progression_Service;
+use ProSe\Core\Guidance\Filing_Guidance_Brief_Resolver;
 use ProSe\Core\Guidance\Guidance_Repository;
 use ProSe\Core\Routing\Court_Routing_Explainer;
 use ProSe\Core\Routing\Workflow_Catalog;
@@ -67,7 +68,10 @@ final class Case_Summary_Presenter {
 		$current_stage   = is_array( $stage_context['current_stage'] ?? null ) ? $stage_context['current_stage'] : array();
 		$stage_id        = sanitize_key( (string) ( $current_stage['id'] ?? '' ) );
 		$stage_title     = trim( (string) ( $current_stage['title'] ?? '' ) );
-		$forms           = $this->normalize_forms( (array) ( $stage_context['stage_forms'] ?? array() ) );
+		$forms            = $this->normalize_forms( (array) ( $stage_context['stage_forms'] ?? array() ) );
+		$download_options = is_array( $stage_context['download_options'] ?? null )
+			? $stage_context['download_options']
+			: array();
 		$court           = trim( (string) ( $input['court'] ?? '' ) );
 		$issue           = trim( (string) ( $input['issue'] ?? $facts['issue'] ?? '' ) );
 		$procedural_node = trim( (string) ( $input['procedural_node'] ?? $stage_context['procedural_node'] ?? '' ) );
@@ -94,6 +98,7 @@ final class Case_Summary_Presenter {
 			),
 			'completed_stages'  => $completed,
 			'current_forms'     => $forms,
+			'download_options'  => $download_options,
 			'skipped_forms'     => $this->normalize_skipped_forms( (array) ( $stage_context['skipped_forms'] ?? array() ) ),
 			'forms_visible'     => ! empty( $stage_context['forms_visible'] ),
 			'completion'        => (int) ( $input['completion'] ?? 0 ),
@@ -139,8 +144,27 @@ final class Case_Summary_Presenter {
 		}
 
 		$forms = is_array( $summary['current_forms'] ?? null ) ? $summary['current_forms'] : array();
+		$download_options = is_array( $summary['download_options'] ?? null ) ? $summary['download_options'] : array();
 
-		if ( ! empty( $forms ) ) {
+		if ( count( $download_options ) >= 2 ) {
+			$form_parts = array();
+
+			foreach ( $download_options as $option ) {
+				if ( ! is_array( $option ) ) {
+					continue;
+				}
+
+				$line = $this->path_option_summary_line( $option );
+
+				if ( '' !== $line ) {
+					$form_parts[] = $line;
+				}
+			}
+
+			if ( ! empty( $form_parts ) ) {
+				$lines[] = __( 'Forms for the current stage:', 'prose-core' ) . ' ' . implode( '; ', $form_parts );
+			}
+		} elseif ( ! empty( $forms ) ) {
 			$form_parts = array();
 
 			foreach ( $forms as $form ) {
@@ -203,6 +227,7 @@ final class Case_Summary_Presenter {
 		$title   = trim( (string) ( $stage['title'] ?? '' ) );
 		$forms   = is_array( $summary['current_forms'] ?? null ) ? $summary['current_forms'] : array();
 		$done    = is_array( $summary['completed_stages'] ?? null ) ? $summary['completed_stages'] : array();
+		$paths   = is_array( $summary['download_options'] ?? null ) ? $summary['download_options'] : array();
 
 		if ( '' !== $title ) {
 			$rows[] = array(
@@ -218,7 +243,25 @@ final class Case_Summary_Presenter {
 			);
 		}
 
-		if ( ! empty( $forms ) ) {
+		if ( count( $paths ) >= 2 ) {
+			foreach ( $paths as $option ) {
+				if ( ! is_array( $option ) ) {
+					continue;
+				}
+
+				$title = $this->path_option_summary_line( $option );
+				$codes = $this->path_option_codes_line( $option );
+
+				if ( '' === $title ) {
+					continue;
+				}
+
+				$rows[] = array(
+					'label' => $title,
+					'value' => $codes,
+				);
+			}
+		} elseif ( ! empty( $forms ) ) {
 			$codes = array_map(
 				static function ( array $form ): string {
 					return (string) ( $form['code'] ?? '' );
@@ -313,6 +356,71 @@ final class Case_Summary_Presenter {
 		}
 
 		return $out;
+	}
+
+	/**
+	 * Human-readable line for an alternate filing path option.
+	 *
+	 * @param array<string, mixed> $option Download option row.
+	 * @return string
+	 */
+	private function path_option_summary_line( array $option ): string {
+		$title = trim( (string) ( $option['title'] ?? '' ) );
+
+		if ( '' !== $title ) {
+			return $title;
+		}
+
+		$codes = array_values(
+			array_filter(
+				array_map(
+					static function ( $code ): string {
+						return trim( (string) $code );
+					},
+					(array) ( $option['form_codes'] ?? array() )
+				)
+			)
+		);
+
+		if ( empty( $codes ) ) {
+			return trim( (string) ( $option['label'] ?? '' ) );
+		}
+
+		return Filing_Guidance_Brief_Resolver::download_button_label( $codes );
+	}
+
+	/**
+	 * Display form codes for a filing path option.
+	 *
+	 * @param array<string, mixed> $option Download option row.
+	 * @return string
+	 */
+	private function path_option_codes_line( array $option ): string {
+		$labels = array();
+
+		foreach ( (array) ( $option['form_codes'] ?? array() ) as $code ) {
+			$code = trim( (string) $code );
+
+			if ( '' === $code ) {
+				continue;
+			}
+
+			$labels[] = 0 === strcasecmp( $code, 'UD-1a' ) ? 'UD-1A' : $code;
+		}
+
+		if ( empty( $labels ) ) {
+			return '';
+		}
+
+		if ( 1 === count( $labels ) ) {
+			return $labels[0];
+		}
+
+		if ( 2 === count( $labels ) ) {
+			return $labels[0] . ' ' . __( 'and', 'prose-core' ) . ' ' . $labels[1];
+		}
+
+		return implode( ', ', array_slice( $labels, 0, -1 ) ) . ', ' . __( 'and', 'prose-core' ) . ' ' . $labels[ count( $labels ) - 1 ];
 	}
 
 	/**

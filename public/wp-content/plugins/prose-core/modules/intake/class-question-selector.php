@@ -51,7 +51,11 @@ final class Question_Selector {
 	 */
 	public function select( array $required_fields, array $missing_field_keys, ?string $workflow, array $routing_missing = array() ): array {
 		if ( null !== $workflow && '' !== $workflow ) {
-			return $this->next_required_question( $required_fields, $missing_field_keys );
+			// Routing chat stops once workflow is resolved; document fields are filled later.
+			return array(
+				'field'    => '',
+				'question' => '',
+			);
 		}
 
 		return $this->next_resolution_question( $routing_missing );

@@ -167,6 +167,17 @@
 	color: #64748b;
 }
 
+.prose-package__path-label {
+	margin: 10px 0 6px;
+	font-size: 13px;
+	font-weight: 700;
+	color: #0f172a;
+}
+
+.prose-package__path-label:first-child {
+	margin-top: 0;
+}
+
 .prose-package__badge {
 	flex: none;
 	padding: 2px 8px;

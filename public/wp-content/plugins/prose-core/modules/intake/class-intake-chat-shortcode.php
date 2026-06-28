@@ -294,11 +294,7 @@ final class Intake_Chat_Shortcode {
 					</div>
 					<div class="prose-intake__actions" data-prose-intake-actions hidden>
 						<h3 class="prose-intake__actions-title"><?php esc_html_e( 'Case Actions', 'prose-core' ); ?></h3>
-						<div class="prose-intake__action-buttons">
-							<button type="button" class="prose-intake__action prose-intake__action--primary" data-prose-intake-get-documents hidden>
-								<?php esc_html_e( 'Get Documents', 'prose-core' ); ?>
-							</button>
-						</div>
+						<div class="prose-intake__action-buttons" data-prose-intake-download-buttons hidden></div>
 					</div>
 					<div class="prose-homepage-layout__package">
 						<?php
@@ -380,14 +376,10 @@ final class Intake_Chat_Shortcode {
 					<h4 class="prose-intake__summary-title"><?php esc_html_e( 'Case Summary', 'prose-core' ); ?></h4>
 					<ul class="prose-intake__summary-list" data-prose-intake-summary-list></ul>
 				</div>
-				<div class="prose-intake__action-buttons">
-					<button type="button" class="prose-intake__action prose-intake__action--primary" data-prose-intake-get-documents hidden>
-						<?php esc_html_e( 'Get Documents', 'prose-core' ); ?>
-					</button>
-					<button type="button" class="prose-intake__action prose-intake__action--secondary" data-prose-intake-toggle-summary hidden>
-						<?php esc_html_e( 'View Case Summary', 'prose-core' ); ?>
-					</button>
-				</div>
+				<div class="prose-intake__action-buttons" data-prose-intake-download-buttons hidden></div>
+				<button type="button" class="prose-intake__action prose-intake__action--secondary" data-prose-intake-toggle-summary hidden>
+					<?php esc_html_e( 'View Case Summary', 'prose-core' ); ?>
+				</button>
 			</aside>
 		<?php
 	}

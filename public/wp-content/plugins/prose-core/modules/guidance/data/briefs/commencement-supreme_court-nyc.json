@@ -50,7 +50,9 @@
       ],
       "options": [
         {
+          "id": "summons_with_notice",
           "title": "Option 1 — Summons With Notice (Form UD-1)",
+          "form_codes": ["UD-1"],
           "paragraphs": [
             "This is the simpler path many self-represented filers use when starting a matrimonial action.",
             "UD-1 is typically a short form (often about 2–3 pages). After it is filed, you must serve your spouse within the time limits set by court rules."
@@ -65,7 +67,9 @@
           ]
         },
         {
+          "id": "summons_and_complaint",
           "title": "Option 2 — Summons (UD-1a) + Verified Complaint (UD-2)",
+          "form_codes": ["UD-1a", "UD-2"],
           "paragraphs": [
             "This path is more detailed and is often used when the case may involve disputes over property, maintenance, or other issues.",
             "UD-2 (Verified Complaint) is longer (often about 6–8 pages depending on the version) and requires verified statements under oath."

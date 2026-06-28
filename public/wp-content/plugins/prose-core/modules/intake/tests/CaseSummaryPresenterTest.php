@@ -167,4 +167,40 @@ class CaseSummaryPresenterTest extends TestCase {
 		$this->assertContains( 'Completed stages', $labels );
 		$this->assertContains( 'Forms for this step', $labels );
 	}
+
+	/**
+	 * Multi-path commencement shows alternate filing options instead of a flat form list.
+	 */
+	public function test_to_action_rows_shows_commencement_path_options(): void {
+		$presenter = new Case_Summary_Presenter();
+		$rows      = $presenter->to_action_rows(
+			array(
+				'current_stage'    => array(
+					'id'    => 'commencement',
+					'title' => 'Starting the Case',
+				),
+				'download_options' => array(
+					array(
+						'id'         => 'summons_with_notice',
+						'title'      => 'Option 1 — Summons With Notice (Form UD-1)',
+						'label'      => 'Get Documents (UD-1)',
+						'form_codes' => array( 'UD-1' ),
+					),
+					array(
+						'id'         => 'summons_and_complaint',
+						'title'      => 'Option 2 — Summons (UD-1a) + Verified Complaint (UD-2)',
+						'label'      => 'Get Documents (UD-1A and UD-2)',
+						'form_codes' => array( 'UD-1a', 'UD-2' ),
+					),
+				),
+			)
+		);
+
+		$this->assertCount( 3, $rows );
+		$this->assertSame( 'Current stage', $rows[0]['label'] );
+		$this->assertStringContainsString( 'Option 1', (string) ( $rows[1]['label'] ?? '' ) );
+		$this->assertSame( 'UD-1', (string) ( $rows[1]['value'] ?? '' ) );
+		$this->assertStringContainsString( 'Option 2', (string) ( $rows[2]['label'] ?? '' ) );
+		$this->assertSame( 'UD-1A and UD-2', (string) ( $rows[2]['value'] ?? '' ) );
+	}
 }

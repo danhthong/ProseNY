@@ -8,6 +8,7 @@
 namespace ProSe\Core\Forms\Engine;
 
 use ProSe\Core\Forms\Classification\Vocabulary;
+use ProSe\Core\Guidance\Filing_Guidance_Brief_Resolver;
 use ProSe\Core\Guidance\Guidance_Repository;
 use ProSe\Core\Forms\Form_Page_Resolver;
 use ProSe\Core\PackageBuilder\Merged_Blank_Pdf_Service;
@@ -192,24 +193,33 @@ final class Stage_Form_Presenter {
 		$guidance      = $this->guidance->read_stage( $current_stage );
 		$future_stages = $this->build_future_stages( $stages, $stage_index );
 		$merged        = $this->merged->status( $workflow, $current_stage, $context );
+		$download_opts = ( new Filing_Guidance_Brief_Resolver() )->download_options(
+			array(
+				'workflow'    => $workflow,
+				'facts'       => $context,
+				'stage'       => $current_stage,
+				'stage_forms' => $stage_forms,
+			)
+		);
 
 		return array(
-			'forms_visible'   => true,
-			'current_stage'   => array(
+			'forms_visible'    => true,
+			'current_stage'    => array(
 				'id'          => $current_stage,
 				'title'       => (string) ( $guidance['title'] ?? $this->humanize_stage( $current_stage ) ),
 				'description' => (string) ( $guidance['description'] ?? '' ),
 				'status'      => 'current',
 			),
-			'stage_forms'     => $stage_forms,
-			'skipped_forms'   => $skipped_forms,
-			'future_stages'   => $future_stages,
-			'next_action'     => $this->next_action( $current_stage, $guidance, $workflow ),
-			'stage_download'  => array(
+			'stage_forms'      => $stage_forms,
+			'skipped_forms'    => $skipped_forms,
+			'future_stages'    => $future_stages,
+			'next_action'      => $this->next_action( $current_stage, $guidance, $workflow ),
+			'stage_download'   => array(
 				'available'    => ! empty( $merged['available'] ),
 				'download_url' => (string) ( $merged['download_url'] ?? '' ),
 			),
-			'procedural_node' => $current_node,
+			'procedural_node'  => $current_node,
+			'download_options' => $download_opts,
 		);
 	}
 

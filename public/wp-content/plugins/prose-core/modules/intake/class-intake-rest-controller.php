@@ -200,7 +200,7 @@ final class Intake_Rest_Controller {
 	}
 
 	/**
-	 * Handle POST /case/complete-stage — advance after document download.
+	 * Handle POST /case/complete-stage — advance when a procedural stage is complete.
 	 *
 	 * @param \WP_REST_Request $request Request.
 	 * @return \WP_REST_Response

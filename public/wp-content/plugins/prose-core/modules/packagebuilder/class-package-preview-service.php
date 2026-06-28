@@ -14,6 +14,7 @@ namespace ProSe\Core\PackageBuilder;
 use ProSe\Core\Forms\Engine\Stage_Form_Presenter;
 use ProSe\Core\Forms\Engine\Workflow_Progression_Service;
 use ProSe\Core\Forms\Form_Page_Resolver;
+use ProSe\Core\Forms\Forms_Catalog;
 use ProSe\Core\Routing\Workflow_Catalog;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -54,23 +55,43 @@ final class Package_Preview_Service {
 	private Form_Page_Resolver $form_pages;
 
 	/**
+	 * Forms catalog.
+	 *
+	 * @var Forms_Catalog
+	 */
+	private Forms_Catalog $forms;
+
+	/**
+	 * Blank asset source for synthesizing missing alternate-path forms.
+	 *
+	 * @var Blank_Asset_Source
+	 */
+	private Blank_Asset_Source $blank_assets;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Package_Builder|null          $builder     Package builder.
 	 * @param Workflow_Catalog|null         $workflows   Workflow catalog.
 	 * @param Merged_Blank_Pdf_Service|null $merged      Merged blank PDF service.
 	 * @param Form_Page_Resolver|null       $form_pages  Form page resolver.
+	 * @param Forms_Catalog|null            $forms       Forms catalog.
+	 * @param Blank_Asset_Source|null       $blank_assets Blank asset source.
 	 */
 	public function __construct(
 		?Package_Builder $builder = null,
 		?Workflow_Catalog $workflows = null,
 		?Merged_Blank_Pdf_Service $merged = null,
-		?Form_Page_Resolver $form_pages = null
+		?Form_Page_Resolver $form_pages = null,
+		?Forms_Catalog $forms = null,
+		?Blank_Asset_Source $blank_assets = null
 	) {
-		$this->builder    = $builder ?? new Package_Builder();
-		$this->workflows  = $workflows ?? new Workflow_Catalog();
-		$this->merged     = $merged ?? new Merged_Blank_Pdf_Service();
-		$this->form_pages = $form_pages ?? new Form_Page_Resolver();
+		$this->builder      = $builder ?? new Package_Builder();
+		$this->workflows    = $workflows ?? new Workflow_Catalog();
+		$this->merged       = $merged ?? new Merged_Blank_Pdf_Service();
+		$this->form_pages   = $form_pages ?? new Form_Page_Resolver();
+		$this->forms        = $forms ?? new Forms_Catalog();
+		$this->blank_assets = $blank_assets ?? new Blank_Asset_Source();
 	}
 
 	/**
@@ -149,6 +170,21 @@ final class Package_Preview_Service {
 
 		$stages = $this->finalize_stage_statuses( $stages, $current_stage, $workflow_key, $facts );
 
+		$download_options = is_array( $stage_context['download_options'] ?? null )
+			? $stage_context['download_options']
+			: array();
+
+		if ( count( $download_options ) >= 2 && '' !== $current_stage ) {
+			foreach ( $stages as $index => $stage_row ) {
+				if ( (string) ( $stage_row['stage'] ?? '' ) !== $current_stage ) {
+					continue;
+				}
+
+				$stages[ $index ] = $this->apply_form_paths( $stage_row, $download_options, $current_stage );
+				break;
+			}
+		}
+
 		if ( '' !== $current_stage ) {
 			$required_count = 0;
 			$optional_count = 0;
@@ -158,6 +194,22 @@ final class Package_Preview_Service {
 			foreach ( $stages as $stage_row ) {
 				if ( 'current' !== ( $stage_row['status'] ?? '' ) ) {
 					continue;
+				}
+
+				if ( ! empty( $stage_row['form_paths'] ) ) {
+					foreach ( (array) $stage_row['form_paths'] as $path ) {
+						++$required_count;
+
+						foreach ( (array) ( $path['forms'] ?? array() ) as $form ) {
+							if ( ! empty( $form['generation_ready'] ) ) {
+								++$ready_count;
+							} else {
+								++$missing_count;
+							}
+						}
+					}
+
+					break;
 				}
 
 				foreach ( (array) ( $stage_row['forms'] ?? array() ) as $form ) {
@@ -192,6 +244,7 @@ final class Package_Preview_Service {
 			'package_type'      => (string) ( $manifest['package_type'] ?? Package_Type::BLANK ),
 			'manifest_status'   => (string) ( $manifest['manifest_status'] ?? Manifest_Status::DRAFT ),
 			'package_status'    => (string) ( $manifest['package_status'] ?? Package_Status::INCOMPLETE ),
+			'path_options'      => count( $download_options ) >= 2 ? count( $download_options ) : 0,
 			'counts'            => array(
 				'required' => $required_count,
 				'optional' => $optional_count,
@@ -286,5 +339,140 @@ final class Package_Preview_Service {
 		}
 
 		return $ordered;
+	}
+
+	/**
+	 * Replace a flat form list with grouped alternate filing paths.
+	 *
+	 * @param array<string, mixed>             $stage_row        Stage preview row.
+	 * @param array<int, array<string, mixed>> $download_options Alternate path options.
+	 * @param string                           $stage_slug       Active stage slug.
+	 * @return array<string, mixed>
+	 */
+	private function apply_form_paths( array $stage_row, array $download_options, string $stage_slug ): array {
+		$forms_by_code = array();
+
+		foreach ( (array) ( $stage_row['forms'] ?? array() ) as $form ) {
+			if ( ! is_array( $form ) ) {
+				continue;
+			}
+
+			$code = trim( (string) ( $form['code'] ?? '' ) );
+
+			if ( '' === $code ) {
+				continue;
+			}
+
+			$forms_by_code[ $this->normalize_form_code_key( $code ) ] = $form;
+		}
+
+		$paths = array();
+
+		foreach ( $download_options as $option ) {
+			if ( ! is_array( $option ) ) {
+				continue;
+			}
+
+			$path_forms = array();
+
+			foreach ( (array) ( $option['form_codes'] ?? array() ) as $code ) {
+				$code = trim( (string) $code );
+
+				if ( '' === $code ) {
+					continue;
+				}
+
+				$key = $this->normalize_form_code_key( $code );
+
+				if ( isset( $forms_by_code[ $key ] ) ) {
+					$path_forms[] = $this->form_for_path_display( $forms_by_code[ $key ] );
+					continue;
+				}
+
+				$resolved = $this->resolve_path_form( $code, $stage_slug );
+
+				if ( null !== $resolved ) {
+					$path_forms[] = $resolved;
+				}
+			}
+
+			if ( empty( $path_forms ) ) {
+				continue;
+			}
+
+			$label = trim( (string) ( $option['title'] ?? '' ) );
+
+			if ( '' === $label ) {
+				$label = trim( (string) ( $option['label'] ?? '' ) );
+			}
+
+			$paths[] = array(
+				'id'    => (string) ( $option['id'] ?? '' ),
+				'label' => $label,
+				'forms' => $path_forms,
+			);
+		}
+
+		if ( count( $paths ) < 2 ) {
+			return $stage_row;
+		}
+
+		$stage_row['form_paths'] = $paths;
+		$stage_row['forms']      = array();
+
+		return $stage_row;
+	}
+
+	/**
+	 * Normalize a form code for case-insensitive lookup.
+	 *
+	 * @param string $code Form code.
+	 * @return string
+	 */
+	private function normalize_form_code_key( string $code ): string {
+		return strtoupper( trim( $code ) );
+	}
+
+	/**
+	 * Forms listed under an alternate filing path are required for that path.
+	 *
+	 * @param array<string, mixed> $form Preview form row.
+	 * @return array<string, mixed>
+	 */
+	private function form_for_path_display( array $form ): array {
+		$form['requirement'] = 'required';
+
+		return $form;
+	}
+
+	/**
+	 * Build a preview form row when an alternate path references a form outside the manifest.
+	 *
+	 * @param string $code       Form code.
+	 * @param string $stage_slug Stage slug.
+	 * @return array<string, mixed>|null
+	 */
+	private function resolve_path_form( string $code, string $stage_slug ): ?array {
+		$record = $this->forms->by_code( $code );
+		$entry  = $this->blank_assets->resolve(
+			is_array( $record ) ? $record : array(),
+			$code,
+			$stage_slug,
+			'required'
+		);
+
+		$resolved_code = trim( (string) ( $entry['code'] ?? $code ) );
+
+		if ( '' === $resolved_code ) {
+			return null;
+		}
+
+		return array(
+			'code'             => $resolved_code,
+			'title'            => (string) ( $entry['title'] ?? $resolved_code ),
+			'url'              => $this->form_pages->resolve( $resolved_code ),
+			'requirement'      => (string) ( $entry['requirement'] ?? 'required' ),
+			'generation_ready' => ! empty( $entry['generation_ready'] ),
+		);
 	}
 }

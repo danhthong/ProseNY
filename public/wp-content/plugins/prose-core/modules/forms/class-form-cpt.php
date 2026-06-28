@@ -36,6 +36,7 @@ class Form_CPT {
 		$loader->add_action( 'admin_menu', $this, 'register_taxonomy_submenus', 30 );
 		$loader->add_action( 'restrict_manage_posts', $this, 'render_taxonomy_filters' );
 		$loader->add_filter( 'parent_file', $this, 'fix_taxonomy_parent_menu' );
+		$loader->add_action( 'pre_get_posts', $this, 'enable_form_code_admin_search' );
 	}
 
 	/**
@@ -309,5 +310,125 @@ class Form_CPT {
 		$names = wp_list_pluck( $terms, 'name' );
 
 		return esc_html( implode( ', ', $names ) );
+	}
+
+	/**
+	 * Extend the Forms list table search to match form code meta.
+	 *
+	 * @param \WP_Query $query Main admin query.
+	 * @return void
+	 */
+	public function enable_form_code_admin_search( \WP_Query $query ): void {
+		if ( ! $this->is_admin_form_code_search( $query ) ) {
+			return;
+		}
+
+		$query->set( 'prose_form_code_search', true );
+
+		add_filter( 'posts_join', array( $this, 'filter_form_code_search_join' ), 10, 2 );
+		add_filter( 'posts_search', array( $this, 'filter_form_code_search_clause' ), 10, 2 );
+		add_filter( 'posts_distinct', array( $this, 'filter_form_code_search_distinct' ), 10, 2 );
+	}
+
+	/**
+	 * Whether the current query is an admin search on the forms list screen.
+	 *
+	 * @param \WP_Query $query Query.
+	 * @return bool
+	 */
+	private function is_admin_form_code_search( \WP_Query $query ): bool {
+		if ( ! is_admin() || ! $query->is_main_query() ) {
+			return false;
+		}
+
+		global $pagenow;
+
+		if ( 'edit.php' !== $pagenow ) {
+			return false;
+		}
+
+		$post_type = $query->get( 'post_type' );
+
+		if ( is_array( $post_type ) ) {
+			if ( ! in_array( self::POST_TYPE, $post_type, true ) ) {
+				return false;
+			}
+		} elseif ( self::POST_TYPE !== $post_type ) {
+			return false;
+		}
+
+		return '' !== trim( (string) $query->get( 's' ) );
+	}
+
+	/**
+	 * Join form code meta for admin search.
+	 *
+	 * @param string    $join  SQL join clause.
+	 * @param \WP_Query $query Query.
+	 * @return string
+	 */
+	public function filter_form_code_search_join( string $join, \WP_Query $query ): string {
+		if ( ! $query->get( 'prose_form_code_search' ) ) {
+			return $join;
+		}
+
+		global $wpdb;
+
+		$join .= $wpdb->prepare(
+			" LEFT JOIN {$wpdb->postmeta} AS prose_form_code_search ON ({$wpdb->posts}.ID = prose_form_code_search.post_id AND prose_form_code_search.meta_key = %s)",
+			Form_Meta::META_FORM_CODE
+		);
+		$join .= $wpdb->prepare(
+			" LEFT JOIN {$wpdb->postmeta} AS prose_form_id_search ON ({$wpdb->posts}.ID = prose_form_id_search.post_id AND prose_form_id_search.meta_key = %s)",
+			Form_Meta::META_FORM_ID
+		);
+
+		return $join;
+	}
+
+	/**
+	 * Append form code meta matches to the default title/content search.
+	 *
+	 * @param string    $search Search SQL fragment.
+	 * @param \WP_Query $query  Query.
+	 * @return string
+	 */
+	public function filter_form_code_search_clause( string $search, \WP_Query $query ): string {
+		if ( ! $query->get( 'prose_form_code_search' ) ) {
+			return $search;
+		}
+
+		global $wpdb;
+
+		$term = trim( (string) $query->get( 's' ) );
+
+		if ( '' === $term ) {
+			return $search;
+		}
+
+		$like = '%' . $wpdb->esc_like( $term ) . '%';
+
+		$search .= $wpdb->prepare(
+			" OR (prose_form_code_search.meta_value LIKE %s) OR (prose_form_id_search.meta_value LIKE %s)",
+			$like,
+			$like
+		);
+
+		return $search;
+	}
+
+	/**
+	 * Prevent duplicate rows when form meta joins match.
+	 *
+	 * @param string    $distinct DISTINCT clause.
+	 * @param \WP_Query $query    Query.
+	 * @return string
+	 */
+	public function filter_form_code_search_distinct( string $distinct, \WP_Query $query ): string {
+		if ( ! $query->get( 'prose_form_code_search' ) ) {
+			return $distinct;
+		}
+
+		return 'DISTINCT';
 	}
 }

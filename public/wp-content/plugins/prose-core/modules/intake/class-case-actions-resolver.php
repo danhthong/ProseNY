@@ -179,6 +179,21 @@ final class Case_Actions_Resolver {
 			$this->build_summary( $workflow, $facts, $package_id, $package_label, $issue, $court_routing )
 		);
 
+		$download_options = is_array( $stage_context['download_options'] ?? null )
+			? $stage_context['download_options']
+			: array();
+
+		if ( $download_enabled && ! empty( $stage_context['forms_visible'] ) && empty( $download_options ) ) {
+			$download_options = ( new \ProSe\Core\Guidance\Filing_Guidance_Brief_Resolver() )->download_options(
+				array(
+					'workflow'     => $workflow,
+					'facts'        => $facts,
+					'stage'        => (string) ( $current_stage ?? 'commencement' ),
+					'stage_forms'  => (array) ( $stage_context['stage_forms'] ?? array() ),
+				)
+			);
+		}
+
 		return array(
 			'case_known'          => $case_known,
 			'intake_complete'     => $intake_complete,
@@ -190,6 +205,7 @@ final class Case_Actions_Resolver {
 			'show_documents'      => $show_documents,
 			'download_enabled'    => $download_enabled,
 			'download_mode'       => $workflow_resolved ? 'merged' : '',
+			'download_options'    => $download_options,
 			'package_id'          => $package_id,
 			'package_label'       => $package_label,
 			'workflow'            => $workflow,

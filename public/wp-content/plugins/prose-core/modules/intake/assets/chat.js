@@ -166,7 +166,7 @@
 		var actionsPanel = root.querySelector( '[data-prose-intake-actions]' );
 		var summaryPanel = root.querySelector( '[data-prose-intake-summary]' );
 		var summaryList = root.querySelector( '[data-prose-intake-summary-list]' );
-		var getDocumentsBtn = root.querySelector( '[data-prose-intake-get-documents]' );
+		var downloadButtonsEl = root.querySelector( '[data-prose-intake-download-buttons]' );
 		var toggleSummaryBtn = root.querySelector( '[data-prose-intake-toggle-summary]' );
 		var fileInput = root.querySelector( '[data-prose-intake-file]' );
 		var uploadBtn = root.querySelector( '[data-prose-intake-upload]' );
@@ -609,6 +609,63 @@
 		}
 
 		/**
+		 * Render one or more Get Documents buttons for the current stage.
+		 *
+		 * @param {Object} actions Action visibility from the server.
+		 * @param {boolean} showDownload Whether the download area should be visible.
+		 * @param {boolean} downloadReady Whether downloads are enabled.
+		 */
+		function renderDownloadButtons( actions, showDownload, downloadReady ) {
+			if ( ! downloadButtonsEl ) {
+				return;
+			}
+
+			downloadButtonsEl.innerHTML = '';
+
+			if ( ! showDownload ) {
+				downloadButtonsEl.hidden = true;
+				return;
+			}
+
+			var options = Array.isArray( actions.download_options ) ? actions.download_options : [];
+			var disabledTitle = downloadReady ? '' : downloadDisabledReason( actions );
+
+			if ( ! options.length ) {
+				options = [
+					{
+						id: 'default',
+						label: STRINGS.getDocuments || 'Get Documents',
+						form_codes: []
+					}
+				];
+			}
+
+			options.forEach( function ( option ) {
+				var btn = document.createElement( 'button' );
+				btn.type = 'button';
+				btn.className = 'prose-intake__action prose-intake__action--primary';
+				btn.textContent = option.label || STRINGS.getDocuments || 'Get Documents';
+				btn.disabled = ! downloadReady;
+				btn.title = disabledTitle;
+				btn.setAttribute( 'data-form-codes', JSON.stringify( option.form_codes || [] ) );
+				btn.addEventListener( 'click', function () {
+					var codes = [];
+
+					try {
+						codes = JSON.parse( btn.getAttribute( 'data-form-codes' ) || '[]' );
+					} catch ( err ) {
+						codes = [];
+					}
+
+					downloadDocuments( codes, btn );
+				} );
+				downloadButtonsEl.appendChild( btn );
+			} );
+
+			downloadButtonsEl.hidden = false;
+		}
+
+		/**
 		 * Update the persistent Case Actions panel.
 		 *
 		 * @param {Object} actions Action visibility from the server.
@@ -653,14 +710,7 @@
 				actionsPanel.hidden = ! showPanel;
 			}
 
-			if ( getDocumentsBtn ) {
-				getDocumentsBtn.hidden = ! showDownload;
-				getDocumentsBtn.disabled = ! downloadReady;
-				getDocumentsBtn.title = downloadReady
-					? ''
-					: downloadDisabledReason( actions );
-				getDocumentsBtn.textContent = STRINGS.getDocuments || 'Get Documents';
-			}
+			renderDownloadButtons( actions, showDownload, downloadReady );
 
 			if ( toggleSummaryBtn ) {
 				toggleSummaryBtn.hidden = isHomepageLayout || ! showPanel || ! ( actions.summary && actions.summary.length );
@@ -721,21 +771,20 @@
 		}
 
 		/**
-		 * Reset the Get Documents button label.
+		 * Reset download button labels after a request finishes.
 		 */
-		function resetDownloadButton() {
-			if ( ! getDocumentsBtn ) {
+		function resetDownloadButtons() {
+			if ( ! downloadButtonsEl || ! session.actions ) {
 				return;
 			}
 
-			var downloadReady = canDownloadDocuments( session.actions || {} );
-			getDocumentsBtn.disabled = ! downloadReady;
-			getDocumentsBtn.title = downloadReady
-				? ''
-				: downloadDisabledReason( session.actions || {} );
-			if ( getDocumentsBtn.textContent === ( STRINGS.downloading || 'Preparing download…' ) ) {
-				getDocumentsBtn.textContent = STRINGS.getDocuments || 'Get Documents';
-			}
+			var actions = session.actions || {};
+			var showActions = !!( actions.case_known || actions.show_documents || actions.workflow );
+			var showPanel = actionsPinned || showActions;
+			var showDownload = showPanel;
+			var downloadReady = canDownloadDocuments( actions );
+
+			renderDownloadButtons( actions, showDownload, downloadReady );
 		}
 
 		/**
@@ -774,9 +823,12 @@
 		}
 
 		/**
-		 * Trigger a browser download for the workflow merged blank PDF packet.
+		 * Trigger a browser download for the selected form bundle.
+		 *
+		 * @param {string[]} formCodes Explicit form codes for split downloads.
+		 * @param {HTMLButtonElement|null} buttonEl Clicked button.
 		 */
-		function downloadDocuments() {
+		function downloadDocuments( formCodes, buttonEl ) {
 			var actions = session.actions || {};
 			var workflow = actions.workflow || ( session.case_profile && session.case_profile.workflow ) || '';
 
@@ -784,24 +836,26 @@
 				return;
 			}
 
-			if ( getDocumentsBtn ) {
-				getDocumentsBtn.disabled = true;
-				getDocumentsBtn.textContent = STRINGS.downloading || 'Preparing download…';
+			if ( buttonEl ) {
+				buttonEl.disabled = true;
+				buttonEl.textContent = STRINGS.downloading || 'Preparing download…';
 			}
 
-			downloadMergedPdf( workflow ).finally( resetDownloadButton );
+			downloadMergedPdf( workflow, formCodes || [], buttonEl ).finally( resetDownloadButtons );
 		}
 
 		/**
 		 * Build or return a merged blank PDF for the resolved workflow.
 		 *
 		 * @param {string} workflow Workflow key.
+		 * @param {string[]} formCodes Optional explicit form codes.
+		 * @param {HTMLButtonElement|null} buttonEl Button used to start the download.
 		 * @return {Promise<void>}
 		 */
-		function downloadMergedPdf( workflow ) {
+		function downloadMergedPdf( workflow, formCodes, buttonEl ) {
 			if ( ! workflow || ! CONFIG.mergedPdfUrl ) {
-				if ( getDocumentsBtn ) {
-					getDocumentsBtn.textContent = STRINGS.downloadError || 'Documents are not available for download yet.';
+				if ( buttonEl ) {
+					buttonEl.textContent = STRINGS.downloadError || 'Documents are not available for download yet.';
 				}
 				return Promise.resolve();
 			}
@@ -817,19 +871,25 @@
 				stage = currentStage.id || '';
 			}
 
+			var payload = {
+				workflow: workflow,
+				stage: stage,
+				procedural_node: proceduralNode,
+				conversation_id: session.conversation_id || '',
+				facts: profile.facts || {}
+			};
+
+			if ( Array.isArray( formCodes ) && formCodes.length ) {
+				payload.form_codes = formCodes;
+			}
+
 			return fetch( CONFIG.mergedPdfUrl, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
 					'X-WP-Nonce': CONFIG.nonce || ''
 				},
-				body: JSON.stringify( {
-					workflow: workflow,
-					stage: stage,
-					procedural_node: proceduralNode,
-					conversation_id: session.conversation_id || '',
-					facts: profile.facts || {}
-				} )
+				body: JSON.stringify( payload )
 			} )
 				.then( function ( res ) {
 					return res.json();
@@ -837,16 +897,17 @@
 				.then( function ( data ) {
 					if ( data && data.success && data.download_url ) {
 						openDownload( data.download_url );
-						return completeStageAfterDownload();
+						// Downloading blank forms does not complete a procedural stage.
+						return;
 					}
 
-					if ( getDocumentsBtn ) {
-						getDocumentsBtn.textContent = STRINGS.downloadError || 'Documents are not available for download yet.';
+					if ( buttonEl ) {
+						buttonEl.textContent = STRINGS.downloadError || 'Documents are not available for download yet.';
 					}
 				} )
 				.catch( function () {
-					if ( getDocumentsBtn ) {
-						getDocumentsBtn.textContent = STRINGS.downloadError || 'Documents are not available for download yet.';
+					if ( buttonEl ) {
+						buttonEl.textContent = STRINGS.downloadError || 'Documents are not available for download yet.';
 					}
 				} );
 		}
@@ -1194,10 +1255,6 @@
 			}
 		} );
 
-		if ( getDocumentsBtn ) {
-			getDocumentsBtn.addEventListener( 'click', downloadDocuments );
-		}
-
 		if ( toggleSummaryBtn ) {
 			toggleSummaryBtn.addEventListener( 'click', toggleSummary );
 		}
@@ -1241,8 +1298,9 @@
 						summaryList.innerHTML = '';
 					}
 				}
-				if ( getDocumentsBtn ) {
-					getDocumentsBtn.hidden = true;
+				if ( downloadButtonsEl ) {
+					downloadButtonsEl.hidden = true;
+					downloadButtonsEl.innerHTML = '';
 				}
 				if ( toggleSummaryBtn ) {
 					toggleSummaryBtn.hidden = true;

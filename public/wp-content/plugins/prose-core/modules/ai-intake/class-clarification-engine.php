@@ -93,7 +93,7 @@ final class Clarification_Engine {
 
 		$normalized = strtolower( trim( $message ) );
 
-		return in_array( $normalized, array( 'no', 'yes', 'maybe', 'ok' ), true )
+		return in_array( $normalized, array( 'maybe', 'ok' ), true )
 			&& in_array( $pending_field, array( 'child_count', 'children', 'has_minor_children' ), true );
 	}
 

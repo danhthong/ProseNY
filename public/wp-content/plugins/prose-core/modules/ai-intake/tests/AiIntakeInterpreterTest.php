@@ -141,7 +141,7 @@ class AiIntakeInterpreterTest extends TestCase {
 	}
 
 	/**
-	 * Priority-ordered missing fields prefer county.
+	 * Priority-ordered missing fields prefer county (internal tracking only).
 	 */
 	public function test_required_field_priority(): void {
 		$provider = new \ProSe\Core\Ai_Intake\Required_Fields_Provider();
@@ -157,6 +157,29 @@ class AiIntakeInterpreterTest extends TestCase {
 
 		$this->assertNotEmpty( $missing );
 		$this->assertSame( 'county', $missing[0]['field'] );
+	}
+
+	/**
+	 * Chat asks routing questions only — not document-phase fields after workflow resolves.
+	 */
+	public function test_conversation_missing_empty_after_workflow_resolved(): void {
+		$provider = new \ProSe\Core\Ai_Intake\Required_Fields_Provider();
+		$missing  = array(
+			array( 'field' => 'county', 'priority' => 100 ),
+			array( 'field' => 'marriage_location', 'priority' => 69 ),
+			array( 'field' => 'case_status', 'priority' => 50 ),
+		);
+
+		$conversation = $provider->conversation_missing_fields( $missing, 'uncontested_divorce_children_nyc' );
+
+		$this->assertSame( array(), $conversation );
+
+		$routing = $provider->conversation_missing_fields(
+			array( array( 'field' => 'children', 'priority' => 95 ) ),
+			null
+		);
+
+		$this->assertSame( 'children', $routing[0]['field'] );
 	}
 
 	/**

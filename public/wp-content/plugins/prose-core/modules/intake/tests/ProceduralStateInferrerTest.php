@@ -42,10 +42,28 @@ class ProceduralStateInferrerTest extends TestCase {
 		$node     = $inferrer->infer_procedural_node(
 			'uncontested_divorce_children_nyc',
 			Vocabulary::NODE_1001_DIVORCE_FILED,
-			array( 'active_divorce' => true ),
+			array(
+				'active_divorce' => true,
+				'case_status'    => 'FILED',
+			),
 			'I filed the divorce papers last week.'
 		);
 
 		$this->assertSame( Vocabulary::NODE_1002_SERVICE_COMPLETE, $node );
+	}
+
+	/**
+	 * Seeking to start a divorce must not advance past commencement.
+	 */
+	public function test_seeking_divorce_stays_at_commencement_node(): void {
+		$inferrer = new Procedural_State_Inferrer();
+		$node     = $inferrer->infer_procedural_node(
+			'uncontested_divorce_children_nyc',
+			'',
+			array( 'active_divorce' => true ),
+			'I need to file for divorce in New York City'
+		);
+
+		$this->assertSame( '', $node );
 	}
 }

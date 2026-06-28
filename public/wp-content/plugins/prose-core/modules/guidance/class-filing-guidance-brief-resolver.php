@@ -99,8 +99,169 @@ final class Filing_Guidance_Brief_Resolver {
 			'stage'       => $stage,
 			'workflow'    => $workflow,
 			'sections'    => $this->normalize_sections( $scenario ),
+			'download_options' => $this->download_options_from_scenario( $scenario ),
 			'disclaimer'  => (string) ( $brief['disclaimer'] ?? __( 'Informational guidance only — not legal advice.', 'prose-core' ) ),
 		);
+	}
+
+	/**
+	 * Resolve split download buttons for the current stage (when applicable).
+	 *
+	 * @param array<string, mixed> $input Same shape as resolve().
+	 * @return array<int, array{id: string, label: string, form_codes: string[]}>
+	 */
+	public function download_options( array $input ): array {
+		$workflow = sanitize_key( (string) ( $input['workflow'] ?? '' ) );
+
+		if ( '' === $workflow ) {
+			return array();
+		}
+
+		$definition = $this->workflows->by_key( $workflow );
+
+		if ( ! is_array( $definition ) ) {
+			return array();
+		}
+
+		$facts  = is_array( $input['facts'] ?? null ) ? $input['facts'] : array();
+		$stage  = sanitize_key( (string) ( $input['stage'] ?? 'commencement' ) );
+		$court  = sanitize_key( (string) ( $definition['court'] ?? 'supreme_court' ) );
+		$brief  = $this->load_brief( $stage, $court );
+		$options = array();
+
+		if ( is_array( $brief ) ) {
+			$scenario = $this->match_scenario( $brief, $facts, $workflow );
+
+			if ( is_array( $scenario ) ) {
+				$options = $this->download_options_from_scenario( $scenario );
+			}
+		}
+
+		if ( ! empty( $options ) ) {
+			return $options;
+		}
+
+		$stage_forms = is_array( $input['stage_forms'] ?? null ) ? $input['stage_forms'] : array();
+		$codes       = array();
+
+		foreach ( $stage_forms as $form ) {
+			if ( ! is_array( $form ) ) {
+				continue;
+			}
+
+			$code = trim( (string) ( $form['code'] ?? '' ) );
+
+			if ( '' !== $code ) {
+				$codes[] = $code;
+			}
+		}
+
+		if ( empty( $codes ) ) {
+			return array();
+		}
+
+		return array(
+			array(
+				'id'         => 'stage_default',
+				'label'      => self::download_button_label( $codes ),
+				'form_codes' => $codes,
+			),
+		);
+	}
+
+	/**
+	 * Build the Get Documents button label from form codes.
+	 *
+	 * @param string[] $codes Form codes.
+	 * @return string
+	 */
+	public static function download_button_label( array $codes ): string {
+		$codes = array_values(
+			array_filter(
+				array_map(
+					static function ( $code ): string {
+						return trim( (string) $code );
+					},
+					$codes
+				)
+			)
+		);
+
+		if ( empty( $codes ) ) {
+			return __( 'Get Documents', 'prose-core' );
+		}
+
+		$labels = array_map( array( self::class, 'format_code_for_label' ), $codes );
+		$suffix = 1 === count( $labels )
+			? $labels[0]
+			: implode(
+				' ' . __( 'and', 'prose-core' ) . ' ',
+				count( $labels ) > 2
+					? array( implode( ', ', array_slice( $labels, 0, -1 ) ), $labels[ count( $labels ) - 1 ] )
+					: $labels
+			);
+
+		return sprintf(
+			/* translators: %s: comma-separated form codes, e.g. UD-1 or UD-1A and UD-2 */
+			__( 'Get Documents (%s)', 'prose-core' ),
+			$suffix
+		);
+	}
+
+	/**
+	 * @param string $code Form code.
+	 * @return string
+	 */
+	private static function format_code_for_label( string $code ): string {
+		if ( 0 === strcasecmp( $code, 'UD-1a' ) ) {
+			return 'UD-1A';
+		}
+
+		return $code;
+	}
+
+	/**
+	 * @param array<string, mixed> $scenario Matched brief scenario.
+	 * @return array<int, array{id: string, label: string, form_codes: string[]}>
+	 */
+	private function download_options_from_scenario( array $scenario ): array {
+		$options = array();
+
+		foreach ( (array) ( $scenario['options'] ?? array() ) as $index => $option ) {
+			if ( ! is_array( $option ) ) {
+				continue;
+			}
+
+			$codes = array_values(
+				array_filter(
+					array_map(
+						static function ( $code ): string {
+							return trim( (string) $code );
+						},
+						(array) ( $option['form_codes'] ?? array() )
+					)
+				)
+			);
+
+			if ( empty( $codes ) ) {
+				continue;
+			}
+
+			$id = trim( (string) ( $option['id'] ?? '' ) );
+
+			if ( '' === $id ) {
+				$id = 'option_' . (string) ( $index + 1 );
+			}
+
+			$options[] = array(
+				'id'         => sanitize_key( $id ),
+				'title'      => trim( (string) ( $option['title'] ?? '' ) ),
+				'label'      => self::download_button_label( $codes ),
+				'form_codes' => $codes,
+			);
+		}
+
+		return $options;
 	}
 
 	/**

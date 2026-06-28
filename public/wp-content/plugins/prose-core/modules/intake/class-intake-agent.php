@@ -265,23 +265,24 @@ final class Intake_Agent {
 
 		$next = $this->selector->select( $required_fields, $missing, $workflow, $routing_missing );
 
-		$next_question = (string) $next['question'];
-		$next_action     = 'ask_question';
-		$profile_array   = $profile->to_array();
-		$is_complete     = empty( $missing ) && null !== $workflow && '' !== $workflow;
+		$next_question    = (string) $next['question'];
+		$next_action      = 'ask_question';
+		$profile_array    = $profile->to_array();
+		$is_complete      = empty( $missing ) && null !== $workflow && '' !== $workflow;
+		$routing_complete = null !== $workflow && '' !== $workflow && empty( $routing_missing );
 
-		// At completion the selector has no further field to ask. Use contextual
-		// guidance instead of repeating the same long workflow summary every turn.
-		if ( '' === trim( $next_question ) && $is_complete ) {
-			$followup        = $this->complete_followup( $message, $workflow, $profile_array );
+		// Once routing resolves (or all required fields are filled), stop asking
+		// document-phase questions and offer procedural guidance instead.
+		if ( '' === trim( $next_question ) && ( $is_complete || $routing_complete ) ) {
+			$routing_only    = $routing_complete && ! $is_complete;
+			$followup        = $this->complete_followup( $message, $workflow, $profile_array, $routing_only );
 			$next_question   = $followup['question'];
 			$next_action     = $followup['next_action'];
 			$profile_array   = $followup['case_profile'];
 		}
 
-		// Mid-intake: user asked for blank forms/PDF — offer the package without
-		// forcing them through every question first.
-		if ( 'ask_question' === $next_action && null !== $workflow && '' !== $workflow && $this->documents->wants_documents( $message ) ) {
+		// Mid-routing: user asked for blank forms before workflow is resolved.
+		if ( 'ask_question' === $next_action && null !== $workflow && '' !== $workflow && ! $routing_complete && $this->documents->wants_documents( $message ) ) {
 			$next_question = __( 'You can get your blank forms from Case Actions once intake is complete. For now, I just need a few more details about your matter.', 'prose-core' );
 			$next_action   = 'ask_question';
 		}
@@ -301,7 +302,15 @@ final class Intake_Agent {
 			$profile_array['candidate_workflows'] = $prior_candidate_workflows;
 		}
 
-		$profile_array['pending_field'] = $is_complete ? '' : (string) $next['field'];
+		$profile_array['pending_field'] = ( $is_complete || $routing_complete ) ? '' : (string) $next['field'];
+
+		$intent = 'gathering';
+
+		if ( $is_complete ) {
+			$intent = 'intake_complete';
+		} elseif ( $routing_complete ) {
+			$intent = 'guidance';
+		}
 
 		$response = array(
 			'conversation_id' => $profile->conversation_id(),
@@ -312,7 +321,7 @@ final class Intake_Agent {
 			'next_question'   => $next_question,
 			'next_action'     => $next_action,
 			'completion'      => $completion,
-			'intent'          => $is_complete ? 'intake_complete' : 'gathering',
+			'intent'          => $intent,
 		);
 
 		if ( $this->debug_enabled() ) {
@@ -347,9 +356,10 @@ final class Intake_Agent {
 	 * @param string               $message       User message.
 	 * @param string               $workflow      Workflow key.
 	 * @param array<string, mixed> $case_profile  Case profile (mutated).
+	 * @param bool                 $routing_only  True when workflow is resolved but document fields remain.
 	 * @return array{question: string, next_action: string, case_profile: array<string, mixed>}
 	 */
-	private function complete_followup( string $message, string $workflow, array $case_profile ): array {
+	private function complete_followup( string $message, string $workflow, array $case_profile, bool $routing_only = false ): array {
 		$announced = ! empty( $case_profile['intake_complete_announced'] );
 
 		if ( $this->wants_documents( $message ) ) {
@@ -372,8 +382,8 @@ final class Intake_Agent {
 			$case_profile = $this->mark_complete_announced( $case_profile );
 
 			return array(
-				'question'     => $this->completion_message( $workflow ),
-				'next_action'  => 'complete_intake',
+				'question'     => $routing_only ? $this->routing_complete_message( $workflow ) : $this->completion_message( $workflow ),
+				'next_action'  => $routing_only ? 'guidance' : 'complete_intake',
 				'case_profile' => $case_profile,
 			);
 		}
@@ -494,6 +504,22 @@ final class Intake_Agent {
 		$index = function_exists( 'wp_rand' ) ? wp_rand( 0, count( $templates ) - 1 ) : array_rand( $templates );
 
 		return $templates[ $index ];
+	}
+
+	/**
+	 * Message once routing resolves the workflow but document fields remain.
+	 *
+	 * @param string $workflow Workflow key.
+	 * @return string
+	 */
+	private function routing_complete_message( string $workflow ): string {
+		$title = $this->workflow_short_title( $workflow );
+
+		return sprintf(
+			/* translators: %s: short matter title. */
+			__( 'I can help you with your %s matter. Your filing path is ready — use Get Documents in Case Actions to download your forms. You will fill in personal details on the forms in a later step.', 'prose-core' ),
+			$title
+		);
 	}
 
 	/**

@@ -136,11 +136,17 @@ final class Procedural_State_Inferrer {
 	 * @return bool
 	 */
 	public function case_already_filed( array $facts, string $message ): bool {
-		if ( ! empty( $facts['active_divorce'] ) ) {
+		if ( $this->message_indicates_case_filed( $message ) ) {
 			return true;
 		}
 
-		return $this->message_indicates_case_filed( $message );
+		if ( ! empty( $facts['existing_case'] ) || ! empty( $facts['service_completed'] ) ) {
+			return true;
+		}
+
+		$status = strtoupper( trim( (string) ( $facts['case_status'] ?? '' ) ) );
+
+		return in_array( $status, array( 'FILED', 'SERVED', 'READY_FOR_CALENDAR', 'UNDER_REVIEW', 'JUDGMENT_ENTERED' ), true );
 	}
 
 	/**

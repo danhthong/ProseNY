@@ -277,6 +277,24 @@ final class Package_Builder_Rest_Controller {
 		}
 
 		$stage_slug = '' !== $stage ? $stage : null;
+		$form_codes = $request->get_param( 'form_codes' );
+
+		if ( is_array( $form_codes ) && ! empty( $form_codes ) ) {
+			$normalized = array_values(
+				array_filter(
+					array_map(
+						static function ( $code ): string {
+							return trim( (string) $code );
+						},
+						$form_codes
+					)
+				)
+			);
+
+			return rest_ensure_response(
+				$this->merged->build_for_codes( $normalized )
+			);
+		}
 
 		return rest_ensure_response(
 			$this->merged->build( $workflow, false, $stage_slug, $facts )

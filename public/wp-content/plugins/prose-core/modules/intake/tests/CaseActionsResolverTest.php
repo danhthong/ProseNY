@@ -125,6 +125,24 @@ class CaseActionsResolverTest extends TestCase {
 		$this->assertTrue( $partial['stage_context']['forms_visible'] );
 		$this->assertTrue( $partial['download_enabled'] );
 		$this->assertGreaterThan( 0, $partial['forms_matched'] );
+		$this->assertCount( 2, $partial['download_options'] );
+		$this->assertSame( 'Get Documents (UD-1)', $partial['download_options'][0]['label'] );
+		$this->assertSame( 'Get Documents (UD-1A and UD-2)', $partial['download_options'][1]['label'] );
+
+		$form_rows = array();
+
+		foreach ( $partial['summary'] as $row ) {
+			$label = (string) ( $row['label'] ?? '' );
+
+			if ( str_contains( $label, 'Option 1' ) || str_contains( $label, 'Option 2' ) ) {
+				$form_rows[] = $row;
+			}
+		}
+
+		$this->assertCount( 2, $form_rows );
+		$this->assertStringContainsString( 'UD-1', (string) ( $form_rows[0]['value'] ?? '' ) );
+		$this->assertStringContainsString( 'Option 2', (string) ( $form_rows[1]['label'] ?? '' ) );
+		$this->assertStringContainsString( 'UD-2', (string) ( $form_rows[1]['value'] ?? '' ) );
 
 		$complete = $resolver->resolve(
 			array(

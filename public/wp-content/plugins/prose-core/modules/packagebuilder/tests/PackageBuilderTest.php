@@ -200,6 +200,46 @@ class PackageBuilderTest extends TestCase {
 	}
 
 	/**
+	 * Commencement alternate paths include UD-1a for Option 2.
+	 */
+	public function test_preview_commencement_form_paths_include_ud_1a(): void {
+		$preview = ( new Package_Preview_Service( $this->builder ) )->preview(
+			array(
+				'workflow' => self::WORKFLOW,
+				'facts'    => array(
+					'spouse_agrees' => true,
+					'children'      => true,
+					'child_count'   => 1,
+					'county'        => 'Kings',
+				),
+			)
+		);
+
+		$commencement = null;
+
+		foreach ( $preview['stages'] as $stage ) {
+			if ( 'current' === ( $stage['status'] ?? '' ) ) {
+				$commencement = $stage;
+				break;
+			}
+		}
+
+		$this->assertIsArray( $commencement );
+		$this->assertNotEmpty( $commencement['form_paths'] ?? array(), 'Commencement should expose alternate filing paths.' );
+
+		$option_two = $commencement['form_paths'][1] ?? null;
+		$this->assertIsArray( $option_two );
+
+		$codes = array_map(
+			static fn( string $code ): string => strtoupper( $code ),
+			array_column( (array) ( $option_two['forms'] ?? array() ), 'code' )
+		);
+
+		$this->assertContains( 'UD-1A', $codes );
+		$this->assertContains( 'UD-2', $codes );
+	}
+
+	/**
 	 * ZIP writer produces an archive when assets are available.
 	 */
 	public function test_zip_writer_builds_archive(): void {

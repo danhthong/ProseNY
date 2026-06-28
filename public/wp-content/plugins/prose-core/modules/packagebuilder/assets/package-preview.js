@@ -219,9 +219,21 @@
 			var body = el( 'div', 'prose-package__stage-body' );
 			body.hidden = ! expanded;
 
-			( stage.forms || [] ).forEach( function ( form ) {
-				body.appendChild( renderForm( form ) );
-			} );
+			if ( Array.isArray( stage.form_paths ) && stage.form_paths.length ) {
+				stage.form_paths.forEach( function ( path ) {
+					if ( path.label ) {
+						body.appendChild( el( 'div', 'prose-package__path-label', path.label ) );
+					}
+
+					( path.forms || [] ).forEach( function ( form ) {
+						body.appendChild( renderForm( form ) );
+					} );
+				} );
+			} else {
+				( stage.forms || [] ).forEach( function ( form ) {
+					body.appendChild( renderForm( form ) );
+				} );
+			}
 
 			block.appendChild( body );
 			els.stages.appendChild( block );
@@ -239,9 +251,15 @@
 		setStatus( data.package_status );
 
 		var counts = data.counts || {};
-		els.summary.textContent = ( counts.required || 0 ) + ' required, ' +
-			( counts.optional || 0 ) + ' optional · ' +
-			( counts.ready || 0 ) + ' ready';
+
+		if ( data.path_options && data.path_options >= 2 ) {
+			els.summary.textContent = data.path_options + ' filing paths · ' +
+				( counts.ready || 0 ) + ' ' + ( strings.ready || 'Ready' ).toLowerCase();
+		} else {
+			els.summary.textContent = ( counts.required || 0 ) + ' required, ' +
+				( counts.optional || 0 ) + ' optional · ' +
+				( counts.ready || 0 ) + ' ready';
+		}
 
 		renderStages( data );
 

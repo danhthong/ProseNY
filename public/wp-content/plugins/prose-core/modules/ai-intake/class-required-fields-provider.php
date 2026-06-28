@@ -263,6 +263,44 @@ final class Required_Fields_Provider {
 	}
 
 	/**
+	 * Fields the intake chat may ask — routing discriminators only.
+	 *
+	 * Document-phase fields (county, names, dates, case status, etc.) are
+	 * collected when the user fills forms later, not in the routing chat.
+	 *
+	 * @param array<int, array<string, mixed>> $missing  Priority-ordered missing fields.
+	 * @param string|null                      $workflow Resolved workflow key.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function conversation_missing_fields( array $missing, ?string $workflow ): array {
+		if ( null !== $workflow && '' !== $workflow ) {
+			return array();
+		}
+
+		$routing_keys = array_flip( $this->routing_field_keys() );
+
+		return array_values(
+			array_filter(
+				$missing,
+				static function ( array $field ) use ( $routing_keys ): bool {
+					$key = (string) ( $field['field'] ?? '' );
+
+					return '' !== $key && isset( $routing_keys[ $key ] );
+				}
+			)
+		);
+	}
+
+	/**
+	 * Routing discriminator keys used before workflow resolution.
+	 *
+	 * @return string[]
+	 */
+	public function routing_field_keys(): array {
+		return array_keys( self::ROUTING_PRIORITIES );
+	}
+
+	/**
 	 * Build a Case_Profile from intake state.
 	 *
 	 * @param Intake_State $state Intake state.

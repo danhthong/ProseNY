@@ -256,6 +256,23 @@ final class Fact_Extractor {
 				);
 			}
 
+			$boolean = $this->parse_boolean( $normalized );
+
+			if ( null !== $boolean ) {
+				if ( $boolean ) {
+					return array(
+						'has_minor_children' => true,
+						'children'           => true,
+					);
+				}
+
+				return array(
+					'child_count'        => 0,
+					'has_minor_children' => false,
+					'children'           => false,
+				);
+			}
+
 			return array();
 		}
 

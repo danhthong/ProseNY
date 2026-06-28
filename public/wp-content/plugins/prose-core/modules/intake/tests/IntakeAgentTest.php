@@ -108,7 +108,7 @@ class IntakeAgentTest extends TestCase {
 	}
 
 	/**
-	 * Each workflow resolves and asks a workflow-defined next question.
+	 * Each workflow resolves and moves to routing guidance (no document-field questions).
 	 *
 	 * @dataProvider workflow_provider
 	 *
@@ -116,16 +116,17 @@ class IntakeAgentTest extends TestCase {
 	 * @param string               $expected     Expected workflow.
 	 * @param array<string, mixed> $case_profile Prior profile.
 	 */
-	public function test_workflow_resolves_and_asks_metadata_question( string $message, string $expected, array $case_profile ): void {
+	public function test_workflow_resolves_and_offers_routing_guidance( string $message, string $expected, array $case_profile ): void {
 		$result = $this->agent->process( $message, $case_profile );
 
 		$this->assertSame( $expected, $result['workflow'], 'Workflow should resolve.' );
 		$this->assertIsArray( $result['missing_fields'] );
-		$this->assertNotEmpty( $result['missing_fields'], 'Fresh intake should have missing required fields.' );
+		$this->assertNotEmpty( $result['missing_fields'], 'Document-phase fields may still be missing internally.' );
+		$this->assertSame( 'guidance', $result['next_action'] );
+		$this->assertStringContainsString( 'Get Documents', $result['next_question'] );
 
-		// Next question must come from workflow metadata for the first missing field.
-		$expected_question = $this->question_for( $expected, $result['missing_fields'][0] );
-		$this->assertSame( $expected_question, $result['next_question'], 'Next question must be workflow-defined.' );
+		$workflow_question = $this->question_for( $expected, $result['missing_fields'][0] );
+		$this->assertNotSame( $workflow_question, $result['next_question'], 'Chat must not ask workflow document fields.' );
 
 		$this->assertGreaterThanOrEqual( 0, $result['completion'] );
 		$this->assertLessThanOrEqual( 100, $result['completion'] );
@@ -141,7 +142,9 @@ class IntakeAgentTest extends TestCase {
 		$this->assertSame( 2, $result['facts_extracted']['child_count'] );
 		$this->assertTrue( $result['facts_extracted']['has_minor_children'] );
 		$this->assertContains( 'county', $result['missing_fields'] );
-		$this->assertSame( 'In which NYC county are you filing?', $result['next_question'] );
+		$this->assertSame( 'guidance', $result['next_action'] );
+		$this->assertStringContainsString( 'Get Documents', $result['next_question'] );
+		$this->assertNotSame( 'In which NYC county are you filing?', $result['next_question'] );
 	}
 
 	/**
@@ -263,7 +266,7 @@ class IntakeAgentTest extends TestCase {
 	 */
 	public function test_pending_field_answer_advances_intake(): void {
 		$turn1 = $this->agent->process( 'I want a divorce and we have two children.' );
-		$this->assertSame( 'county', $turn1['case_profile']['pending_field'] );
+		$this->assertSame( '', $turn1['case_profile']['pending_field'] );
 
 		$turn2 = $this->agent->process( 'Brooklyn', $turn1['case_profile'] );
 		$this->assertSame( 'Kings', $turn2['case_profile']['facts']['county'] );
@@ -281,11 +284,27 @@ class IntakeAgentTest extends TestCase {
 		$turn2 = $this->agent->process( 'No', $turn1['case_profile'] );
 
 		$this->assertSame( 'uncontested_divorce_no_children_nyc', $turn2['workflow'] );
-		$this->assertNotEmpty( $turn2['missing_fields'], 'Workflow required fields should remain.' );
+		$this->assertNotEmpty( $turn2['missing_fields'], 'Workflow required fields should remain internally.' );
 		$this->assertNotSame( '', $turn2['next_question'], 'Intake must continue after children answer.' );
 		$this->assertLessThan( 100, $turn2['completion'] );
-		$this->assertSame( 'In which NYC county are you filing?', $turn2['next_question'] );
+		$this->assertSame( 'guidance', $turn2['next_action'] );
+		$this->assertStringContainsString( 'Get Documents', $turn2['next_question'] );
+		$this->assertNotSame( 'In which NYC county are you filing?', $turn2['next_question'] );
 		$this->assertFalse( $turn2['case_profile']['facts']['has_minor_children'] );
+	}
+
+	/**
+	 * Affirmative children routing answers must advance intake.
+	 */
+	public function test_divorce_advances_after_yes_to_children(): void {
+		$turn1 = $this->agent->process( 'I want divorce' );
+		$this->assertSame( 'Do you have any children under 21?', $turn1['next_question'] );
+
+		$turn2 = $this->agent->process( 'Yes', $turn1['case_profile'] );
+
+		$this->assertSame( 'uncontested_divorce_children_nyc', $turn2['workflow'] );
+		$this->assertTrue( $turn2['case_profile']['facts']['has_minor_children'] );
+		$this->assertNotSame( 'Do you have any children under 21?', $turn2['next_question'] );
 	}
 
 	/**
@@ -294,17 +313,19 @@ class IntakeAgentTest extends TestCase {
 	public function test_custody_skips_child_details_when_no_children(): void {
 		$turn1 = $this->agent->process( 'Help me with child custody' );
 		$this->assertSame( 'custody_nyc', $turn1['workflow'] );
-		$this->assertSame( 'In which NYC county are you filing?', $turn1['next_question'] );
+		$this->assertSame( 'guidance', $turn1['next_action'] );
+		$this->assertStringContainsString( 'Get Documents', $turn1['next_question'] );
+		$this->assertNotSame( 'In which NYC county are you filing?', $turn1['next_question'] );
 
 		$turn2 = $this->agent->process( 'Queen', $turn1['case_profile'] );
 		$this->assertSame( 'Queens', $turn2['case_profile']['facts']['county'] );
-		$this->assertSame( 'How many children are involved?', $turn2['next_question'] );
+		$this->assertNotSame( 'How many children are involved?', $turn2['next_question'] );
 
 		$turn3 = $this->agent->process( 'No', $turn2['case_profile'] );
 		$this->assertSame( 0, $turn3['case_profile']['facts']['child_count'] );
 		$this->assertNotContains( 'child_names', $turn3['missing_fields'] );
 		$this->assertNotContains( 'child_birth_dates', $turn3['missing_fields'] );
-		$this->assertSame(
+		$this->assertNotSame(
 			'What is your full legal name and contact information?',
 			$turn3['next_question']
 		);
