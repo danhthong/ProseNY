@@ -86,6 +86,37 @@ final class User_Document_Repository extends Abstract_Repository {
 	}
 
 	/**
+	 * Documents linked to a conversation or its case.
+	 *
+	 * @param int $user_id         User ID.
+	 * @param int $conversation_id Conversation ID.
+	 * @param int $case_id         Optional case ID.
+	 * @param int $limit           Max rows.
+	 * @return object[]
+	 */
+	public function for_conversation( int $user_id, int $conversation_id, int $case_id = 0, int $limit = 10 ): array {
+		global $wpdb;
+
+		if ( $user_id <= 0 || $conversation_id <= 0 ) {
+			return array();
+		}
+
+		$limit = max( 1, min( 50, $limit ) );
+
+		if ( $case_id > 0 ) {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$sql = "SELECT * FROM {$this->table()} WHERE user_id = %d AND (conversation_id = %d OR case_id = %d OR conversation_id IS NULL) ORDER BY created_at DESC LIMIT %d";
+			$rows = $wpdb->get_results( $wpdb->prepare( $sql, $user_id, $conversation_id, $case_id, $limit ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		} else {
+			// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$sql  = "SELECT * FROM {$this->table()} WHERE user_id = %d AND (conversation_id = %d OR conversation_id IS NULL) ORDER BY created_at DESC LIMIT %d";
+			$rows = $wpdb->get_results( $wpdb->prepare( $sql, $user_id, $conversation_id, $limit ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		}
+
+		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
 	 * Build a download URL for a document row.
 	 *
 	 * @param object $row Document row.
@@ -105,6 +136,10 @@ final class User_Document_Repository extends Abstract_Repository {
 		$token = (string) ( $row->download_token ?? '' );
 
 		if ( '' !== $token ) {
+			if ( str_starts_with( $token, 'http://' ) || str_starts_with( $token, 'https://' ) ) {
+				return $token;
+			}
+
 			return rest_url( 'prose/v1/documents/download/' . rawurlencode( $token ) );
 		}
 

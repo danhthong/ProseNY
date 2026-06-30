@@ -795,6 +795,38 @@ class AiIntakeInterpreterTest extends TestCase {
 	}
 
 	/**
+	 * "What is need to do next?" at commencement should use stage guidance, not generic intake.
+	 */
+	public function test_what_to_do_next_at_commencement_uses_stage_guidance(): void {
+		$state = array(
+			'workflow'     => 'uncontested_divorce_children_nyc',
+			'case_profile' => array(
+				'workflow'                 => 'uncontested_divorce_children_nyc',
+				'guidance_brief_delivered' => true,
+			),
+			'facts'        => array(
+				'issue'         => array( 'value' => 'divorce', 'confidence' => 0.95, 'confirmed' => true ),
+				'spouse_agrees' => array( 'value' => true, 'confidence' => 0.95, 'confirmed' => true ),
+				'child_count'   => array( 'value' => 1, 'confidence' => 0.95, 'confirmed' => true ),
+				'county'        => array( 'value' => 'Queens', 'confidence' => 0.95, 'confirmed' => true ),
+			),
+		);
+
+		$result = $this->interpreter->interpret( 'what is need to do next?', $state );
+		$reply  = strtolower( (string) ( $result['question'] ?? '' ) );
+
+		$this->assertStringNotContainsString( 'tell me a bit more about your legal matter', $reply );
+		$this->assertStringNotContainsString( 'tell me a little more about your legal matter', $reply );
+		$this->assertStringNotContainsString( 'help you find the right path', $reply );
+		$this->assertTrue(
+			str_contains( $reply, 'ud-1' )
+			|| str_contains( $reply, 'file' )
+			|| str_contains( $reply, 'summons' )
+			|| str_contains( $reply, 'commencement' )
+		);
+	}
+
+	/**
 	 * Filed uncontested case with settlement should advance to service guidance.
 	 */
 	public function test_filed_settlement_case_advances_to_service_guidance(): void {

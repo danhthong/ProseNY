@@ -20,35 +20,17 @@ get_template_part( 'template-parts/prose-site-shell-start' );
 
 		<div id="prose-dashboard-status" class="prose-dashboard__status" aria-live="polite"></div>
 
-		<div class="prose-dashboard__grid">
-			<section class="prose-dashboard__widget" aria-labelledby="prose-case-progress-title">
-				<h2 id="prose-case-progress-title" class="prose-dashboard__widget-title"><?php esc_html_e( 'Case Progress', 'prose-app' ); ?></h2>
-				<div id="prose-case-progress" class="prose-dashboard__widget-body"></div>
+		<div class="prose-dashboard__stack">
+			<section class="prose-dashboard__cases-intro" aria-labelledby="prose-cases-title">
+				<h2 id="prose-cases-title" class="prose-dashboard__cases-title"><?php esc_html_e( 'Your cases', 'prose-app' ); ?></h2>
+				<p class="prose-dashboard__cases-lead"><?php esc_html_e( 'Each conversation is a case record. Expand a row to see progress, lifecycle, courts, and documents. The most recent case opens by default.', 'prose-app' ); ?></p>
 			</section>
 
-			<section class="prose-dashboard__widget" aria-labelledby="prose-subscription-title">
+			<div id="prose-conversation-records" class="prose-dashboard__records"></div>
+
+			<section class="prose-dashboard__widget prose-dashboard__widget--subscription" aria-labelledby="prose-subscription-title">
 				<h2 id="prose-subscription-title" class="prose-dashboard__widget-title"><?php esc_html_e( 'Subscription', 'prose-app' ); ?></h2>
 				<div id="prose-subscription" class="prose-dashboard__widget-body"></div>
-			</section>
-
-			<section class="prose-dashboard__widget" aria-labelledby="prose-case-lifecycle-title">
-				<h2 id="prose-case-lifecycle-title" class="prose-dashboard__widget-title"><?php esc_html_e( 'Case Lifecycle', 'prose-app' ); ?></h2>
-				<div id="prose-case-lifecycle" class="prose-dashboard__widget-body"></div>
-			</section>
-
-			<section class="prose-dashboard__widget" aria-labelledby="prose-matter-map-title">
-				<h2 id="prose-matter-map-title" class="prose-dashboard__widget-title"><?php esc_html_e( 'Courts Involved', 'prose-app' ); ?></h2>
-				<div id="prose-matter-map" class="prose-dashboard__widget-body"></div>
-			</section>
-
-			<section class="prose-dashboard__widget prose-dashboard__widget--wide" aria-labelledby="prose-conversations-title">
-				<h2 id="prose-conversations-title" class="prose-dashboard__widget-title"><?php esc_html_e( 'Your Conversations', 'prose-app' ); ?></h2>
-				<div id="prose-conversations" class="prose-dashboard__widget-body"></div>
-			</section>
-
-			<section class="prose-dashboard__widget prose-dashboard__widget--wide" aria-labelledby="prose-documents-title">
-				<h2 id="prose-documents-title" class="prose-dashboard__widget-title"><?php esc_html_e( 'Generated Documents', 'prose-app' ); ?></h2>
-				<div id="prose-documents" class="prose-dashboard__widget-body"></div>
 			</section>
 		</div>
 	</div>

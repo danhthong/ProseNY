@@ -279,6 +279,9 @@ class IntakeAgentTest extends TestCase {
 	public function test_divorce_does_not_complete_after_children_only(): void {
 		$turn1 = $this->agent->process( 'I want divorce' );
 		$this->assertSame( 'Do you have any children under 21?', $turn1['next_question'] );
+		$this->assertCount( 2, $turn1['quick_answers'] ?? array() );
+		$this->assertSame( 'yes', $turn1['quick_answers'][0]['value'] ?? '' );
+		$this->assertSame( 'no', $turn1['quick_answers'][1]['value'] ?? '' );
 		$this->assertSame( '', (string) ( $turn1['workflow'] ?? '' ) );
 
 		$turn2 = $this->agent->process( 'No', $turn1['case_profile'] );

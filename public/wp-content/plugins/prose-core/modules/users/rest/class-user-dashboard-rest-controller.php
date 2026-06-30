@@ -10,10 +10,12 @@ namespace ProSe\Core\Users\Rest;
 use ProSe\Core\Forms\Database\Repositories\Case_Repository;
 use ProSe\Core\Forms\Engine\Stage_Form_Presenter;
 use ProSe\Core\Guidance\Eligibility_Presenter;
+use ProSe\Core\Guidance\Filing_Guidance_Brief_Resolver;
 use ProSe\Core\Guidance\Procedural_Roadmap_Presenter;
 use ProSe\Core\Intake\Case_Lifecycle_Service;
 use ProSe\Core\Intake\Rest\Courtflow_Session_Store;
 use ProSe\Core\Loader;
+use ProSe\Core\PackageBuilder\Merged_Blank_Pdf_Service;
 use ProSe\Core\Routing\Workflow_Catalog;
 use ProSe\Core\Users\Database\Repositories\Conversation_Repository;
 use ProSe\Core\Users\Database\Repositories\Message_Repository;
@@ -87,6 +89,11 @@ final class User_Dashboard_Rest_Controller {
 	private Eligibility_Presenter $eligibility;
 
 	/**
+	 * @var Merged_Blank_Pdf_Service
+	 */
+	private Merged_Blank_Pdf_Service $merged_pdfs;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Courtflow_Session_Store|null $session_store Optional session store.
@@ -102,6 +109,7 @@ final class User_Dashboard_Rest_Controller {
 		$this->session_store     = $session_store ?? new Courtflow_Session_Store();
 		$this->lifecycle_service = new Case_Lifecycle_Service();
 		$this->eligibility       = new Eligibility_Presenter();
+		$this->merged_pdfs       = new Merged_Blank_Pdf_Service();
 	}
 
 	/**
@@ -172,33 +180,12 @@ final class User_Dashboard_Rest_Controller {
 
 		$active_case = $this->cases->find_active_for_user( $user_id );
 
+		$all_documents = $this->documents->recent_for_user( $user_id, 50 );
 		$conversations = array();
-		$resume_url    = home_url( '/' );
 
 		foreach ( $this->conversations->recent_for_user( $user_id, 20 ) as $row ) {
-			$formatted       = $this->format_conversation_row( $row );
+			$formatted       = $this->format_conversation_row( $row, $user_id, $active_case, $all_documents );
 			$conversations[] = $formatted;
-
-			if ( ! empty( $formatted['resume_url'] ) && home_url( '/' ) === $resume_url ) {
-				$resume_url = (string) $formatted['resume_url'];
-			}
-		}
-
-		$case_progress = $this->build_case_progress( $conversations, $active_case, $resume_url );
-		$case_lifecycle = $this->build_case_lifecycle( $conversations, $case_progress );
-		$matter_map     = $case_lifecycle['matter_map'] ?? array( 'show' => false );
-
-		$documents = array();
-
-		foreach ( $this->documents->recent_for_user( $user_id, 10 ) as $row ) {
-			$documents[] = array(
-				'document_id'   => (int) $row->document_id,
-				'title'         => (string) $row->title,
-				'status'        => (string) $row->status,
-				'document_type' => (string) $row->document_type,
-				'download_url'  => $this->documents->download_url_for_row( $row ),
-				'created_at'    => (string) $row->created_at,
-			);
 		}
 
 		return rest_ensure_response(
@@ -207,12 +194,7 @@ final class User_Dashboard_Rest_Controller {
 					'display_name' => (string) $user->display_name,
 					'email'        => (string) $user->user_email,
 				),
-				'active_case'          => $active_case,
-				'case_progress'        => $case_progress,
-				'case_lifecycle'       => $case_lifecycle,
-				'matter_map'           => $matter_map,
 				'recent_conversations' => $conversations,
-				'documents'            => $documents,
 				'subscription'         => $this->subscription->for_user( $user_id ),
 			)
 		);
@@ -305,127 +287,467 @@ final class User_Dashboard_Rest_Controller {
 	}
 
 	/**
-	 * Build compact case progress summary for the dashboard (Option B).
+	 * Build compact case progress summary for one conversation.
 	 *
-	 * @param array<int, array<string, mixed>> $conversations Recent conversations.
-	 * @param array<string, mixed>|null        $active_case   Active case row.
-	 * @param string                           $resume_url    Default resume URL.
+	 * @param object                   $row         Conversation row.
+	 * @param array<string, mixed>|null $active_case Active case row.
 	 * @return array<string, mixed>
 	 */
-	private function build_case_progress( array $conversations, $active_case, string $resume_url ): array {
-		$roadmap = null;
-		$url     = $resume_url;
-		$profile = array();
+	private function build_case_progress_for_row( object $row, $active_case ): array {
+		$context      = $this->decode_context( (string) ( $row->context_json ?? '' ) );
+		$case_profile = is_array( $context['case_profile'] ?? null ) ? $context['case_profile'] : array();
+		$resume_url   = $this->resume_url( (string) $row->session_id );
+		$roadmap      = is_array( $case_profile['roadmap'] ?? null ) ? $case_profile['roadmap'] : null;
 
-		foreach ( $conversations as $conversation ) {
-			if ( empty( $conversation['session_id'] ) ) {
-				continue;
+		if ( ! is_array( $roadmap ) || empty( $roadmap['show'] ) ) {
+			$workflow = trim( (string) ( $case_profile['workflow'] ?? '' ) );
+
+			if ( '' === $workflow ) {
+				return array( 'show' => false );
 			}
 
-			$row = $this->conversations->find_owned_by_session(
-				get_current_user_id(),
-				(string) $conversation['session_id']
-			);
-
-			if ( ! $row ) {
-				continue;
-			}
-
-			$context      = $this->decode_context( (string) ( $row->context_json ?? '' ) );
-			$case_profile = is_array( $context['case_profile'] ?? null ) ? $context['case_profile'] : array();
-			$candidate    = is_array( $case_profile['roadmap'] ?? null ) ? $case_profile['roadmap'] : null;
-
-			if ( is_array( $candidate ) && ! empty( $candidate['show'] ) ) {
-				$roadmap = $candidate;
-				$profile = $case_profile;
-				$url     = (string) ( $conversation['resume_url'] ?? $resume_url );
-				break;
-			}
-
-			if ( null === $roadmap && '' !== trim( (string) ( $case_profile['workflow'] ?? '' ) ) ) {
-				$roadmap = $this->roadmap_from_profile( $case_profile );
-				$profile = $case_profile;
-				$url     = (string) ( $conversation['resume_url'] ?? $resume_url );
-			}
+			$roadmap = $this->roadmap_from_profile( $case_profile );
 		}
 
 		if ( ! is_array( $roadmap ) || empty( $roadmap['show'] ) ) {
 			return array( 'show' => false );
 		}
 
-		$summary = $this->roadmap_presenter->to_summary( $roadmap, $url );
+		$summary = $this->roadmap_presenter->to_summary( $roadmap, $resume_url );
 
-		if ( is_array( $active_case ) && isset( $active_case['progress_percentage'] ) ) {
-			$summary['progress_percentage'] = (int) $active_case['progress_percentage'];
-		} elseif ( isset( $profile['progress'] ) ) {
-			$summary['progress_percentage'] = (int) $profile['progress'];
+		if ( is_array( $active_case ) && ! empty( $row->case_id ) && (int) $row->case_id === (int) ( $active_case['case_id'] ?? 0 ) ) {
+			$summary['progress_percentage'] = (int) ( $active_case['progress_percentage'] ?? $summary['progress_percentage'] ?? 0 );
+		} elseif ( isset( $case_profile['progress'] ) ) {
+			$summary['progress_percentage'] = (int) $case_profile['progress'];
 		}
 
 		return $summary;
 	}
 
 	/**
-	 * Build lifecycle checklist for dashboard from the most recent divorce conversation.
+	 * Build lifecycle checklist for one conversation.
 	 *
-	 * @param array<int, array<string, mixed>> $conversations Recent conversations.
-	 * @param array<string, mixed>             $case_progress Case progress summary.
+	 * @param object               $row           Conversation row.
+	 * @param array<string, mixed> $case_progress Case progress summary.
 	 * @return array<string, mixed>
 	 */
-	private function build_case_lifecycle( array $conversations, array $case_progress ): array {
-		foreach ( $conversations as $conversation ) {
-			if ( empty( $conversation['session_id'] ) ) {
-				continue;
-			}
+	private function build_case_lifecycle_for_row( object $row, array $case_progress ): array {
+		$context      = $this->decode_context( (string) ( $row->context_json ?? '' ) );
+		$case_profile = is_array( $context['case_profile'] ?? null ) ? $context['case_profile'] : array();
+		$facts        = is_array( $case_profile['facts'] ?? null ) ? $case_profile['facts'] : array();
+		$actions      = is_array( $context['actions'] ?? null ) ? $context['actions'] : array();
+		$lifecycle    = $this->lifecycle_service->build(
+			$case_profile,
+			array(
+				'intake_complete' => ! empty( $actions['intake_complete'] ) || ! empty( $case_profile['workflow'] ),
+				'completion'      => max(
+					(int) ( $case_profile['progress'] ?? 0 ),
+					(int) ( $case_progress['progress_percentage'] ?? 0 )
+				),
+			)
+		);
 
-			$row = $this->conversations->find_owned_by_session(
-				get_current_user_id(),
-				(string) $conversation['session_id']
-			);
-
-			if ( ! $row ) {
-				continue;
-			}
-
-			$context      = $this->decode_context( (string) ( $row->context_json ?? '' ) );
-			$case_profile = is_array( $context['case_profile'] ?? null ) ? $context['case_profile'] : array();
-			$facts        = is_array( $case_profile['facts'] ?? null ) ? $case_profile['facts'] : array();
-			$actions      = is_array( $context['actions'] ?? null ) ? $context['actions'] : array();
-			$lifecycle    = $this->lifecycle_service->build(
-				$case_profile,
-				array(
-					'intake_complete' => ! empty( $actions['intake_complete'] ) || ! empty( $case_profile['workflow'] ),
-					'completion'      => max(
-						(int) ( $case_profile['progress'] ?? 0 ),
-						(int) ( $case_progress['progress_percentage'] ?? 0 )
-					),
-				)
-			);
-
-			if ( empty( $lifecycle['show'] ) ) {
-				continue;
-			}
-
-			$eligibility = $this->eligibility->evaluate( $facts );
-			$matter_map  = $this->lifecycle_service->build_matter_map( $case_profile );
-
-			return array_merge(
-				$lifecycle,
-				array(
-					'eligibility'       => $eligibility,
-					'matter_map'        => $matter_map,
-					'continue_case_url' => (string) ( $case_progress['continue_case_url'] ?? $conversation['resume_url'] ?? home_url( '/' ) ),
-				)
-			);
+		if ( empty( $lifecycle['show'] ) ) {
+			return array( 'show' => false );
 		}
 
-		return array( 'show' => false );
+		$eligibility = $this->eligibility->evaluate( $facts );
+		$matter_map  = $this->lifecycle_service->build_matter_map( $case_profile );
+
+		return array_merge(
+			$lifecycle,
+			array(
+				'eligibility'       => $eligibility,
+				'matter_map'        => $matter_map,
+				'continue_case_url' => (string) ( $case_progress['continue_case_url'] ?? $this->resume_url( (string) $row->session_id ) ),
+			)
+		);
 	}
 
 	/**
-	 * @param object $row Conversation row.
+	 * Documents generated for one conversation.
+	 *
+	 * @param int      $user_id         User ID.
+	 * @param object   $row             Conversation row.
+	 * @param object[] $all_user_docs   All documents for the user.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function documents_for_row( int $user_id, object $row, array $all_user_docs ): array {
+		unset( $all_user_docs );
+
+		$conversation_id = (int) $row->conversation_id;
+		$case_id         = ! empty( $row->case_id ) ? (int) $row->case_id : 0;
+		$context         = $this->decode_context( (string) ( $row->context_json ?? '' ) );
+		$documents       = array();
+		$seen            = array();
+
+		$add_document = static function ( array $document, string $key ) use ( &$documents, &$seen ): void {
+			if ( isset( $seen[ $key ] ) ) {
+				return;
+			}
+
+			$seen[ $key ] = true;
+			$documents[]  = $document;
+		};
+
+		$stage_forms      = $this->stage_forms_for_row( $context, $row );
+		$stage_title      = $this->stage_title_for_row( $context, $row );
+		$download_options = $this->download_options_for_row( $context, $row );
+
+		if ( ! empty( $download_options ) ) {
+			foreach ( $download_options as $option ) {
+				if ( ! is_array( $option ) ) {
+					continue;
+				}
+
+				$option_id = trim( (string) ( $option['id'] ?? '' ) );
+				$add_document(
+					$this->format_merged_option_document( $option, $stage_forms ),
+					'merged:' . ( '' !== $option_id ? $option_id : (string) ( $option['label'] ?? '' ) )
+				);
+			}
+
+			return $documents;
+		}
+
+		foreach ( $stage_forms as $form ) {
+			if ( ! is_array( $form ) ) {
+				continue;
+			}
+
+			$code = trim( (string) ( $form['code'] ?? '' ) );
+			$add_document(
+				$this->format_stage_form_document( $form, $stage_title ),
+				'form:' . ( '' !== $code ? $code : (string) ( $form['title'] ?? '' ) )
+			);
+		}
+
+		foreach ( $this->documents->for_conversation( $user_id, $conversation_id, $case_id, 50 ) as $doc_row ) {
+			$add_document( $this->format_document_payload( $doc_row ), 'db:' . (int) $doc_row->document_id );
+		}
+
+		$session_docs = is_array( $context['documents'] ?? null ) ? $context['documents'] : array();
+
+		foreach ( $session_docs as $doc ) {
+			if ( ! is_array( $doc ) ) {
+				continue;
+			}
+
+			$formatted = $this->format_session_document( $doc );
+			$add_document(
+				$formatted,
+				'session:' . (string) ( $formatted['title'] ?? '' ) . '|' . (string) ( $formatted['download_url'] ?? '' )
+			);
+		}
+
+		$stored_session = $this->session_store->get( (string) $row->session_id );
+		$live_docs      = is_array( $stored_session['documents'] ?? null ) ? $stored_session['documents'] : array();
+
+		foreach ( $live_docs as $doc ) {
+			if ( ! is_array( $doc ) ) {
+				continue;
+			}
+
+			$formatted = $this->format_session_document( $doc );
+			$add_document(
+				$formatted,
+				'live:' . (string) ( $formatted['title'] ?? '' ) . '|' . (string) ( $formatted['download_url'] ?? '' )
+			);
+		}
+
+		return $documents;
+	}
+
+	/**
+	 * Stage forms for the current procedural stage (matches chat / package preview).
+	 *
+	 * @param array<string, mixed> $context Stored conversation context.
+	 * @param object               $row     Conversation row.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function stage_forms_for_row( array $context, object $row ): array {
+		$stage_ctx = $this->stage_context_for_row( $context, $row );
+		$forms     = is_array( $stage_ctx['stage_forms'] ?? null ) ? $stage_ctx['stage_forms'] : array();
+
+		return $forms;
+	}
+
+	/**
+	 * Merged download paths for the current stage (matches Case Actions buttons).
+	 *
+	 * @param array<string, mixed> $context Stored conversation context.
+	 * @param object               $row     Conversation row.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function download_options_for_row( array $context, object $row ): array {
+		$stage_ctx = $this->stage_context_for_row( $context, $row );
+		$options   = is_array( $stage_ctx['download_options'] ?? null ) ? $stage_ctx['download_options'] : array();
+
+		if ( ! empty( $options ) ) {
+			return $options;
+		}
+
+		$actions = is_array( $context['actions'] ?? null ) ? $context['actions'] : array();
+		$options = is_array( $actions['download_options'] ?? null ) ? $actions['download_options'] : array();
+
+		return $options;
+	}
+
+	/**
+	 * @param array<string, mixed> $context Stored conversation context.
+	 * @param object               $row     Conversation row.
 	 * @return array<string, mixed>
 	 */
-	private function format_conversation_row( object $row ): array {
+	private function stage_context_for_row( array $context, object $row ): array {
+		$actions   = is_array( $context['actions'] ?? null ) ? $context['actions'] : array();
+		$stage_ctx = is_array( $actions['stage_context'] ?? null ) ? $actions['stage_context'] : array();
+
+		if ( ! empty( $stage_ctx ) ) {
+			return $stage_ctx;
+		}
+
+		$stored_session = $this->session_store->get( (string) $row->session_id );
+
+		if ( is_array( $stored_session ) ) {
+			$session_actions = is_array( $stored_session['actions'] ?? null ) ? $stored_session['actions'] : array();
+			$session_ctx     = is_array( $session_actions['stage_context'] ?? null ) ? $session_actions['stage_context'] : array();
+
+			if ( ! empty( $session_ctx ) ) {
+				return $session_ctx;
+			}
+		}
+
+		return $this->rebuild_stage_context_from_profile( $context );
+	}
+
+	/**
+	 * Rebuild stage context from stored case profile when actions snapshot is missing.
+	 *
+	 * @param array<string, mixed> $context Stored conversation context.
+	 * @return array<string, mixed>
+	 */
+	private function rebuild_stage_context_from_profile( array $context ): array {
+		$case_profile = is_array( $context['case_profile'] ?? null ) ? $context['case_profile'] : array();
+		$workflow     = trim( (string) ( $case_profile['workflow'] ?? '' ) );
+
+		if ( '' === $workflow ) {
+			return array();
+		}
+
+		$facts   = is_array( $case_profile['facts'] ?? null ) ? $case_profile['facts'] : array();
+		$actions = is_array( $context['actions'] ?? null ) ? $context['actions'] : array();
+		$node    = trim( (string) ( $case_profile['procedural_node'] ?? '' ) );
+		$stage   = ( new Stage_Form_Presenter() )->present(
+			array(
+				'workflow'        => $workflow,
+				'facts'           => $facts,
+				'intake_complete' => ! empty( $actions['intake_complete'] ) || ! empty( $case_profile['workflow'] ),
+				'issue'           => (string) ( $case_profile['issue'] ?? $facts['issue'] ?? 'divorce' ),
+				'current_node'    => $node,
+			)
+		);
+
+		return is_array( $stage ) ? $stage : array();
+	}
+
+	/**
+	 * @param array<string, mixed>             $option      Download option row.
+	 * @param array<int, array<string, mixed>> $stage_forms Stage forms for titles.
+	 * @return array<string, mixed>
+	 */
+	private function format_merged_option_document( array $option, array $stage_forms ): array {
+		$form_codes = is_array( $option['form_codes'] ?? null ) ? $option['form_codes'] : array();
+		$label      = trim( (string) ( $option['label'] ?? '' ) );
+		$title      = trim( (string) ( $option['title'] ?? '' ) );
+		$display    = '' !== $label ? $label : $title;
+
+		if ( '' === $display && ! empty( $form_codes ) ) {
+			$display = Filing_Guidance_Brief_Resolver::download_button_label( $form_codes );
+		}
+
+		$download_url = '';
+
+		if ( ! empty( $form_codes ) ) {
+			$merged = $this->merged_pdfs->build_for_codes( $form_codes );
+
+			if ( ! empty( $merged['success'] ) ) {
+				$download_url = (string) ( $merged['download_url'] ?? '' );
+			}
+		}
+
+		$included_forms = $this->forms_for_codes( $stage_forms, $form_codes );
+
+		return array(
+			'document_id'    => 0,
+			'title'          => $display,
+			'display_title'  => $display,
+			'label'          => $label,
+			'form_codes'     => array_values( $form_codes ),
+			'included_forms' => $included_forms,
+			'status'         => '' !== $download_url ? 'ready' : 'pending',
+			'document_type'  => 'merged_package',
+			'download_url'   => $download_url,
+			'created_at'     => '',
+		);
+	}
+
+	/**
+	 * @param array<int, array<string, mixed>> $stage_forms Stage form rows.
+	 * @param array<int, string>               $form_codes  Codes in this package.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function forms_for_codes( array $stage_forms, array $form_codes ): array {
+		if ( empty( $form_codes ) || empty( $stage_forms ) ) {
+			return array();
+		}
+
+		$lookup = array();
+
+		foreach ( $stage_forms as $form ) {
+			if ( ! is_array( $form ) ) {
+				continue;
+			}
+
+			$code = trim( (string) ( $form['code'] ?? '' ) );
+
+			if ( '' !== $code ) {
+				$lookup[ $this->normalize_form_code_key( $code ) ] = $form;
+			}
+		}
+
+		$rows = array();
+
+		foreach ( $form_codes as $code ) {
+			$key = $this->normalize_form_code_key( (string) $code );
+
+			if ( '' === $key || ! isset( $lookup[ $key ] ) ) {
+				continue;
+			}
+
+			$form   = $lookup[ $key ];
+			$title  = (string) ( $form['title'] ?? $code );
+			$rows[] = array(
+				'code'  => (string) ( $form['code'] ?? $code ),
+				'title' => $title,
+				'label' => $title . ' (' . (string) ( $form['code'] ?? $code ) . ')',
+			);
+		}
+
+		return $rows;
+	}
+
+	/**
+	 * @param string $code Form code.
+	 * @return string
+	 */
+	private function normalize_form_code_key( string $code ): string {
+		return strtolower( trim( $code ) );
+	}
+
+	/**
+	 * @param array<string, mixed> $context Stored conversation context.
+	 * @param object               $row     Conversation row.
+	 * @return string
+	 */
+	private function stage_title_for_row( array $context, object $row ): string {
+		$actions   = is_array( $context['actions'] ?? null ) ? $context['actions'] : array();
+		$stage_ctx = is_array( $actions['stage_context'] ?? null ) ? $actions['stage_context'] : array();
+		$current   = is_array( $stage_ctx['current_stage'] ?? null ) ? $stage_ctx['current_stage'] : array();
+		$title     = trim( (string) ( $current['title'] ?? '' ) );
+
+		if ( '' !== $title ) {
+			return $title;
+		}
+
+		$stored_session = $this->session_store->get( (string) $row->session_id );
+
+		if ( is_array( $stored_session ) ) {
+			$session_actions = is_array( $stored_session['actions'] ?? null ) ? $stored_session['actions'] : array();
+			$session_ctx     = is_array( $session_actions['stage_context'] ?? null ) ? $session_actions['stage_context'] : array();
+			$session_current = is_array( $session_ctx['current_stage'] ?? null ) ? $session_ctx['current_stage'] : array();
+			$title           = trim( (string) ( $session_current['title'] ?? '' ) );
+
+			if ( '' !== $title ) {
+				return $title;
+			}
+		}
+
+		$case_profile  = is_array( $context['case_profile'] ?? null ) ? $context['case_profile'] : array();
+		$roadmap       = is_array( $case_profile['roadmap'] ?? null ) ? $case_profile['roadmap'] : array();
+		$current_stage = is_array( $roadmap['current_stage'] ?? null ) ? $roadmap['current_stage'] : array();
+
+		return trim( (string) ( $current_stage['title'] ?? $current_stage['label'] ?? '' ) );
+	}
+
+	/**
+	 * @param array<string, mixed> $form        Stage form row.
+	 * @param string               $stage_title Current stage label.
+	 * @return array<string, mixed>
+	 */
+	private function format_stage_form_document( array $form, string $stage_title = '' ): array {
+		$code     = (string) ( $form['code'] ?? '' );
+		$title    = (string) ( $form['title'] ?? $code );
+		$download = (string) ( $form['download_url'] ?? '' );
+
+		return array(
+			'document_id'   => 0,
+			'form_code'     => $code,
+			'title'         => $title,
+			'display_title' => '' !== $code ? $title . ' (' . $code . ')' : $title,
+			'stage_title'   => $stage_title,
+			'status'        => '' !== $download ? 'ready' : ( ! empty( $form['uncertain'] ) ? 'uncertain' : 'preparing' ),
+			'required'      => ! empty( $form['required'] ),
+			'document_type' => 'form',
+			'download_url'  => $download,
+			'form_url'      => (string) ( $form['url'] ?? '' ),
+			'created_at'    => '',
+		);
+	}
+
+	/**
+	 * @param object $row Document row.
+	 * @return array<string, mixed>
+	 */
+	private function format_document_payload( object $row ): array {
+		return array(
+			'document_id'   => (int) $row->document_id,
+			'title'         => (string) $row->title,
+			'status'        => (string) $row->status,
+			'document_type' => (string) $row->document_type,
+			'download_url'  => $this->documents->download_url_for_row( $row ),
+			'created_at'    => (string) $row->created_at,
+		);
+	}
+
+	/**
+	 * @param array<string, mixed> $doc Session document payload.
+	 * @return array<string, mixed>
+	 */
+	private function format_session_document( array $doc ): array {
+		$download = (string) ( $doc['download_url'] ?? '' );
+
+		if ( '' !== $download && ! str_starts_with( $download, 'http://' ) && ! str_starts_with( $download, 'https://' ) ) {
+			$download = rest_url( 'prose/v1/documents/download/' . rawurlencode( $download ) );
+		}
+
+		return array(
+			'document_id'   => 0,
+			'title'         => (string) ( $doc['title'] ?? __( 'Filing package', 'prose-core' ) ),
+			'status'        => (string) ( $doc['status'] ?? 'ready' ),
+			'document_type' => (string) ( $doc['form_slug'] ?? $doc['document_type'] ?? 'blank_package' ),
+			'download_url'  => $download,
+			'created_at'    => '',
+		);
+	}
+
+	/**
+	 * @param object                   $row         Conversation row.
+	 * @param int                      $user_id     User ID.
+	 * @param array<string, mixed>|null $active_case Active case row.
+	 * @param object[]                 $all_user_docs All user documents.
+	 * @return array<string, mixed>
+	 */
+	private function format_conversation_row( object $row, int $user_id, $active_case, array $all_user_docs ): array {
 		$conversation_id = (int) $row->conversation_id;
 		$session_id      = (string) $row->session_id;
 		$context         = $this->decode_context( (string) ( $row->context_json ?? '' ) );
@@ -433,6 +755,11 @@ final class User_Dashboard_Rest_Controller {
 		$workflow_key    = (string) ( $case_profile['workflow'] ?? '' );
 		$workflow_label  = $this->workflow_label( $workflow_key );
 		$updated_at      = (string) $row->updated_at;
+		$case_progress   = $this->build_case_progress_for_row( $row, $active_case );
+		$case_lifecycle  = $this->build_case_lifecycle_for_row( $row, $case_progress );
+		$matter_map      = is_array( $case_lifecycle['matter_map'] ?? null )
+			? $case_lifecycle['matter_map']
+			: array( 'show' => false );
 
 		return array(
 			'conversation_id'  => $conversation_id,
@@ -447,6 +774,10 @@ final class User_Dashboard_Rest_Controller {
 			'workflow'         => $workflow_key,
 			'workflow_label'   => $workflow_label,
 			'resume_url'       => $this->resume_url( $session_id ),
+			'case_progress'    => $case_progress,
+			'case_lifecycle'   => $case_lifecycle,
+			'matter_map'       => $matter_map,
+			'documents'        => $this->documents_for_row( $user_id, $row, $all_user_docs ),
 		);
 	}
 

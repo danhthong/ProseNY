@@ -41,6 +41,64 @@ final class Question_Selector {
 	private const FALLBACK_QUESTION = 'What legal matter can I help you with today? For example, divorce, custody, child support, or an order of protection.';
 
 	/**
+	 * Routing discriminator keys answered with yes/no.
+	 *
+	 * @var string[]
+	 */
+	private const BOOLEAN_FIELDS = array(
+		'children',
+		'has_minor_children',
+		'spouse_agrees',
+		'marital_property_resolved',
+		'spouse_responded',
+		'active_divorce',
+		'protection_needed',
+	);
+
+	/**
+	 * Whether a field accepts a yes/no quick answer.
+	 *
+	 * @param string      $field Field key.
+	 * @param string|null $type  Optional field type from workflow metadata.
+	 * @return bool
+	 */
+	public static function is_boolean_field( string $field, ?string $type = null ): bool {
+		if ( '' === trim( $field ) ) {
+			return false;
+		}
+
+		if ( null !== $type ) {
+			return 'boolean' === $type;
+		}
+
+		return in_array( $field, self::BOOLEAN_FIELDS, true );
+	}
+
+	/**
+	 * Quick answer chips for yes/no intake questions.
+	 *
+	 * @param string      $field Pending field key.
+	 * @param string|null $type  Optional field type from workflow metadata.
+	 * @return array<int, array{label: string, value: string}>
+	 */
+	public static function quick_answers_for_field( string $field, ?string $type = null ): array {
+		if ( ! self::is_boolean_field( $field, $type ) ) {
+			return array();
+		}
+
+		return array(
+			array(
+				'label' => __( 'Yes', 'prose-core' ),
+				'value' => 'yes',
+			),
+			array(
+				'label' => __( 'No', 'prose-core' ),
+				'value' => 'no',
+			),
+		);
+	}
+
+	/**
 	 * Select the next question.
 	 *
 	 * @param array<int, array<string, mixed>> $required_fields    Workflow required_fields.

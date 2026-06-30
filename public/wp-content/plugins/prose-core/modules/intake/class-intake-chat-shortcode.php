@@ -219,6 +219,9 @@ final class Intake_Chat_Shortcode {
 						'exportCopied'    => __( 'Copied to clipboard', 'prose-core' ),
 						'exportDownloaded' => __( 'Debug export downloaded', 'prose-core' ),
 						'exportError'     => __( 'Could not export conversation.', 'prose-core' ),
+						'yes'             => __( 'Yes', 'prose-core' ),
+						'no'              => __( 'No', 'prose-core' ),
+						'quickAnswers'    => __( 'Quick answers', 'prose-core' ),
 					),
 				)
 			);

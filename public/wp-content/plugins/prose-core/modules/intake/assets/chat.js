@@ -311,6 +311,7 @@
 
 			updateExportVisibility();
 			updateHomepagePromptsVisibility();
+			restoreQuickAnswersForSession();
 		}
 
 		/**
@@ -528,6 +529,247 @@
 			transcript.appendChild( bubble );
 			transcript.scrollTop = transcript.scrollHeight;
 			return bubble;
+		}
+
+		/**
+		 * Remove any quick-answer chips from the transcript.
+		 *
+		 * @return {void}
+		 */
+		function clearQuickAnswers() {
+			transcript.querySelectorAll( '.prose-intake__quick-answers' ).forEach( function ( el ) {
+				el.remove();
+			} );
+		}
+
+		/**
+		 * Client fallback for yes/no chips when the API omits quick_answers.
+		 *
+		 * @param {string} field Pending field key.
+		 * @return {Array<{label: string, value: string}>}
+		 */
+		function quickAnswersForField( field ) {
+			var booleanFields = {
+				children: true,
+				has_minor_children: true,
+				spouse_agrees: true,
+				marital_property_resolved: true,
+				spouse_responded: true,
+				active_divorce: true,
+				protection_needed: true
+			};
+
+			if ( ! field || ! booleanFields[ field ] ) {
+				return [];
+			}
+
+			return [
+				{ label: STRINGS.yes || 'Yes', value: 'yes' },
+				{ label: STRINGS.no || 'No', value: 'no' }
+			];
+		}
+
+		/**
+		 * Infer yes/no chips from the assistant question text.
+		 *
+		 * @param {string} question Assistant question.
+		 * @return {Array<{label: string, value: string}>}
+		 */
+		function quickAnswersForQuestion( question ) {
+			var text = ( question || '' ).toLowerCase();
+
+			if ( ! text ) {
+				return [];
+			}
+
+			if ( /\bchildren\b/.test( text ) && ( /\bunder\s*21\b/.test( text ) || /\bminor\b/.test( text ) ) ) {
+				return quickAnswersForField( 'children' );
+			}
+
+			if ( /spouse agree/.test( text ) || /agree to the divorce/.test( text ) ) {
+				return quickAnswersForField( 'spouse_agrees' );
+			}
+
+			if ( /property and finances/.test( text ) || /marital property/.test( text ) ) {
+				return quickAnswersForField( 'marital_property_resolved' );
+			}
+
+			if ( /spouse respond/.test( text ) || /respond to the divorce/.test( text ) ) {
+				return quickAnswersForField( 'spouse_responded' );
+			}
+
+			if ( /active divorce/.test( text ) || /case already been started/.test( text ) || /already filed/.test( text ) ) {
+				return quickAnswersForField( 'active_divorce' );
+			}
+
+			if ( /protection/.test( text ) || /order of protection/.test( text ) || /harmed or threatened/.test( text ) ) {
+				return quickAnswersForField( 'protection_needed' );
+			}
+
+			return [];
+		}
+
+		/**
+		 * Whether yes/no chips should be offered for this turn.
+		 *
+		 * @param {Object} data       REST payload.
+		 * @param {Object} result     Interpreter result.
+		 * @param {string} nextAction Next action from the server.
+		 * @param {boolean} needsReview Whether intake needs human review.
+		 * @param {boolean} apiFailed Whether the request failed.
+		 * @return {boolean}
+		 */
+		function shouldOfferQuickAnswers( data, result, nextAction, needsReview, apiFailed ) {
+			if ( needsReview || apiFailed || ( input && input.disabled ) ) {
+				return false;
+			}
+
+			if ( 'guidance' === nextAction || 'complete_intake' === nextAction || 'intake_complete' === ( result && result.intent ) ) {
+				return false;
+			}
+
+			if ( data.actions && data.actions.stage_context && data.actions.stage_context.forms_visible ) {
+				return false;
+			}
+
+			if ( session.actions && session.actions.stage_context && session.actions.stage_context.forms_visible ) {
+				return false;
+			}
+
+			return 'ask_question' === nextAction;
+		}
+
+		/**
+		 * Resolve quick answers from the API or pending field state.
+		 *
+		 * @param {Object} data       REST payload.
+		 * @param {Object} result     Interpreter result.
+		 * @param {string} question   Assistant question text.
+		 * @param {string} nextAction Next action from the server.
+		 * @return {Array<{label: string, value: string}>}
+		 */
+		function resolveQuickAnswers( data, result, question, nextAction ) {
+			var answers = data.quick_answers || ( result && result.quick_answers );
+
+			if ( Array.isArray( answers ) && answers.length ) {
+				return answers;
+			}
+
+			if ( 'ask_question' !== nextAction ) {
+				return [];
+			}
+
+			var field = '';
+
+			if ( result && result.pending_field ) {
+				field = result.pending_field;
+			} else if ( session.case_profile && session.case_profile.pending_field ) {
+				field = session.case_profile.pending_field;
+			} else if ( session.state && session.state.pending_field ) {
+				field = session.state.pending_field;
+			}
+
+			answers = quickAnswersForField( field );
+
+			if ( answers.length ) {
+				return answers;
+			}
+
+			return quickAnswersForQuestion( question );
+		}
+
+		/**
+		 * Render yes/no chips below an agent question.
+		 *
+		 * @param {HTMLElement} bubble  Agent bubble element.
+		 * @param {Array}       answers Quick answer options.
+		 * @return {void}
+		 */
+		function renderQuickAnswers( bubble, answers ) {
+			clearQuickAnswers();
+
+			if ( ! bubble || ! Array.isArray( answers ) || ! answers.length ) {
+				return;
+			}
+
+			var wrap = document.createElement( 'div' );
+			wrap.className = 'prose-intake__quick-answers';
+			wrap.setAttribute( 'role', 'group' );
+			wrap.setAttribute( 'aria-label', STRINGS.quickAnswers || 'Quick answers' );
+
+			answers.forEach( function ( answer ) {
+				if ( ! answer ) {
+					return;
+				}
+
+				var btn = document.createElement( 'button' );
+				btn.type = 'button';
+				btn.className = 'prose-intake__quick-answer';
+				btn.textContent = answer.label || answer.value || '';
+				btn.addEventListener( 'click', function () {
+					if ( busy ) {
+						return;
+					}
+
+					clearQuickAnswers();
+
+					var value = answer.value || answer.label || '';
+					var label = answer.label || answer.value || '';
+
+					send( value, { userLabel: label } );
+				} );
+				wrap.appendChild( btn );
+			} );
+
+			bubble.insertAdjacentElement( 'afterend', wrap );
+			transcript.scrollTop = transcript.scrollHeight;
+		}
+
+		/**
+		 * Restore quick answers after reloading a saved session.
+		 *
+		 * @return {void}
+		 */
+		function restoreQuickAnswersForSession() {
+			if ( input && input.disabled ) {
+				return;
+			}
+
+			if ( session.actions && session.actions.stage_context && session.actions.stage_context.forms_visible ) {
+				return;
+			}
+
+			var workflow = session.case_profile && session.case_profile.workflow;
+
+			if ( workflow && ! ( session.case_profile && session.case_profile.pending_field ) ) {
+				return;
+			}
+
+			var bubbles = transcript.querySelectorAll( '.prose-intake__bubble--agent' );
+
+			if ( ! bubbles.length ) {
+				return;
+			}
+
+			var lastBubble = bubbles[ bubbles.length - 1 ];
+			var question = ( lastBubble.textContent || '' ).trim();
+			var field = '';
+
+			if ( session.case_profile && session.case_profile.pending_field ) {
+				field = session.case_profile.pending_field;
+			} else if ( session.state && session.state.pending_field ) {
+				field = session.state.pending_field;
+			}
+
+			var answers = quickAnswersForField( field );
+
+			if ( ! answers.length ) {
+				answers = quickAnswersForQuestion( question );
+			}
+
+			if ( answers.length ) {
+				renderQuickAnswers( lastBubble, answers );
+			}
 		}
 
 		/**
@@ -1001,7 +1243,7 @@
 		 * Send a message to the intake endpoint.
 		 *
 		 * @param {string} message User message.
-		 * @param {{skipUserBubble?: boolean}} options Optional send flags.
+		 * @param {{skipUserBubble?: boolean, userLabel?: string}} options Optional send flags.
 		 */
 		function send( message, options ) {
 			options = options || {};
@@ -1010,13 +1252,14 @@
 				return;
 			}
 			busy = true;
+			clearQuickAnswers();
 			sendBtn.disabled = true;
 			if ( uploadBtn ) {
 				uploadBtn.disabled = true;
 			}
 
 			if ( ! options.skipUserBubble ) {
-				addBubble( 'user', message );
+				addBubble( 'user', options.userLabel || message );
 				updateHomepagePromptsVisibility();
 			}
 			var thinking = addBubble( 'agent', STRINGS.sending || 'Thinking…' );
@@ -1101,6 +1344,15 @@
 						thinking.classList.add( 'prose-intake__bubble--complete' );
 					} else {
 						thinking.textContent = question || ( STRINGS.greeting || 'How can I help with your legal matter today?' );
+					}
+
+					var quickAnswers = resolveQuickAnswers( data, result, question, nextAction );
+					var showQuickAnswers = shouldOfferQuickAnswers( data, result, nextAction, needsReview, apiFailed ) && quickAnswers.length;
+
+					if ( showQuickAnswers ) {
+						renderQuickAnswers( thinking, quickAnswers );
+					} else {
+						clearQuickAnswers();
 					}
 
 					// Direct path: user asked for specific forms — open the merged
@@ -1302,6 +1554,7 @@
 					downloadButtonsEl.hidden = true;
 					downloadButtonsEl.innerHTML = '';
 				}
+				clearQuickAnswers();
 				if ( toggleSummaryBtn ) {
 					toggleSummaryBtn.hidden = true;
 				}

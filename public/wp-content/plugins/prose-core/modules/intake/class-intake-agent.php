@@ -322,6 +322,10 @@ final class Intake_Agent {
 			'next_action'     => $next_action,
 			'completion'      => $completion,
 			'intent'          => $intent,
+			'quick_answers'   => Question_Selector::quick_answers_for_field(
+				(string) $profile_array['pending_field'],
+				$this->field_type( $required_fields, (string) $profile_array['pending_field'] )
+			),
 		);
 
 		if ( $this->debug_enabled() ) {

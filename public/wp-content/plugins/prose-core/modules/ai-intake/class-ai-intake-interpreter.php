@@ -443,7 +443,8 @@ final class AI_Intake_Interpreter {
 		$reply        = $this->reconcile_stale_commencement_brief( $reply, $stage_ctx, $intake->plain_facts(), $message );
 		$reply        = $this->reconcile_case_state_statement_reply( $reply, $stage_ctx, $intake->plain_facts(), $message );
 		$reply        = $this->reconcile_stage_forms_reply( $message, $reply, $stage_ctx, $workflow );
-		$reply        = $this->reconcile_procedural_guidance_reply( $message, $reply, $stage_ctx, $has_workflow );
+		$roadmap_snapshot = is_array( $state['case_profile']['roadmap'] ?? null ) ? $state['case_profile']['roadmap'] : array();
+		$reply            = $this->reconcile_procedural_guidance_reply( $message, $reply, $stage_ctx, $has_workflow, $roadmap_snapshot, $workflow );
 		$reply        = $this->reconcile_reply_after_intake( $reply, $applied, $missing, $workflow );
 
 		if ( ! User_Intake_Context::message_asks_about_account( $message ) ) {
@@ -478,21 +479,24 @@ final class AI_Intake_Interpreter {
 			if ( ! empty( $contradictions ) ) {
 				$reply = (string) ( $contradictions[0]['message'] ?? '' );
 			}
+			if ( '' === $reply && $has_workflow && $this->message_requests_guidance( $message ) ) {
+				$reply = $this->build_next_step_guidance_reply( $stage_ctx, $roadmap_snapshot, (string) $workflow );
+			}
 			if ( '' === $reply ) {
 				$reply = $this->build_gathering_fallback( $missing, $workflow );
 			}
 		}
 
-		$pending_hint = '';
+		$conversation_missing = $this->conversation_missing( $missing, $workflow );
+		$pending_hint         = '';
 
-		if ( ! $has_workflow && ! empty( $missing ) ) {
-			$pending_hint = (string) $missing[0]['field'];
+		if ( ! $has_workflow && ! empty( $conversation_missing ) ) {
+			$pending_hint = (string) ( $conversation_missing[0]['field'] ?? '' );
 		} elseif ( $has_workflow ) {
 			$intake->set_pending_field( '' );
 		}
 
-		$conversation_missing = $this->conversation_missing( $missing, $workflow );
-		$account_turn           = User_Intake_Context::message_asks_about_account( $message ) && '' !== $account_reply;
+		$account_turn = User_Intake_Context::message_asks_about_account( $message ) && '' !== $account_reply;
 
 		if ( $account_turn ) {
 			$intent      = 'gathering';
@@ -771,6 +775,90 @@ final class AI_Intake_Interpreter {
 		$index = function_exists( 'wp_rand' ) ? wp_rand( 0, count( $templates ) - 1 ) : array_rand( $templates );
 
 		return sprintf( $templates[ $index ], $title );
+	}
+
+	/**
+	 * Build procedural next-step guidance from stage context and roadmap.
+	 *
+	 * @param array<string, mixed> $stage_ctx Stage context.
+	 * @param array<string, mixed> $roadmap   Procedural roadmap snapshot.
+	 * @param string               $workflow  Workflow key.
+	 * @return string
+	 */
+	private function build_next_step_guidance_reply( array $stage_ctx, array $roadmap, string $workflow ): string {
+		$parts = array();
+
+		$stage_title = trim( (string) ( $stage_ctx['current_stage']['title'] ?? '' ) );
+		$stage_desc  = trim( (string) ( $stage_ctx['current_stage']['description'] ?? '' ) );
+		$next_action = trim( (string) ( $stage_ctx['next_action']['message'] ?? '' ) );
+
+		if ( '' !== $stage_title ) {
+			/* translators: %s: procedural stage title. */
+			$parts[] = sprintf( __( 'You are at the %s stage.', 'prose-core' ), $stage_title );
+		}
+
+		if ( '' !== $next_action ) {
+			$parts[] = $next_action;
+		} elseif ( '' !== $stage_desc ) {
+			$parts[] = $stage_desc;
+		}
+
+		$next_likely = is_array( $roadmap['next_likely_step'] ?? null ) ? $roadmap['next_likely_step'] : array();
+		$next_title  = trim( (string) ( $next_likely['title'] ?? '' ) );
+		$next_desc   = trim( (string) ( $next_likely['description'] ?? '' ) );
+
+		if ( '' !== $next_title ) {
+			$joined = strtolower( implode( ' ', $parts ) );
+
+			if ( ! str_contains( $joined, strtolower( $next_title ) ) ) {
+				/* translators: 1: next stage title, 2: optional next stage description. */
+				$parts[] = sprintf(
+					__( 'After this, the next step is typically %1$s.%2$s', 'prose-core' ),
+					$next_title,
+					'' !== $next_desc ? ' ' . $next_desc : ''
+				);
+			}
+		}
+
+		if ( ! empty( $stage_ctx['forms_visible'] ) ) {
+			$forms = array_filter(
+				(array) ( $stage_ctx['stage_forms'] ?? array() ),
+				static function ( $form ): bool {
+					return is_array( $form ) && ( ! empty( $form['download_url'] ) || ! empty( $form['applicable'] ) );
+				}
+			);
+
+			$codes = array_values(
+				array_filter(
+					array_map(
+						static function ( array $form ): string {
+							return strtoupper( trim( (string) ( $form['code'] ?? '' ) ) );
+						},
+						$forms
+					)
+				)
+			);
+
+			if ( ! empty( $codes ) ) {
+				$parts[] = sprintf(
+					/* translators: %s: comma-separated form codes. */
+					__( 'Use Get Documents in Case Actions to download %s.', 'prose-core' ),
+					implode( ', ', array_slice( $codes, 0, 4 ) )
+				);
+			}
+		}
+
+		$follow_up = trim( (string) ( $roadmap['suggested_next_question'] ?? '' ) );
+
+		if ( '' !== $follow_up ) {
+			$parts[] = __( 'One detail that would help refine your path:', 'prose-core' ) . ' ' . $follow_up;
+		}
+
+		if ( empty( $parts ) && '' !== $workflow ) {
+			return $this->build_guidance_fallback( $workflow, 100 );
+		}
+
+		return implode( "\n\n", $parts );
 	}
 
 	/**
@@ -1102,6 +1190,7 @@ final class AI_Intake_Interpreter {
 			'completion'           => $completion,
 			'workflow'             => $state->workflow(),
 			'conversation_id'      => $state->conversation_id(),
+			'quick_answers'        => \ProSe\Core\Intake\Question_Selector::quick_answers_for_field( $state->pending_field() ),
 		);
 	}
 
@@ -1595,7 +1684,9 @@ final class AI_Intake_Interpreter {
 		string $message,
 		string $reply,
 		array $stage_ctx,
-		bool $has_workflow
+		bool $has_workflow,
+		array $roadmap = array(),
+		?string $workflow = null
 	): string {
 		if ( $this->message_asks_current_stage_forms( $message ) ) {
 			return $reply;
@@ -1605,21 +1696,17 @@ final class AI_Intake_Interpreter {
 			return $reply;
 		}
 
-		if ( empty( $stage_ctx['forms_visible'] ) ) {
+		$should_replace = '' === trim( $reply )
+			|| $this->reply_is_generic_gathering_prompt( $reply )
+			|| $this->reply_only_asks_optional_fields( $reply );
+
+		if ( ! $should_replace ) {
 			return $reply;
 		}
 
-		$next = trim( (string) ( $stage_ctx['next_action']['message'] ?? '' ) );
+		$guidance = $this->build_next_step_guidance_reply( $stage_ctx, $roadmap, (string) $workflow );
 
-		if ( '' === $next ) {
-			return $reply;
-		}
-
-		if ( $this->reply_is_generic_gathering_prompt( $reply ) || $this->reply_only_asks_optional_fields( $reply ) ) {
-			return $next;
-		}
-
-		return $reply;
+		return '' !== trim( $guidance ) ? $guidance : $reply;
 	}
 
 	/**
@@ -1633,8 +1720,11 @@ final class AI_Intake_Interpreter {
 
 		foreach ( array(
 			'could you tell me a little more about your legal matter',
+			'could you tell me a bit more about your legal matter',
 			'could you tell me a bit more about your situation',
 			'tell me more about your situation',
+			'help you find the right path',
+			'point you in the right direction',
 		) as $phrase ) {
 			if ( str_contains( $text, $phrase ) ) {
 				return true;
@@ -1674,9 +1764,16 @@ final class AI_Intake_Interpreter {
 			'what do i do next',
 			'what do i need to do',
 			'what need to do',
+			'what is need to do',
+			'what i need to do',
+			'what to do next',
+			'what should i do next',
 			'what should i do',
 			'what now',
 			'need to do now',
+			'need to do next',
+			"what's next",
+			'whats next',
 			'next step',
 			'next steps',
 			'how to start',

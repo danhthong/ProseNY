@@ -46,8 +46,6 @@
 		});
 	}
 
-	var dashboardData = null;
-
 	function setStatus(message, isError) {
 		var el = document.getElementById('prose-dashboard-status');
 		if (!el) {
@@ -57,20 +55,108 @@
 		el.className = 'prose-dashboard__status' + (isError ? ' prose-dashboard__status--error' : '');
 	}
 
-	function renderCaseLifecycle(caseLifecycle) {
-		var el = document.getElementById('prose-case-lifecycle');
-		if (!el) {
-			return;
+	function escapeHtml(text) {
+		return String(text)
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;');
+	}
+
+	function escapeAttr(text) {
+		return escapeHtml(text).replace(/'/g, '&#39;');
+	}
+
+	function conversationMeta(item) {
+		var meta = [];
+		if (item.updated_at_label) {
+			meta.push(item.updated_at_label);
+		}
+		if (item.message_count) {
+			meta.push(item.message_count === 1 ? '1 message' : item.message_count + ' messages');
+		}
+		if (item.workflow_label) {
+			meta.push(item.workflow_label);
+		}
+		return meta.join(' · ');
+	}
+
+	function renderCaseProgressHtml(caseProgress, resumeUrl) {
+		caseProgress = caseProgress || {};
+		resumeUrl = resumeUrl || cfg.homeUrl || '/';
+
+		if (!caseProgress.show) {
+			return (
+				'<p class="prose-dashboard__empty">' +
+				escapeHtml(I18N.noCaseProgress || 'Case progress appears after intake identifies a workflow.') +
+				'</p>'
+			);
 		}
 
+		var pct = Math.max(0, Math.min(100, Number(caseProgress.progress_percentage || 0)));
+		var confidence = caseProgress.confidence_level || {};
+		var nextStep = caseProgress.next_likely_step || {};
+		var continueUrl = caseProgress.continue_case_url || resumeUrl;
+
+		return (
+			'<p class="prose-dashboard__stage">' +
+			escapeHtml(caseProgress.current_stage || 'Intake') +
+			' · ' +
+			escapeHtml(String(pct)) +
+			'% complete</p>' +
+			'<div class="prose-dashboard__progress" role="progressbar" aria-valuenow="' +
+			pct +
+			'" aria-valuemin="0" aria-valuemax="100">' +
+			'<div class="prose-dashboard__progress-bar" style="width:' +
+			pct +
+			'%"></div>' +
+			'</div>' +
+			'<dl class="prose-dashboard__case-progress-meta">' +
+			(confidence.label
+				? '<div><dt>' +
+					escapeHtml(I18N.confidence || 'Confidence') +
+					'</dt><dd>' +
+					escapeHtml(confidence.label) +
+					(confidence.reason ? ' — ' + escapeHtml(confidence.reason) : '') +
+					'</dd></div>'
+				: '') +
+			(caseProgress.suggested_follow_up_question
+				? '<div><dt>' +
+					escapeHtml(I18N.suggestedFollowUp || 'Suggested follow-up') +
+					'</dt><dd>' +
+					escapeHtml(caseProgress.suggested_follow_up_question) +
+					'</dd></div>'
+				: '') +
+			(nextStep.title
+				? '<div><dt>' +
+					escapeHtml(I18N.nextLikelyStep || 'Next likely step') +
+					'</dt><dd><strong>' +
+					escapeHtml(nextStep.title) +
+					'</strong>' +
+					(nextStep.description ? '<br>' + escapeHtml(nextStep.description) : '') +
+					'</dd></div>'
+				: '') +
+			'</dl>' +
+			'<p class="prose-dashboard__case-progress-note">' +
+			escapeHtml(I18N.progressNote || 'For your reference only — not a mandatory checklist.') +
+			'</p>' +
+			'<p><a class="prose-dashboard__cta prose-dashboard__continue-case" href="' +
+			escapeAttr(continueUrl) +
+			'">' +
+			escapeHtml(I18N.continueCase || 'Continue Case') +
+			'</a></p>'
+		);
+	}
+
+	function renderCaseLifecycleHtml(caseLifecycle) {
 		caseLifecycle = caseLifecycle || {};
 
 		if (!caseLifecycle.show) {
-			el.innerHTML =
+			return (
 				'<p class="prose-dashboard__empty">' +
 				escapeHtml(I18N.noLifecycle || 'Lifecycle tracking appears after you start a divorce case.') +
-				'</p>';
-			return;
+				'</p>'
+			);
 		}
 
 		var html = '<ol class="prose-dashboard__lifecycle-list">';
@@ -96,33 +182,28 @@
 
 		if (caseLifecycle.continue_case_url) {
 			html +=
-				'<p><a class="prose-dashboard__cta" href="' +
+				'<p><a class="prose-dashboard__update-milestones" href="' +
 				escapeAttr(caseLifecycle.continue_case_url) +
 				'">' +
 				escapeHtml(I18N.updateMilestones || 'Update milestones') +
 				'</a></p>';
 		}
 
-		el.innerHTML = html;
+		return html;
 	}
 
-	function renderMatterMap(matterMap) {
-		var el = document.getElementById('prose-matter-map');
-		if (!el) {
-			return;
-		}
-
+	function renderMatterMapHtml(matterMap) {
 		matterMap = matterMap || {};
 
 		if (!matterMap.show || !matterMap.tracks || !matterMap.tracks.length) {
-			el.innerHTML =
+			return (
 				'<p class="prose-dashboard__empty">' +
 				escapeHtml(I18N.noMatterMap || 'No parallel court tracks identified yet.') +
-				'</p>';
-			return;
+				'</p>'
+			);
 		}
 
-		el.innerHTML =
+		return (
 			'<ul class="prose-dashboard__matter-tracks">' +
 			matterMap.tracks
 				.map(function (track) {
@@ -135,89 +216,205 @@
 					);
 				})
 				.join('') +
-			'</ul>';
+			'</ul>'
+		);
 	}
 
-	function renderCaseProgress(activeCase, caseProgress) {
-		var el = document.getElementById('prose-case-progress');
-		if (!el) {
-			return;
+	function formatDocumentTitle(item) {
+		if (item.document_type === 'merged_package') {
+			return item.display_title || item.title || 'Document';
 		}
 
-		caseProgress = caseProgress || {};
-
-		if (caseProgress.show) {
-			var pct = Math.max(0, Math.min(100, Number(caseProgress.progress_percentage || 0)));
-			var confidence = caseProgress.confidence_level || {};
-			var nextStep = caseProgress.next_likely_step || {};
-			var continueUrl = caseProgress.continue_case_url || cfg.homeUrl || '/';
-
-			el.innerHTML =
-				'<p class="prose-dashboard__stage">' +
-				escapeHtml(caseProgress.current_stage || 'Intake') +
-				' · ' +
-				escapeHtml(String(pct)) +
-				'% complete</p>' +
-				'<div class="prose-dashboard__progress">' +
-				'<div class="prose-dashboard__progress-bar" style="width:' +
-				pct +
-				'%"></div>' +
-				'</div>' +
-				'<dl class="prose-dashboard__case-progress-meta">' +
-				(confidence.label
-					? '<div><dt>Confidence</dt><dd>' +
-						escapeHtml(confidence.label) +
-						(confidence.reason ? ' — ' + escapeHtml(confidence.reason) : '') +
-						'</dd></div>'
-					: '') +
-				(nextStep.title
-					? '<div><dt>Next likely step</dt><dd><strong>' +
-						escapeHtml(nextStep.title) +
-						'</strong>' +
-						(nextStep.description ? '<br>' + escapeHtml(nextStep.description) : '') +
-						'</dd></div>'
-					: '') +
-				(caseProgress.suggested_follow_up_question
-					? '<div><dt>Suggested follow-up</dt><dd>' +
-						escapeHtml(caseProgress.suggested_follow_up_question) +
-						'</dd></div>'
-					: '') +
-				'</dl>' +
-				'<p class="prose-dashboard__case-progress-note">For your reference only — not a mandatory checklist.</p>' +
-				'<p><a class="prose-dashboard__cta prose-dashboard__continue-case" href="' +
-				escapeAttr(continueUrl) +
-				'">' +
-				escapeHtml(I18N.continueCase || 'Continue Case') +
-				'</a></p>';
-			return;
+		if (item.form_code && item.title) {
+			return item.title + ' (' + item.form_code + ')';
 		}
 
-		if (!activeCase) {
-			el.innerHTML =
+		return item.display_title || item.title || 'Document';
+	}
+
+	function renderDocumentIncludes(item) {
+		if (!item.included_forms || !item.included_forms.length) {
+			return '';
+		}
+
+		return (
+			'<ul class="prose-dashboard__document-includes">' +
+			item.included_forms
+				.map(function (form) {
+					return (
+						'<li class="prose-dashboard__document-include">' +
+						escapeHtml(form.label || form.title || form.code || '') +
+						'</li>'
+					);
+				})
+				.join('') +
+			'</ul>'
+		);
+	}
+
+	function renderDocumentsHtml(documents) {
+		if (!documents || !documents.length) {
+			return (
 				'<p class="prose-dashboard__empty">' +
-				escapeHtml(I18N.noCase || 'No active case.') +
-				'</p>' +
-				'<p><a class="prose-dashboard__cta" href="' +
-				escapeAttr(cfg.homeUrl || '/') +
-				'">' +
-				escapeHtml(I18N.startCase || 'Start a new case') +
-				'</a></p>';
-			return;
+				escapeHtml(I18N.noDocuments || 'No documents generated yet for this case.') +
+				'</p>'
+			);
 		}
 
-		el.innerHTML =
-			'<p class="prose-dashboard__stage">' +
-			'Stage: ' +
-			escapeHtml(activeCase.current_stage || 'Intake') +
-			' · ' +
-			escapeHtml(String(activeCase.progress_percentage || 0)) +
-			'% complete' +
-			'</p>' +
-			'<div class="prose-dashboard__progress">' +
-			'<div class="prose-dashboard__progress-bar" style="width:' +
-			Math.max(0, Math.min(100, activeCase.progress_percentage || 0)) +
-			'%"></div>' +
-			'</div>';
+		return (
+			'<ul class="prose-dashboard__document-list">' +
+			documents
+				.map(function (item) {
+					var displayTitle = formatDocumentTitle(item);
+					var rowClass =
+						item.document_type === 'merged_package'
+							? 'prose-dashboard__document-row prose-dashboard__document-row--merged'
+							: 'prose-dashboard__document-row';
+					var action = item.download_url
+						? '<a class="prose-dashboard__document-action" href="' +
+							escapeAttr(item.download_url) +
+							'" target="_blank" rel="noopener noreferrer">' +
+							escapeHtml(I18N.download || 'Download') +
+							'</a>'
+						: '<span class="prose-dashboard__document-status">' +
+							escapeHtml(I18N.pending || 'Pending') +
+							'</span>';
+
+					return (
+						'<li class="' +
+						rowClass +
+						'">' +
+						'<div class="prose-dashboard__document-main">' +
+						'<span class="prose-dashboard__document-title">' +
+						escapeHtml(displayTitle) +
+						'</span>' +
+						renderDocumentIncludes(item) +
+						'</div>' +
+						action +
+						'</li>'
+					);
+				})
+				.join('') +
+			'</ul>'
+		);
+	}
+
+	function renderRecordBody(item, resumeUrl) {
+		resumeUrl = resumeUrl || cfg.homeUrl || '/';
+
+		return (
+			(item.preview ? '<p class="prose-dashboard__accordion-preview">' + escapeHtml(item.preview) + '</p>' : '') +
+			'<section class="prose-dashboard__record-panel prose-dashboard__record-panel--full" aria-labelledby="prose-case-progress-' +
+			escapeAttr(item.session_id || '') +
+			'">' +
+			'<h3 id="prose-case-progress-' +
+			escapeAttr(item.session_id || '') +
+			'" class="prose-dashboard__record-panel-title">' +
+			escapeHtml(I18N.caseProgress || 'Case Progress') +
+			'</h3>' +
+			'<div class="prose-dashboard__record-panel-body">' +
+			renderCaseProgressHtml(item.case_progress, resumeUrl) +
+			'</div>' +
+			'</section>' +
+			'<div class="prose-dashboard__record-columns">' +
+			'<section class="prose-dashboard__record-panel" aria-labelledby="prose-case-lifecycle-' +
+			escapeAttr(item.session_id || '') +
+			'">' +
+			'<h3 id="prose-case-lifecycle-' +
+			escapeAttr(item.session_id || '') +
+			'" class="prose-dashboard__record-panel-title">' +
+			escapeHtml(I18N.caseLifecycle || 'Case Lifecycle') +
+			'</h3>' +
+			'<div class="prose-dashboard__record-panel-body">' +
+			renderCaseLifecycleHtml(item.case_lifecycle) +
+			'</div>' +
+			'</section>' +
+			'<section class="prose-dashboard__record-panel" aria-labelledby="prose-courts-' +
+			escapeAttr(item.session_id || '') +
+			'">' +
+			'<h3 id="prose-courts-' +
+			escapeAttr(item.session_id || '') +
+			'" class="prose-dashboard__record-panel-title">' +
+			escapeHtml(I18N.courtsInvolved || 'Courts Involved') +
+			'</h3>' +
+			'<div class="prose-dashboard__record-panel-body">' +
+			renderMatterMapHtml(item.matter_map) +
+			'</div>' +
+			'</section>' +
+			'</div>' +
+			'<section class="prose-dashboard__record-panel prose-dashboard__record-panel--full" aria-labelledby="prose-documents-' +
+			escapeAttr(item.session_id || '') +
+			'">' +
+			'<h3 id="prose-documents-' +
+			escapeAttr(item.session_id || '') +
+			'" class="prose-dashboard__record-panel-title">' +
+			escapeHtml(I18N.generatedDocuments || 'Generated Documents') +
+			'</h3>' +
+			'<div class="prose-dashboard__record-panel-body">' +
+			renderDocumentsHtml(item.documents) +
+			'</div>' +
+			'</section>'
+		);
+	}
+
+	function renderConversationAccordion(item, isExpanded) {
+		var resumeUrl = item.resume_url || cfg.homeUrl || '/';
+		var meta = conversationMeta(item);
+		var sessionId = item.session_id || '';
+		var panelId = 'prose-accordion-panel-' + sessionId;
+		var triggerId = 'prose-accordion-trigger-' + sessionId;
+		var expandedClass = isExpanded ? ' prose-dashboard__accordion--expanded' : '';
+
+		return (
+			'<article class="prose-dashboard__accordion' +
+			expandedClass +
+			'" data-session-id="' +
+			escapeAttr(sessionId) +
+			'">' +
+			'<div class="prose-dashboard__accordion-trigger-wrap">' +
+			'<button type="button" class="prose-dashboard__accordion-trigger" id="' +
+			escapeAttr(triggerId) +
+			'" aria-expanded="' +
+			(isExpanded ? 'true' : 'false') +
+			'" aria-controls="' +
+			escapeAttr(panelId) +
+			'">' +
+			'<span class="prose-dashboard__accordion-chevron" aria-hidden="true">' +
+			(isExpanded ? '−' : '+') +
+			'</span>' +
+			'<span class="prose-dashboard__accordion-summary">' +
+			'<span class="prose-dashboard__accordion-title">' +
+			escapeHtml(item.title || 'Conversation') +
+			'</span>' +
+			(meta ? '<span class="prose-dashboard__accordion-meta">' + escapeHtml(meta) + '</span>' : '') +
+			'</span>' +
+			'</button>' +
+			'<div class="prose-dashboard__accordion-actions">' +
+			'<a class="prose-dashboard__conversation-resume" href="' +
+			escapeAttr(resumeUrl) +
+			'">' +
+			escapeHtml(I18N.resumeChat || 'Resume') +
+			'</a>' +
+			'<button type="button" class="prose-dashboard__conversation-remove" data-session-id="' +
+			escapeAttr(sessionId) +
+			'" aria-label="' +
+			escapeAttr((I18N.removeConversation || 'Remove') + ': ' + (item.title || 'Conversation')) +
+			'">' +
+			escapeHtml(I18N.removeConversation || 'Remove') +
+			'</button>' +
+			'</div>' +
+			'</div>' +
+			'<div class="prose-dashboard__accordion-panel" id="' +
+			escapeAttr(panelId) +
+			'" role="region" aria-labelledby="' +
+			escapeAttr(triggerId) +
+			'"' +
+			(isExpanded ? '' : ' hidden') +
+			'>' +
+			renderRecordBody(item, resumeUrl) +
+			'</div>' +
+			'</article>'
+		);
 	}
 
 	function renderSubscription(subscription) {
@@ -228,7 +425,7 @@
 
 		subscription = subscription || {};
 		var upgrade = subscription.upgrade_url
-			? '<p><a href="' + escapeAttr(subscription.upgrade_url) + '">Upgrade</a></p>'
+			? '<p><a class="prose-dashboard__cta--link" href="' + escapeAttr(subscription.upgrade_url) + '">Upgrade</a></p>'
 			: '';
 
 		el.innerHTML =
@@ -241,14 +438,15 @@
 			upgrade;
 	}
 
-	function renderConversations(items) {
-		var el = document.getElementById('prose-conversations');
+	function renderConversationRecords(items) {
+		var el = document.getElementById('prose-conversation-records');
 		if (!el) {
 			return;
 		}
 
 		if (!items || !items.length) {
 			el.innerHTML =
+				'<div class="prose-dashboard__records-empty">' +
 				'<p class="prose-dashboard__empty">' +
 				escapeHtml(I18N.noConversations || 'No conversations yet.') +
 				'</p>' +
@@ -256,115 +454,74 @@
 				escapeAttr(cfg.homeUrl || '/') +
 				'">' +
 				escapeHtml(I18N.startChat || 'Start chatting') +
-				'</a></p>';
+				'</a></p>' +
+				'</div>';
 			return;
 		}
 
-		el.innerHTML =
-			'<ul class="prose-dashboard__conversation-list">' +
-			items
-				.map(function (item) {
-					var meta = [];
-					if (item.updated_at_label) {
-						meta.push(item.updated_at_label);
-					}
-					if (item.message_count) {
-						meta.push(
-							(item.message_count === 1 ? '1 message' : item.message_count + ' messages')
-						);
-					}
-					if (item.workflow_label) {
-						meta.push(item.workflow_label);
-					}
-
-					return (
-						'<li class="prose-dashboard__conversation">' +
-						'<div class="prose-dashboard__conversation-main">' +
-						'<a class="prose-dashboard__conversation-title" href="' +
-						escapeAttr(item.resume_url || cfg.homeUrl || '/') +
-						'">' +
-						escapeHtml(item.title || 'Conversation') +
-						'</a>' +
-						(item.preview
-							? '<p class="prose-dashboard__conversation-preview">' + escapeHtml(item.preview) + '</p>'
-							: '') +
-						(meta.length
-							? '<p class="prose-dashboard__conversation-meta">' + escapeHtml(meta.join(' · ')) + '</p>'
-							: '') +
-						'</div>' +
-						'<div class="prose-dashboard__conversation-actions">' +
-						'<a class="prose-dashboard__conversation-resume" href="' +
-						escapeAttr(item.resume_url || cfg.homeUrl || '/') +
-						'">' +
-						escapeHtml(I18N.resumeChat || 'Resume') +
-						'</a>' +
-						'<button type="button" class="prose-dashboard__conversation-remove" data-session-id="' +
-						escapeAttr(item.session_id || '') +
-						'" aria-label="' +
-						escapeAttr(
-							(I18N.removeConversation || 'Remove') +
-								': ' +
-								(item.title || 'Conversation')
-						) +
-						'">' +
-						escapeHtml(I18N.removeConversation || 'Remove') +
-						'</button>' +
-						'</div>' +
-						'</li>'
-					);
-				})
-				.join('') +
-			'</ul>';
+		el.innerHTML = items
+			.map(function (item, index) {
+				return renderConversationAccordion(item, index === 0);
+			})
+			.join('');
 	}
 
-	function renderDocuments(items) {
-		var el = document.getElementById('prose-documents');
-		if (!el) {
+	function setAccordionExpanded(accordion, expanded) {
+		if (!accordion) {
 			return;
 		}
 
-		if (!items || !items.length) {
-			el.innerHTML = '<p class="prose-dashboard__empty">' + escapeHtml(I18N.noDocuments || 'No documents.') + '</p>';
+		var trigger = accordion.querySelector('.prose-dashboard__accordion-trigger');
+		var panel = accordion.querySelector('.prose-dashboard__accordion-panel');
+		var chevron = accordion.querySelector('.prose-dashboard__accordion-chevron');
+
+		accordion.classList.toggle('prose-dashboard__accordion--expanded', expanded);
+
+		if (trigger) {
+			trigger.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+		}
+
+		if (panel) {
+			panel.hidden = !expanded;
+		}
+
+		if (chevron) {
+			chevron.textContent = expanded ? '−' : '+';
+		}
+	}
+
+	function handleAccordionToggle(event) {
+		var trigger = event.target.closest('.prose-dashboard__accordion-trigger');
+		if (!trigger) {
 			return;
 		}
 
-		el.innerHTML =
-			'<ul class="prose-dashboard__list">' +
-			items
-				.map(function (item) {
-					var link = item.download_url
-						? '<a href="' + escapeAttr(item.download_url) + '">Download</a>'
-						: '<span>' + escapeHtml(item.status || 'pending') + '</span>';
-					return '<li><strong>' + escapeHtml(item.title || 'Document') + '</strong> · ' + link + '</li>';
-				})
-				.join('') +
-			'</ul>';
-	}
+		var accordion = trigger.closest('.prose-dashboard__accordion');
+		if (!accordion) {
+			return;
+		}
 
-	function escapeHtml(text) {
-		return String(text)
-			.replace(/&/g, '&amp;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;')
-			.replace(/"/g, '&quot;');
-	}
+		var willExpand = !accordion.classList.contains('prose-dashboard__accordion--expanded');
+		var root = document.getElementById('prose-conversation-records');
 
-	function escapeAttr(text) {
-		return escapeHtml(text).replace(/'/g, '&#39;');
+		if (willExpand && root) {
+			root.querySelectorAll('.prose-dashboard__accordion--expanded').forEach(function (item) {
+				if (item !== accordion) {
+					setAccordionExpanded(item, false);
+				}
+			});
+		}
+
+		setAccordionExpanded(accordion, willExpand);
 	}
 
 	function renderDashboard(data) {
-		dashboardData = data;
 		var greeting = document.getElementById('prose-dashboard-greeting');
 		if (greeting && data.user) {
 			greeting.textContent = 'Welcome back, ' + (data.user.display_name || data.user.email || 'there') + '.';
 		}
-		renderCaseProgress(data.active_case, data.case_progress);
-		renderCaseLifecycle(data.case_lifecycle);
-		renderMatterMap(data.matter_map);
+		renderConversationRecords(data.recent_conversations);
 		renderSubscription(data.subscription);
-		renderConversations(data.recent_conversations);
-		renderDocuments(data.documents);
 	}
 
 	function handleConversationRemoveClick(event) {
@@ -378,11 +535,7 @@
 			return;
 		}
 
-		var confirmMessage =
-			I18N.confirmRemoveConversation ||
-			'Remove this conversation from your dashboard? This cannot be undone.';
-
-		if (!window.confirm(confirmMessage)) {
+		if (!window.confirm(I18N.confirmRemoveConversation || 'Remove this conversation from your dashboard? This cannot be undone.')) {
 			return;
 		}
 
@@ -404,13 +557,14 @@
 	}
 
 	function bindConversationActions() {
-		var el = document.getElementById('prose-conversations');
+		var el = document.getElementById('prose-conversation-records');
 		if (!el || el.dataset.removeBound === '1') {
 			return;
 		}
 
 		el.dataset.removeBound = '1';
 		el.addEventListener('click', handleConversationRemoveClick);
+		el.addEventListener('click', handleAccordionToggle);
 	}
 
 	setStatus(I18N.loading || 'Loading…');
