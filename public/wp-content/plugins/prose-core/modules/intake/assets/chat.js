@@ -167,6 +167,7 @@
 		var summaryPanel = root.querySelector( '[data-prose-intake-summary]' );
 		var summaryList = root.querySelector( '[data-prose-intake-summary-list]' );
 		var downloadButtonsEl = root.querySelector( '[data-prose-intake-download-buttons]' );
+		var stageActionsEl = root.querySelector( '[data-prose-intake-stage-actions]' );
 		var toggleSummaryBtn = root.querySelector( '[data-prose-intake-toggle-summary]' );
 		var fileInput = root.querySelector( '[data-prose-intake-file]' );
 		var uploadBtn = root.querySelector( '[data-prose-intake-upload]' );
@@ -908,6 +909,89 @@
 		}
 
 		/**
+		 * Build the case profile payload for stage completion.
+		 *
+		 * @return {Object}
+		 */
+		function buildCaseProfileForStageComplete() {
+			var profile = Object.assign( {}, session.case_profile || {} );
+
+			if ( ! profile.facts || ! Object.keys( profile.facts ).length ) {
+				var stateFacts = session.state && session.state.facts;
+
+				if ( stateFacts && typeof stateFacts === 'object' ) {
+					profile.facts = Object.keys( stateFacts ).reduce( function ( acc, key ) {
+						var entry = stateFacts[ key ];
+
+						if ( entry && typeof entry === 'object' && Object.prototype.hasOwnProperty.call( entry, 'value' ) ) {
+							acc[ key ] = entry.value;
+						} else {
+							acc[ key ] = entry;
+						}
+
+						return acc;
+					}, {} );
+				}
+			}
+
+			if ( ! profile.workflow && session.state && session.state.workflow ) {
+				profile.workflow = session.state.workflow;
+			}
+
+			if ( ! profile.procedural_node && session.actions && session.actions.stage_context ) {
+				profile.procedural_node = session.actions.stage_context.procedural_node || '';
+			}
+
+			return profile;
+		}
+
+		/**
+		 * Label for the stage-complete confirmation button.
+		 *
+		 * @param {Object} actions Action visibility from the server.
+		 * @return {string}
+		 */
+		function completeStageButtonLabel( actions ) {
+			var nextTitle = actions && actions.next_stage_title ? String( actions.next_stage_title ) : '';
+			var template = STRINGS.completeStageNext || 'I completed this step — continue to %s';
+
+			if ( nextTitle ) {
+				return template.replace( '%s', nextTitle );
+			}
+
+			return STRINGS.completeStage || 'I completed this step';
+		}
+
+		/**
+		 * Render the stage-complete confirmation button.
+		 *
+		 * @param {Object} actions Action visibility from the server.
+		 * @param {boolean} showPanel Whether the actions panel is visible.
+		 */
+		function renderCompleteStageButton( actions, showPanel ) {
+			if ( ! stageActionsEl ) {
+				return;
+			}
+
+			stageActionsEl.innerHTML = '';
+
+			if ( ! showPanel || ! actions || ! actions.can_complete_stage ) {
+				stageActionsEl.hidden = true;
+				return;
+			}
+
+			var btn = document.createElement( 'button' );
+			btn.type = 'button';
+			btn.className = 'prose-intake__action prose-intake__action--secondary prose-intake__action--complete-stage';
+			btn.textContent = completeStageButtonLabel( actions );
+			btn.addEventListener( 'click', function () {
+				completeCurrentStage( btn, completeStageButtonLabel( actions ) );
+			} );
+			stageActionsEl.appendChild( btn );
+			stageActionsEl.hidden = false;
+		}
+
+		/**
 		 * Update the persistent Case Actions panel.
 		 *
 		 * @param {Object} actions Action visibility from the server.
@@ -953,6 +1037,7 @@
 			}
 
 			renderDownloadButtons( actions, showDownload, downloadReady );
+			renderCompleteStageButton( actions, showPanel );
 
 			if ( toggleSummaryBtn ) {
 				toggleSummaryBtn.hidden = isHomepageLayout || ! showPanel || ! ( actions.summary && actions.summary.length );
@@ -1155,13 +1240,22 @@
 		}
 
 		/**
-		 * Advance procedural stage after a successful document download.
+		 * Advance to the next procedural stage after the user confirms completion.
 		 *
+		 * @param {HTMLButtonElement|null} buttonEl Button element.
+		 * @param {string} defaultLabel Default button label for reset.
 		 * @return {Promise<void>}
 		 */
-		function completeStageAfterDownload() {
-			if ( ! CONFIG.completeStageUrl ) {
+		function completeCurrentStage( buttonEl, defaultLabel ) {
+			if ( ! CONFIG.completeStageUrl || busy ) {
 				return Promise.resolve();
+			}
+
+			busy = true;
+
+			if ( buttonEl ) {
+				buttonEl.disabled = true;
+				buttonEl.textContent = STRINGS.completingStage || 'Moving to next stage…';
 			}
 
 			return fetch( CONFIG.completeStageUrl, {
@@ -1171,7 +1265,7 @@
 					'X-WP-Nonce': CONFIG.nonce || ''
 				},
 				body: JSON.stringify( {
-					case_profile: session.case_profile || {},
+					case_profile: buildCaseProfileForStageComplete(),
 					conversation_id: session.conversation_id || ''
 				} )
 			} )
@@ -1180,11 +1274,22 @@
 				} )
 				.then( function ( data ) {
 					if ( ! data || ! data.success ) {
+						var serverMessage = data && data.message ? String( data.message ) : '';
+						var errorBubble = addBubble( 'agent', serverMessage || STRINGS.completeStageError || 'Could not advance to the next stage. Please try again.' );
+						errorBubble.classList.add( 'prose-intake__bubble--error' );
 						return;
 					}
 
 					if ( data.case_profile ) {
 						session.case_profile = data.case_profile;
+					}
+
+					if ( session.state && typeof session.state === 'object' ) {
+						session.state.case_profile = session.case_profile;
+
+						if ( data.procedural_node ) {
+							session.state.procedural_node = data.procedural_node;
+						}
 					}
 
 					if ( data.actions ) {
@@ -1201,13 +1306,32 @@
 						session.actions
 					);
 
+					var message = data.message ? String( data.message ) : '';
+
+					if ( message ) {
+						var stageBubble = addBubble( 'agent', message );
+						stageBubble.classList.add( 'prose-intake__bubble--complete' );
+
+						if ( CONFIG.useAi ) {
+							session.conversation = session.conversation || [];
+							session.conversation.push( { role: 'assistant', content: message } );
+							saveSession(
+								session.conversation_id,
+								session.case_profile,
+								session.conversation,
+								session.state,
+								session.actions
+							);
+						}
+					}
+
 					if ( data.advanced ) {
 						document.dispatchEvent( new CustomEvent( 'prose:stage-advanced', {
 							detail: {
 								conversation_id: session.conversation_id,
 								workflow: ( session.actions && session.actions.workflow ) || ( session.case_profile && session.case_profile.workflow ) || '',
 								facts: ( session.case_profile && session.case_profile.facts ) || {},
-								procedural_node: ( session.case_profile && session.case_profile.procedural_node ) || '',
+								procedural_node: ( session.case_profile && session.case_profile.procedural_node ) || data.procedural_node || '',
 								stage: ( session.actions && session.actions.stage_context && session.actions.stage_context.current_stage )
 									? session.actions.stage_context.current_stage.id
 									: ''
@@ -1215,7 +1339,28 @@
 						} ) );
 					}
 				} )
-				.catch( function () {} );
+				.catch( function () {
+					var errorBubble = addBubble( 'agent', STRINGS.completeStageError || 'Could not advance to the next stage. Please try again.' );
+					errorBubble.classList.add( 'prose-intake__bubble--error' );
+				} )
+				.finally( function () {
+					busy = false;
+
+					if ( buttonEl ) {
+						buttonEl.disabled = false;
+						buttonEl.textContent = defaultLabel || completeStageButtonLabel( session.actions || {} );
+					}
+				} );
+		}
+
+		/**
+		 * Advance procedural stage after a successful document download.
+		 *
+		 * @deprecated Use completeCurrentStage() — stage completion is user-confirmed.
+		 * @return {Promise<void>}
+		 */
+		function completeStageAfterDownload() {
+			return completeCurrentStage( null, '' );
 		}
 
 		/**

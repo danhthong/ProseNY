@@ -127,11 +127,12 @@ final class Procedural_Stage_Completer {
 
 		if ( $advanced_node === $current_node ) {
 			return array(
-				'advanced'       => false,
-				'case_profile'   => $case_profile,
-				'stage_context'  => $stage_context,
-				'actions'        => $this->actions->resolve( $case_profile ),
+				'advanced'        => false,
+				'case_profile'    => $case_profile,
+				'stage_context'   => $stage_context,
+				'actions'         => $this->actions->resolve( $case_profile ),
 				'completed_stage' => $current_stage,
+				'message'         => $this->stage_complete_message( $stage_context, $workflow, false ),
 			);
 		}
 
@@ -162,7 +163,62 @@ final class Procedural_Stage_Completer {
 			'actions'         => $actions,
 			'completed_stage' => $current_stage,
 			'procedural_node' => $advanced_node,
+			'message'         => $this->stage_complete_message( $next_context, $workflow, true, $current_stage ),
 		);
+	}
+
+	/**
+	 * User-facing message after confirming a procedural stage is complete.
+	 *
+	 * @param array<string, mixed> $stage_ctx       Current or next stage context.
+	 * @param string               $workflow        Workflow key.
+	 * @param bool                 $advanced        Whether the workflow moved forward.
+	 * @param string               $completed_stage Completed stage slug.
+	 * @return string
+	 */
+	private function stage_complete_message( array $stage_ctx, string $workflow, bool $advanced, string $completed_stage = '' ): string {
+		if ( ! $advanced ) {
+			$title = trim( (string) ( $stage_ctx['current_stage']['title'] ?? '' ) );
+
+			if ( '' !== $title ) {
+				/* translators: %s: current procedural stage title. */
+				return sprintf(
+					__( 'You are already at the latest available step (%s). There is nothing further to advance right now.', 'prose-core' ),
+					$title
+				);
+			}
+
+			return __( 'You are already at the latest available step. There is nothing further to advance right now.', 'prose-core' );
+		}
+
+		$next_title = trim( (string) ( $stage_ctx['current_stage']['title'] ?? '' ) );
+		$next_step  = trim( (string) ( $stage_ctx['next_action']['message'] ?? '' ) );
+		$parts      = array();
+
+		if ( '' !== $completed_stage && '' !== $next_title ) {
+			$completed_label = ucwords( str_replace( '_', ' ', $completed_stage ) );
+			/* translators: 1: completed stage label, 2: next stage title. */
+			$parts[] = sprintf(
+				__( 'Thanks — I marked %1$s as complete. Your case is now at the %2$s stage.', 'prose-core' ),
+				$completed_label,
+				$next_title
+			);
+		} elseif ( '' !== $next_title ) {
+			/* translators: %s: next procedural stage title. */
+			$parts[] = sprintf( __( 'Thanks — your case is now at the %s stage.', 'prose-core' ), $next_title );
+		}
+
+		if ( '' !== $next_step ) {
+			$parts[] = $next_step;
+		}
+
+		if ( ! empty( $stage_ctx['forms_visible'] ) ) {
+			$parts[] = __( 'Use Get Documents in Case Actions when you are ready for the forms for this step.', 'prose-core' );
+		}
+
+		unset( $workflow );
+
+		return implode( ' ', $parts );
 	}
 
 	/**
@@ -220,6 +276,7 @@ final class Procedural_Stage_Completer {
 
 		$case_profile['roadmap']             = $roadmap;
 		$case_profile['roadmap_fingerprint'] = (string) ( $roadmap['fingerprint'] ?? '' );
+		$case_profile['progress']            = (int) ( $roadmap['progress_percentage'] ?? 0 );
 
 		return $case_profile;
 	}

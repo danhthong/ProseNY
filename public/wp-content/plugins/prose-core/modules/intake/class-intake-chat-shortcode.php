@@ -222,6 +222,11 @@ final class Intake_Chat_Shortcode {
 						'yes'             => __( 'Yes', 'prose-core' ),
 						'no'              => __( 'No', 'prose-core' ),
 						'quickAnswers'    => __( 'Quick answers', 'prose-core' ),
+						'completeStage'   => __( 'I completed this step', 'prose-core' ),
+						/* translators: %s: next procedural stage title. */
+						'completeStageNext' => __( 'I completed this step — continue to %s', 'prose-core' ),
+						'completingStage' => __( 'Moving to next stage…', 'prose-core' ),
+						'completeStageError' => __( 'Could not advance to the next stage. Please try again.', 'prose-core' ),
 					),
 				)
 			);
@@ -298,6 +303,7 @@ final class Intake_Chat_Shortcode {
 					<div class="prose-intake__actions" data-prose-intake-actions hidden>
 						<h3 class="prose-intake__actions-title"><?php esc_html_e( 'Case Actions', 'prose-core' ); ?></h3>
 						<div class="prose-intake__action-buttons" data-prose-intake-download-buttons hidden></div>
+						<div class="prose-intake__stage-actions" data-prose-intake-stage-actions hidden></div>
 					</div>
 					<div class="prose-homepage-layout__package">
 						<?php
@@ -380,6 +386,7 @@ final class Intake_Chat_Shortcode {
 					<ul class="prose-intake__summary-list" data-prose-intake-summary-list></ul>
 				</div>
 				<div class="prose-intake__action-buttons" data-prose-intake-download-buttons hidden></div>
+				<div class="prose-intake__stage-actions" data-prose-intake-stage-actions hidden></div>
 				<button type="button" class="prose-intake__action prose-intake__action--secondary" data-prose-intake-toggle-summary hidden>
 					<?php esc_html_e( 'View Case Summary', 'prose-core' ); ?>
 				</button>

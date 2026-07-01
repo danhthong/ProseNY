@@ -157,6 +157,49 @@ class ProceduralRoadmapPresenterTest extends TestCase {
 	}
 
 	/**
+	 * Workflow progress reflects procedural stage position, not intake completion percent.
+	 */
+	public function test_workflow_progress_uses_stage_not_intake_completion(): void {
+		$stage = ( new \ProSe\Core\Forms\Engine\Stage_Form_Presenter() )->present(
+			array(
+				'workflow'        => 'uncontested_divorce_children_nyc',
+				'facts'           => array(
+					'spouse_agrees' => true,
+					'child_count'   => 1,
+					'county'        => 'Queens',
+				),
+				'intake_complete' => true,
+				'issue'           => 'divorce',
+				'current_node'    => 'NODE_1010_JUDGMENT',
+			)
+		);
+
+		$roadmap = $this->presenter->present(
+			array(
+				'issue'                 => 'divorce',
+				'facts'                 => array(
+					'spouse_agrees' => true,
+					'child_count'   => 1,
+					'county'        => 'Queens',
+				),
+				'workflow'              => 'uncontested_divorce_children_nyc',
+				'workflow_resolved'     => true,
+				'intake_complete'       => true,
+				'completion'            => 7,
+				'stage_context'         => $stage,
+				'procedural_node'       => 'NODE_1010_JUDGMENT',
+				'procedural_navigator'  => array(),
+				'missing_fields'        => array(),
+			)
+		);
+
+		$this->assertSame( 'workflow', $roadmap['mode'] );
+		$this->assertSame( 'calendar', $roadmap['current_stage']['id'] ?? '' );
+		$this->assertGreaterThan( 50, (int) ( $roadmap['progress_percentage'] ?? 0 ) );
+		$this->assertNotSame( 7, (int) ( $roadmap['progress_percentage'] ?? 0 ) );
+	}
+
+	/**
 	 * Change detection respects stored fingerprint.
 	 */
 	public function test_resolve_with_change_detection(): void {

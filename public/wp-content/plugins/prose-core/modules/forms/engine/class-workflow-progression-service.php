@@ -501,6 +501,31 @@ final class Workflow_Progression_Service {
 	}
 
 	/**
+	 * Progress percentage based on procedural stage index (0 at first stage, 100 at last).
+	 *
+	 * @param string               $workflow_enum_or_key Enum or key.
+	 * @param string               $stage_slug           Current stage slug.
+	 * @param array<string, mixed> $context              Context.
+	 * @return int
+	 */
+	public function progress_for_stage( string $workflow_enum_or_key, string $stage_slug, array $context = array() ): int {
+		$stages = $this->get_stages( $workflow_enum_or_key, $context );
+		$total  = count( $stages );
+
+		if ( $total <= 1 ) {
+			return '' !== $stage_slug ? 100 : 0;
+		}
+
+		$index = array_search( $stage_slug, $stages, true );
+
+		if ( false === $index ) {
+			return 0;
+		}
+
+		return (int) round( ( (int) $index / ( $total - 1 ) ) * 100 );
+	}
+
+	/**
 	 * Linear advancement using internal.progression.
 	 *
 	 * @param string               $workflow_key  Repository workflow key.

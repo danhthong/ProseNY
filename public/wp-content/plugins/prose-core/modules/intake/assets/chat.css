@@ -359,6 +359,18 @@
 	gap: 8px;
 }
 
+.prose-intake__stage-actions {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 12px;
+}
+
+.prose-intake__action--complete-stage {
+	width: 100%;
+	text-align: center;
+}
+
 .prose-intake__action {
 	appearance: none;
 	border-radius: 9px;

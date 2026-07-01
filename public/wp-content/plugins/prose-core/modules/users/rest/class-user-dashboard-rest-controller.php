@@ -297,16 +297,16 @@ final class User_Dashboard_Rest_Controller {
 		$context      = $this->decode_context( (string) ( $row->context_json ?? '' ) );
 		$case_profile = is_array( $context['case_profile'] ?? null ) ? $context['case_profile'] : array();
 		$resume_url   = $this->resume_url( (string) $row->session_id );
-		$roadmap      = is_array( $case_profile['roadmap'] ?? null ) ? $case_profile['roadmap'] : null;
+		$workflow     = trim( (string) ( $case_profile['workflow'] ?? '' ) );
 
-		if ( ! is_array( $roadmap ) || empty( $roadmap['show'] ) ) {
-			$workflow = trim( (string) ( $case_profile['workflow'] ?? '' ) );
+		if ( '' !== $workflow ) {
+			$roadmap = $this->roadmap_from_profile( $case_profile );
+		} else {
+			$roadmap = is_array( $case_profile['roadmap'] ?? null ) ? $case_profile['roadmap'] : null;
 
-			if ( '' === $workflow ) {
+			if ( ! is_array( $roadmap ) || empty( $roadmap['show'] ) ) {
 				return array( 'show' => false );
 			}
-
-			$roadmap = $this->roadmap_from_profile( $case_profile );
 		}
 
 		if ( ! is_array( $roadmap ) || empty( $roadmap['show'] ) ) {
@@ -317,8 +317,6 @@ final class User_Dashboard_Rest_Controller {
 
 		if ( is_array( $active_case ) && ! empty( $row->case_id ) && (int) $row->case_id === (int) ( $active_case['case_id'] ?? 0 ) ) {
 			$summary['progress_percentage'] = (int) ( $active_case['progress_percentage'] ?? $summary['progress_percentage'] ?? 0 );
-		} elseif ( isset( $case_profile['progress'] ) ) {
-			$summary['progress_percentage'] = (int) $case_profile['progress'];
 		}
 
 		return $summary;

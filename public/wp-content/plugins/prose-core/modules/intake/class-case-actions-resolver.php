@@ -183,6 +183,16 @@ final class Case_Actions_Resolver {
 			? $stage_context['download_options']
 			: array();
 
+		$future_stages      = is_array( $stage_context['future_stages'] ?? null ) ? $stage_context['future_stages'] : array();
+		$can_complete_stage = $workflow_resolved
+			&& ! empty( $stage_context['forms_visible'] )
+			&& ! empty( $future_stages );
+		$next_stage_title   = '';
+
+		if ( $can_complete_stage && is_array( $future_stages[0] ?? null ) ) {
+			$next_stage_title = trim( (string) ( $future_stages[0]['title'] ?? '' ) );
+		}
+
 		if ( $download_enabled && ! empty( $stage_context['forms_visible'] ) && empty( $download_options ) ) {
 			$download_options = ( new \ProSe\Core\Guidance\Filing_Guidance_Brief_Resolver() )->download_options(
 				array(
@@ -213,6 +223,9 @@ final class Case_Actions_Resolver {
 			'court_routing'       => $court_routing,
 			'stage_context'       => $stage_context,
 			'summary'             => $summary_rows,
+			'can_complete_stage'  => $can_complete_stage,
+			'next_stage_title'    => $next_stage_title,
+			'current_stage_title' => trim( (string) ( $stage_context['current_stage']['title'] ?? '' ) ),
 		);
 	}
 

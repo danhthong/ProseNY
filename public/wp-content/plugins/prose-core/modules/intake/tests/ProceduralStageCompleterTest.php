@@ -42,5 +42,7 @@ class ProceduralStageCompleterTest extends TestCase {
 		$this->assertTrue( $result['advanced'] );
 		$this->assertSame( 'NODE_1002_SERVICE_COMPLETE', $result['case_profile']['procedural_node'] ?? '' );
 		$this->assertSame( 'service', $result['stage_context']['current_stage']['id'] ?? '' );
+		$this->assertNotEmpty( $result['message'] ?? '' );
+		$this->assertStringContainsString( 'service', strtolower( (string) ( $result['message'] ?? '' ) ) );
 	}
 }

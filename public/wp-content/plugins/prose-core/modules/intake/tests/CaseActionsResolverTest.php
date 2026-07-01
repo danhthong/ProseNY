@@ -129,6 +129,9 @@ class CaseActionsResolverTest extends TestCase {
 		$this->assertSame( 'Get Documents (UD-1)', $partial['download_options'][0]['label'] );
 		$this->assertSame( 'Get Documents (UD-1A and UD-2)', $partial['download_options'][1]['label'] );
 
+		$this->assertTrue( $partial['can_complete_stage'] );
+		$this->assertNotEmpty( $partial['next_stage_title'] );
+
 		$form_rows = array();
 
 		foreach ( $partial['summary'] as $row ) {

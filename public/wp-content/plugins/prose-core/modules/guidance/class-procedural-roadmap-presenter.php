@@ -7,6 +7,7 @@
 
 namespace ProSe\Core\Guidance;
 
+use ProSe\Core\Forms\Engine\Workflow_Progression_Service;
 use ProSe\Core\Procedural\Guidance_Resolver;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -57,20 +58,30 @@ final class Procedural_Roadmap_Presenter {
 	private Guidance_Resolver $guidance;
 
 	/**
+	 * Workflow progression.
+	 *
+	 * @var Workflow_Progression_Service
+	 */
+	private Workflow_Progression_Service $progression;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Guidance_Repository|null $repository    Repository.
-	 * @param Step_Resolver|null       $step_resolver Step resolver.
-	 * @param Guidance_Resolver|null   $guidance      Guidance resolver.
+	 * @param Guidance_Repository|null         $repository    Repository.
+	 * @param Step_Resolver|null               $step_resolver Step resolver.
+	 * @param Guidance_Resolver|null           $guidance      Guidance resolver.
+	 * @param Workflow_Progression_Service|null $progression  Progression service.
 	 */
 	public function __construct(
 		?Guidance_Repository $repository = null,
 		?Step_Resolver $step_resolver = null,
-		?Guidance_Resolver $guidance = null
+		?Guidance_Resolver $guidance = null,
+		?Workflow_Progression_Service $progression = null
 	) {
 		$this->repository    = $repository ?? new Guidance_Repository();
 		$this->step_resolver   = $step_resolver ?? new Step_Resolver();
 		$this->guidance        = $guidance ?? new Guidance_Resolver();
+		$this->progression     = $progression ?? new Workflow_Progression_Service();
 	}
 
 	/**
@@ -297,6 +308,7 @@ final class Procedural_Roadmap_Presenter {
 
 		$confidence = $this->derive_confidence( $completion, $resolved, $intake_ok, true );
 		$question   = $this->suggested_question( $missing, $seed );
+		$progress   = $this->intake_step_progress_percentage( $steps_def, $completed );
 
 		return array(
 			'show'                    => true,
@@ -315,7 +327,7 @@ final class Procedural_Roadmap_Presenter {
 			'required_forms'          => array(),
 			'procedural_guidance'     => null,
 			'disclaimer'              => $this->disclaimer(),
-			'progress_percentage'     => $completion,
+			'progress_percentage'     => $progress,
 		);
 	}
 
@@ -478,7 +490,7 @@ final class Procedural_Roadmap_Presenter {
 			'required_forms'          => $required_forms,
 			'procedural_guidance'     => '' !== $stage_guidance ? $stage_guidance : null,
 			'disclaimer'              => $this->disclaimer(),
-			'progress_percentage'     => $completion,
+			'progress_percentage'     => $this->stage_progress_percentage( $workflow, $stage_ctx, $facts ),
 		);
 
 		return $this->merge_lifecycle_roadmap( $roadmap, $lifecycle, $intake_ok );
@@ -582,7 +594,87 @@ final class Procedural_Roadmap_Presenter {
 			$roadmap['branch_note'] = (string) $lifecycle['branch_note'];
 		}
 
+		$roadmap['progress_percentage'] = $this->lifecycle_milestone_progress_percentage( $milestones );
+
 		return $roadmap;
+	}
+
+	/**
+	 * @param string               $workflow  Workflow key.
+	 * @param array<string, mixed> $stage_ctx Stage context.
+	 * @param array<string, mixed> $facts     Plain facts.
+	 * @return int
+	 */
+	private function stage_progress_percentage( string $workflow, array $stage_ctx, array $facts ): int {
+		if ( '' === $workflow ) {
+			return 0;
+		}
+
+		$current_stage = sanitize_key( (string) ( $stage_ctx['current_stage']['id'] ?? '' ) );
+
+		if ( '' !== $current_stage ) {
+			return $this->progression->progress_for_stage( $workflow, $current_stage, $facts );
+		}
+
+		$node = trim( (string) ( $stage_ctx['procedural_node'] ?? '' ) );
+
+		if ( '' !== $node ) {
+			$resolved_stage = $this->progression->get_current_stage( $workflow, $node, $facts );
+
+			if ( null !== $resolved_stage && '' !== $resolved_stage ) {
+				return $this->progression->progress_for_stage( $workflow, $resolved_stage, $facts );
+			}
+		}
+
+		return 0;
+	}
+
+	/**
+	 * @param array<int, mixed> $steps_def Step definitions.
+	 * @param array<int, mixed> $completed Completed steps.
+	 * @return int
+	 */
+	private function intake_step_progress_percentage( array $steps_def, array $completed ): int {
+		$total = count( $steps_def );
+
+		if ( $total <= 1 ) {
+			return empty( $completed ) ? 0 : 100;
+		}
+
+		return (int) round( ( count( $completed ) / $total ) * 100 );
+	}
+
+	/**
+	 * @param array<int, mixed> $milestones Lifecycle milestones.
+	 * @return int
+	 */
+	private function lifecycle_milestone_progress_percentage( array $milestones ): int {
+		$total = count( $milestones );
+
+		if ( $total <= 1 ) {
+			return $total ? 100 : 0;
+		}
+
+		$index = 0;
+
+		foreach ( $milestones as $position => $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+
+			$status = (string) ( $item['status'] ?? '' );
+
+			if ( 'current' === $status ) {
+				$index = (int) $position;
+				break;
+			}
+
+			if ( 'completed' === $status ) {
+				$index = (int) $position;
+			}
+		}
+
+		return (int) round( ( $index / ( $total - 1 ) ) * 100 );
 	}
 
 	/**
