@@ -801,7 +801,18 @@
 
 				var item = document.createElement( 'li' );
 				item.className = 'prose-intake__summary-item';
-				item.textContent = row.label + ': ' + ( row.value || '' );
+
+				var label = document.createElement( 'strong' );
+				label.textContent = row.label + ':';
+				item.appendChild( label );
+
+				if ( row.value ) {
+					var value = document.createElement( 'span' );
+					value.className = 'prose-intake__summary-value';
+					value.textContent = ' ' + row.value;
+					item.appendChild( value );
+				}
+
 				summaryList.appendChild( item );
 			} );
 		}

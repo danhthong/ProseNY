@@ -139,8 +139,9 @@
 	function renderForm( form ) {
 		var row = el( 'div', 'prose-package__form' );
 		var main = el( 'div', 'prose-package__form-main' );
+		var displayStatus = form.status || '';
 
-		if ( form.url ) {
+		if ( form.url && 'not_applicable' !== displayStatus ) {
 			var link = el( 'a', 'prose-package__form-link' );
 			link.href = form.url;
 			link.target = '_blank';
@@ -158,19 +159,58 @@
 			}
 		}
 
+		if ( form.hint ) {
+			main.appendChild( el( 'span', 'prose-package__form-hint', form.hint ) );
+		}
+
+		if ( form.reason && ( 'not_applicable' === displayStatus || 'pending' === displayStatus ) ) {
+			main.appendChild( el( 'span', 'prose-package__form-reason', form.reason ) );
+		}
+
 		row.appendChild( main );
 
-		var badges = el( 'div', 'prose-package__badges' );
-		var reqClass = 'optional' === form.requirement ? 'optional' : 'required';
-		var reqLabel = 'optional' === form.requirement ? ( strings.optional || 'Optional' ) : ( strings.required || 'Required' );
-		badges.appendChild( el( 'span', 'prose-package__badge prose-package__badge--' + reqClass, reqLabel ) );
+		if ( 'not_applicable' !== displayStatus ) {
+			var badges = el( 'div', 'prose-package__badges' );
+			var reqClass = 'optional' === form.requirement ? 'optional' : 'required';
+			var reqLabel = 'optional' === form.requirement ? ( strings.optional || 'Optional' ) : ( strings.required || 'Required' );
+			badges.appendChild( el( 'span', 'prose-package__badge prose-package__badge--' + reqClass, reqLabel ) );
 
-		var readyClass = form.generation_ready ? 'ready' : 'pending';
-		var readyLabel = form.generation_ready ? ( strings.ready || 'Ready' ) : ( strings.pending || 'Preparing' );
-		badges.appendChild( el( 'span', 'prose-package__badge prose-package__badge--' + readyClass, readyLabel ) );
+			var readyClass = form.generation_ready ? 'ready' : 'pending';
+			var readyLabel = form.generation_ready ? ( strings.ready || 'Ready' ) : ( strings.pending || 'Preparing' );
+			badges.appendChild( el( 'span', 'prose-package__badge prose-package__badge--' + readyClass, readyLabel ) );
 
-		row.appendChild( badges );
+			row.appendChild( badges );
+		}
+
 		return row;
+	}
+
+	function renderFormGroups( groups ) {
+		var container = el( 'div', 'prose-package__form-groups' );
+
+		( groups || [] ).forEach( function ( group ) {
+			if ( ! group || ! group.forms || ! group.forms.length ) {
+				return;
+			}
+
+			var block = el( 'div', 'prose-package__form-group' );
+
+			if ( group.title ) {
+				block.appendChild( el( 'div', 'prose-package__group-title', group.title ) );
+			}
+
+			if ( group.description ) {
+				block.appendChild( el( 'div', 'prose-package__group-description', group.description ) );
+			}
+
+			group.forms.forEach( function ( form ) {
+				block.appendChild( renderForm( form ) );
+			} );
+
+			container.appendChild( block );
+		} );
+
+		return container;
 	}
 
 	function renderStages( data ) {
@@ -229,6 +269,8 @@
 						body.appendChild( renderForm( form ) );
 					} );
 				} );
+			} else if ( Array.isArray( stage.form_groups ) && stage.form_groups.length ) {
+				body.appendChild( renderFormGroups( stage.form_groups ) );
 			} else {
 				( stage.forms || [] ).forEach( function ( form ) {
 					body.appendChild( renderForm( form ) );

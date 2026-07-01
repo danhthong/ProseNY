@@ -99,7 +99,9 @@ final class Case_Summary_Presenter {
 			'completed_stages'  => $completed,
 			'current_forms'     => $forms,
 			'download_options'  => $download_options,
+			'form_groups'       => is_array( $stage_context['form_groups'] ?? null ) ? $stage_context['form_groups'] : array(),
 			'skipped_forms'     => $this->normalize_skipped_forms( (array) ( $stage_context['skipped_forms'] ?? array() ) ),
+			'pending_forms'     => $this->normalize_skipped_forms( (array) ( $stage_context['pending_forms'] ?? array() ) ),
 			'forms_visible'     => ! empty( $stage_context['forms_visible'] ),
 			'completion'        => (int) ( $input['completion'] ?? 0 ),
 			'key_facts'         => $this->key_facts( $facts ),
@@ -165,26 +167,32 @@ final class Case_Summary_Presenter {
 				$lines[] = __( 'Forms for the current stage:', 'prose-core' ) . ' ' . implode( '; ', $form_parts );
 			}
 		} elseif ( ! empty( $forms ) ) {
-			$form_parts = array();
+			$group_text = $this->form_groups_prompt_text( is_array( $summary['form_groups'] ?? null ) ? $summary['form_groups'] : array() );
 
-			foreach ( $forms as $form ) {
-				$code  = (string) ( $form['code'] ?? '' );
-				$title = (string) ( $form['title'] ?? $code );
-				$line  = $code . ( '' !== $title && $title !== $code ? ' — ' . $title : '' );
+			if ( '' !== $group_text ) {
+				$lines[] = $group_text;
+			} else {
+				$form_parts = array();
 
-				if ( empty( $form['required'] ) ) {
-					$line .= ' ' . __( '(if applicable)', 'prose-core' );
+				foreach ( $forms as $form ) {
+					$code  = (string) ( $form['code'] ?? '' );
+					$title = (string) ( $form['title'] ?? $code );
+					$line  = $code . ( '' !== $title && $title !== $code ? ' — ' . $title : '' );
+
+					if ( empty( $form['required'] ) ) {
+						$line .= ' ' . __( '(if applicable)', 'prose-core' );
+					}
+
+					$form_parts[] = $line;
 				}
 
-				$form_parts[] = $line;
+				$lines[] = __( 'Forms for the current stage:', 'prose-core' ) . ' ' . implode( '; ', $form_parts );
 			}
-
-			$lines[] = __( 'Forms for the current stage:', 'prose-core' ) . ' ' . implode( '; ', $form_parts );
 		}
 
 		$skipped = is_array( $summary['skipped_forms'] ?? null ) ? $summary['skipped_forms'] : array();
 
-		if ( ! empty( $skipped ) ) {
+		if ( ! empty( $skipped ) && empty( $summary['form_groups'] ) ) {
 			$skip_parts = array();
 
 			foreach ( $skipped as $form ) {
@@ -262,20 +270,141 @@ final class Case_Summary_Presenter {
 				);
 			}
 		} elseif ( ! empty( $forms ) ) {
-			$codes = array_map(
-				static function ( array $form ): string {
-					return (string) ( $form['code'] ?? '' );
-				},
-				$forms
-			);
+			$group_rows = $this->form_groups_action_rows( is_array( $summary['form_groups'] ?? null ) ? $summary['form_groups'] : array() );
+
+			if ( ! empty( $group_rows ) ) {
+				$rows = array_merge( $rows, $group_rows );
+			} else {
+				$codes = array_map(
+					static function ( array $form ): string {
+						return (string) ( $form['code'] ?? '' );
+					},
+					$forms
+				);
+
+				$rows[] = array(
+					'label' => __( 'Forms for this step', 'prose-core' ),
+					'value' => implode( ', ', array_filter( $codes ) ),
+				);
+			}
+		}
+
+		return $rows;
+	}
+
+	/**
+	 * @param array<int, array<string, mixed>> $groups Form groups.
+	 * @return array<int, array{label: string, value: string}>
+	 */
+	private function form_groups_action_rows( array $groups ): array {
+		$rows = array();
+
+		foreach ( $groups as $group ) {
+			if ( ! is_array( $group ) || empty( $group['forms'] ) ) {
+				continue;
+			}
+
+			$title = trim( (string) ( $group['title'] ?? '' ) );
+
+			if ( '' === $title ) {
+				continue;
+			}
+
+			$lines = array();
+
+			foreach ( (array) $group['forms'] as $form ) {
+				if ( ! is_array( $form ) ) {
+					continue;
+				}
+
+				$line = $this->form_group_line( $form );
+
+				if ( '' !== $line ) {
+					$lines[] = $line;
+				}
+			}
+
+			if ( empty( $lines ) ) {
+				continue;
+			}
 
 			$rows[] = array(
-				'label' => __( 'Forms for this step', 'prose-core' ),
-				'value' => implode( ', ', array_filter( $codes ) ),
+				'label' => $title,
+				'value' => implode( "\n", $lines ),
 			);
 		}
 
 		return $rows;
+	}
+
+	/**
+	 * @param array<int, array<string, mixed>> $groups Form groups.
+	 * @return string
+	 */
+	private function form_groups_prompt_text( array $groups ): string {
+		$sections = array();
+
+		foreach ( $groups as $group ) {
+			if ( ! is_array( $group ) || empty( $group['forms'] ) ) {
+				continue;
+			}
+
+			$title = trim( (string) ( $group['title'] ?? '' ) );
+			$lines = array();
+
+			foreach ( (array) $group['forms'] as $form ) {
+				if ( ! is_array( $form ) ) {
+					continue;
+				}
+
+				$line = $this->form_group_line( $form );
+
+				if ( '' !== $line ) {
+					$lines[] = $line;
+				}
+			}
+
+			if ( empty( $lines ) || '' === $title ) {
+				continue;
+			}
+
+			$sections[] = $title . ":\n" . implode( "\n", $lines );
+		}
+
+		if ( empty( $sections ) ) {
+			return '';
+		}
+
+		return __( 'Forms for the current stage:', 'prose-core' ) . "\n" . implode( "\n\n", $sections );
+	}
+
+	/**
+	 * @param array<string, mixed> $form Grouped form row.
+	 * @return string
+	 */
+	private function form_group_line( array $form ): string {
+		$code   = trim( (string) ( $form['code'] ?? '' ) );
+		$title  = trim( (string) ( $form['title'] ?? $code ) );
+		$status = (string) ( $form['status'] ?? 'required' );
+		$hint   = trim( (string) ( $form['hint'] ?? '' ) );
+		$reason = trim( (string) ( $form['reason'] ?? '' ) );
+
+		if ( '' === $code ) {
+			return '';
+		}
+
+		$prefix = 'not_applicable' === $status ? '⚪' : ( 'pending' === $status ? '🟡' : '✅' );
+		$line   = $prefix . ' ' . $code . ( '' !== $title && $title !== $code ? ' — ' . $title : '' );
+
+		if ( '' !== $hint && 'required' !== $status ) {
+			$line .= ' ' . $hint;
+		}
+
+		if ( '' !== $reason && in_array( $status, array( 'not_applicable', 'pending' ), true ) ) {
+			$line .= "\nReason:\n" . $reason;
+		}
+
+		return $line;
 	}
 
 	/**

@@ -345,6 +345,13 @@
 	color: #0f172a;
 }
 
+.prose-intake__summary-value {
+	display: block;
+	margin-top: 2px;
+	padding-left: 0;
+	white-space: pre-line;
+}
+
 .prose-intake__summary-item::before {
 	content: '✓';
 	position: absolute;
@@ -417,6 +424,10 @@
 	border: 0;
 	border-radius: 0;
 	box-shadow: none;
+	--prose-intake-site-header: 72px;
+	--prose-intake-sticky-gap: 16px;
+	--prose-intake-sticky-top: calc( var( --prose-intake-site-header ) + var( --prose-intake-sticky-gap ) );
+	--prose-intake-sticky-height: calc( 100dvh - var( --prose-intake-site-header ) - ( var( --prose-intake-sticky-gap ) * 2 ) );
 }
 
 .prose-homepage-layout {
@@ -508,6 +519,7 @@
 	border: 1px solid #e2e8f0;
 	border-radius: 16px;
 	box-shadow: 0 2px 4px rgba( 15, 23, 42, 0.06 ), 0 4px 12px rgba( 15, 23, 42, 0.05 );
+	min-height: 0;
 }
 
 .prose-intake__chat-card > *,
@@ -544,6 +556,54 @@
 	max-height: 560px;
 }
 
+.prose-intake--homepage .prose-intake__form {
+	flex-shrink: 0;
+	position: sticky;
+	bottom: 0;
+	z-index: 2;
+	margin-top: auto;
+	background: #ffffff;
+}
+
+@media ( min-width: 901px ) {
+	.prose-homepage-layout__chat {
+		position: sticky;
+		top: var( --prose-intake-sticky-top );
+		align-self: start;
+		max-height: var( --prose-intake-sticky-height );
+		overflow: hidden;
+	}
+
+	.prose-homepage-layout__hero,
+	.prose-homepage-layout__subtitle {
+		flex-shrink: 0;
+	}
+
+	.prose-intake__chat-card {
+		flex: 1 1 auto;
+		min-height: 280px;
+		max-height: none;
+		overflow: hidden;
+	}
+
+	.prose-intake--homepage .prose-intake__header {
+		flex-shrink: 0;
+	}
+
+	.prose-intake--homepage .prose-intake__transcript {
+		flex: 1 1 auto;
+		min-height: 160px;
+		max-height: none;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+
+	.prose-homepage-layout__privacy,
+	.prose-homepage-layout__prompts {
+		flex-shrink: 0;
+	}
+}
+
 @media ( max-width: 900px ) {
 	.prose-homepage-layout {
 		grid-template-columns: 1fr;
@@ -561,6 +621,11 @@
 
 	.prose-homepage-layout__privacy {
 		justify-content: center;
+	}
+
+	.prose-intake--homepage .prose-intake__form {
+		bottom: env( safe-area-inset-bottom, 0 );
+		box-shadow: 0 -6px 16px rgba( 15, 23, 42, 0.08 );
 	}
 }
 

@@ -169,6 +169,55 @@ class CaseSummaryPresenterTest extends TestCase {
 	}
 
 	/**
+	 * Action rows expose grouped form sections instead of one comma-separated list.
+	 */
+	public function test_to_action_rows_uses_form_groups(): void {
+		$presenter = new Case_Summary_Presenter();
+		$rows      = $presenter->to_action_rows(
+			array(
+				'current_stage' => array(
+					'id'    => 'calendar',
+					'title' => 'Final Papers & Calendar',
+				),
+				'current_forms' => array(
+					array( 'code' => 'UD-5' ),
+				),
+				'form_groups'   => array(
+					array(
+						'id'    => 'required',
+						'title' => 'Required Forms',
+						'forms' => array(
+							array(
+								'code'   => 'UD-5',
+								'title'  => 'Affirmation of Regularity',
+								'status' => 'required',
+							),
+						),
+					),
+					array(
+						'id'    => 'not_applicable',
+						'title' => 'Not Applicable',
+						'forms' => array(
+							array(
+								'code'   => 'UD-4',
+								'title'  => 'Removal of Barriers',
+								'status' => 'not_applicable',
+								'reason' => 'No religious barriers were identified.',
+							),
+						),
+					),
+				),
+			)
+		);
+
+		$labels = array_column( $rows, 'label' );
+
+		$this->assertContains( 'Required Forms', $labels );
+		$this->assertContains( 'Not Applicable', $labels );
+		$this->assertNotContains( 'Forms for this step', $labels );
+	}
+
+	/**
 	 * Multi-path commencement shows alternate filing options instead of a flat form list.
 	 */
 	public function test_to_action_rows_shows_commencement_path_options(): void {

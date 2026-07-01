@@ -7,6 +7,7 @@
 
 namespace ProSe\Core\Ai_Intake;
 
+use ProSe\Core\Forms\Engine\Stage_Form_Group_Presenter;
 use ProSe\Core\Guidance\Filing_Guidance_Brief_Resolver;
 use ProSe\Core\Guidance\Procedural_Roadmap_Presenter;
 use ProSe\Core\Intake\Case_Summary_Presenter;
@@ -1643,6 +1644,22 @@ final class AI_Intake_Interpreter {
 			$title = ucwords( str_replace( '_', ' ', $stage_id ) );
 		}
 
+		$groups = is_array( $stage_ctx['form_groups'] ?? null ) ? $stage_ctx['form_groups'] : array();
+		$grouped_text = ( new Stage_Form_Group_Presenter() )->format_groups_text( $groups );
+
+		if ( '' !== $grouped_text ) {
+			$message = sprintf(
+				/* translators: %s: procedural stage title. */
+				__( 'For the %s stage:', 'prose-core' ),
+				$title
+			);
+
+			$message .= "\n\n" . $grouped_text;
+			$message .= "\n\n" . __( 'Informational guidance only — not legal advice.', 'prose-core' );
+
+			return $message;
+		}
+
 		$message = sprintf(
 			/* translators: %s: procedural stage title. */
 			__( 'For the %s stage, typical forms may include:', 'prose-core' ),
@@ -2198,46 +2215,54 @@ final class AI_Intake_Interpreter {
 		$lines[] = '';
 		$lines[] = __( 'Based on the information you\'ve provided, the system will prepare the required final submission forms. Some forms are mandatory for every case, while others are included only if they apply to your circumstances (for example, if you have children, are requesting child support, or the marriage was performed by clergy).', 'prose-core' );
 		$lines[] = '';
-		$lines[] = __( 'Typical forms at this stage may include:', 'prose-core' );
-		$lines[] = '';
 
-		foreach ( (array) ( $stage_ctx['stage_forms'] ?? array() ) as $form ) {
-			if ( ! empty( $form['uncertain'] ) ) {
-				continue;
-			}
+		$groups = is_array( $stage_ctx['form_groups'] ?? null ) ? $stage_ctx['form_groups'] : array();
+		$grouped_text = ( new Stage_Form_Group_Presenter() )->format_groups_text( $groups );
 
-			$code = trim( (string) ( $form['code'] ?? '' ) );
-
-			if ( '' === $code ) {
-				continue;
-			}
-
-			$form_title = trim( (string) ( $form['title'] ?? $code ) );
-			$suffix     = $this->calendar_form_applicability_suffix( $code, ! empty( $form['required'] ) );
-			$lines[]    = '• ' . $code . ' — ' . $form_title . $suffix;
-		}
-
-		$skipped = (array) ( $stage_ctx['skipped_forms'] ?? array() );
-
-		if ( ! empty( $skipped ) ) {
+		if ( '' !== $grouped_text ) {
+			$lines[] = $grouped_text;
+		} else {
+			$lines[] = __( 'Typical forms at this stage may include:', 'prose-core' );
 			$lines[] = '';
-			$lines[] = __( 'Forms not included for your situation:', 'prose-core' );
 
-			foreach ( $skipped as $form ) {
-				$code   = trim( (string) ( $form['code'] ?? '' ) );
-				$reason = trim( (string) ( $form['reason'] ?? '' ) );
+			foreach ( (array) ( $stage_ctx['stage_forms'] ?? array() ) as $form ) {
+				if ( ! empty( $form['uncertain'] ) ) {
+					continue;
+				}
+
+				$code = trim( (string) ( $form['code'] ?? '' ) );
 
 				if ( '' === $code ) {
 					continue;
 				}
 
-				$line = '• ' . $code;
+				$form_title = trim( (string) ( $form['title'] ?? $code ) );
+				$suffix     = $this->calendar_form_applicability_suffix( $code, ! empty( $form['required'] ) );
+				$lines[]    = '• ' . $code . ' — ' . $form_title . $suffix;
+			}
 
-				if ( '' !== $reason ) {
-					$line .= ' — ' . $reason;
+			$skipped = (array) ( $stage_ctx['skipped_forms'] ?? array() );
+
+			if ( ! empty( $skipped ) ) {
+				$lines[] = '';
+				$lines[] = __( 'Forms not included for your situation:', 'prose-core' );
+
+				foreach ( $skipped as $form ) {
+					$code   = trim( (string) ( $form['code'] ?? '' ) );
+					$reason = trim( (string) ( $form['reason'] ?? '' ) );
+
+					if ( '' === $code ) {
+						continue;
+					}
+
+					$line = '• ' . $code;
+
+					if ( '' !== $reason ) {
+						$line .= ' — ' . $reason;
+					}
+
+					$lines[] = $line;
 				}
-
-				$lines[] = $line;
 			}
 		}
 

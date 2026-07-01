@@ -183,6 +183,22 @@ final class Package_Preview_Service {
 				$stages[ $index ] = $this->apply_form_paths( $stage_row, $download_options, $current_stage );
 				break;
 			}
+		} elseif ( '' !== $current_stage && ! empty( $stage_context['form_groups'] ) ) {
+			foreach ( $stages as $index => $stage_row ) {
+				if ( 'current' !== ( $stage_row['status'] ?? '' ) ) {
+					continue;
+				}
+
+				if ( ! empty( $stage_row['form_paths'] ) ) {
+					break;
+				}
+
+				$stages[ $index ] = $this->apply_form_groups(
+					$stage_row,
+					(array) $stage_context['form_groups']
+				);
+				break;
+			}
 		}
 
 		if ( '' !== $current_stage ) {
@@ -205,6 +221,45 @@ final class Package_Preview_Service {
 								++$ready_count;
 							} else {
 								++$missing_count;
+							}
+						}
+					}
+
+					break;
+				}
+
+				if ( ! empty( $stage_row['form_groups'] ) ) {
+					foreach ( (array) $stage_row['form_groups'] as $group ) {
+						if ( 'not_applicable' === (string) ( $group['id'] ?? '' ) ) {
+							continue;
+						}
+
+						foreach ( (array) ( $group['forms'] ?? array() ) as $form ) {
+							if ( ! is_array( $form ) ) {
+								continue;
+							}
+
+							$display_status = (string) ( $form['status'] ?? '' );
+
+							if ( in_array( $display_status, array( 'not_applicable', 'pending' ), true ) ) {
+								continue;
+							}
+
+							$requirement = (string) ( $form['requirement'] ?? 'required' );
+							$ready       = ! empty( $form['generation_ready'] );
+
+							if ( 'optional' === $requirement ) {
+								++$optional_count;
+							} else {
+								++$required_count;
+
+								if ( ! $ready ) {
+									++$missing_count;
+								}
+							}
+
+							if ( $ready ) {
+								++$ready_count;
 							}
 						}
 					}
@@ -339,6 +394,86 @@ final class Package_Preview_Service {
 		}
 
 		return $ordered;
+	}
+
+	/**
+	 * Replace a flat form list with grouped sections for the current stage.
+	 *
+	 * @param array<string, mixed>             $stage_row   Stage preview row.
+	 * @param array<int, array<string, mixed>> $form_groups Grouped form sections.
+	 * @return array<string, mixed>
+	 */
+	private function apply_form_groups( array $stage_row, array $form_groups ): array {
+		$forms_by_code = array();
+
+		foreach ( (array) ( $stage_row['forms'] ?? array() ) as $form ) {
+			if ( ! is_array( $form ) ) {
+				continue;
+			}
+
+			$code = trim( (string) ( $form['code'] ?? '' ) );
+
+			if ( '' === $code ) {
+				continue;
+			}
+
+			$forms_by_code[ $this->normalize_form_code_key( $code ) ] = $form;
+		}
+
+		$groups = array();
+
+		foreach ( $form_groups as $group ) {
+			if ( ! is_array( $group ) || empty( $group['forms'] ) ) {
+				continue;
+			}
+
+			$group_forms = array();
+
+			foreach ( (array) $group['forms'] as $form ) {
+				if ( ! is_array( $form ) ) {
+					continue;
+				}
+
+				$code = trim( (string) ( $form['code'] ?? '' ) );
+
+				if ( '' === $code ) {
+					continue;
+				}
+
+				$key      = $this->normalize_form_code_key( $code );
+				$manifest = isset( $forms_by_code[ $key ] ) ? $forms_by_code[ $key ] : null;
+
+				$group_forms[] = array_merge(
+					$form,
+					array(
+						'url'              => is_array( $manifest ) ? (string) ( $manifest['url'] ?? $this->form_pages->resolve( $code ) ) : $this->form_pages->resolve( $code ),
+						'title'            => trim( (string) ( $form['title'] ?? ( is_array( $manifest ) ? ( $manifest['title'] ?? $code ) : $code ) ) ),
+						'requirement'      => is_array( $manifest ) ? (string) ( $manifest['requirement'] ?? 'required' ) : 'required',
+						'generation_ready' => is_array( $manifest ) ? ! empty( $manifest['generation_ready'] ) : false,
+					)
+				);
+			}
+
+			if ( empty( $group_forms ) ) {
+				continue;
+			}
+
+			$groups[] = array(
+				'id'          => (string) ( $group['id'] ?? '' ),
+				'title'       => (string) ( $group['title'] ?? '' ),
+				'description' => (string) ( $group['description'] ?? '' ),
+				'forms'       => $group_forms,
+			);
+		}
+
+		if ( empty( $groups ) ) {
+			return $stage_row;
+		}
+
+		$stage_row['form_groups'] = $groups;
+		$stage_row['forms']       = array();
+
+		return $stage_row;
 	}
 
 	/**

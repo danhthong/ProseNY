@@ -188,7 +188,15 @@ final class Filing_Guidance_Brief_Resolver {
 		);
 
 		if ( empty( $codes ) ) {
-			return __( 'Get Documents', 'prose-core' );
+			return array();
+		}
+
+		if ( count( $codes ) > 3 ) {
+			return sprintf(
+				/* translators: %d: number of forms in the download package. */
+				__( 'Get Documents (%d forms)', 'prose-core' ),
+				count( $codes )
+			);
 		}
 
 		$labels = array_map( array( self::class, 'format_code_for_label' ), $codes );
