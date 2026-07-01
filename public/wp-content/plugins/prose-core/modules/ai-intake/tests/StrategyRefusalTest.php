@@ -50,7 +50,7 @@ class StrategyRefusalTest extends TestCase {
 	public function test_role_guidance_forbids_strategy(): void {
 		$guidance = Conversation_Engine::role_guidance();
 
-		$this->assertStringContainsString( 'NEVER give legal strategy', $guidance );
+		$this->assertStringContainsString( 'Never give legal strategy', $guidance );
 		$this->assertStringContainsString( 'procedural_navigator', $guidance );
 	}
 

@@ -19,8 +19,8 @@ class ProactiveGuidanceTest extends TestCase {
 	public function test_role_guidance_forbids_roadmap_in_prose(): void {
 		$guidance = Conversation_Engine::role_guidance();
 
-		$this->assertStringContainsString( 'NEVER render roadmap content', $guidance );
-		$this->assertStringContainsString( 'procedural_roadmap', $guidance );
+		$this->assertStringContainsString( 'Never render roadmap step lists', $guidance );
+		$this->assertStringContainsString( 'procedural_navigator', $guidance );
 		$this->assertStringContainsString( 'Never use mandatory language', $guidance );
 	}
 
@@ -30,7 +30,8 @@ class ProactiveGuidanceTest extends TestCase {
 	public function test_role_guidance_requires_soft_language(): void {
 		$guidance = Conversation_Engine::role_guidance();
 
-		$this->assertStringContainsString( 'you may wish to consider', $guidance );
-		$this->assertStringContainsString( 'suggested_next_question', $guidance );
+		$this->assertStringContainsString( 'Never use mandatory language', $guidance );
+		$this->assertStringContainsString( 'paraphrase naturally', $guidance );
+		$this->assertStringContainsString( 'missing_information', $guidance );
 	}
 }

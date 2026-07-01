@@ -99,6 +99,11 @@ TXT;
 	private Case_Summary_Presenter $summary_presenter;
 
 	/**
+	 * @var Ai_Provider_Interface|null
+	 */
+	private ?Ai_Provider_Interface $provider_override;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param AI_Settings|null                    $settings          Settings.
@@ -108,6 +113,7 @@ TXT;
 	 * @param Workflow_Catalog|null               $workflows         Workflow catalog.
 	 * @param Workflow_Engine|null                $workflow_engine   Workflow engine.
 	 * @param Case_Summary_Presenter|null         $summary_presenter Summary presenter.
+	 * @param Ai_Provider_Interface|null          $provider          Optional provider override (tests).
 	 */
 	public function __construct(
 		?AI_Settings $settings = null,
@@ -116,15 +122,17 @@ TXT;
 		?Guidance_Repository $guidance = null,
 		?Workflow_Catalog $workflows = null,
 		?Workflow_Engine $workflow_engine = null,
-		?Case_Summary_Presenter $summary_presenter = null
+		?Case_Summary_Presenter $summary_presenter = null,
+		?Ai_Provider_Interface $provider = null
 	) {
-		$this->settings          = $settings ?? new AI_Settings();
-		$this->logger            = $logger ?? new AI_Logger();
-		$this->briefs            = $briefs ?? new Filing_Guidance_Brief_Resolver();
-		$this->guidance          = $guidance ?? new Guidance_Repository();
-		$this->workflows         = $workflows ?? new Workflow_Catalog();
-		$this->workflow_engine   = $workflow_engine ?? new Workflow_Engine();
-		$this->summary_presenter = $summary_presenter ?? new Case_Summary_Presenter( $this->workflows );
+		$this->settings           = $settings ?? new AI_Settings();
+		$this->logger             = $logger ?? new AI_Logger();
+		$this->briefs             = $briefs ?? new Filing_Guidance_Brief_Resolver();
+		$this->guidance           = $guidance ?? new Guidance_Repository();
+		$this->workflows          = $workflows ?? new Workflow_Catalog();
+		$this->workflow_engine    = $workflow_engine ?? new Workflow_Engine();
+		$this->summary_presenter  = $summary_presenter ?? new Case_Summary_Presenter( $this->workflows );
+		$this->provider_override  = $provider;
 	}
 
 	/**
@@ -163,7 +171,7 @@ TXT;
 		}
 
 		try {
-			$provider = $this->settings->make_provider();
+			$provider = $this->settings->make_provider( $this->provider_override );
 			$messages = array(
 				array(
 					'role'    => 'system',
@@ -226,6 +234,30 @@ TXT;
 	}
 
 	/**
+	 * Append guidance text only when it is not already present (normalized).
+	 *
+	 * @param array<int, string> $parts Guidance paragraphs.
+	 * @param string             $text  Candidate paragraph.
+	 */
+	private function append_unique_guidance_part( array &$parts, string $text ): void {
+		$text = trim( $text );
+
+		if ( '' === $text ) {
+			return;
+		}
+
+		$needle = strtolower( preg_replace( '/\s+/', ' ', $text ) );
+
+		foreach ( $parts as $existing ) {
+			if ( strtolower( preg_replace( '/\s+/', ' ', (string) $existing ) ) === $needle ) {
+				return;
+			}
+		}
+
+		$parts[] = $text;
+	}
+
+	/**
 	 * Rich procedural guidance assembled from workflow data when ChatGPT is unavailable.
 	 *
 	 * @param array<string, mixed> $payload           Structured case payload.
@@ -255,20 +287,20 @@ TXT;
 		$personal = $this->personalized_fact_paragraph( $facts );
 
 		if ( '' !== $personal ) {
-			$parts[] = $personal;
+			$this->append_unique_guidance_part( $parts, $personal );
 		}
 
 		$description = trim( (string) ( $current['description'] ?? '' ) );
 
 		if ( '' !== $description ) {
-			$parts[] = $description;
+			$this->append_unique_guidance_part( $parts, $description );
 		}
 
 		$stage_guidance = is_array( $payload['procedural']['stage_guidance'] ?? null ) ? $payload['procedural']['stage_guidance'] : array();
 		$overview       = trim( (string) ( $stage_guidance['overview'] ?? $stage_guidance['summary'] ?? '' ) );
 
 		if ( '' !== $overview ) {
-			$parts[] = $overview;
+			$this->append_unique_guidance_part( $parts, $overview );
 		}
 
 		$brief = is_array( $payload['procedural']['filing_guidance_brief'] ?? null ) ? $payload['procedural']['filing_guidance_brief'] : array();
@@ -281,7 +313,7 @@ TXT;
 			$text = trim( (string) ( $step['text'] ?? $step['description'] ?? '' ) );
 
 			if ( '' !== $text ) {
-				$parts[] = $text;
+				$this->append_unique_guidance_part( $parts, $text );
 			}
 		}
 
@@ -339,7 +371,7 @@ TXT;
 		$next_action = trim( (string) ( $current['next_action'] ?? '' ) );
 
 		if ( '' !== $next_action ) {
-			$parts[] = $next_action;
+			$this->append_unique_guidance_part( $parts, $next_action );
 		}
 
 		$next_stage = is_array( $payload['transition']['next_stage'] ?? null ) ? $payload['transition']['next_stage'] : null;
@@ -410,14 +442,23 @@ TXT;
 	 * @return array<int, array<string, mixed>>
 	 */
 	private function build_deterministic_checklist( array $payload, array $completion_result ): array {
-		$checklist = array();
+		$checklist           = array();
+		$seen_completed_stage = array();
 
 		foreach ( (array) ( $payload['case_context']['completed_documents'] ?? array() ) as $doc ) {
 			if ( ! is_array( $doc ) ) {
 				continue;
 			}
 
+			$stage_id    = sanitize_key( (string) ( $doc['stage_id'] ?? '' ) );
 			$stage_title = trim( (string) ( $doc['stage_title'] ?? $doc['stage_id'] ?? '' ) );
+			$dedupe_key  = '' !== $stage_id ? $stage_id : strtolower( $stage_title );
+
+			if ( '' === $dedupe_key || isset( $seen_completed_stage[ $dedupe_key ] ) ) {
+				continue;
+			}
+
+			$seen_completed_stage[ $dedupe_key ] = true;
 
 			if ( '' !== $stage_title ) {
 				/* translators: %s: completed procedural stage title. */

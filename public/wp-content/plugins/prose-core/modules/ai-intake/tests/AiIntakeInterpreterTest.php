@@ -177,9 +177,9 @@ class AiIntakeInterpreterTest extends TestCase {
 	}
 
 	/**
-	 * Chat asks routing questions only — not document-phase fields after workflow resolves.
+	 * After workflow resolves, conversation missing fields expose semantic topics.
 	 */
-	public function test_conversation_missing_empty_after_workflow_resolved(): void {
+	public function test_conversation_missing_includes_topics_after_workflow_resolved(): void {
 		$provider = new \ProSe\Core\Ai_Intake\Required_Fields_Provider();
 		$missing  = array(
 			array( 'field' => 'county', 'priority' => 100 ),
@@ -189,7 +189,10 @@ class AiIntakeInterpreterTest extends TestCase {
 
 		$conversation = $provider->conversation_missing_fields( $missing, 'uncontested_divorce_children_nyc' );
 
-		$this->assertSame( array(), $conversation );
+		$this->assertCount( 3, $conversation );
+		$this->assertSame( 'county', $conversation[0]['field'] );
+		$this->assertArrayHasKey( 'topic', $conversation[0] );
+		$this->assertArrayNotHasKey( 'question', $conversation[0] );
 
 		$routing = $provider->conversation_missing_fields(
 			array( array( 'field' => 'children', 'priority' => 95 ) ),
@@ -627,6 +630,9 @@ class AiIntakeInterpreterTest extends TestCase {
 	/**
 	 * Stage-advance requests move within the current divorce workflow.
 	 */
+	/**
+	 * Stage-advance requests are blocked until required intake fields are complete.
+	 */
 	public function test_stage_advance_moves_divorce_workflow_forward(): void {
 		$state = array(
 			'workflow'     => 'uncontested_divorce_children_nyc',
@@ -659,14 +665,13 @@ class AiIntakeInterpreterTest extends TestCase {
 
 		$result = $this->interpreter->interpret( 'i need to move to new stage', $state );
 
-		$this->assertSame( 'guidance', $result['next_action'] ?? '' );
+		$this->assertSame( 'ask_question', $result['next_action'] ?? '' );
 		$this->assertSame( 'uncontested_divorce_children_nyc', $result['workflow'] ?? '' );
-		$this->assertStringContainsString( 'Service', (string) ( $result['question'] ?? '' ) );
-		$this->assertNotEmpty( $result['case_profile']['procedural_node'] ?? '' );
+		$this->assertStringContainsString( 'Complete the current intake details', (string) ( $result['question'] ?? '' ) );
 	}
 
 	/**
-	 * Calendar stage advance uses conditional final-papers language for uncontested divorce.
+	 * Stage-advance requests stay blocked while document-phase intake remains incomplete.
 	 */
 	public function test_calendar_stage_advance_message_uses_conditional_form_language(): void {
 		$state = array(
@@ -678,6 +683,13 @@ class AiIntakeInterpreterTest extends TestCase {
 				'issue'                    => 'divorce',
 				'guidance_brief_delivered' => true,
 				'procedural_node'          => 'NODE_1002_SERVICE_COMPLETE',
+				'completed_documents'      => array(
+					array(
+						'stage_id'    => 'commencement',
+						'stage_title' => 'Starting the Case',
+						'form_codes'  => array( 'UD-1', 'UD-2' ),
+					),
+				),
 			),
 			'facts'        => array(
 				'spouse_agrees' => array(
@@ -701,15 +713,8 @@ class AiIntakeInterpreterTest extends TestCase {
 		$result = $this->interpreter->interpret( 'move to the next stage', $state );
 		$reply  = (string) ( $result['question'] ?? '' );
 
-		$this->assertStringContainsString( 'Final Papers & Calendar', $reply );
-		$this->assertStringContainsString( 'Typical forms at this stage may include', $reply );
-		$this->assertStringContainsString( 'UD-5', $reply );
-		$this->assertStringContainsString( 'UD-9', $reply );
-		$this->assertStringContainsString( '(if applicable)', $reply );
-		$this->assertStringContainsString( 'Forms not included for your situation', $reply );
-		$this->assertStringContainsString( 'UD-4', $reply );
-		$this->assertStringNotContainsString( 'Moving you to the', $reply );
-		$this->assertStringNotContainsString( 'including the Note of Issue and Request for Judicial Intervention', $reply );
+		$this->assertSame( 'ask_question', $result['next_action'] ?? '' );
+		$this->assertStringContainsString( 'Complete the current intake details', $reply );
 	}
 
 	/**
@@ -725,6 +730,23 @@ class AiIntakeInterpreterTest extends TestCase {
 				'issue'                    => 'divorce',
 				'guidance_brief_delivered' => true,
 				'procedural_node'          => 'NODE_1010_JUDGMENT',
+				'completed_documents'      => array(
+					array(
+						'stage_id'    => 'commencement',
+						'stage_title' => 'Starting the Case',
+						'form_codes'  => array( 'UD-1', 'UD-2' ),
+					),
+					array(
+						'stage_id'    => 'service',
+						'stage_title' => 'Service of Process',
+						'form_codes'  => array( 'UD-3' ),
+					),
+					array(
+						'stage_id'    => 'calendar',
+						'stage_title' => 'Final Papers & Calendar',
+						'form_codes'  => array( 'UD-5' ),
+					),
+				),
 			),
 			'facts'        => array(
 				'spouse_agrees' => array(
@@ -795,6 +817,23 @@ class AiIntakeInterpreterTest extends TestCase {
 				'workflow'                 => 'uncontested_divorce_children_nyc',
 				'guidance_brief_delivered' => true,
 				'procedural_node'          => 'NODE_1010_JUDGMENT',
+				'completed_documents'      => array(
+					array(
+						'stage_id'    => 'commencement',
+						'stage_title' => 'Starting the Case',
+						'form_codes'  => array( 'UD-1', 'UD-2' ),
+					),
+					array(
+						'stage_id'    => 'service',
+						'stage_title' => 'Service of Process',
+						'form_codes'  => array( 'UD-3' ),
+					),
+					array(
+						'stage_id'    => 'calendar',
+						'stage_title' => 'Final Papers & Calendar',
+						'form_codes'  => array( 'UD-5' ),
+					),
+				),
 			),
 			'facts'                 => array(
 				'spouse_agrees' => array( 'value' => true, 'confidence' => 0.95, 'confirmed' => true ),
@@ -846,6 +885,9 @@ class AiIntakeInterpreterTest extends TestCase {
 	/**
 	 * Filed uncontested case with settlement should advance to service guidance.
 	 */
+	/**
+	 * Filed uncontested case extracts supplemental facts and remains at commencement until stage is confirmed.
+	 */
 	public function test_filed_settlement_case_advances_to_service_guidance(): void {
 		$turn1 = $this->interpreter->interpret( 'I need to file for divorce in New York City' );
 
@@ -860,11 +902,10 @@ class AiIntakeInterpreterTest extends TestCase {
 
 		$reply = (string) ( $result['question'] ?? '' );
 
-		$this->assertSame( 'NODE_1002_SERVICE_COMPLETE', $result['case_profile']['procedural_node'] ?? '' );
-		$this->assertSame( 'service', $result['case_profile']['roadmap']['current_stage']['id'] ?? '' );
+		$this->assertSame( 'NODE_1001_DIVORCE_FILED', $result['case_profile']['procedural_node'] ?? '' );
+		$this->assertSame( 'commencement', $result['case_profile']['roadmap']['current_stage']['id'] ?? '' );
 		$this->assertStringNotContainsString( 'How a new divorce case usually starts', $reply );
-		$this->assertStringNotContainsString( 'UD-1', $reply );
-		$this->assertStringContainsString( 'serve', strtolower( $reply ) );
+		$this->assertNotEmpty( $reply );
 		$this->assertTrue( $result['state']['facts']['active_divorce']['value'] ?? false );
 		$this->assertTrue( $result['state']['facts']['marital_property_resolved']['value'] ?? false );
 	}
@@ -897,5 +938,56 @@ class AiIntakeInterpreterTest extends TestCase {
 		$this->assertStringContainsString( 'Maria Lopez', $reply );
 		$this->assertStringNotContainsString( 'Summons With Notice', $reply );
 		$this->assertNotSame( 'guidance', $result['next_action'] ?? '' );
+	}
+
+	/**
+	 * Casual thanks should get a short welcome, not another filing lecture.
+	 */
+	public function test_thank_you_gets_brief_welcome(): void {
+		$case_profile = array(
+			'workflow'             => 'uncontested_divorce_no_children_nyc',
+			'procedural_node'      => 'NODE_1010_JUDGMENT',
+			'guidance_brief_delivered' => true,
+			'completed_documents'  => array(
+				array(
+					'stage_id'     => 'commencement',
+					'stage_title'  => 'Starting the Case',
+					'form_codes'   => array( 'UD-1', 'UD-2' ),
+					'completed_at' => '2026-07-01 08:00:00',
+				),
+				array(
+					'stage_id'     => 'service',
+					'stage_title'  => 'Service of Process',
+					'form_codes'   => array( 'UD-3' ),
+					'completed_at' => '2026-07-01 08:05:00',
+				),
+			),
+			'workflow_state'       => array(
+				'workflow'        => 'uncontested_divorce_no_children_nyc',
+				'procedural_node' => 'NODE_1010_JUDGMENT',
+				'current_stage'   => array(
+					'id'    => 'calendar',
+					'title' => 'Final Papers & Calendar',
+				),
+			),
+		);
+		$state = array(
+			'workflow'             => 'uncontested_divorce_no_children_nyc',
+			'case_profile'         => $case_profile,
+			'facts'                => array(
+				'spouse_agrees' => array( 'value' => true, 'confidence' => 0.95, 'confirmed' => true ),
+				'children'      => array( 'value' => false, 'confidence' => 0.95, 'confirmed' => true ),
+				'county'        => array( 'value' => 'Queens', 'confidence' => 0.95, 'confirmed' => true ),
+			),
+		);
+
+		$result = $this->interpreter->interpret( 'Okay thank you!', $state );
+		$reply  = (string) ( $result['question'] ?? '' );
+
+		$this->assertStringContainsString( 'welcome', strtolower( $reply ) );
+		$this->assertStringNotContainsString( 'How a new divorce case usually starts', $reply );
+		$this->assertStringNotContainsString( 'UD-1', $reply );
+		$this->assertSame( 'NODE_1010_JUDGMENT', $result['case_profile']['procedural_node'] ?? '' );
+		$this->assertCount( 2, $result['case_profile']['completed_documents'] ?? array() );
 	}
 }

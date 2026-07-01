@@ -282,6 +282,96 @@
 		}
 
 		/**
+		 * Whether a stored turn is UI-only and must not be sent to the API.
+		 *
+		 * @param {Object} turn Conversation turn.
+		 * @return {boolean}
+		 */
+		function isLocalConversationTurn( turn ) {
+			return !!( turn && ( turn.local_only || turn.source === 'stage_complete' ) );
+		}
+
+		/**
+		 * Conversation history safe to send to AI endpoints.
+		 *
+		 * @param {Array} conversation Full stored conversation.
+		 * @return {Array}
+		 */
+		function conversationForApi( conversation ) {
+			return ( conversation || [] ).filter( function ( turn ) {
+				if ( ! turn || ! turn.content ) {
+					return false;
+				}
+
+				if ( isLocalConversationTurn( turn ) ) {
+					return false;
+				}
+
+				if ( 'user' === turn.role && isInternalStageGuidancePrompt( turn.content ) ) {
+					return false;
+				}
+
+				return true;
+			} );
+		}
+
+		/**
+		 * Record the stage-complete button click in the transcript (not sent to API).
+		 *
+		 * @param {string} label Button label shown to the user.
+		 * @return {void}
+		 */
+		function recordStageCompleteUserTurn( label ) {
+			var text = String( label || '' ).trim();
+
+			if ( ! text ) {
+				return;
+			}
+
+			addBubble( 'user', text );
+			updateHomepagePromptsVisibility();
+
+			session.conversation = session.conversation || [];
+			session.conversation.push( {
+				role: 'user',
+				content: text,
+				local_only: true,
+				source: 'stage_complete'
+			} );
+		}
+
+		/**
+		 * Keep user-confirmed stage progress when merging API case profiles.
+		 *
+		 * @param {Object} serverProfile Profile from the API.
+		 * @return {Object}
+		 */
+		function preserveCaseProfileProgress( serverProfile ) {
+			var merged = Object.assign( {}, serverProfile || {} );
+			var pinned = session.case_profile || {};
+			var pinnedDocs = Array.isArray( pinned.completed_documents ) ? pinned.completed_documents : [];
+			var mergedDocs = Array.isArray( merged.completed_documents ) ? merged.completed_documents : [];
+
+			if ( pinnedDocs.length && pinnedDocs.length > mergedDocs.length ) {
+				merged.completed_documents = pinnedDocs;
+			}
+
+			if ( pinned.procedural_node && pinnedDocs.length ) {
+				merged.procedural_node = pinned.procedural_node;
+			}
+
+			if ( pinned.workflow_state && pinnedDocs.length ) {
+				merged.workflow_state = pinned.workflow_state;
+			}
+
+			if ( pinned.roadmap && pinnedDocs.length && ! merged.roadmap ) {
+				merged.roadmap = pinned.roadmap;
+			}
+
+			return merged;
+		}
+
+		/**
 		 * Paint transcript and action panel from the current session.
 		 *
 		 * @return {void}
@@ -1131,7 +1221,7 @@
 			var state = session.state && typeof session.state === 'object' ? session.state : {};
 			var profile = session.case_profile || {};
 			var context = {
-				conversation_tail: Array.isArray( session.conversation ) ? session.conversation.slice( -8 ) : []
+				conversation_tail: conversationForApi( session.conversation || [] ).slice( -8 )
 			};
 
 			if ( state.conversation_summary ) {
@@ -1475,7 +1565,7 @@
 			var serverGuidance = stageData.ai_guidance ? String( stageData.ai_guidance ).trim() : '';
 			var serverMessage = stageData.message ? String( stageData.message ).trim() : '';
 
-			if ( stageData.ai_used && ( serverGuidance || serverMessage ) ) {
+			if ( serverGuidance || serverMessage ) {
 				return Promise.resolve();
 			}
 
@@ -1544,7 +1634,7 @@
 					message: promptParts.join( ' ' ),
 					case_profile: pinnedProfile,
 					state: pinnedState,
-					conversation: session.conversation || []
+					conversation: conversationForApi( session.conversation || [] )
 				} )
 			} )
 				.then( function ( res ) {
@@ -1610,6 +1700,16 @@
 			}
 
 			busy = true;
+
+			var stageCompleteLabel = defaultLabel || completeStageButtonLabel( session.actions || {} );
+			recordStageCompleteUserTurn( stageCompleteLabel );
+			saveSession(
+				session.conversation_id,
+				session.case_profile,
+				session.conversation,
+				session.state,
+				session.actions
+			);
 
 			var guidanceBubble = addBubble(
 				'agent',
@@ -1695,7 +1795,7 @@
 						guidanceBubble.remove();
 					}
 
-					if ( CONFIG.useAi && data.advanced && ! ( data.ai_used && guidanceText ) ) {
+					if ( CONFIG.useAi && data.advanced && ! guidanceText ) {
 						guidancePromise = fetchStageGuidanceAfterComplete( data );
 					}
 
@@ -1793,7 +1893,7 @@
 
 			if ( CONFIG.useAi ) {
 				payload.state = session.state && Object.keys( session.state ).length ? session.state : { case_profile: session.case_profile || {} };
-				payload.conversation = session.conversation || [];
+				payload.conversation = conversationForApi( session.conversation || [] );
 			}
 
 			fetch( CONFIG.restUrl, {
@@ -1814,7 +1914,9 @@
 					var result = data.result && typeof data.result === 'object' ? data.result : data;
 
 					session.conversation_id = data.conversation_id || result.conversation_id || session.conversation_id;
-					session.case_profile = data.case_profile || result.case_profile || session.case_profile || {};
+					session.case_profile = preserveCaseProfileProgress(
+						data.case_profile || result.case_profile || session.case_profile || {}
+					);
 
 					if ( result.case_memory ) {
 						session.case_profile.case_memory = result.case_memory;

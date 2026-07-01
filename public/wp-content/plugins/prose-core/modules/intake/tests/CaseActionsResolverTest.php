@@ -166,7 +166,7 @@ class CaseActionsResolverTest extends TestCase {
 	}
 
 	/**
-	 * Adoption workflow unlocks blank forms once the workflow is routed.
+	 * Adoption workflow unlocks blank forms once the workflow is routed and type is known.
 	 */
 	public function test_adoption_download_available_after_workflow_routed(): void {
 		$resolver = new Case_Actions_Resolver();
@@ -174,6 +174,9 @@ class CaseActionsResolverTest extends TestCase {
 			array(
 				'workflow' => 'adoption_nyc',
 				'issue'    => 'adoption',
+				'facts'    => array(
+					'adoption_type' => 'agency',
+				),
 				'progress' => 10,
 			),
 			array(
@@ -220,26 +223,33 @@ class CaseActionsResolverTest extends TestCase {
 	}
 
 	/**
-	 * Stored procedural node selects the matching stage forms.
+	 * Stored procedural node selects the matching stage forms after user-confirmed progression.
 	 */
 	public function test_procedural_node_selects_service_stage_forms(): void {
 		$resolver = new Case_Actions_Resolver();
 		$actions  = $resolver->resolve(
 			array(
-				'workflow'        => 'uncontested_divorce_children_nyc',
-				'procedural_node' => 'NODE_1002_SERVICE_COMPLETE',
-				'facts'           => array(
+				'workflow'            => 'uncontested_divorce_children_nyc',
+				'procedural_node'     => 'NODE_1002_SERVICE_COMPLETE',
+				'completed_documents' => array(
+					array(
+						'stage_id'    => 'commencement',
+						'stage_title' => 'Starting the Case',
+						'form_codes'  => array( 'UD-1', 'UD-2' ),
+					),
+				),
+				'facts'               => array(
 					'county'        => 'Queens',
 					'spouse_agrees' => true,
 					'children'      => true,
 					'child_count'   => 1,
 				),
-				'progress' => 40,
+				'progress'            => 40,
 			)
 		);
 
 		$this->assertSame( 'service', $actions['stage_context']['current_stage']['id'] ?? '' );
-		$codes = array_column( $actions['stage_context']['stage_forms'] ?? array(), 'code' );
+		$codes = $this->stage_form_codes( $actions['stage_context'] ?? array() );
 		$this->assertContains( 'UD-3', $codes );
 		$this->assertNotContains( 'UD-1', $codes );
 	}
@@ -268,6 +278,48 @@ class CaseActionsResolverTest extends TestCase {
 		$labels = array_column( $actions['summary'] ?? array(), 'label' );
 
 		$this->assertContains( 'Current stage', $labels );
-		$this->assertContains( 'Forms for this step', $labels );
+		$this->assertTrue(
+			in_array( 'Forms for this step', $labels, true )
+			|| $this->has_alternate_path_summary_row( $labels ),
+			'Commencement exposes either a flat form row or alternate filing options.'
+		);
+	}
+
+	/**
+	 * Collect visible form codes from stage context rows.
+	 *
+	 * @param array<string, mixed> $stage_context Stage context.
+	 * @return string[]
+	 */
+	private function stage_form_codes( array $stage_context ): array {
+		$codes = array_column( (array) ( $stage_context['stage_forms'] ?? array() ), 'code' );
+
+		foreach ( (array) ( $stage_context['form_groups'] ?? array() ) as $group ) {
+			if ( ! is_array( $group ) ) {
+				continue;
+			}
+
+			foreach ( (array) ( $group['forms'] ?? array() ) as $form ) {
+				if ( is_array( $form ) && ! empty( $form['code'] ) ) {
+					$codes[] = (string) $form['code'];
+				}
+			}
+		}
+
+		return array_values( array_filter( array_unique( $codes ) ) );
+	}
+
+	/**
+	 * @param string[] $labels Summary row labels.
+	 * @return bool
+	 */
+	private function has_alternate_path_summary_row( array $labels ): bool {
+		foreach ( $labels as $label ) {
+			if ( str_contains( $label, 'Option ' ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }

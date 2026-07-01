@@ -8,6 +8,7 @@
 use PHPUnit\Framework\TestCase;
 use ProSe\Core\Ai_Intake\AI_Settings;
 use ProSe\Core\Ai_Intake\Stage_Transition_Guidance_Service;
+use ProSe\Core\Ai_Intake\Stub_Ai_Provider;
 use ProSe\Core\Routing\Workflow_Catalog;
 
 /**
@@ -20,23 +21,27 @@ class StageTransitionGuidanceServiceTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		Workflow_Catalog::reset_cache();
+		AI_Settings::clear_cache();
+		$GLOBALS['prose_test_options'] = array();
 	}
 
 	/**
 	 * Builds a structured payload and returns AI guidance for the new stage.
 	 */
 	public function test_generates_guidance_from_completion_result(): void {
-		$settings = new class() extends AI_Settings {
-			public function get( string $key, $default = null ) {
-				if ( 'api_key' === $key ) {
-					return 'sk-test-key';
-				}
+		$settings = new AI_Settings();
+		$settings->update( array( 'api_key' => 'sk-test-key' ) );
 
-				return parent::get( $key, $default );
-			}
-		};
-
-		$service = new Stage_Transition_Guidance_Service( $settings );
+		$service = new Stage_Transition_Guidance_Service(
+			$settings,
+			null,
+			null,
+			null,
+			null,
+			null,
+			null,
+			new Stub_Ai_Provider()
+		);
 		$result  = $service->generate(
 			array(
 				'advanced'        => true,
@@ -94,18 +99,9 @@ class StageTransitionGuidanceServiceTest extends TestCase {
 	 * Falls back to the deterministic message when AI is unavailable.
 	 */
 	public function test_falls_back_without_api_key(): void {
-		$settings = new class() extends AI_Settings {
-			public function get( string $key, $default = null ) {
-				if ( 'api_key' === $key ) {
-					return '';
-				}
-
-				return parent::get( $key, $default );
-			}
-		};
-
-		$service = new Stage_Transition_Guidance_Service( $settings );
-		$result  = $service->generate(
+		$settings = new AI_Settings();
+		$service  = new Stage_Transition_Guidance_Service( $settings );
+		$result   = $service->generate(
 			array(
 				'message'       => 'Deterministic fallback message.',
 				'stage_context' => array(
@@ -119,6 +115,7 @@ class StageTransitionGuidanceServiceTest extends TestCase {
 
 		$this->assertFalse( $result['ai_used'] );
 		$this->assertNotEmpty( $result['guidance'] );
-		$this->assertStringContainsString( 'Before continuing', $result['guidance'] );
+		$this->assertStringContainsString( 'Service of Process', $result['guidance'] );
+		$this->assertStringContainsString( 'informational guidance only', $result['guidance'] );
 	}
 }

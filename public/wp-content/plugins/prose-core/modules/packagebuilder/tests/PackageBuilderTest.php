@@ -182,7 +182,7 @@ class PackageBuilderTest extends TestCase {
 		}
 
 		$this->assertIsArray( $current );
-		$codes = array_column( (array) ( $current['forms'] ?? array() ), 'code' );
+		$codes = $this->preview_stage_form_codes( $current );
 		$this->assertContains( 'UD-3', $codes );
 		$this->assertNotContains( 'UD-1', $codes );
 
@@ -282,6 +282,42 @@ class PackageBuilderTest extends TestCase {
 		$zip->close();
 
 		@unlink( $tmp_asset );
+	}
+
+	/**
+	 * Collect form codes from a preview stage row.
+	 *
+	 * @param array<string, mixed> $stage Preview stage row.
+	 * @return string[]
+	 */
+	private function preview_stage_form_codes( array $stage ): array {
+		$codes = array_column( (array) ( $stage['forms'] ?? array() ), 'code' );
+
+		foreach ( (array) ( $stage['form_groups'] ?? array() ) as $group ) {
+			if ( ! is_array( $group ) ) {
+				continue;
+			}
+
+			foreach ( (array) ( $group['forms'] ?? array() ) as $form ) {
+				if ( is_array( $form ) && ! empty( $form['code'] ) ) {
+					$codes[] = (string) $form['code'];
+				}
+			}
+		}
+
+		foreach ( (array) ( $stage['form_paths'] ?? array() ) as $path ) {
+			if ( ! is_array( $path ) ) {
+				continue;
+			}
+
+			foreach ( (array) ( $path['forms'] ?? array() ) as $form ) {
+				if ( is_array( $form ) && ! empty( $form['code'] ) ) {
+					$codes[] = (string) $form['code'];
+				}
+			}
+		}
+
+		return array_values( array_filter( array_unique( $codes ) ) );
 	}
 }
 

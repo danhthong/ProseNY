@@ -150,6 +150,13 @@ final class AI_Intake_Interpreter {
 	private Procedural_State_Inferrer $procedural_state;
 
 	/**
+	 * Case profile snapshot at the start of interpret() — preserves stage progress.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private array $pinned_case_profile = array();
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Ai_Provider_Interface|null      $provider         Provider override.
@@ -224,6 +231,7 @@ final class AI_Intake_Interpreter {
 
 		$case_profile    = is_array( $state['case_profile'] ?? null ) ? $state['case_profile'] : array();
 		$procedural_node = trim( (string) ( $case_profile['procedural_node'] ?? '' ) );
+		$this->pinned_case_profile = $case_profile;
 
 		if ( ! empty( $state['stage_guidance_only'] ) ) {
 			return $this->build_stage_guidance_result( $intake, $case_profile, $state );
@@ -358,10 +366,47 @@ final class AI_Intake_Interpreter {
 		$missing_ai     = $missing_payload_pre['conversation'];
 		$completion_pre = (int) $missing_payload_pre['completion'];
 		$workflow_state_pre = $this->resolve_workflow_state( $intake, $procedural_node, $case_profile );
-		$procedural_node    = (string) ( $workflow_state_pre['procedural_node'] ?? $procedural_node );
+		$procedural_node    = $this->prefer_pinned_procedural_node(
+			$case_profile,
+			(string) ( $workflow_state_pre['procedural_node'] ?? $procedural_node )
+		);
+
+		if ( is_array( $workflow_state_pre ) ) {
+			$workflow_state_pre['procedural_node'] = $procedural_node;
+		}
+
 		$stage_pre    = $this->stage_context( $workflow_pre, $intake, ! empty( $workflow_state_pre['intake_complete'] ), $procedural_node, $case_profile );
 		$brief_pre    = $this->resolve_filing_brief( $workflow_pre, $intake, $stage_pre );
 		$brief_sent   = ! empty( $state['case_profile']['guidance_brief_delivered'] );
+
+		if ( $this->is_conversational_closing_message( $message ) ) {
+			$case_memory_pre = Case_Memory::build(
+				$intake,
+				$missing_payload_pre,
+				$stage_pre
+			);
+
+			return $this->build_result(
+				$intake,
+				array(),
+				$missing_pre,
+				$this->consistency->check( $intake ),
+				array(),
+				null !== $workflow_pre && '' !== $workflow_pre ? 'guidance' : 'gathering',
+				'guidance',
+				$this->build_closing_acknowledgment_reply(),
+				1.0,
+				false,
+				$completion_pre,
+				'',
+				array_merge(
+					$case_profile,
+					array(
+						'case_memory' => $case_memory_pre,
+					)
+				)
+			);
+		}
 
 		$case_memory_pre = Case_Memory::build(
 			$intake,
@@ -421,7 +466,9 @@ final class AI_Intake_Interpreter {
 				'filing_guidance_brief' => $brief_pre,
 				'guidance_brief_sent'   => $brief_sent,
 				'procedural_roadmap'    => $roadmap_pre,
-				'reference_knowledge'   => $this->knowledge_context->for_message( $message, $workflow_pre, null ),
+				'reference_knowledge'   => $this->is_conversational_closing_message( $message )
+					? array()
+					: $this->knowledge_context->for_message( $message, $workflow_pre, null ),
 				'user_context'          => $user_context,
 				'gathering_hints'       => array(
 					'bullets' => \ProSe\Core\Routing\Routing_Discriminator_Catalog::gathering_bullets( $missing_ai ),
@@ -449,7 +496,15 @@ final class AI_Intake_Interpreter {
 		$workflow     = $intake->workflow();
 		$has_workflow = null !== $workflow && '' !== $workflow;
 		$workflow_state = $this->resolve_workflow_state( $intake, $procedural_node, $case_profile );
-		$procedural_node = (string) ( $workflow_state['procedural_node'] ?? $procedural_node );
+		$procedural_node = $this->prefer_pinned_procedural_node(
+			$case_profile,
+			(string) ( $workflow_state['procedural_node'] ?? $procedural_node )
+		);
+
+		if ( is_array( $workflow_state ) ) {
+			$workflow_state['procedural_node'] = $procedural_node;
+		}
+
 		$stage_ctx    = $this->stage_context( $workflow, $intake, ! empty( $workflow_state['intake_complete'] ), $procedural_node, $case_profile );
 		$filing_brief = $this->resolve_filing_brief( $workflow, $intake, $stage_ctx );
 		$brief_extra  = array();
@@ -1301,6 +1356,8 @@ final class AI_Intake_Interpreter {
 			$missing
 		);
 
+		$case_profile_extra = $this->preserve_case_profile_progress( $case_profile_extra );
+
 		return array(
 			'intent'               => $intent,
 			'fact_updates'         => $applied,
@@ -1673,6 +1730,10 @@ final class AI_Intake_Interpreter {
 			return $reply;
 		}
 
+		if ( $this->is_conversational_closing_message( $message ) ) {
+			return $reply;
+		}
+
 		if ( $this->message_asks_current_stage_forms( $message ) ) {
 			return $reply;
 		}
@@ -1953,6 +2014,115 @@ final class AI_Intake_Interpreter {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Keep user-confirmed procedural progress across conversational turns.
+	 *
+	 * @param array<string, mixed> $extra Mutable case profile extras for build_result().
+	 * @return array<string, mixed>
+	 */
+	private function preserve_case_profile_progress( array $extra ): array {
+		$pinned = $this->pinned_case_profile;
+
+		if ( empty( $pinned ) ) {
+			return $extra;
+		}
+
+		if ( ! empty( $pinned['completed_documents'] ) && is_array( $pinned['completed_documents'] ) ) {
+			$extra['completed_documents'] = $pinned['completed_documents'];
+		}
+
+		foreach ( array( 'roadmap', 'roadmap_fingerprint', 'guidance_brief_delivered' ) as $key ) {
+			if ( array_key_exists( $key, $pinned ) && null !== $pinned[ $key ] && '' !== $pinned[ $key ] ) {
+				$extra[ $key ] = $pinned[ $key ];
+			}
+		}
+
+		$pinned_node = trim( (string) ( $pinned['procedural_node'] ?? '' ) );
+
+		if ( '' !== $pinned_node ) {
+			$extra['procedural_node'] = $pinned_node;
+		}
+
+		if ( is_array( $pinned['workflow_state'] ?? null ) && ! empty( $pinned['workflow_state'] ) ) {
+			$workflow_state = $pinned['workflow_state'];
+
+			if ( '' !== $pinned_node ) {
+				$workflow_state['procedural_node'] = $pinned_node;
+			}
+
+			$extra['workflow_state'] = $workflow_state;
+		}
+
+		return $extra;
+	}
+
+	/**
+	 * Prefer the stored procedural node when the user has confirmed stage completions.
+	 *
+	 * @param array<string, mixed> $case_profile   Incoming case profile.
+	 * @param string               $resolved_node  Node from workflow state resolver.
+	 * @return string
+	 */
+	private function prefer_pinned_procedural_node( array $case_profile, string $resolved_node ): string {
+		$pinned_node = trim( (string) ( $case_profile['procedural_node'] ?? '' ) );
+
+		if ( '' === $pinned_node ) {
+			return $resolved_node;
+		}
+
+		if ( Completed_Stage_Document_Store::completed_stage_count( $case_profile ) > 0 ) {
+			return $pinned_node;
+		}
+
+		return $resolved_node;
+	}
+
+	/**
+	 * @param string $message User message.
+	 * @return bool
+	 */
+	private function is_conversational_closing_message( string $message ): bool {
+		$text = strtolower( trim( $message ) );
+
+		if ( '' === $text || strlen( $text ) > 80 || str_contains( $text, '?' ) ) {
+			return false;
+		}
+
+		if ( $this->message_requests_guidance( $message ) ) {
+			return false;
+		}
+
+		$normalized = trim( preg_replace( '/[^\p{L}\p{N}\s\']/u', '', $text ) ?? $text );
+
+		$patterns = array(
+			'/^(okay|ok|okey)( thank(?:s| you)( so much)?)?[!.]*$/',
+			'/^thank(?:s| you)( so much)?[!.]*$/',
+			'/^(got it|sounds good|perfect|great|awesome|cool|alright|all right)[!.]*$/',
+			'/^thank(?:s| you),? (okay|ok|got it|sounds good|perfect)[!.]*$/',
+			'/^(okay|ok),? thank(?:s| you)[!.]*$/',
+		);
+
+		foreach ( $patterns as $pattern ) {
+			if ( preg_match( $pattern, $normalized ) ) {
+				return true;
+			}
+		}
+
+		if ( preg_match( '/\b(thank you|thanks)\b/', $normalized )
+			&& ! preg_match( '/\b(what|how|which|when|where|why|can you|do i|need to|should i)\b/', $normalized ) ) {
+			return strlen( $normalized ) <= 48;
+		}
+
+		return false;
+	}
+
+	/**
+	 * @return string
+	 */
+	private function build_closing_acknowledgment_reply(): string {
+		return __( 'You\'re welcome! If you have more questions about your case or any form, just ask.', 'prose-core' );
 	}
 
 	/**

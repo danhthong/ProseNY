@@ -232,6 +232,30 @@ if ( ! function_exists( 'current_time' ) ) {
 	}
 }
 
+if ( ! function_exists( 'wp_date' ) ) {
+	/**
+	 * @param string              $format    Date format.
+	 * @param int|false           $timestamp Timestamp.
+	 * @param \DateTimeZone|null  $timezone  Timezone.
+	 * @return string
+	 */
+	function wp_date( $format, $timestamp = null, $timezone = null ) {
+		unset( $timezone );
+
+		if ( null === $timestamp || false === $timestamp ) {
+			$timestamp = time();
+		}
+
+		$format = trim( (string) $format );
+
+		if ( '' === $format ) {
+			$format = 'Y-m-d H:i:s';
+		}
+
+		return gmdate( $format, (int) $timestamp );
+	}
+}
+
 if ( ! function_exists( 'wp_rand' ) ) {
 	/**
 	 * @param int $min Minimum.
