@@ -9,6 +9,7 @@ namespace ProSe\Core\Intake;
 
 use ProSe\Core\Ai_Intake\Stage_Transition_Guidance_Service;
 use ProSe\Core\Loader;
+use ProSe\Core\Users\Conversation_Persistence;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -68,23 +69,33 @@ final class Intake_Rest_Controller {
 	private Stage_Transition_Guidance_Service $stage_guidance;
 
 	/**
+	 * Conversation persistence for logged-in resume.
+	 *
+	 * @var Conversation_Persistence
+	 */
+	private Conversation_Persistence $conversation_persistence;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Intake_Agent|null                       $agent           Intake agent.
 	 * @param Case_Actions_Resolver|null              $actions         Case actions resolver.
 	 * @param Procedural_Stage_Completer|null         $stage_completer Stage completer.
 	 * @param Stage_Transition_Guidance_Service|null  $stage_guidance  Stage guidance service.
+	 * @param Conversation_Persistence|null           $conversation_persistence Conversation persistence.
 	 */
 	public function __construct(
 		?Intake_Agent $agent = null,
 		?Case_Actions_Resolver $actions = null,
 		?Procedural_Stage_Completer $stage_completer = null,
-		?Stage_Transition_Guidance_Service $stage_guidance = null
+		?Stage_Transition_Guidance_Service $stage_guidance = null,
+		?Conversation_Persistence $conversation_persistence = null
 	) {
-		$this->agent           = $agent ?? new Intake_Agent();
-		$this->actions         = $actions ?? new Case_Actions_Resolver();
-		$this->stage_completer = $stage_completer ?? new Procedural_Stage_Completer();
-		$this->stage_guidance  = $stage_guidance ?? new Stage_Transition_Guidance_Service();
+		$this->agent                    = $agent ?? new Intake_Agent();
+		$this->actions                  = $actions ?? new Case_Actions_Resolver();
+		$this->stage_completer          = $stage_completer ?? new Procedural_Stage_Completer();
+		$this->stage_guidance           = $stage_guidance ?? new Stage_Transition_Guidance_Service();
+		$this->conversation_persistence = $conversation_persistence ?? new Conversation_Persistence();
 	}
 
 	/**
@@ -157,6 +168,11 @@ final class Intake_Rest_Controller {
 						'required' => true,
 					),
 					'conversation_id' => array(
+						'type'              => 'string',
+						'required'          => false,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'user_turn_label' => array(
 						'type'              => 'string',
 						'required'          => false,
 						'sanitize_callback' => 'sanitize_text_field',
@@ -256,11 +272,73 @@ final class Intake_Rest_Controller {
 			}
 		}
 
+		$this->maybe_persist_stage_complete_turn( $request, $result );
+
 		return rest_ensure_response(
 			array_merge(
 				array( 'success' => true ),
 				$result
 			)
+		);
+	}
+
+	/**
+	 * Persist the stage-complete user turn and AI guidance for conversation resume.
+	 *
+	 * @param \WP_REST_Request     $request REST request.
+	 * @param array<string, mixed> $result  Stage completion result.
+	 * @return void
+	 */
+	private function maybe_persist_stage_complete_turn( \WP_REST_Request $request, array $result ): void {
+		if ( empty( $result['advanced'] ) ) {
+			return;
+		}
+
+		$conversation_id = trim( (string) $request->get_param( 'conversation_id' ) );
+
+		if ( '' === $conversation_id ) {
+			return;
+		}
+
+		$user_turn = trim( (string) $request->get_param( 'user_turn_label' ) );
+
+		if ( '' === $user_turn ) {
+			$next_title = trim( (string) ( $result['actions']['next_stage_title'] ?? '' ) );
+
+			if ( '' !== $next_title ) {
+				/* translators: %s: next procedural stage title. */
+				$user_turn = sprintf( __( 'I completed this step — continue to %s', 'prose-core' ), $next_title );
+			}
+		}
+
+		$assistant_reply = trim( (string) ( $result['ai_guidance'] ?? $result['message'] ?? '' ) );
+
+		if ( '' === $user_turn || '' === $assistant_reply ) {
+			return;
+		}
+
+		$case_profile = is_array( $result['case_profile'] ?? null ) ? $result['case_profile'] : array();
+		$actions      = is_array( $result['actions'] ?? null ) ? $result['actions'] : array();
+		$transcript   = is_array( $case_profile['stage_transition_transcript'] ?? null )
+			? $case_profile['stage_transition_transcript']
+			: array();
+
+		$transcript[] = array(
+			'user'      => $user_turn,
+			'assistant' => $assistant_reply,
+			'recorded_at' => gmdate( 'c' ),
+		);
+		$case_profile['stage_transition_transcript'] = $transcript;
+
+		$this->conversation_persistence->persist_intake_turn(
+			$conversation_id,
+			$user_turn,
+			$assistant_reply,
+			$case_profile,
+			array(
+				'case_profile' => $case_profile,
+			),
+			$actions
 		);
 	}
 }

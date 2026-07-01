@@ -183,6 +183,72 @@
 		var actionsPinned = false;
 		var resumePending = false;
 		var isDashboardConversation = !!conversationIdFromUrl();
+		var resumeIdFromBoot = conversationIdFromUrl();
+
+		if ( resumeIdFromBoot ) {
+			adoptResumeConversationId( resumeIdFromBoot );
+		}
+
+		/**
+		 * Keep one canonical conversation id across URL, session, and API payloads.
+		 *
+		 * @param {string} conversationId Public conversation UUID.
+		 * @return {void}
+		 */
+		function adoptResumeConversationId( conversationId ) {
+			conversationId = String( conversationId || '' ).trim();
+
+			if ( ! conversationId ) {
+				return;
+			}
+
+			session.conversation_id = conversationId;
+			session.case_profile = session.case_profile && typeof session.case_profile === 'object' ? session.case_profile : {};
+			session.case_profile.conversation_id = conversationId;
+			session.state = session.state && typeof session.state === 'object' ? session.state : {};
+			session.state.conversation_id = conversationId;
+			isDashboardConversation = true;
+		}
+
+		/**
+		 * Resolve the active conversation id for API calls.
+		 *
+		 * @return {string}
+		 */
+		function ensureSessionConversationId() {
+			var resumeId = conversationIdFromUrl();
+			var conversationId = resumeId || session.conversation_id || '';
+
+			if ( conversationId ) {
+				adoptResumeConversationId( conversationId );
+			}
+
+			return conversationId;
+		}
+
+		/**
+		 * Lock or unlock the widget while a dashboard conversation is restoring.
+		 *
+		 * @param {boolean} locked Whether restore is in progress.
+		 * @return {void}
+		 */
+		function setResumeLocked( locked ) {
+			resumePending = !!locked;
+			var disabled = resumePending || busy;
+
+			input.disabled = disabled;
+			sendBtn.disabled = disabled;
+
+			if ( uploadBtn ) {
+				uploadBtn.disabled = disabled;
+			}
+
+			if ( stageActionsEl ) {
+				stageActionsEl.querySelectorAll( 'button' ).forEach( function ( button ) {
+					button.disabled = disabled;
+				} );
+			}
+		}
 
 		/**
 		 * Read conversation_id from the URL for dashboard resume links.
@@ -204,12 +270,14 @@
 		 * @param {string} conversationId Public conversation UUID.
 		 * @return {Promise<void>}
 		 */
-		function restoreConversationFromServer( conversationId ) {
+		function restoreConversationFromServer( conversationId, localConversation ) {
 			if ( ! CONFIG.loggedIn || ! CONFIG.conversationRestUrl || ! conversationId ) {
 				return Promise.resolve();
 			}
 
-			resumePending = true;
+			adoptResumeConversationId( conversationId );
+			setResumeLocked( true );
+			localConversation = Array.isArray( localConversation ) ? localConversation : ( session.conversation || [] );
 
 			return fetch( CONFIG.conversationRestUrl + encodeURIComponent( conversationId ), {
 				method: 'GET',
@@ -226,12 +294,17 @@
 					return res.json();
 				} )
 				.then( function ( data ) {
-					session.conversation_id = data.conversation_id || conversationId;
+					adoptResumeConversationId( data.conversation_id || conversationId );
 					session.case_profile = data.case_profile && typeof data.case_profile === 'object' ? data.case_profile : {};
 					session.state = data.state && typeof data.state === 'object' ? data.state : {};
 					session.actions = data.actions && typeof data.actions === 'object' ? data.actions : {};
-					session.conversation = Array.isArray( data.conversation ) ? data.conversation : [];
-					isDashboardConversation = true;
+
+					var liveLocal = Array.isArray( session.conversation ) ? session.conversation.slice() : [];
+
+					session.conversation = mergeServerConversationWithLocalStageTurns(
+						Array.isArray( data.conversation ) ? data.conversation : [],
+						unionLocalConversations( localConversation, liveLocal )
+					);
 
 					saveSession(
 						session.conversation_id,
@@ -245,7 +318,7 @@
 					// Fall back to local session when restore fails.
 				} )
 				.finally( function () {
-					resumePending = false;
+					setResumeLocked( false );
 				} );
 		}
 
@@ -282,6 +355,24 @@
 		}
 
 		/**
+		 * Whether a stored turn is a stage-complete confirmation shown in the transcript.
+		 *
+		 * @param {Object} turn Conversation turn.
+		 * @return {boolean}
+		 */
+		function isStageCompleteUserTurn( turn ) {
+			if ( ! turn || 'user' !== turn.role ) {
+				return false;
+			}
+
+			if ( turn.source === 'stage_complete' || turn.local_only ) {
+				return true;
+			}
+
+			return /^I completed this step\b/i.test( String( turn.content || '' ) );
+		}
+
+		/**
 		 * Whether a stored turn is UI-only and must not be sent to the API.
 		 *
 		 * @param {Object} turn Conversation turn.
@@ -313,6 +404,133 @@
 
 				return true;
 			} );
+		}
+
+		/**
+		 * Union two local conversation snapshots without duplicate turns.
+		 *
+		 * @param {Array} snapshot Conversation captured at boot.
+		 * @param {Array} live     Conversation updated during restore.
+		 * @return {Array}
+		 */
+		function unionLocalConversations( snapshot, live ) {
+			var merged = Array.isArray( snapshot ) ? snapshot.slice() : [];
+
+			( live || [] ).forEach( function ( turn ) {
+				if ( ! turn || ! turn.content ) {
+					return;
+				}
+
+				var role = turn.role || '';
+				var content = String( turn.content || '' ).trim();
+
+				if ( ! content ) {
+					return;
+				}
+
+				var exists = merged.some( function ( existing ) {
+					return existing
+						&& ( existing.role || '' ) === role
+						&& String( existing.content || '' ).trim() === content;
+				} );
+
+				if ( ! exists ) {
+					merged.push( turn );
+				}
+			} );
+
+			return merged;
+		}
+
+		/**
+		 * Merge server conversation history with local stage-complete user turns.
+		 *
+		 * @param {Array} serverConversation Conversation from the server.
+		 * @param {Array} localConversation  Conversation from local storage.
+		 * @return {Array}
+		 */
+		function mergeServerConversationWithLocalStageTurns( serverConversation, localConversation ) {
+			var server = Array.isArray( serverConversation ) ? serverConversation.slice() : [];
+			var local = Array.isArray( localConversation ) ? localConversation : [];
+
+			if ( ! local.length ) {
+				return server;
+			}
+
+			var merged = server.slice();
+
+			local.forEach( function ( localTurn, index ) {
+				if ( ! isStageCompleteUserTurn( localTurn ) ) {
+					return;
+				}
+
+				var content = String( localTurn.content || '' ).trim();
+
+				if ( ! content ) {
+					return;
+				}
+
+				var exists = merged.some( function ( turn ) {
+					return 'user' === turn.role && String( turn.content || '' ).trim() === content;
+				} );
+
+				if ( exists ) {
+					return;
+				}
+
+				var insertAt = merged.length;
+				var anchor = '';
+				var assistantTurn = local[ index + 1 ] && 'assistant' === local[ index + 1 ].role ? local[ index + 1 ] : null;
+
+				if ( assistantTurn && assistantTurn.content ) {
+					anchor = String( assistantTurn.content ).substring( 0, 120 );
+				}
+
+				if ( anchor ) {
+					for ( var k = 0; k < merged.length; k++ ) {
+						if ( 'assistant' === merged[k].role && String( merged[k].content || '' ).indexOf( anchor.substring( 0, 40 ) ) !== -1 ) {
+							insertAt = k;
+							break;
+						}
+					}
+				}
+
+				merged.splice( insertAt, 0, {
+					role: 'user',
+					content: content,
+					source: 'stage_complete',
+					local_only: true
+				} );
+
+				if ( ! assistantTurn || ! assistantTurn.content ) {
+					return;
+				}
+
+				var assistantContent = String( assistantTurn.content ).trim();
+				var assistantExists = merged.some( function ( turn ) {
+					return 'assistant' === turn.role
+						&& String( turn.content || '' ).trim() === assistantContent;
+				} );
+
+				if ( assistantExists ) {
+					return;
+				}
+
+				var assistantInsertAt = insertAt + 1;
+
+				for ( var m = 0; m < merged.length; m++ ) {
+					if ( 'assistant' === merged[m].role && String( merged[m].content || '' ).indexOf( assistantContent.substring( 0, 40 ) ) !== -1 ) {
+						return;
+					}
+				}
+
+				merged.splice( assistantInsertAt, 0, {
+					role: 'assistant',
+					content: assistantContent
+				} );
+			} );
+
+			return merged;
 		}
 
 		/**
@@ -354,18 +572,6 @@
 
 			if ( pinnedDocs.length && pinnedDocs.length > mergedDocs.length ) {
 				merged.completed_documents = pinnedDocs;
-			}
-
-			if ( pinned.procedural_node && pinnedDocs.length ) {
-				merged.procedural_node = pinned.procedural_node;
-			}
-
-			if ( pinned.workflow_state && pinnedDocs.length ) {
-				merged.workflow_state = pinned.workflow_state;
-			}
-
-			if ( pinned.roadmap && pinnedDocs.length && ! merged.roadmap ) {
-				merged.roadmap = pinned.roadmap;
 			}
 
 			return merged;
@@ -1228,10 +1434,6 @@
 				context.conversation_summary = String( state.conversation_summary );
 			}
 
-			if ( profile.case_memory ) {
-				context.case_memory = profile.case_memory;
-			}
-
 			return context;
 		}
 
@@ -1520,7 +1722,7 @@
 				.then( function ( data ) {
 					if ( data && data.success && data.download_url ) {
 						openDownload( data.download_url );
-						// Downloading blank forms does not complete a procedural stage.
+						requestFormsDownloadedGuidance( workflow, formCodes || [] );
 						return;
 					}
 
@@ -1613,12 +1815,18 @@
 			);
 			guidanceBubble.classList.add( 'prose-intake__bubble--thinking' );
 
-			var pinnedProfile = Object.assign( {}, session.case_profile || {} );
+			var pinnedProfile = Object.assign( {}, stageData.case_profile || session.case_profile || {} );
 			var pinnedState = Object.assign( {}, session.state && typeof session.state === 'object' ? session.state : {} );
 
 			pinnedState.case_profile = pinnedProfile;
 			pinnedState.stage_guidance_only = true;
 			pinnedState.completed_stage = completedSlug;
+			pinnedState.ai_event = {
+				type: 'completion_confirmation',
+				completed_stage: completedSlug,
+				source: 'stage_complete_button'
+			};
+			delete pinnedState.case_memory;
 
 			if ( pinnedProfile.procedural_node ) {
 				pinnedState.procedural_node = pinnedProfile.procedural_node;
@@ -1695,11 +1903,12 @@
 		 * @return {Promise<void>}
 		 */
 		function completeCurrentStage( buttonEl, defaultLabel ) {
-			if ( ! CONFIG.completeStageUrl || busy ) {
+			if ( ! CONFIG.completeStageUrl || busy || resumePending ) {
 				return Promise.resolve();
 			}
 
 			busy = true;
+			var conversationId = ensureSessionConversationId();
 
 			var stageCompleteLabel = defaultLabel || completeStageButtonLabel( session.actions || {} );
 			recordStageCompleteUserTurn( stageCompleteLabel );
@@ -1730,8 +1939,9 @@
 				},
 				body: JSON.stringify( {
 					case_profile: buildCaseProfileForStageComplete(),
-					conversation_id: session.conversation_id || '',
-					intake_context: buildIntakeContextForStageComplete()
+					conversation_id: conversationId || session.conversation_id || '',
+					intake_context: buildIntakeContextForStageComplete(),
+					user_turn_label: stageCompleteLabel
 				} )
 			} )
 				.then( function ( res ) {
@@ -1862,6 +2072,38 @@
 		}
 
 		/**
+		 * Ask the AI to explain a successful forms download (downloaded ≠ filed).
+		 *
+		 * @param {string} workflow Workflow key.
+		 * @param {string[]} formCodes Downloaded form codes.
+		 */
+		function requestFormsDownloadedGuidance( workflow, formCodes ) {
+			if ( ! CONFIG.useAi || busy ) {
+				return;
+			}
+
+			session.state = session.state && typeof session.state === 'object' ? session.state : {};
+			session.state.ai_event = {
+				type: 'forms_downloaded',
+				workflow: workflow,
+				form_codes: Array.isArray( formCodes ) ? formCodes : [],
+				source: 'document_download'
+			};
+			saveSession(
+				session.conversation_id,
+				session.case_profile,
+				session.conversation,
+				session.state,
+				session.actions
+			);
+
+			send(
+				STRINGS.formsDownloadedPrompt || 'I downloaded the blank forms for this step.',
+				{ skipUserBubble: true }
+			);
+		}
+
+		/**
 		 * Send a message to the intake endpoint.
 		 *
 		 * @param {string} message User message.
@@ -1870,7 +2112,7 @@
 		function send( message, options ) {
 			options = options || {};
 
-			if ( busy || ! message ) {
+			if ( busy || resumePending || ! message ) {
 				return;
 			}
 			busy = true;
@@ -1890,9 +2132,19 @@
 				message: message,
 				case_profile: session.case_profile || {}
 			};
+			var conversationId = ensureSessionConversationId();
+
+			if ( conversationId ) {
+				payload.case_profile.conversation_id = conversationId;
+			}
 
 			if ( CONFIG.useAi ) {
 				payload.state = session.state && Object.keys( session.state ).length ? session.state : { case_profile: session.case_profile || {} };
+
+				if ( conversationId ) {
+					payload.state.conversation_id = conversationId;
+				}
+
 				payload.conversation = conversationForApi( session.conversation || [] );
 			}
 
@@ -1913,7 +2165,8 @@
 				.then( function ( data ) {
 					var result = data.result && typeof data.result === 'object' ? data.result : data;
 
-					session.conversation_id = data.conversation_id || result.conversation_id || session.conversation_id;
+					session.conversation_id = data.conversation_id || result.conversation_id || session.conversation_id || conversationId;
+					adoptResumeConversationId( conversationIdFromUrl() || session.conversation_id );
 					session.case_profile = preserveCaseProfileProgress(
 						data.case_profile || result.case_profile || session.case_profile || {}
 					);
@@ -1925,6 +2178,11 @@
 					}
 
 					session.state = result.state || data.state || session.state || {};
+
+					if ( session.state && session.state.ai_event ) {
+						delete session.state.ai_event;
+					}
+
 					syncWorkflowFromResponse( data, result );
 
 					var completion = data.completion != null ? data.completion : ( result.completion || 0 );
@@ -2211,12 +2469,18 @@
 
 		var resumeId = conversationIdFromUrl();
 		var bootPromise = Promise.resolve();
+		var localConversation = Array.isArray( session.conversation ) ? session.conversation.slice() : [];
 
-		if ( resumeId && ( ! session.conversation_id || session.conversation_id !== resumeId ) ) {
-			bootPromise = restoreConversationFromServer( resumeId );
+		if ( resumeId ) {
+			bootPromise = restoreConversationFromServer( resumeId, localConversation );
+		}
+
+		if ( resumeId ) {
+			setResumeLocked( true );
 		}
 
 		bootPromise.finally( function () {
+			setResumeLocked( false );
 			renderSavedSession();
 		} );
 	}

@@ -36,7 +36,9 @@ final class Case_Memory {
 		array $missing_payload,
 		array $stage_context,
 		float $confidence = 0.0,
-		array $completed_forms = array()
+		array $completed_forms = array(),
+		array $workflow_state = array(),
+		array $workflow_assessment = array()
 	): array {
 		$resolved   = is_array( $missing_payload['resolved'] ?? null ) ? $missing_payload['resolved'] : array();
 		$workflow   = $state->workflow();
@@ -45,10 +47,25 @@ final class Case_Memory {
 			? $missing_payload['conversation']
 			: array();
 
-		$current_stage = is_array( $stage_context['current_stage'] ?? null )
-			? $stage_context['current_stage']
-			: null;
+		$canonical_stage = is_array( $workflow_state['current_stage'] ?? null )
+			? $workflow_state['current_stage']
+			: ( is_array( $stage_context['current_stage'] ?? null ) ? $stage_context['current_stage'] : null );
 		$next_stage    = self::resolve_next_stage( $stage_context );
+
+		if ( empty( $workflow_assessment ) ) {
+			$workflow_assessment = array(
+				'status'             => null !== $workflow && '' !== $workflow ? 'confirmed' : 'gathering',
+				'status_label'       => null !== $workflow && '' !== $workflow ? __( 'Confirmed', 'prose-core' ) : __( 'Gathering', 'prose-core' ),
+				'workflow'           => (string) ( $workflow ?? '' ),
+				'workflow_title'     => '',
+				'confidence'         => null !== $workflow && '' !== $workflow ? 1.0 : $confidence,
+				'confidence_percent' => null !== $workflow && '' !== $workflow ? 100 : (int) round( $confidence * 100 ),
+				'confirmed_facts'    => array(),
+				'outstanding'        => array(),
+				'candidate_workflows'=> is_array( $resolved['candidate_workflows'] ?? null ) ? $resolved['candidate_workflows'] : array(),
+				'reason'             => '',
+			);
+		}
 
 		return array(
 			'workflow'            => $workflow,
@@ -59,14 +76,16 @@ final class Case_Memory {
 			'missing_information' => $conversation_missing,
 			'internal_missing'    => self::compact_internal_missing( $all_missing, $workflow ),
 			'completed_forms'     => array_values( $completed_forms ),
-			'current_stage'       => $current_stage,
+			'current_stage'       => $canonical_stage,
 			'next_stage'          => $next_stage,
 			'completion'          => (int) ( $missing_payload['completion'] ?? 0 ),
-			'routing_status'      => null !== $workflow && '' !== $workflow ? 'resolved' : 'gathering',
-			'candidate_workflows' => is_array( $resolved['candidate_workflows'] ?? null )
-				? $resolved['candidate_workflows']
-				: array(),
-			'procedural_node'     => (string) ( $stage_context['procedural_node'] ?? '' ),
+			'routing_status'      => (string) ( $workflow_assessment['status'] ?? ( null !== $workflow && '' !== $workflow ? 'confirmed' : 'gathering' ) ),
+			'workflow_assessment' => $workflow_assessment,
+			'candidate_workflows' => is_array( $workflow_assessment['candidate_workflows'] ?? null )
+				? $workflow_assessment['candidate_workflows']
+				: ( is_array( $resolved['candidate_workflows'] ?? null ) ? $resolved['candidate_workflows'] : array() ),
+			'procedural_node'     => (string) ( $workflow_state['procedural_node'] ?? $stage_context['procedural_node'] ?? '' ),
+			'workflow_state'      => $workflow_state,
 		);
 	}
 

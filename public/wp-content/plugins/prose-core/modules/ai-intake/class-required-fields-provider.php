@@ -182,7 +182,38 @@ final class Required_Fields_Provider {
 			'routing_missing'     => $routing_missing,
 			'required_field_defs' => $required_defs,
 			'extraction_defs'     => $this->extraction_defs( $workflow, $routing_missing, $result->candidate_workflows() ),
+			'candidate_workflows' => $this->candidate_workflow_rows( $result->candidate_workflows() ),
+			'routing_confidence'  => (float) $result->confidence(),
+			'routing_status'      => null !== $workflow && '' !== $workflow ? 'confirmed' : 'gathering',
 		);
+	}
+
+	/**
+	 * @param string[] $keys Candidate workflow keys.
+	 * @return array<int, array<string, string>>
+	 */
+	private function candidate_workflow_rows( array $keys ): array {
+		$rows = array();
+
+		foreach ( $keys as $key ) {
+			$key = trim( (string) $key );
+
+			if ( '' === $key ) {
+				continue;
+			}
+
+			$definition = $this->catalog->by_key( $key );
+			$title      = is_array( $definition )
+				? trim( (string) ( $definition['description'] ?? $definition['title'] ?? $definition['name'] ?? '' ) )
+				: '';
+
+			$rows[] = array(
+				'workflow' => $key,
+				'title'    => '' !== $title ? $title : ucwords( str_replace( array( '_', '-' ), ' ', $key ) ),
+			);
+		}
+
+		return $rows;
 	}
 
 	/**

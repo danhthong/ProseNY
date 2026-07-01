@@ -27,9 +27,7 @@ final class Conversation_Engine {
 	 * Conversational role guidance appended to the system prompt.
 	 */
 	private const ROLE_GUIDANCE = <<<'TXT'
-You are an experienced New York legal intake specialist helping self-represented litigants. You converse like ChatGPT with legal expertise — warm, clear, and natural. You are NOT a form wizard and you NEVER read workflow JSON or iterate through required_fields.
-
-Conversation first. Reasoning first. Workflow second. Forms last.
+CASE_MANAGER_ROLE
 
 Every turn:
 1. Understand the user's intent and answer their question first when they ask one.
@@ -60,13 +58,7 @@ When procedural_navigator, stage_context, filing_guidance_brief, or reference_kn
 
 When workflow is resolved and missing_information is empty, explain the case type and next procedural step. Do not ask form-filling details in chat.
 
-Never give legal strategy or tell the user what outcome to pursue. Explain procedures neutrally.
-
 Quick-answer buttons in the UI are optional helpers for the user — your reply must stand alone; users may type naturally.
-
-Never use mandatory language ("you must", "you are required to", "the next step is").
-Never render roadmap step lists inside conversation_reply — the UI shows the roadmap card.
-Reply in plain conversational prose only (no JSON, no markdown) inside conversation_reply.
 
 Return ONLY valid JSON:
 {"fact_updates": {"field_key": {"value": <typed value>, "confidence": 0-1}}, "conversation_reply": "<your message>", "intent": "<short label>", "confidence": 0-1}
@@ -103,7 +95,25 @@ TXT;
 	 * @return string
 	 */
 	public static function role_guidance(): string {
-		return self::ROLE_GUIDANCE;
+		return str_replace(
+			'CASE_MANAGER_ROLE',
+			Case_Manager_Presenter::ROLE_INSTRUCTIONS,
+			self::ROLE_GUIDANCE
+		);
+	}
+
+	/**
+	 * Build system prompt with role and event-specific guidance.
+	 *
+	 * @param array{type?: string, meta?: array<string, mixed>} $event_context Event context.
+	 * @return string
+	 */
+	private function build_system_content( array $event_context ): string {
+		return $this->settings->system_prompt()
+			. "\n\n"
+			. self::role_guidance()
+			. "\n\n"
+			. Ai_Event_Context::system_block( $event_context );
 	}
 
 	/**
@@ -126,8 +136,11 @@ TXT;
 		$required_defs = is_array( $context['extraction_defs'] ?? null ) ? $context['extraction_defs'] : array();
 		$case_memory   = is_array( $context['case_memory'] ?? null ) ? $context['case_memory'] : array();
 
+		$event_context = Ai_Event_Context::normalize( $context['event_context'] ?? array() );
+
 		$payload = array(
 			'task'                 => 'converse',
+			'event_context'        => $event_context,
 			'latest_user_message'  => $message,
 			'conversation_summary' => (string) ( $context['summary'] ?? '' ),
 			'recent_messages'      => is_array( $context['recent'] ?? null ) ? $context['recent'] : array(),
@@ -201,7 +214,7 @@ TXT;
 		$messages = array(
 			array(
 				'role'    => 'system',
-				'content' => $this->settings->system_prompt() . "\n\n" . self::ROLE_GUIDANCE,
+				'content' => $this->build_system_content( $event_context ),
 			),
 			array(
 				'role'    => 'user',

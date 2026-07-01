@@ -39,6 +39,7 @@ final class Case_Lifecycle_Service {
 	public const STAGE_CLOSED           = 'closed';
 
 	public const EVENT_FORMS_GENERATED = 'forms_generated';
+	public const EVENT_USER_MARKED_COMPLETE = 'user_marked_complete';
 	public const EVENT_FILED           = 'filed';
 	public const EVENT_SERVED          = 'served';
 	public const EVENT_SPOUSE_ANSWERED = 'spouse_answered';
@@ -323,33 +324,7 @@ final class Case_Lifecycle_Service {
 	 * @return array<string, mixed>
 	 */
 	private function with_inferred_procedural_events( array $case_profile ): array {
-		$node = trim( (string) ( $case_profile['procedural_node'] ?? '' ) );
-
-		if ( '' === $node ) {
-			return $case_profile;
-		}
-
-		$inferred = array( self::EVENT_FORMS_GENERATED );
-
-		if ( in_array(
-			$node,
-			array(
-				Vocabulary::NODE_1002_SERVICE_COMPLETE,
-				Vocabulary::NODE_1003_ANSWER_FILED,
-			),
-			true
-		) ) {
-			$inferred[] = self::EVENT_FILED;
-		}
-
-		return $this->append_events_if_missing(
-			$case_profile,
-			$inferred,
-			array(
-				'procedural_node' => $node,
-				'inferred'        => true,
-			)
-		);
+		return $case_profile;
 	}
 
 	/**
@@ -472,11 +447,11 @@ final class Case_Lifecycle_Service {
 			return self::STAGE_SERVED;
 		}
 
-		if ( $this->has_event( $events, self::EVENT_FORMS_GENERATED ) || ( $intake_ok && $completion >= 100 ) ) {
-			return self::STAGE_FILED;
+		if ( $this->has_event( $events, self::EVENT_FORMS_GENERATED ) ) {
+			return self::STAGE_FORMS_READY;
 		}
 
-		if ( $intake_ok || $completion >= 100 ) {
+		if ( $intake_ok && $completion >= 100 ) {
 			return self::STAGE_FORMS_READY;
 		}
 

@@ -90,12 +90,8 @@ final class Workflow_State_Resolver {
 		$entry_node       = $this->entry_node( $workflow, $facts );
 		$sequence         = $this->progression->get_node_sequence( $workflow, $facts );
 		$effective_node   = $this->effective_node( $stored_node, $entry_node, $sequence, $intake_complete, $completed_stage_count );
-		$stage_slug       = $this->progression->get_current_stage( $workflow, $effective_node, $facts );
 		$stages           = $this->progression->get_stages( $workflow, $facts );
-
-		if ( null === $stage_slug || '' === $stage_slug ) {
-			$stage_slug = (string) ( $stages[0] ?? 'commencement' );
-		}
+		$stage_slug       = $this->resolve_current_stage_slug( $workflow, $effective_node, $facts, $completed_stage_count, $stages );
 
 		$guidance = $this->guidance->read_stage( $stage_slug );
 		$title    = trim( (string) ( $guidance['title'] ?? '' ) );
@@ -203,6 +199,53 @@ final class Workflow_State_Resolver {
 		}
 
 		return $stored_node;
+	}
+
+	/**
+	 * Resolve stage slug from procedural node and user-confirmed completions.
+	 *
+	 * When multiple UI stages share one node (e.g. calendar + judgment), completion
+	 * count selects the active stage so ChatGPT never receives a stale prior stage.
+	 *
+	 * @param string               $workflow              Workflow key.
+	 * @param string               $effective_node        Effective procedural node.
+	 * @param array<string, mixed> $facts                 Plain facts.
+	 * @param int                  $completed_stage_count Completed stage count.
+	 * @param string[]             $stages                Ordered stage slugs.
+	 * @return string
+	 */
+	private function resolve_current_stage_slug(
+		string $workflow,
+		string $effective_node,
+		array $facts,
+		int $completed_stage_count,
+		array $stages
+	): string {
+		$node_stage = $this->progression->get_current_stage( $workflow, $effective_node, $facts );
+
+		if ( empty( $stages ) ) {
+			return (string) ( $node_stage ?? 'commencement' );
+		}
+
+		if ( $completed_stage_count > 0 ) {
+			$index            = min( $completed_stage_count, count( $stages ) - 1 );
+			$completion_stage = (string) ( $stages[ $index ] ?? '' );
+
+			if ( '' !== $completion_stage ) {
+				$node_index         = false !== $node_stage ? array_search( $node_stage, $stages, true ) : false;
+				$completion_index   = array_search( $completion_stage, $stages, true );
+
+				if ( false === $node_index || ( false !== $completion_index && $completion_index > $node_index ) ) {
+					return $completion_stage;
+				}
+			}
+		}
+
+		if ( null !== $node_stage && '' !== $node_stage ) {
+			return $node_stage;
+		}
+
+		return (string) ( $stages[0] ?? 'commencement' );
 	}
 
 	/**

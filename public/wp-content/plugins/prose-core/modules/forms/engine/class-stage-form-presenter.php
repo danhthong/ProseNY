@@ -176,10 +176,15 @@ final class Stage_Form_Presenter {
 		// fields (names, dates, income, etc.) are optional for download.
 
 		$current_node  = $this->resolve_current_node( $workflow, $input, $context );
-		$current_stage = $this->progression->get_current_stage( $workflow, $current_node, $context );
-		$stages        = $this->progression->get_stages( $workflow, $context );
+		$current_stage = sanitize_key( trim( (string) ( $input['current_stage'] ?? '' ) ) );
 
-		if ( null === $current_stage || '' === $current_stage ) {
+		if ( '' === $current_stage ) {
+			$current_stage = (string) ( $this->progression->get_current_stage( $workflow, $current_node, $context ) ?? '' );
+		}
+
+		$stages = $this->progression->get_stages( $workflow, $context );
+
+		if ( '' === $current_stage ) {
 			$current_stage = $stages[0] ?? 'commencement';
 		}
 

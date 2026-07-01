@@ -93,12 +93,42 @@ final class Routing_Discriminator_Catalog {
 	);
 
 	/**
+	 * Plain-language reasons for routing questions.
+	 *
+	 * @var array<string, string>
+	 */
+	private const WHY_REASONS = array(
+		'children'                  => 'Children under 21 affect which divorce forms and court procedures apply.',
+		'spouse_agrees'             => 'Whether your spouse agrees determines whether the case is uncontested or contested.',
+		'marital_property_resolved' => 'Unresolved property or support issues can change which workflow and forms you need.',
+		'spouse_responded'          => 'Whether your spouse responded affects the next procedural steps after service.',
+		'active_divorce'            => 'If papers were already filed, we continue from your current court stage instead of commencement.',
+		'protection_needed'         => 'Safety concerns may require a different court and protective-order workflow.',
+		'county'                    => 'Divorce cases are filed in the Supreme Court of the county with proper jurisdiction.',
+	);
+
+	/**
+	 * Short outstanding labels for assessments and dashboards.
+	 *
+	 * @var array<string, string>
+	 */
+	private const OUTSTANDING_LABELS = array(
+		'children'                  => 'children under 21',
+		'spouse_agrees'             => 'spouse agreement',
+		'marital_property_resolved' => 'property agreement',
+		'spouse_responded'          => 'spouse response',
+		'active_divorce'            => 'whether papers were filed',
+		'protection_needed'         => 'safety concerns',
+	);
+
+	/**
 	 * Keys that share one quick-answer group (aliases collapse to canonical key).
 	 *
 	 * @var array<string, string>
 	 */
 	private const CANONICAL_KEYS = array(
-		'has_minor_children' => 'children',
+		'has_minor_children'      => 'children',
+		'minor_children_involved' => 'children',
 	);
 
 	/**
@@ -115,6 +145,129 @@ final class Routing_Discriminator_Catalog {
 		}
 
 		return str_replace( '_', ' ', $key );
+	}
+
+	/**
+	 * Why a routing fact is needed — for explain-why intake prompts.
+	 *
+	 * @param string $key Field key.
+	 * @return string
+	 */
+	public static function why_for( string $key ): string {
+		$key = self::canonical_key( $key );
+
+		if ( isset( self::WHY_REASONS[ $key ] ) ) {
+			return self::WHY_REASONS[ $key ];
+		}
+
+		return __( 'This detail helps determine the correct court workflow for your situation.', 'prose-core' );
+	}
+
+	/**
+	 * Short label for an outstanding routing topic.
+	 *
+	 * @param string $key Field key.
+	 * @return string
+	 */
+	public static function outstanding_label( string $key ): string {
+		$key = self::canonical_key( $key );
+
+		if ( isset( self::OUTSTANDING_LABELS[ $key ] ) ) {
+			return self::OUTSTANDING_LABELS[ $key ];
+		}
+
+		return self::topic_for( $key );
+	}
+
+	/**
+	 * Acknowledgment line after a routing fact is confirmed.
+	 *
+	 * @param string $key   Field key.
+	 * @param mixed  $value Stored fact value.
+	 * @return string Empty when not a routing discriminator.
+	 */
+	public static function confirmed_acknowledgment( string $key, $value ): string {
+		$key = self::canonical_key( $key );
+
+		switch ( $key ) {
+			case 'children':
+				if ( false === $value || 0 === $value || '0' === $value ) {
+					return __( 'No children under 21 confirmed', 'prose-core' );
+				}
+
+				if ( true === $value || ( is_numeric( $value ) && (int) $value > 0 ) ) {
+					return __( 'Children under 21 confirmed', 'prose-core' );
+				}
+				break;
+
+			case 'spouse_agrees':
+				if ( true === $value ) {
+					return __( 'Spouse agrees to the divorce', 'prose-core' );
+				}
+
+				if ( false === $value ) {
+					return __( 'Spouse does not agree to the divorce', 'prose-core' );
+				}
+				break;
+
+			case 'marital_property_resolved':
+				if ( true === $value ) {
+					return __( 'Property and financial issues resolved', 'prose-core' );
+				}
+
+				if ( false === $value ) {
+					return __( 'Property or financial issues not yet resolved', 'prose-core' );
+				}
+				break;
+
+			case 'spouse_responded':
+				if ( true === $value ) {
+					return __( 'Spouse responded to the papers', 'prose-core' );
+				}
+
+				if ( false === $value ) {
+					return __( 'Spouse has not responded yet', 'prose-core' );
+				}
+				break;
+
+			case 'active_divorce':
+				if ( true === $value ) {
+					return __( 'Divorce papers already filed', 'prose-core' );
+				}
+
+				if ( false === $value ) {
+					return __( 'No divorce case filed yet', 'prose-core' );
+				}
+				break;
+
+			case 'protection_needed':
+				if ( true === $value ) {
+					return __( 'Protection concerns noted', 'prose-core' );
+				}
+
+				if ( false === $value ) {
+					return __( 'No protection order needed', 'prose-core' );
+				}
+				break;
+		}
+
+		return '';
+	}
+
+	/**
+	 * Canonical routing discriminator key.
+	 *
+	 * @param string $key Field key.
+	 * @return string
+	 */
+	public static function canonical_key( string $key ): string {
+		$key = trim( $key );
+
+		if ( '' === $key ) {
+			return '';
+		}
+
+		return (string) ( self::CANONICAL_KEYS[ $key ] ?? $key );
 	}
 
 	/**
@@ -255,19 +408,5 @@ final class Routing_Discriminator_Catalog {
 	 */
 	public static function quick_answer_groups( array $conversation_missing ): array {
 		return array();
-	}
-
-	/**
-	 * @param string $key Field key.
-	 * @return string
-	 */
-	private static function canonical_key( string $key ): string {
-		$key = trim( $key );
-
-		if ( '' === $key ) {
-			return '';
-		}
-
-		return (string) ( self::CANONICAL_KEYS[ $key ] ?? $key );
 	}
 }

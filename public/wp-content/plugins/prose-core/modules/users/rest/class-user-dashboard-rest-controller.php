@@ -13,7 +13,9 @@ use ProSe\Core\Guidance\Eligibility_Presenter;
 use ProSe\Core\Guidance\Filing_Guidance_Brief_Resolver;
 use ProSe\Core\Guidance\Procedural_Roadmap_Presenter;
 use ProSe\Core\Intake\Case_Lifecycle_Service;
+use ProSe\Core\Intake\Case_Stage_Integrity;
 use ProSe\Core\Intake\Completed_Stage_Document_Store;
+use ProSe\Core\Intake\Conversation_Restore_Enricher;
 use ProSe\Core\Intake\Rest\Courtflow_Session_Store;
 use ProSe\Core\Loader;
 use ProSe\Core\PackageBuilder\Merged_Blank_Pdf_Service;
@@ -233,19 +235,34 @@ final class User_Dashboard_Rest_Controller {
 		$conversation = array();
 
 		foreach ( $messages as $message ) {
-			$conversation[] = array(
+			$content = (string) ( $message['content'] ?? '' );
+			$entry   = array(
 				'role'    => 'user' === ( $message['role'] ?? '' ) ? 'user' : 'assistant',
-				'content' => (string) ( $message['content'] ?? '' ),
+				'content' => $content,
 			);
+
+			if ( 'user' === $entry['role'] && preg_match( '/^I completed this step\b/i', $content ) ) {
+				$entry['source'] = 'stage_complete';
+			}
+
+			$conversation[] = $entry;
 		}
+
+		$case_profile = is_array( $context['case_profile'] ?? null ) ? $context['case_profile'] : array();
+		$case_profile = ( new Case_Stage_Integrity() )->reconcile_case_profile( $case_profile, true );
+		$case_profile['conversation_id'] = (string) $row->session_id;
+		$conversation                    = ( new Conversation_Restore_Enricher() )->enrich( $conversation, $case_profile );
+		$state                           = is_array( $context['state'] ?? null ) ? $context['state'] : array();
+		$state['conversation_id']        = (string) $row->session_id;
+		$actions                         = is_array( $context['actions'] ?? null ) ? $context['actions'] : array();
 
 		return rest_ensure_response(
 			array(
 				'conversation_id' => (string) $row->session_id,
 				'title'           => (string) $row->title,
-				'case_profile'    => is_array( $context['case_profile'] ?? null ) ? $context['case_profile'] : array(),
-				'state'           => is_array( $context['state'] ?? null ) ? $context['state'] : array(),
-				'actions'         => is_array( $context['actions'] ?? null ) ? $context['actions'] : array(),
+				'case_profile'    => $case_profile,
+				'state'           => $state,
+				'actions'         => $actions,
 				'conversation'    => $conversation,
 				'messages'        => $messages,
 			)

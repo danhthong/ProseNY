@@ -187,7 +187,9 @@ final class Procedural_Stage_Completer {
 			Completed_Stage_Document_Store::completed_stage_count( $case_profile )
 		);
 		$case_profile                    = $this->refresh_roadmap( $case_profile, $next_context );
+		$case_profile                    = ( new Case_Stage_Integrity( $this->workflow_engine ) )->reconcile_case_profile( $case_profile, true );
 		$actions                         = $this->actions->resolve( $case_profile );
+		$next_context                    = is_array( $actions['stage_context'] ?? null ) ? $actions['stage_context'] : $next_context;
 
 		if ( '' !== trim( $session_id ) && is_user_logged_in() ) {
 			$this->persistence->update_session_context( $session_id, $case_profile, array(), $actions );
@@ -265,18 +267,13 @@ final class Procedural_Stage_Completer {
 	 * @return array<string, mixed>
 	 */
 	private function record_lifecycle_for_stage( array $case_profile, string $completed_stage, string $advanced_node ): array {
-		$to_add = array( Case_Lifecycle_Service::EVENT_FORMS_GENERATED );
-
-		if ( 'commencement' === $completed_stage || Vocabulary::NODE_1002_SERVICE_COMPLETE === $advanced_node ) {
-			$to_add[] = Case_Lifecycle_Service::EVENT_FILED;
-		}
-
 		$case_profile = $this->lifecycle->append_events_if_missing(
 			$case_profile,
-			$to_add,
+			array( Case_Lifecycle_Service::EVENT_USER_MARKED_COMPLETE ),
 			array(
 				'stage'           => $completed_stage,
 				'procedural_node' => $advanced_node,
+				'source'          => 'user',
 			)
 		);
 

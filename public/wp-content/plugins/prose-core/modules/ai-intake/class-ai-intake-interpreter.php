@@ -143,6 +143,20 @@ final class AI_Intake_Interpreter {
 	private Workflow_Engine $workflow_engine;
 
 	/**
+	 * Case manager presenter (snapshot, timeline, upcoming documents).
+	 *
+	 * @var Case_Manager_Presenter
+	 */
+	private Case_Manager_Presenter $case_manager;
+
+	/**
+	 * Canonical case context builder.
+	 *
+	 * @var Case_Context_Builder
+	 */
+	private Case_Context_Builder $case_context;
+
+	/**
 	 * Procedural state inferrer.
 	 *
 	 * @var Procedural_State_Inferrer
@@ -209,6 +223,8 @@ final class AI_Intake_Interpreter {
 		$this->knowledge_context = $knowledge_context ?? new Knowledge_Context_Provider();
 		$this->procedural_state  = new Procedural_State_Inferrer();
 		$this->workflow_engine   = $workflow_engine ?? new Workflow_Engine( null, null, $this->fields_provider );
+		$this->case_manager      = new Case_Manager_Presenter();
+		$this->case_context      = new Case_Context_Builder( $this->workflow_engine, $this->fields_provider );
 	}
 
 	/**
@@ -232,6 +248,7 @@ final class AI_Intake_Interpreter {
 		$case_profile    = is_array( $state['case_profile'] ?? null ) ? $state['case_profile'] : array();
 		$procedural_node = trim( (string) ( $case_profile['procedural_node'] ?? '' ) );
 		$this->pinned_case_profile = $case_profile;
+		$workflow_at_entry         = trim( (string) ( $intake->workflow() ?? $case_profile['workflow'] ?? '' ) );
 
 		if ( ! empty( $state['stage_guidance_only'] ) ) {
 			return $this->build_stage_guidance_result( $intake, $case_profile, $state );
@@ -446,6 +463,15 @@ final class AI_Intake_Interpreter {
 		// --- Single conversational OpenAI call: extract facts + write reply ---
 		$scope_note = isset( $state['scope_note'] ) && is_string( $state['scope_note'] ) ? trim( $state['scope_note'] ) : '';
 
+		$event_context = Ai_Event_Context::resolve(
+			array(
+				'state'             => $state,
+				'message'           => $message,
+				'workflow_at_entry' => $workflow_at_entry,
+				'workflow_now'      => (string) ( $workflow_pre ?? '' ),
+			)
+		);
+
 		$turn = $this->engine->converse(
 			$message,
 			$intake,
@@ -474,6 +500,7 @@ final class AI_Intake_Interpreter {
 					'bullets' => \ProSe\Core\Routing\Routing_Discriminator_Catalog::gathering_bullets( $missing_ai ),
 					'issue'   => (string) ( $intake->issue() ?? '' ),
 				),
+				'event_context'         => $event_context,
 			),
 			$this->provider,
 			$this->logger
@@ -572,13 +599,67 @@ final class AI_Intake_Interpreter {
 		}
 
 		$conversation_missing = $missing_payload['conversation'];
-		$case_memory          = Case_Memory::build(
-			$intake,
-			$missing_payload,
-			$stage_ctx,
-			$turn['raw_confidence']
+		$reply                = $this->reconcile_partial_intake_continuity( $reply, $applied, $conversation_missing, $workflow, $stage_ctx );
+
+		$stored_fingerprint = (string) ( $state['case_profile']['roadmap_fingerprint'] ?? '' );
+		$roadmap_resolution = $this->roadmap_presenter->resolve_with_change_detection(
+			$stored_fingerprint,
+			$this->roadmap_input(
+				$intake,
+				$workflow,
+				$missing,
+				$completion_pct,
+				$stage_ctx,
+				$this->procedural_navigator_context( $intake, $workflow ),
+				$missing_payload['resolved'] ?? $resolved
+			)
 		);
-		$pending_hint         = '';
+
+		$roadmap_extra = array(
+			'roadmap'             => $roadmap_resolution['roadmap'],
+			'roadmap_fingerprint' => (string) ( $roadmap_resolution['fingerprint'] ?? '' ),
+		);
+
+		$case_profile_for_summary = is_array( $state['case_profile'] ?? null ) ? $state['case_profile'] : array();
+		$roadmap_for_summary      = is_array( $roadmap_resolution['roadmap'] ?? null )
+			? $roadmap_resolution['roadmap']
+			: ( is_array( $case_profile_for_summary['roadmap'] ?? null ) ? $case_profile_for_summary['roadmap'] : $roadmap_snapshot );
+
+		$canonical_context = $this->case_context->build(
+			array(
+				'intake'           => $intake,
+				'case_profile'     => $case_profile_for_summary,
+				'missing_payload'  => $missing_payload,
+				'procedural_node'  => $procedural_node,
+				'roadmap'          => $roadmap_for_summary,
+				'completion'       => $completion_pct,
+				'raw_confidence'   => $turn['raw_confidence'],
+				'court'            => (string) ( $intake->court() ?? $case_profile_for_summary['court'] ?? '' ),
+				'issue'            => (string) ( $intake->issue() ?? $case_profile_for_summary['issue'] ?? '' ),
+			)
+		);
+
+		$case_memory       = is_array( $canonical_context['case_memory'] ?? null ) ? $canonical_context['case_memory'] : array();
+		$case_summary_final = is_array( $canonical_context['case_summary'] ?? null ) ? $canonical_context['case_summary'] : array();
+		$workflow_state    = is_array( $canonical_context['workflow_state'] ?? null ) ? $canonical_context['workflow_state'] : array();
+		$stage_ctx         = is_array( $canonical_context['stage_context'] ?? null ) ? $canonical_context['stage_context'] : $stage_ctx;
+
+		$reply = $this->case_manager->append_sections(
+			$reply,
+			array(
+				'message'              => $message,
+				'case_summary'         => $case_summary_final,
+				'case_memory'          => $case_memory,
+				'stage_context'        => $stage_ctx,
+				'workflow'             => (string) ( $workflow ?? '' ),
+				'facts'                => $intake->plain_facts(),
+				'raw_confidence'       => $turn['raw_confidence'],
+				'workflow_assessment'  => $canonical_context['workflow_assessment'] ?? array(),
+				'stage_transition'     => ! empty( $state['stage_guidance_turn'] ),
+			)
+		);
+
+		$pending_hint = '';
 
 		if ( ! $has_workflow && ! empty( $conversation_missing ) ) {
 			if ( count( $conversation_missing ) > 1 ) {
@@ -615,25 +696,6 @@ final class AI_Intake_Interpreter {
 			$intent      = 'gathering';
 			$next_action = 'ask_question';
 		}
-
-		$stored_fingerprint = (string) ( $state['case_profile']['roadmap_fingerprint'] ?? '' );
-		$roadmap_resolution = $this->roadmap_presenter->resolve_with_change_detection(
-			$stored_fingerprint,
-			$this->roadmap_input(
-				$intake,
-				$workflow,
-				$missing,
-				$completion_pct,
-				$stage_ctx,
-				$this->procedural_navigator_context( $intake, $workflow ),
-				$resolved
-			)
-		);
-
-		$roadmap_extra = array(
-			'roadmap'             => $roadmap_resolution['roadmap'],
-			'roadmap_fingerprint' => (string) ( $roadmap_resolution['fingerprint'] ?? '' ),
-		);
 
 		$result = $this->build_result(
 			$intake,
@@ -775,6 +837,13 @@ final class AI_Intake_Interpreter {
 	 * @return array<string, mixed>
 	 */
 	private function build_stage_guidance_result( Intake_State $intake, array $case_profile, array $state ): array {
+		if ( is_array( $state['case_profile'] ?? null ) && ! empty( $state['case_profile'] ) ) {
+			$case_profile = array_merge( $case_profile, $state['case_profile'] );
+		}
+
+		$integrity    = new \ProSe\Core\Intake\Case_Stage_Integrity( $this->workflow_engine );
+		$case_profile = $integrity->reconcile_case_profile( $case_profile, true );
+
 		$actions = ( new \ProSe\Core\Intake\Case_Actions_Resolver() )->resolve( $case_profile );
 		$intake_context = array(
 			'conversation_summary' => $intake->conversation_summary(),
@@ -784,11 +853,7 @@ final class AI_Intake_Interpreter {
 			$intake_context['conversation_tail'] = $state['conversation_tail'];
 		}
 
-		if ( is_array( $state['case_memory'] ?? null ) ) {
-			$intake_context['case_memory'] = $state['case_memory'];
-		}
-
-		$service = new Stage_Transition_Guidance_Service();
+		$service = new Stage_Transition_Guidance_Service( null, $this->logger, null, null, null, $this->workflow_engine );
 		$result  = $service->generate(
 			array(
 				'advanced'        => true,
@@ -797,6 +862,14 @@ final class AI_Intake_Interpreter {
 				'stage_context'   => is_array( $actions['stage_context'] ?? null ) ? $actions['stage_context'] : array(),
 				'actions'         => $actions,
 				'message'         => '',
+				'procedural_node' => (string) ( $case_profile['procedural_node'] ?? '' ),
+				'ai_event'        => Ai_Event_Context::build(
+					Ai_Event_Context::TYPE_COMPLETION_CONFIRMATION,
+					array(
+						'completed_stage' => sanitize_key( (string) ( $state['completed_stage'] ?? '' ) ),
+						'source'          => 'stage_guidance_only',
+					)
+				),
 			),
 			$intake_context
 		);
@@ -1272,6 +1345,81 @@ final class AI_Intake_Interpreter {
 		}
 
 		return $reply;
+	}
+
+	/**
+	 * Acknowledge newly confirmed facts and continue partial intake without restarting.
+	 *
+	 * @param string                                                            $reply                 Model reply.
+	 * @param array<string, array{value: mixed, confidence: float, confirmed?: bool}> $applied               Applied updates.
+	 * @param array<int, array<string, mixed>>                                  $conversation_missing  Remaining routing gaps.
+	 * @param string|null                                                       $workflow              Resolved workflow.
+	 * @param array<string, mixed>                                              $stage_ctx             Stage context.
+	 * @return string
+	 */
+	private function reconcile_partial_intake_continuity(
+		string $reply,
+		array $applied,
+		array $conversation_missing,
+		?string $workflow,
+		array $stage_ctx
+	): string {
+		if ( empty( $applied ) || ( null !== $workflow && '' !== $workflow ) ) {
+			return $reply;
+		}
+
+		$acks = array();
+
+		foreach ( $applied as $key => $update ) {
+			if ( ! is_array( $update ) ) {
+				continue;
+			}
+
+			$ack = Routing_Discriminator_Catalog::confirmed_acknowledgment( (string) $key, $update['value'] ?? null );
+
+			if ( '' !== $ack ) {
+				$acks[] = "\u{2713} " . $ack;
+			}
+		}
+
+		if ( empty( $acks ) ) {
+			return $reply;
+		}
+
+		$acks = array_values( array_unique( $acks ) );
+		$lead = __( 'Thank you.', 'prose-core' ) . "\n\n" . implode( "\n", $acks );
+
+		if ( ! empty( $conversation_missing ) ) {
+			$lead .= "\n\n" . __( 'I still need to understand:', 'prose-core' );
+
+			foreach ( Routing_Discriminator_Catalog::gathering_bullets( $conversation_missing ) as $bullet ) {
+				$lead .= "\n\n• " . $bullet;
+			}
+
+			$stage_title = trim( (string) ( $stage_ctx['current_stage']['title'] ?? '' ) );
+
+			if ( '' !== $stage_title ) {
+				/* translators: %s: procedural stage title. */
+				$lead .= "\n\n" . sprintf(
+					__( 'While we clarify those details, here is how the %s stage generally works in New York.', 'prose-core' ),
+					$stage_title
+				);
+			}
+		}
+
+		$reply = trim( $reply );
+
+		if ( '' === $reply ) {
+			return $lead;
+		}
+
+		foreach ( $acks as $ack ) {
+			if ( str_contains( $reply, substr( $ack, 2 ) ) ) {
+				return $reply;
+			}
+		}
+
+		return $lead . "\n\n" . $reply;
 	}
 
 	/**

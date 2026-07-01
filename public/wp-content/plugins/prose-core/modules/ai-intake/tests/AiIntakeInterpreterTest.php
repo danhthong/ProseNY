@@ -741,11 +741,6 @@ class AiIntakeInterpreterTest extends TestCase {
 						'stage_title' => 'Service of Process',
 						'form_codes'  => array( 'UD-3' ),
 					),
-					array(
-						'stage_id'    => 'calendar',
-						'stage_title' => 'Final Papers & Calendar',
-						'form_codes'  => array( 'UD-5' ),
-					),
 				),
 			),
 			'facts'        => array(
@@ -827,11 +822,6 @@ class AiIntakeInterpreterTest extends TestCase {
 						'stage_id'    => 'service',
 						'stage_title' => 'Service of Process',
 						'form_codes'  => array( 'UD-3' ),
-					),
-					array(
-						'stage_id'    => 'calendar',
-						'stage_title' => 'Final Papers & Calendar',
-						'form_codes'  => array( 'UD-5' ),
 					),
 				),
 			),

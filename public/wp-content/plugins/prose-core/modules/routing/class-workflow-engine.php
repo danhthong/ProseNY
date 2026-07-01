@@ -231,11 +231,13 @@ final class Workflow_Engine {
 
 		return $this->stages->present(
 			array(
-				'workflow'        => $workflow,
-				'facts'           => $facts,
-				'intake_complete' => (bool) ( $workflow_state['intake_complete'] ?? $intake_complete ),
-				'issue'           => (string) ( $facts['issue'] ?? 'divorce' ),
-				'current_node'    => (string) ( $workflow_state['procedural_node'] ?? $procedural_node ),
+				'workflow'              => $workflow,
+				'facts'                   => $facts,
+				'intake_complete'         => (bool) ( $workflow_state['intake_complete'] ?? $intake_complete ),
+				'issue'                   => (string) ( $facts['issue'] ?? 'divorce' ),
+				'current_node'            => (string) ( $workflow_state['procedural_node'] ?? $procedural_node ),
+				'current_stage'           => sanitize_key( (string) ( $workflow_state['current_stage']['id'] ?? '' ) ),
+				'completed_stage_count'   => max( 0, $completed_stage_count ),
 			)
 		);
 	}

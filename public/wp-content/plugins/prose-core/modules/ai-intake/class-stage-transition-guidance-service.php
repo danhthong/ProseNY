@@ -11,6 +11,7 @@ use ProSe\Core\Forms\Engine\Stage_Form_Group_Presenter;
 use ProSe\Core\Guidance\Filing_Guidance_Brief_Resolver;
 use ProSe\Core\Guidance\Guidance_Repository;
 use ProSe\Core\Intake\Case_Summary_Presenter;
+use ProSe\Core\Intake\Case_Stage_Integrity;
 use ProSe\Core\Intake\Completed_Stage_Document_Store;
 use ProSe\Core\Routing\Workflow_Catalog;
 use ProSe\Core\Routing\Workflow_Engine;
@@ -28,29 +29,29 @@ final class Stage_Transition_Guidance_Service {
 	 * Focused system instructions for post-stage-completion guidance.
 	 */
 	private const ROLE_GUIDANCE = <<<'TXT'
-The user just marked a procedural stage complete in CourtFlow. You are an experienced legal assistant guiding them through New York court procedure.
+CASE_MANAGER_ROLE
 
-The Workflow Engine has already advanced their case. Your job is to EDUCATE — explain the NEW current stage using the complete case_context JSON.
+The user just marked a procedural stage complete in CourtFlow. The Workflow Engine has already advanced their case.
 
 Rules:
 - Use ONLY the JSON context. Do not invent courts, forms, deadlines, fees, or legal strategy.
 - Treat case_context.case_memory, procedural.filing_guidance_brief, procedural.stage_guidance, and procedural.workflow_summary as authoritative.
-- Personalize every explanation: open with what you know about THIS case from known_facts / routing_facts / case_summary (e.g. uncontested, children, county, spouse agrees). Use natural phrasing, not a raw fact dump.
-- Explain the NEW current stage (transition.current_stage), not the stage they just finished — except to acknowledge completion briefly.
+- Explain the NEW current stage (transition.current_stage), not the stage they just finished — except to acknowledge completion briefly with a progress summary.
 - Cover in conversational prose (short paragraphs, blank lines between):
-  1) What this stage is and why it is necessary
-  2) What usually happens during this stage
-  3) Required documents — explain each form's purpose, not just list codes
-  4) Conditional documents — explain when they apply and why, using form_groups and pending_forms
-  5) What information the user should prepare
-  6) Common mistakes to avoid for this stage
-  7) What happens after this stage is completed (transition.next_stage / future_stages)
-  8) Whether additional intake information is still needed (case_memory.missing_information)
+  1) Personalized opening from known_facts / routing_facts
+  2) Why this stage matters (legal purpose in plain language)
+  3) What to expect during this stage
+  4) Required documents — explain each form's purpose, not just list codes
+  5) Conditional documents — when they apply and why
+  6) What information the user should prepare
+  7) Common mistakes to avoid for this stage
+  8) Clear next step action
+  9) What happens after this stage (transition.next_stage / future_stages)
+  10) Whether additional intake information is still needed — explain why if asking
 - Tell the user they can use Get Documents in Case Actions for blank forms.
-- Never use mandatory language ("you must", "you are required to").
-- No markdown headings or bullet characters in the guidance body — use plain paragraphs.
-- End the guidance with a brief informational disclaimer that this is procedural guidance, not legal advice.
+- End with a brief informational disclaimer that this is procedural guidance, not legal advice.
 - Do not ask intake questions or extract facts.
+- Do NOT include Case Snapshot, Stage Timeline, or Upcoming Documents — appended automatically.
 
 Also produce a dynamic "Next Stage Checklist" derived from the workflow, completed_documents, current stage forms, and known facts — NOT hardcoded generic items. Mark items the user has likely already done (completed stages/documents) as completed: true.
 
@@ -99,6 +100,11 @@ TXT;
 	private Case_Summary_Presenter $summary_presenter;
 
 	/**
+	 * @var Case_Manager_Presenter
+	 */
+	private Case_Manager_Presenter $case_manager;
+
+	/**
 	 * @var Ai_Provider_Interface|null
 	 */
 	private ?Ai_Provider_Interface $provider_override;
@@ -133,6 +139,7 @@ TXT;
 		$this->workflow_engine    = $workflow_engine ?? new Workflow_Engine();
 		$this->summary_presenter  = $summary_presenter ?? new Case_Summary_Presenter( $this->workflows );
 		$this->provider_override  = $provider;
+		$this->case_manager       = new Case_Manager_Presenter( $this->workflows );
 	}
 
 	/**
@@ -147,6 +154,34 @@ TXT;
 	}
 
 	/**
+	 * Reconcile workflow state before building the AI payload.
+	 *
+	 * @param array<string, mixed> $completion_result Stage completion result.
+	 * @param array<string, mixed> $intake_context    Session context.
+	 * @return array<string, mixed>
+	 */
+	private function prepare_completion_result( array $completion_result ): array {
+		$case_profile = is_array( $completion_result['case_profile'] ?? null ) ? $completion_result['case_profile'] : array();
+
+		if ( empty( $case_profile ) ) {
+			return $completion_result;
+		}
+
+		$integrity    = new Case_Stage_Integrity( $this->workflow_engine );
+		$case_profile = $integrity->reconcile_case_profile( $case_profile, true );
+
+		$completion_result['case_profile']    = $case_profile;
+		$completion_result['procedural_node'] = (string) ( $case_profile['procedural_node'] ?? '' );
+
+		$actions = ( new \ProSe\Core\Intake\Case_Actions_Resolver() )->resolve( $case_profile );
+
+		$completion_result['actions']       = $actions;
+		$completion_result['stage_context'] = is_array( $actions['stage_context'] ?? null ) ? $actions['stage_context'] : array();
+
+		return $completion_result;
+	}
+
+	/**
 	 * Generate next-stage guidance after procedural stage completion.
 	 *
 	 * @param array<string, mixed> $completion_result Output from Procedural_Stage_Completer.
@@ -154,7 +189,52 @@ TXT;
 	 * @return array{guidance: string, checklist: array<int, array<string, mixed>>, ai_used: bool}
 	 */
 	public function generate( array $completion_result, array $intake_context = array() ): array {
-		$payload = $this->build_payload( $completion_result, $intake_context );
+		unset( $intake_context['case_memory'] );
+
+		$completion_result = $this->prepare_completion_result( $completion_result );
+		$payload           = $this->build_payload( $completion_result, $intake_context );
+		$event_context     = $this->resolve_event_context( $completion_result, $intake_context );
+		$payload['event_context'] = $event_context;
+
+		$integrity  = new Case_Stage_Integrity( $this->workflow_engine );
+		$validation = $integrity->validate_stage_snapshot(
+			array(
+				'roadmap'         => is_array( $completion_result['case_profile']['roadmap'] ?? null )
+					? $completion_result['case_profile']['roadmap']
+					: array(),
+				'workflow_state'  => is_array( $completion_result['case_profile']['workflow_state'] ?? null )
+					? $completion_result['case_profile']['workflow_state']
+					: array(),
+				'case_memory'     => is_array( $payload['case_context']['case_memory'] ?? null )
+					? $payload['case_context']['case_memory']
+					: array(),
+				'stage_context'   => is_array( $completion_result['stage_context'] ?? null )
+					? $completion_result['stage_context']
+					: array(),
+				'transition'      => is_array( $payload['transition'] ?? null ) ? $payload['transition'] : array(),
+				'brief_stage'     => sanitize_key( (string) ( $payload['case_context']['brief_stage'] ?? '' ) ),
+			)
+		);
+
+		if ( ! $validation['valid'] ) {
+			$this->logger->log(
+				array(
+					'type'       => 'stage_integrity_error',
+					'latency_ms' => 0,
+					'prompt'     => array(
+						'mismatches'      => $validation['mismatches'],
+						'canonical_stage' => $validation['canonical_stage'],
+						'completion'      => array(
+							'completed_stage' => $completion_result['completed_stage'] ?? '',
+							'procedural_node' => $completion_result['case_profile']['procedural_node'] ?? '',
+						),
+					),
+					'response'   => '',
+				)
+			);
+
+			return $this->build_deterministic_guidance( $payload, $completion_result );
+		}
 
 		if ( empty( $payload['transition']['current_stage']['id'] ?? '' ) ) {
 			$fallback = trim( (string) ( $completion_result['message'] ?? '' ) );
@@ -175,7 +255,7 @@ TXT;
 			$messages = array(
 				array(
 					'role'    => 'system',
-					'content' => $this->settings->system_prompt() . "\n\n" . self::ROLE_GUIDANCE,
+					'content' => $this->build_system_content( $event_context ),
 				),
 				array(
 					'role'    => 'user',
@@ -222,7 +302,7 @@ TXT;
 			$checklist = is_array( $parsed['checklist'] ?? null ) ? $parsed['checklist'] : array();
 
 			return array(
-				'guidance'  => $this->format_guidance_response( $parsed ),
+				'guidance'  => $this->format_guidance_response( $parsed, $payload ),
 				'checklist' => $checklist,
 				'ai_used'   => true,
 			);
@@ -231,6 +311,103 @@ TXT;
 
 			return $this->build_deterministic_guidance( $payload, $completion_result );
 		}
+	}
+
+	/**
+	 * Rebuild stage-transition assistant guidance for conversation restore (no AI call).
+	 *
+	 * @param array<string, mixed> $case_profile      Current case profile snapshot.
+	 * @param int                  $transition_index  Zero-based completed stage index.
+	 * @return string
+	 */
+	public function restored_transition_guidance( array $case_profile, int $transition_index ): string {
+		$workflow = trim( (string) ( $case_profile['workflow'] ?? '' ) );
+
+		if ( '' === $workflow || $transition_index < 0 ) {
+			return '';
+		}
+
+		$facts         = is_array( $case_profile['facts'] ?? null ) ? $case_profile['facts'] : array();
+		$required_defs = $this->required_field_defs( $workflow );
+		$stages        = ( new \ProSe\Core\Forms\Engine\Workflow_Progression_Service() )->get_stages( $workflow, $facts );
+
+		if ( $transition_index >= count( $stages ) - 1 ) {
+			return '';
+		}
+
+		$completed_stage = sanitize_key( (string) $stages[ $transition_index ] );
+		$restored        = $this->profile_at_completed_count( $case_profile, $transition_index + 1, $stages );
+		$actions         = ( new \ProSe\Core\Intake\Case_Actions_Resolver() )->resolve( $restored );
+		$stage_context   = is_array( $actions['stage_context'] ?? null ) ? $actions['stage_context'] : array();
+
+		$completion_result = array(
+			'advanced'        => true,
+			'completed_stage' => $completed_stage,
+			'case_profile'    => $restored,
+			'stage_context'   => $stage_context,
+			'actions'         => $actions,
+		);
+
+		$completion_result = $this->prepare_completion_result( $completion_result );
+		$payload           = $this->build_payload( $completion_result, array() );
+		$result            = $this->build_deterministic_guidance( $payload, $completion_result );
+
+		return trim( (string) ( $result['guidance'] ?? '' ) );
+	}
+
+	/**
+	 * @param array<string, mixed> $case_profile     Case profile snapshot.
+	 * @param int                  $completed_count  Number of completed stages.
+	 * @param string[]             $stages           Ordered stage slugs.
+	 * @return array<string, mixed>
+	 */
+	private function profile_at_completed_count( array $case_profile, int $completed_count, array $stages ): array {
+		$allowed = array_flip( array_map( 'sanitize_key', array_slice( $stages, 0, max( 0, $completed_count ) ) ) );
+		$profile = $case_profile;
+
+		$profile['completed_documents'] = array_values(
+			array_filter(
+				Completed_Stage_Document_Store::entries_from_profile( $case_profile ),
+				static function ( $entry ) use ( $allowed ): bool {
+					if ( ! is_array( $entry ) ) {
+						return false;
+					}
+
+					$stage_id = sanitize_key( (string) ( $entry['stage_id'] ?? '' ) );
+
+					return '' !== $stage_id && isset( $allowed[ $stage_id ] );
+				}
+			)
+		);
+
+		$workflow     = trim( (string) ( $case_profile['workflow'] ?? '' ) );
+		$facts        = is_array( $case_profile['facts'] ?? null ) ? $case_profile['facts'] : array();
+		$required     = $this->required_field_defs( $workflow );
+		$stored_node  = trim( (string) ( $case_profile['procedural_node'] ?? '' ) );
+		$workflow_state = $this->workflow_engine->resolve_state(
+			$workflow,
+			$facts,
+			$stored_node,
+			$required,
+			$completed_count
+		);
+
+		$profile['procedural_node']  = (string) ( $workflow_state['procedural_node'] ?? $stored_node );
+		$profile['workflow_state']   = $workflow_state;
+		$profile['progress']       = (int) ( $case_profile['progress'] ?? 0 );
+
+		return ( new Case_Stage_Integrity( $this->workflow_engine ) )->reconcile_case_profile( $profile, true );
+	}
+
+	/**
+	 * @param string $workflow Workflow key.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function required_field_defs( string $workflow ): array {
+		$definition = $this->workflows->by_key( $workflow );
+		$fields     = is_array( $definition['required_fields'] ?? null ) ? $definition['required_fields'] : array();
+
+		return $fields;
 	}
 
 	/**
@@ -394,7 +571,8 @@ TXT;
 				array(
 					'guidance'  => implode( "\n\n", array_filter( $parts ) ),
 					'checklist' => $checklist,
-				)
+				),
+				$payload
 			),
 			'checklist' => $checklist,
 			'ai_used'   => false,
@@ -554,12 +732,9 @@ TXT;
 			$missing_payload,
 			$stage_context,
 			1.0,
-			$this->completed_form_codes( $case_profile )
+			$this->completed_form_codes( $case_profile ),
+			is_array( $workflow_state ) ? $workflow_state : array()
 		);
-
-		if ( is_array( $intake_context['case_memory'] ?? null ) && ! empty( $intake_context['case_memory'] ) ) {
-			$case_memory = array_merge( $case_memory, $intake_context['case_memory'] );
-		}
 
 		$summary_structured = $this->summary_presenter->build(
 			array(
@@ -582,6 +757,7 @@ TXT;
 				'county'   => (string) ( $facts['county'] ?? '' ),
 			)
 		);
+		$brief_stage = '' !== $current_id ? $current_id : 'commencement';
 
 		$form_groups = is_array( $stage_context['form_groups'] ?? null ) ? $stage_context['form_groups'] : array();
 		$groups_text = ( new Stage_Form_Group_Presenter() )->format_groups_text( $form_groups );
@@ -601,6 +777,7 @@ TXT;
 				'summary'               => $summary_structured,
 				'summary_text'          => $this->summary_presenter->to_prompt_text( $summary_structured ),
 				'case_memory'           => $case_memory,
+				'brief_stage'           => $brief_stage,
 				'known_facts'           => $facts,
 				'routing_facts'         => $this->routing_facts( $facts ),
 				'missing_facts'         => array(
@@ -653,38 +830,118 @@ TXT;
 	 * @param array<string, mixed> $parsed Decoded model response.
 	 * @return string
 	 */
-	private function format_guidance_response( array $parsed ): string {
+	private function format_guidance_response( array $parsed, array $payload = array() ): string {
 		$guidance  = trim( (string) ( $parsed['guidance'] ?? $parsed['conversation_reply'] ?? '' ) );
 		$checklist = is_array( $parsed['checklist'] ?? null ) ? $parsed['checklist'] : array();
 
-		if ( empty( $checklist ) ) {
+		if ( ! empty( $checklist ) ) {
+			$lines = array(
+				__( 'Before continuing, please make sure you have completed:', 'prose-core' ),
+			);
+
+			foreach ( $checklist as $item ) {
+				if ( ! is_array( $item ) ) {
+					continue;
+				}
+
+				$label = trim( (string) ( $item['label'] ?? $item['item'] ?? '' ) );
+
+				if ( '' === $label ) {
+					continue;
+				}
+
+				$done    = ! empty( $item['completed'] ) || ! empty( $item['done'] );
+				$lines[] = ( $done ? "\u{2713} " : "\u{25A1} " ) . $label;
+			}
+
+			if ( count( $lines ) > 1 ) {
+				$guidance = $guidance . "\n\n" . implode( "\n", $lines );
+			}
+		}
+
+		if ( empty( $payload ) ) {
 			return $guidance;
 		}
 
-		$lines = array(
-			__( 'Before continuing, please make sure you have completed:', 'prose-core' ),
+		$case_context = is_array( $payload['case_context'] ?? null ) ? $payload['case_context'] : array();
+		$transition   = is_array( $payload['transition'] ?? null ) ? $payload['transition'] : array();
+		$current      = is_array( $transition['current_stage'] ?? null ) ? $transition['current_stage'] : array();
+		$workflow     = trim( (string) ( $case_context['summary']['workflow'] ?? '' ) );
+		$facts        = is_array( $case_context['known_facts'] ?? null ) ? $case_context['known_facts'] : array();
+		$stage_context = array(
+			'current_stage' => $current,
+			'future_stages' => is_array( $payload['procedural']['future_stages'] ?? null ) ? $payload['procedural']['future_stages'] : array(),
 		);
 
-		foreach ( $checklist as $item ) {
-			if ( ! is_array( $item ) ) {
-				continue;
-			}
+		return $this->case_manager->append_sections(
+			$guidance,
+			array(
+				'message'       => 'stage_complete',
+				'case_summary'  => is_array( $case_context['summary'] ?? null ) ? $case_context['summary'] : array(),
+				'case_memory'   => is_array( $case_context['case_memory'] ?? null ) ? $case_context['case_memory'] : array(),
+				'stage_context' => $stage_context,
+				'workflow'      => $workflow,
+				'facts'         => $facts,
+				'raw_confidence' => 1.0,
+			)
+		);
+	}
 
-			$label = trim( (string) ( $item['label'] ?? $item['item'] ?? '' ) );
+	/**
+	 * @return string
+	 */
+	private function role_guidance(): string {
+		return str_replace(
+			'CASE_MANAGER_ROLE',
+			Case_Manager_Presenter::ROLE_INSTRUCTIONS,
+			self::ROLE_GUIDANCE
+		);
+	}
 
-			if ( '' === $label ) {
-				continue;
-			}
+	/**
+	 * @param array{type?: string, meta?: array<string, mixed>} $event_context Event context.
+	 * @return string
+	 */
+	private function build_system_content( array $event_context ): string {
+		return $this->settings->system_prompt()
+			. "\n\n"
+			. $this->role_guidance()
+			. "\n\n"
+			. Ai_Event_Context::system_block( $event_context );
+	}
 
-			$done    = ! empty( $item['completed'] ) || ! empty( $item['done'] );
-			$lines[] = ( $done ? "\u{2713} " : "\u{25A1} " ) . $label;
+	/**
+	 * @param array<string, mixed> $completion_result Completion result.
+	 * @param array<string, mixed> $intake_context    Session context.
+	 * @return array{type: string, meta: array<string, mixed>}
+	 */
+	private function resolve_event_context( array $completion_result, array $intake_context ): array {
+		if ( isset( $completion_result['ai_event'] ) ) {
+			return Ai_Event_Context::normalize( $completion_result['ai_event'] );
 		}
 
-		if ( count( $lines ) <= 1 ) {
-			return $guidance;
+		if ( isset( $intake_context['ai_event'] ) ) {
+			return Ai_Event_Context::normalize( $intake_context['ai_event'] );
 		}
 
-		return $guidance . "\n\n" . implode( "\n", $lines );
+		$completed_stage = sanitize_key( (string) ( $completion_result['completed_stage'] ?? '' ) );
+
+		if ( ! empty( $completion_result['advanced'] ) ) {
+			return Ai_Event_Context::build(
+				Ai_Event_Context::TYPE_STAGE_TRANSITION,
+				array(
+					'completed_stage' => $completed_stage,
+					'source'          => 'stage_completer',
+				)
+			);
+		}
+
+		return Ai_Event_Context::build(
+			Ai_Event_Context::TYPE_COMPLETION_CONFIRMATION,
+			array(
+				'completed_stage' => $completed_stage,
+			)
+		);
 	}
 
 	/**
