@@ -300,7 +300,7 @@ final class Case_Summary_Presenter {
 		$rows = array();
 
 		foreach ( $groups as $group ) {
-			if ( ! is_array( $group ) || empty( $group['forms'] ) ) {
+			if ( ! is_array( $group ) || empty( $group['forms'] ) || ! $this->include_form_group_in_summary( $group ) ) {
 				continue;
 			}
 
@@ -345,7 +345,7 @@ final class Case_Summary_Presenter {
 		$sections = array();
 
 		foreach ( $groups as $group ) {
-			if ( ! is_array( $group ) || empty( $group['forms'] ) ) {
+			if ( ! is_array( $group ) || empty( $group['forms'] ) || ! $this->include_form_group_in_summary( $group ) ) {
 				continue;
 			}
 
@@ -376,6 +376,16 @@ final class Case_Summary_Presenter {
 		}
 
 		return __( 'Forms for the current stage:', 'prose-core' ) . "\n" . implode( "\n\n", $sections );
+	}
+
+	/**
+	 * Whether a grouped form section should appear in the Case Summary sidebar.
+	 *
+	 * @param array<string, mixed> $group Form group row.
+	 * @return bool
+	 */
+	private function include_form_group_in_summary( array $group ): bool {
+		return 'not_applicable' !== sanitize_key( (string) ( $group['id'] ?? '' ) );
 	}
 
 	/**

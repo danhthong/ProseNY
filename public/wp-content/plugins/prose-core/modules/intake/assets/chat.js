@@ -533,85 +533,143 @@
 		}
 
 		/**
+		 * Natural quick-answer phrases per routing topic (client fallback).
+		 *
+		 * @type {Object<string, string[]>}
+		 */
+		var QUICK_SUGGESTION_PHRASES = {
+			children: [
+				'We have children under 21',
+				'We do not have children under 21'
+			],
+			has_minor_children: [
+				'We have children under 21',
+				'We do not have children under 21'
+			],
+			spouse_agrees: [
+				'My spouse and I both agree to the divorce',
+				'My spouse does not agree to the divorce'
+			],
+			marital_property_resolved: [
+				'We agree on property and finances',
+				'We have a settlement or separation agreement',
+				'We have not agreed on property yet'
+			],
+			spouse_responded: [
+				'My spouse responded to the papers',
+				'My spouse has not responded yet'
+			],
+			active_divorce: [
+				'We already filed for divorce',
+				'We have not filed yet'
+			],
+			protection_needed: [
+				'I need an order of protection',
+				'I do not need protection'
+			]
+		};
+
+		var QUICK_SUGGESTION_SHORTCUTS = [
+			'We agree on everything',
+			'We have a signed separation agreement'
+		];
+
+		var QUICK_ANSWER_CANONICAL = {
+			has_minor_children: 'children'
+		};
+
+		/**
 		 * Remove any quick-answer chips from the transcript.
 		 *
 		 * @return {void}
 		 */
 		function clearQuickAnswers() {
-			transcript.querySelectorAll( '.prose-intake__quick-answers' ).forEach( function ( el ) {
+			transcript.querySelectorAll( '.prose-intake__quick-answers-wrap' ).forEach( function ( el ) {
 				el.remove();
 			} );
 		}
 
 		/**
-		 * Client fallback for yes/no chips when the API omits quick_answers.
+		 * Build quick suggestions from case memory gaps (client fallback).
 		 *
-		 * @param {string} field Pending field key.
-		 * @return {Array<{label: string, value: string}>}
+		 * @param {Array<Object>} gaps Missing information rows.
+		 * @return {Array<{label: string, value: string, field: string}>}
 		 */
-		function quickAnswersForField( field ) {
-			var booleanFields = {
-				children: true,
-				has_minor_children: true,
-				spouse_agrees: true,
-				marital_property_resolved: true,
-				spouse_responded: true,
-				active_divorce: true,
-				protection_needed: true
-			};
-
-			if ( ! field || ! booleanFields[ field ] ) {
+		function quickSuggestionsFromGaps( gaps ) {
+			if ( ! Array.isArray( gaps ) || ! gaps.length ) {
 				return [];
 			}
 
-			return [
-				{ label: STRINGS.yes || 'Yes', value: 'yes' },
-				{ label: STRINGS.no || 'No', value: 'no' }
-			];
+			var suggestions = [];
+			var seen = {};
+			var gapCount = 0;
+
+			gaps.forEach( function ( gap ) {
+				if ( ! gap ) {
+					return;
+				}
+
+				var key = gap.key || gap.field || '';
+				key = QUICK_ANSWER_CANONICAL[ key ] || key;
+
+				if ( ! key || seen[ key ] || ! QUICK_SUGGESTION_PHRASES[ key ] ) {
+					return;
+				}
+
+				seen[ key ] = true;
+				gapCount += 1;
+
+				QUICK_SUGGESTION_PHRASES[ key ].forEach( function ( phrase ) {
+					suggestions.push( {
+						label: phrase,
+						value: phrase,
+						field: key
+					} );
+				} );
+			} );
+
+			if ( gapCount > 1 ) {
+				QUICK_SUGGESTION_SHORTCUTS.forEach( function ( phrase ) {
+					suggestions.push( {
+						label: phrase,
+						value: phrase,
+						field: ''
+					} );
+				} );
+			}
+
+			return suggestions.slice( 0, 8 );
 		}
 
 		/**
-		 * Infer yes/no chips from the assistant question text.
+		 * Resolve quick suggestions from the API or case memory.
 		 *
-		 * @param {string} question Assistant question.
-		 * @return {Array<{label: string, value: string}>}
+		 * @param {Object} data   REST payload.
+		 * @param {Object} result Interpreter result.
+		 * @return {Array<{label: string, value: string, field: string}>}
 		 */
-		function quickAnswersForQuestion( question ) {
-			var text = ( question || '' ).toLowerCase();
+		function resolveQuickSuggestions( data, result ) {
+			var suggestions = ( data && data.quick_suggestions ) || ( result && result.quick_suggestions ) || [];
 
-			if ( ! text ) {
-				return [];
+			if ( Array.isArray( suggestions ) && suggestions.length ) {
+				return suggestions;
 			}
 
-			if ( /\bchildren\b/.test( text ) && ( /\bunder\s*21\b/.test( text ) || /\bminor\b/.test( text ) ) ) {
-				return quickAnswersForField( 'children' );
+			var memory = null;
+
+			if ( result && result.case_memory ) {
+				memory = result.case_memory;
+			} else if ( data && data.case_memory ) {
+				memory = data.case_memory;
+			} else if ( session.case_profile && session.case_profile.case_memory ) {
+				memory = session.case_profile.case_memory;
 			}
 
-			if ( /spouse agree/.test( text ) || /agree to the divorce/.test( text ) ) {
-				return quickAnswersForField( 'spouse_agrees' );
-			}
-
-			if ( /property and finances/.test( text ) || /marital property/.test( text ) ) {
-				return quickAnswersForField( 'marital_property_resolved' );
-			}
-
-			if ( /spouse respond/.test( text ) || /respond to the divorce/.test( text ) ) {
-				return quickAnswersForField( 'spouse_responded' );
-			}
-
-			if ( /active divorce/.test( text ) || /case already been started/.test( text ) || /already filed/.test( text ) ) {
-				return quickAnswersForField( 'active_divorce' );
-			}
-
-			if ( /protection/.test( text ) || /order of protection/.test( text ) || /harmed or threatened/.test( text ) ) {
-				return quickAnswersForField( 'protection_needed' );
-			}
-
-			return [];
+			return quickSuggestionsFromGaps( memory && memory.missing_information );
 		}
 
 		/**
-		 * Whether yes/no chips should be offered for this turn.
+		 * Whether quick suggestions should be offered for this turn.
 		 *
 		 * @param {Object} data       REST payload.
 		 * @param {Object} result     Interpreter result.
@@ -620,7 +678,7 @@
 		 * @param {boolean} apiFailed Whether the request failed.
 		 * @return {boolean}
 		 */
-		function shouldOfferQuickAnswers( data, result, nextAction, needsReview, apiFailed ) {
+		function shouldOfferQuickSuggestions( data, result, nextAction, needsReview, apiFailed ) {
 			if ( needsReview || apiFailed || ( input && input.disabled ) ) {
 				return false;
 			}
@@ -641,87 +699,170 @@
 		}
 
 		/**
-		 * Resolve quick answers from the API or pending field state.
+		 * Parse the chat input into comma-separated answer parts.
 		 *
-		 * @param {Object} data       REST payload.
-		 * @param {Object} result     Interpreter result.
-		 * @param {string} question   Assistant question text.
-		 * @param {string} nextAction Next action from the server.
-		 * @return {Array<{label: string, value: string}>}
+		 * @return {string[]}
 		 */
-		function resolveQuickAnswers( data, result, question, nextAction ) {
-			var answers = data.quick_answers || ( result && result.quick_answers );
-
-			if ( Array.isArray( answers ) && answers.length ) {
-				return answers;
-			}
-
-			if ( 'ask_question' !== nextAction ) {
-				return [];
-			}
-
-			var field = '';
-
-			if ( result && result.pending_field ) {
-				field = result.pending_field;
-			} else if ( session.case_profile && session.case_profile.pending_field ) {
-				field = session.case_profile.pending_field;
-			} else if ( session.state && session.state.pending_field ) {
-				field = session.state.pending_field;
-			}
-
-			answers = quickAnswersForField( field );
-
-			if ( answers.length ) {
-				return answers;
-			}
-
-			return quickAnswersForQuestion( question );
+		function getInputAnswerParts() {
+			return ( input.value || '' )
+				.split( /\s*,\s*/ )
+				.map( function ( part ) {
+					return part.trim();
+				} )
+				.filter( function ( part ) {
+					return '' !== part;
+				} );
 		}
 
 		/**
-		 * Render yes/no chips below an agent question.
+		 * All phrases that belong to one routing topic (mutually exclusive).
 		 *
-		 * @param {HTMLElement} bubble  Agent bubble element.
-		 * @param {Array}       answers Quick answer options.
+		 * @param {string}        field       Topic key.
+		 * @param {Array<Object>} suggestions Active quick suggestions.
+		 * @return {string[]}
+		 */
+		function phrasesForQuickAnswerField( field, suggestions ) {
+			var phrases = QUICK_SUGGESTION_PHRASES[ field ]
+				? QUICK_SUGGESTION_PHRASES[ field ].slice()
+				: [];
+
+			( suggestions || [] ).forEach( function ( suggestion ) {
+				if ( ! suggestion || ( suggestion.field || '' ) !== field ) {
+					return;
+				}
+
+				var phrase = suggestion.value || suggestion.label || '';
+
+				if ( phrase && phrases.indexOf( phrase ) === -1 ) {
+					phrases.push( phrase );
+				}
+			} );
+
+			return phrases;
+		}
+
+		/**
+		 * Toggle a quick-answer phrase in the chat input (comma-separated).
+		 * Re-clicking a selected chip removes it; otherwise replaces siblings on the same topic.
+		 *
+		 * @param {string}        phrase      Suggestion text.
+		 * @param {string}        field       Routing topic key.
+		 * @param {Array<Object>} suggestions Active quick suggestions.
 		 * @return {void}
 		 */
-		function renderQuickAnswers( bubble, answers ) {
+		function insertQuickAnswerIntoInput( phrase, field, suggestions ) {
+			if ( ! input || ! phrase ) {
+				return;
+			}
+
+			phrase = String( phrase ).trim();
+			field = String( field || '' ).trim();
+
+			if ( '' === phrase ) {
+				return;
+			}
+
+			var parts = getInputAnswerParts();
+			var isSelected = parts.indexOf( phrase ) !== -1;
+
+			if ( isSelected ) {
+				parts = parts.filter( function ( part ) {
+					return part !== phrase;
+				} );
+				input.value = parts.join( ', ' );
+				input.focus();
+				autoGrow();
+				return;
+			}
+
+			if ( field ) {
+				var fieldPhrases = phrasesForQuickAnswerField( field, suggestions );
+
+				parts = parts.filter( function ( part ) {
+					return fieldPhrases.indexOf( part ) === -1;
+				} );
+			}
+
+			parts.push( phrase );
+			input.value = parts.join( ', ' );
+			input.focus();
+			autoGrow();
+		}
+
+		/**
+		 * Sync selected styling on quick-answer chips from the chat input.
+		 *
+		 * @param {HTMLElement}   row         Chip container.
+		 * @param {Array<Object>} suggestions Active quick suggestions.
+		 * @return {void}
+		 */
+		function syncQuickAnswerButtons( row, suggestions ) {
+			if ( ! row ) {
+				return;
+			}
+
+			var parts = getInputAnswerParts();
+
+			row.querySelectorAll( '.prose-intake__quick-answer' ).forEach( function ( btn ) {
+				var value = ( btn.dataset.value || btn.textContent || '' ).trim();
+
+				btn.classList.toggle( 'is-selected', parts.indexOf( value ) !== -1 );
+			} );
+		}
+
+		/**
+		 * Render optional quick-answer suggestions below an agent message.
+		 *
+		 * @param {HTMLElement} bubble      Agent bubble element.
+		 * @param {Array}       suggestions Natural-language suggestion chips.
+		 * @return {void}
+		 */
+		function renderQuickSuggestions( bubble, suggestions ) {
 			clearQuickAnswers();
 
-			if ( ! bubble || ! Array.isArray( answers ) || ! answers.length ) {
+			if ( ! bubble || ! Array.isArray( suggestions ) || ! suggestions.length ) {
 				return;
 			}
 
 			var wrap = document.createElement( 'div' );
-			wrap.className = 'prose-intake__quick-answers';
+			wrap.className = 'prose-intake__quick-answers-wrap';
 			wrap.setAttribute( 'role', 'group' );
 			wrap.setAttribute( 'aria-label', STRINGS.quickAnswers || 'Quick answers' );
 
-			answers.forEach( function ( answer ) {
-				if ( ! answer ) {
+			var title = document.createElement( 'div' );
+			title.className = 'prose-intake__quick-answers-title';
+			title.textContent = STRINGS.quickAnswersHint || STRINGS.quickAnswersTitle || 'Quick answers — tap to add to your message';
+			wrap.appendChild( title );
+
+			var row = document.createElement( 'div' );
+			row.className = 'prose-intake__quick-answers';
+
+			suggestions.forEach( function ( suggestion ) {
+				if ( ! suggestion ) {
 					return;
 				}
 
 				var btn = document.createElement( 'button' );
 				btn.type = 'button';
 				btn.className = 'prose-intake__quick-answer';
-				btn.textContent = answer.label || answer.value || '';
+				btn.textContent = suggestion.label || suggestion.value || '';
+				btn.dataset.value = suggestion.value || suggestion.label || '';
+				btn.dataset.field = suggestion.field || '';
 				btn.addEventListener( 'click', function () {
-					if ( busy ) {
+					if ( busy || ( input && input.disabled ) ) {
 						return;
 					}
 
-					clearQuickAnswers();
+					var value = suggestion.value || suggestion.label || '';
+					var field = suggestion.field || '';
 
-					var value = answer.value || answer.label || '';
-					var label = answer.label || answer.value || '';
-
-					send( value, { userLabel: label } );
+					insertQuickAnswerIntoInput( value, field, suggestions );
+					syncQuickAnswerButtons( row, suggestions );
 				} );
-				wrap.appendChild( btn );
+				row.appendChild( btn );
 			} );
 
+			wrap.appendChild( row );
 			bubble.insertAdjacentElement( 'afterend', wrap );
 			transcript.scrollTop = transcript.scrollHeight;
 		}
@@ -742,7 +883,7 @@
 
 			var workflow = session.case_profile && session.case_profile.workflow;
 
-			if ( workflow && ! ( session.case_profile && session.case_profile.pending_field ) ) {
+			if ( workflow && ! ( session.case_profile && session.case_profile.case_memory ) ) {
 				return;
 			}
 
@@ -753,23 +894,10 @@
 			}
 
 			var lastBubble = bubbles[ bubbles.length - 1 ];
-			var question = ( lastBubble.textContent || '' ).trim();
-			var field = '';
+			var suggestions = resolveQuickSuggestions( null, { case_memory: session.case_profile && session.case_profile.case_memory } );
 
-			if ( session.case_profile && session.case_profile.pending_field ) {
-				field = session.case_profile.pending_field;
-			} else if ( session.state && session.state.pending_field ) {
-				field = session.state.pending_field;
-			}
-
-			var answers = quickAnswersForField( field );
-
-			if ( ! answers.length ) {
-				answers = quickAnswersForQuestion( question );
-			}
-
-			if ( answers.length ) {
-				renderQuickAnswers( lastBubble, answers );
+			if ( suggestions.length ) {
+				renderQuickSuggestions( lastBubble, suggestions );
 			}
 		}
 
@@ -949,8 +1077,16 @@
 				profile.workflow = session.state.workflow;
 			}
 
-			if ( ! profile.procedural_node && session.actions && session.actions.stage_context ) {
+			var actionNode = session.actions && session.actions.stage_context && session.actions.stage_context.procedural_node;
+
+			if ( actionNode ) {
+				profile.procedural_node = actionNode;
+			} else if ( ! profile.procedural_node && session.actions && session.actions.stage_context ) {
 				profile.procedural_node = session.actions.stage_context.procedural_node || '';
+			}
+
+			if ( session.case_profile && Array.isArray( session.case_profile.completed_documents ) ) {
+				profile.completed_documents = session.case_profile.completed_documents;
 			}
 
 			return profile;
@@ -1023,9 +1159,13 @@
 			var actionNode = actions.stage_context && actions.stage_context.procedural_node;
 
 			if ( profileNode && actionNode && profileNode !== actionNode ) {
-				syncPackagePreview();
-				refreshActions();
-				return;
+				session.case_profile = session.case_profile || {};
+				session.case_profile.procedural_node = actionNode;
+
+				if ( session.state && typeof session.state === 'object' ) {
+					session.state.procedural_node = actionNode;
+					session.state.case_profile = session.case_profile;
+				}
 			}
 
 			if ( actionNode && ! profileNode ) {
@@ -1502,11 +1642,12 @@
 						thinking.textContent = question || ( STRINGS.greeting || 'How can I help with your legal matter today?' );
 					}
 
-					var quickAnswers = resolveQuickAnswers( data, result, question, nextAction );
-					var showQuickAnswers = shouldOfferQuickAnswers( data, result, nextAction, needsReview, apiFailed ) && quickAnswers.length;
+					var quickSuggestions = resolveQuickSuggestions( data, result );
+					var showQuickSuggestions = shouldOfferQuickSuggestions( data, result, nextAction, needsReview, apiFailed )
+						&& quickSuggestions.length;
 
-					if ( showQuickAnswers ) {
-						renderQuickAnswers( thinking, quickAnswers );
+					if ( showQuickSuggestions ) {
+						renderQuickSuggestions( thinking, quickSuggestions );
 					} else {
 						clearQuickAnswers();
 					}

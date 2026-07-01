@@ -9,6 +9,7 @@ namespace ProSe\Core\Ai_Intake;
 
 use ProSe\Core\Intake\Completion_Calculator;
 use ProSe\Core\Routing\Case_Profile;
+use ProSe\Core\Routing\Routing_Discriminator_Catalog;
 use ProSe\Core\Routing\Routing_Engine;
 use ProSe\Core\Routing\Workflow_Catalog;
 
@@ -273,22 +274,52 @@ final class Required_Fields_Provider {
 	 * @return array<int, array<string, mixed>>
 	 */
 	public function conversation_missing_fields( array $missing, ?string $workflow ): array {
-		if ( null !== $workflow && '' !== $workflow ) {
-			return array();
+		return $this->conversation_missing_information( $missing, $workflow );
+	}
+
+	/**
+	 * Semantic missing topics for conversational intake (no scripted question text).
+	 *
+	 * @param array<int, array<string, mixed>> $missing  Priority-ordered missing fields.
+	 * @param string|null                      $workflow Resolved workflow key.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function conversation_missing_information( array $missing, ?string $workflow ): array {
+		$routing_keys = array_flip( $this->routing_field_keys() );
+		$out          = array();
+
+		foreach ( $missing as $field ) {
+			$key = (string) ( $field['field'] ?? '' );
+
+			if ( '' === $key ) {
+				continue;
+			}
+
+			if ( null !== $workflow && '' !== $workflow ) {
+				$out[] = array(
+					'field'    => $key,
+					'key'      => $key,
+					'topic'    => Routing_Discriminator_Catalog::topic_for( $key ),
+					'type'     => (string) ( $field['type'] ?? $this->infer_type( $key ) ),
+					'priority' => (int) ( $field['priority'] ?? 0 ),
+				);
+				continue;
+			}
+
+			if ( ! isset( $routing_keys[ $key ] ) ) {
+				continue;
+			}
+
+			$out[] = array(
+				'field'    => $key,
+				'key'      => $key,
+				'topic'    => Routing_Discriminator_Catalog::topic_for( $key ),
+				'type'     => (string) ( $field['type'] ?? $this->infer_type( $key ) ),
+				'priority' => (int) ( $field['priority'] ?? 0 ),
+			);
 		}
 
-		$routing_keys = array_flip( $this->routing_field_keys() );
-
-		return array_values(
-			array_filter(
-				$missing,
-				static function ( array $field ) use ( $routing_keys ): bool {
-					$key = (string) ( $field['field'] ?? '' );
-
-					return '' !== $key && isset( $routing_keys[ $key ] );
-				}
-			)
-		);
+		return $out;
 	}
 
 	/**
@@ -352,16 +383,8 @@ final class Required_Fields_Provider {
 	 * @return string
 	 */
 	private function resolution_question( string $key ): string {
-		$map = array(
-			'children'                  => 'Do you have any children under 21?',
-			'spouse_agrees'             => 'Does your spouse agree to the divorce?',
-			'marital_property_resolved' => 'Do you and your spouse agree on property and finances?',
-			'spouse_responded'          => 'Did your spouse respond to the divorce papers?',
-			'active_divorce'            => 'Is there an active divorce case?',
-			'protection_needed'         => 'Do you need protection from someone who has harmed or threatened you?',
-		);
-
-		return (string) ( $map[ $key ] ?? 'Could you tell me a bit more about your situation?' );
+		// Internal metadata only — conversational intake uses semantic topics, not this text.
+		return Routing_Discriminator_Catalog::topic_for( $key );
 	}
 
 	/**

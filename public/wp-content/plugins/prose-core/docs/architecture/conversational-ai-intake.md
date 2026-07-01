@@ -35,13 +35,20 @@ and a `conversation_reply`.
 {
   "conversation_summary": "",
   "recent_messages": [],
-  "intake_state": {},
-  "missing_fields": [],
+  "case_memory": {
+    "workflow": null,
+    "facts": {},
+    "missing_information": [],
+    "current_stage": null,
+    "routing_status": "gathering"
+  },
   "workflow": {},
   "package": {},
   "contradictions": []
 }
 ```
+
+See [Conversation-First AI Intake](./conversation-first-intake.md) for the full architectural review.
 
 ### Model output (every response)
 
@@ -90,8 +97,11 @@ explains the package, the forms, and the next filing steps.
 
 ## Components
 
-- `Conversation_Engine` (new) — builds context, makes the single OpenAI call,
+- `Conversation_Engine` — builds context with `case_memory`, makes the single OpenAI call,
   normalizes output via `Fact_Extractor`.
+- `Case_Memory` — unified structured snapshot (facts, missing topics, stage, workflow).
+- `Workflow_Engine` — deterministic workflow authority (no conversational text).
+- `Routing_Discriminator_Catalog` — semantic topics for routing facts.
 - `Fact_Extractor::process_raw()` (new public) — shared normalization +
   deterministic supplement, reused by the engine and the legacy extractor.
 - `Required_Fields_Provider` — unchanged authority for required/missing fields.

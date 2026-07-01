@@ -10,6 +10,8 @@ namespace ProSe\Core\Intake;
 use ProSe\Core\Forms\Engine\Stage_Form_Presenter;
 use ProSe\Core\Forms\Classification\Vocabulary;
 use ProSe\Core\Guidance\Procedural_Roadmap_Presenter;
+use ProSe\Core\Routing\Workflow_Catalog;
+use ProSe\Core\Routing\Workflow_Engine;
 use ProSe\Core\Users\Conversation_Persistence;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -47,6 +49,21 @@ final class Procedural_Stage_Completer {
 	private Conversation_Persistence $persistence;
 
 	/**
+	 * @var Completed_Stage_Document_Store
+	 */
+	private Completed_Stage_Document_Store $completed_documents;
+
+	/**
+	 * @var Workflow_Engine
+	 */
+	private Workflow_Engine $workflow_engine;
+
+	/**
+	 * @var Workflow_Catalog
+	 */
+	private Workflow_Catalog $workflows;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Stage_Form_Presenter|null         $stage_presenter   Stage presenter.
@@ -54,19 +71,28 @@ final class Procedural_Stage_Completer {
 	 * @param Case_Lifecycle_Service|null       $lifecycle           Lifecycle service.
 	 * @param Procedural_Roadmap_Presenter|null $roadmap_presenter   Roadmap presenter.
 	 * @param Conversation_Persistence|null     $persistence         Conversation persistence.
+	 * @param Completed_Stage_Document_Store|null $completed_documents Completed document store.
+	 * @param Workflow_Engine|null            $workflow_engine     Workflow engine.
+	 * @param Workflow_Catalog|null           $workflows           Workflow catalog.
 	 */
 	public function __construct(
 		?Stage_Form_Presenter $stage_presenter = null,
 		?Case_Actions_Resolver $actions = null,
 		?Case_Lifecycle_Service $lifecycle = null,
 		?Procedural_Roadmap_Presenter $roadmap_presenter = null,
-		?Conversation_Persistence $persistence = null
+		?Conversation_Persistence $persistence = null,
+		?Completed_Stage_Document_Store $completed_documents = null,
+		?Workflow_Engine $workflow_engine = null,
+		?Workflow_Catalog $workflows = null
 	) {
-		$this->stage_presenter   = $stage_presenter ?? new Stage_Form_Presenter();
-		$this->actions           = $actions ?? new Case_Actions_Resolver();
-		$this->lifecycle         = $lifecycle ?? new Case_Lifecycle_Service();
-		$this->roadmap_presenter = $roadmap_presenter ?? new Procedural_Roadmap_Presenter();
-		$this->persistence       = $persistence ?? new Conversation_Persistence();
+		$this->stage_presenter       = $stage_presenter ?? new Stage_Form_Presenter();
+		$this->actions               = $actions ?? new Case_Actions_Resolver();
+		$this->lifecycle             = $lifecycle ?? new Case_Lifecycle_Service();
+		$this->roadmap_presenter     = $roadmap_presenter ?? new Procedural_Roadmap_Presenter();
+		$this->persistence           = $persistence ?? new Conversation_Persistence();
+		$this->completed_documents   = $completed_documents ?? new Completed_Stage_Document_Store();
+		$this->workflow_engine       = $workflow_engine ?? new Workflow_Engine();
+		$this->workflows             = $workflows ?? new Workflow_Catalog();
 	}
 
 	/**
@@ -89,14 +115,18 @@ final class Procedural_Stage_Completer {
 
 		$facts            = is_array( $case_profile['facts'] ?? null ) ? $case_profile['facts'] : array();
 		$procedural_node  = trim( (string) ( $case_profile['procedural_node'] ?? '' ) );
-		$stage_context    = $this->stage_presenter->present(
-			array(
-				'workflow'        => $workflow,
-				'facts'           => $facts,
-				'intake_complete'   => true,
-				'issue'           => (string) ( $case_profile['issue'] ?? $facts['issue'] ?? 'divorce' ),
-				'current_node'    => $procedural_node,
-			)
+		$required_defs    = $this->required_field_defs( $workflow );
+		$completed_stages = Completed_Stage_Document_Store::completed_stage_count( $case_profile );
+		$workflow_state   = $this->workflow_engine->resolve_state( $workflow, $facts, $procedural_node, $required_defs, $completed_stages );
+		$procedural_node  = (string) ( $workflow_state['procedural_node'] ?? $procedural_node );
+
+		$stage_context    = $this->workflow_engine->determine_stage(
+			$workflow,
+			$facts,
+			$procedural_node,
+			true,
+			$required_defs,
+			$completed_stages
 		);
 
 		if ( empty( $stage_context['forms_visible'] ) ) {
@@ -137,20 +167,27 @@ final class Procedural_Stage_Completer {
 		}
 
 		$case_profile['procedural_node'] = $advanced_node;
+		$case_profile                    = $this->completed_documents->record_stage_completion( $case_profile, $stage_context, $current_stage );
 		$case_profile                    = $this->record_lifecycle_for_stage( $case_profile, $current_stage, $advanced_node );
 
-		$next_context = $this->stage_presenter->present(
-			array(
-				'workflow'        => $workflow,
-				'facts'           => $facts,
-				'intake_complete'   => true,
-				'issue'           => (string) ( $case_profile['issue'] ?? $facts['issue'] ?? 'divorce' ),
-				'current_node'    => $advanced_node,
-			)
+		$next_context = $this->workflow_engine->determine_stage(
+			$workflow,
+			$facts,
+			$advanced_node,
+			true,
+			$required_defs,
+			Completed_Stage_Document_Store::completed_stage_count( $case_profile )
 		);
 
-		$case_profile = $this->refresh_roadmap( $case_profile, $next_context );
-		$actions      = $this->actions->resolve( $case_profile );
+		$case_profile['workflow_state']  = $this->workflow_engine->resolve_state(
+			$workflow,
+			$facts,
+			$advanced_node,
+			$required_defs,
+			Completed_Stage_Document_Store::completed_stage_count( $case_profile )
+		);
+		$case_profile                    = $this->refresh_roadmap( $case_profile, $next_context );
+		$actions                         = $this->actions->resolve( $case_profile );
 
 		if ( '' !== trim( $session_id ) && is_user_logged_in() ) {
 			$this->persistence->update_session_context( $session_id, $case_profile, array(), $actions );
@@ -279,5 +316,20 @@ final class Procedural_Stage_Completer {
 		$case_profile['progress']            = (int) ( $roadmap['progress_percentage'] ?? 0 );
 
 		return $case_profile;
+	}
+
+	/**
+	 * @param string $workflow Workflow key.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function required_field_defs( string $workflow ): array {
+		if ( '' === $workflow ) {
+			return array();
+		}
+
+		$definition = $this->workflows->by_key( $workflow );
+		$fields     = is_array( $definition['required_fields'] ?? null ) ? $definition['required_fields'] : array();
+
+		return $fields;
 	}
 }

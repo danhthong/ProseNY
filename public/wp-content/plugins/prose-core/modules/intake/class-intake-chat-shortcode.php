@@ -222,6 +222,7 @@ final class Intake_Chat_Shortcode {
 						'yes'             => __( 'Yes', 'prose-core' ),
 						'no'              => __( 'No', 'prose-core' ),
 						'quickAnswers'    => __( 'Quick answers', 'prose-core' ),
+						'quickAnswersHint' => __( 'Quick answers — tap to add to your message', 'prose-core' ),
 						'completeStage'   => __( 'I completed this step', 'prose-core' ),
 						/* translators: %s: next procedural stage title. */
 						'completeStageNext' => __( 'I completed this step — continue to %s', 'prose-core' ),

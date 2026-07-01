@@ -574,11 +574,7 @@ final class Procedural_Roadmap_Presenter {
 		$roadmap['next_likely_step'] = $this->next_likely_step( $focus, $upcoming );
 		$roadmap['procedural_guidance'] = '' !== trim( (string) $guidance ) ? trim( (string) $guidance ) : null;
 		$roadmap['suggested_next_question'] = $question;
-		$roadmap['current_stage']    = array(
-			'id'    => $stage,
-			'title' => $label,
-			'label' => $label,
-		);
+		unset( $roadmap['current_stage'] );
 		$roadmap['answer_deadline']  = ! empty( $deadlines[0] ) && is_array( $deadlines[0] )
 			? array(
 				'label'    => (string) ( $deadlines[0]['label'] ?? '' ),

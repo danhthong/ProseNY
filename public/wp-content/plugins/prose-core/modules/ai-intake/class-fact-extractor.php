@@ -639,15 +639,77 @@ final class Fact_Extractor {
 	 */
 	private function extract_contextual_booleans( string $message ): array {
 		$facts = array();
+		$text  = strtolower( $message );
 
-		if ( preg_match( '/\b(?:have|we have)\s+(?:two|2|\d+)\s+children\b/i', $message ) ) {
-			$facts['children']            = true;
-			$facts['has_minor_children']  = true;
+		if ( preg_match( '/\b(?:have|we have)\s+(?:two|2|\d+)\s+children\b/i', $message, $m ) ) {
+			$facts['children']           = true;
+			$facts['has_minor_children'] = true;
+
+			if ( preg_match( '/\b(?:two|2)\s+children\b/i', $message ) ) {
+				$facts['child_count'] = 2;
+			} elseif ( preg_match( '/\b(?:one|1)\s+children?\b/i', $message ) ) {
+				$facts['child_count'] = 1;
+			} elseif ( preg_match( '/\b(\d+)\s+children\b/i', $message, $count_match ) ) {
+				$facts['child_count'] = (int) $count_match[1];
+			}
+		}
+
+		if ( preg_match( '/\bwe have children under 21\b/i', $message ) ) {
+			$facts['children']           = true;
+			$facts['has_minor_children'] = true;
+		}
+
+		if ( preg_match( '/\b(?:do not|don\'t) have children\b/i', $message )
+			|| preg_match( '/\bno children under 21\b/i', $message ) ) {
+			$facts['children']           = false;
+			$facts['has_minor_children'] = false;
+			$facts['child_count']        = 0;
 		}
 
 		if ( preg_match( '/\bno children\b/i', $message ) ) {
 			$facts['children']           = false;
 			$facts['has_minor_children'] = false;
+		}
+
+		if ( preg_match( '/\b(?:spouse|we).*(?:both )?agree.*divorce\b/i', $message )
+			|| preg_match( '/\bmy spouse agrees to the divorce\b/i', $message ) ) {
+			$facts['spouse_agrees'] = true;
+		}
+
+		if ( preg_match( '/\bspouse does not agree\b/i', $message ) ) {
+			$facts['spouse_agrees'] = false;
+		}
+
+		if ( preg_match( '/\b(?:settlement|separation) agreement\b/i', $message )
+			|| preg_match( '/\bsigned an agreement\b/i', $message )
+			|| preg_match( '/\bagree on property\b/i', $message )
+			|| preg_match( '/\bagree on everything\b/i', $message ) ) {
+			$facts['marital_property_resolved'] = true;
+		}
+
+		if ( preg_match( '/\bhave not agreed on property\b/i', $message ) ) {
+			$facts['marital_property_resolved'] = false;
+		}
+
+		if ( preg_match( '/\balready filed\b/i', $message ) ) {
+			$facts['active_divorce'] = true;
+		}
+
+		if ( preg_match( '/\bhave not filed\b/i', $message ) ) {
+			$facts['active_divorce'] = false;
+		}
+
+		if ( preg_match( '/\border of protection\b/i', $message ) || preg_match( '/\bneed protection\b/i', $message ) ) {
+			$facts['protection_needed'] = true;
+		}
+
+		if ( preg_match( '/\bdo not need protection\b/i', $message ) ) {
+			$facts['protection_needed'] = false;
+		}
+
+		if ( str_contains( $text, 'agree on everything' ) ) {
+			$facts['spouse_agrees']             = true;
+			$facts['marital_property_resolved'] = true;
 		}
 
 		return $facts;

@@ -15,6 +15,8 @@ use ProSe\Core\Intake\Completion_Calculator;
 use ProSe\Core\Intake\Procedural_State_Inferrer;
 use ProSe\Core\Intake\Document_Request_Detector;
 use ProSe\Core\Procedural\Procedural_Navigator;
+use ProSe\Core\Routing\Routing_Discriminator_Catalog;
+use ProSe\Core\Routing\Workflow_Engine;
 use ProSe\Core\Search\Knowledge_Context_Provider;
 use ProSe\Core\Users\User_Intake_Context;
 
@@ -133,6 +135,13 @@ final class AI_Intake_Interpreter {
 	private Knowledge_Context_Provider $knowledge_context;
 
 	/**
+	 * Workflow engine (deterministic — no conversational text).
+	 *
+	 * @var Workflow_Engine
+	 */
+	private Workflow_Engine $workflow_engine;
+
+	/**
 	 * Procedural state inferrer.
 	 *
 	 * @var Procedural_State_Inferrer
@@ -156,6 +165,7 @@ final class AI_Intake_Interpreter {
 	 * @param Document_Request_Detector|null  $documents        Document detector.
 	 * @param Procedural_Roadmap_Presenter|null $roadmap_presenter Roadmap presenter.
 	 * @param Knowledge_Context_Provider|null $knowledge_context Knowledge context.
+	 * @param Workflow_Engine|null            $workflow_engine   Workflow engine.
 	 */
 	public function __construct(
 		?Ai_Provider_Interface $provider = null,
@@ -171,7 +181,8 @@ final class AI_Intake_Interpreter {
 		?Conversation_Engine $engine = null,
 		?Document_Request_Detector $documents = null,
 		?Procedural_Roadmap_Presenter $roadmap_presenter = null,
-		?Knowledge_Context_Provider $knowledge_context = null
+		?Knowledge_Context_Provider $knowledge_context = null,
+		?Workflow_Engine $workflow_engine = null
 	) {
 		$this->settings        = $settings ?? new AI_Settings();
 		$this->logger          = $logger ?? new AI_Logger();
@@ -189,6 +200,7 @@ final class AI_Intake_Interpreter {
 		$this->roadmap_presenter = $roadmap_presenter ?? new Procedural_Roadmap_Presenter();
 		$this->knowledge_context = $knowledge_context ?? new Knowledge_Context_Provider();
 		$this->procedural_state  = new Procedural_State_Inferrer();
+		$this->workflow_engine   = $workflow_engine ?? new Workflow_Engine( null, null, $this->fields_provider );
 	}
 
 	/**
@@ -314,35 +326,42 @@ final class AI_Intake_Interpreter {
 			// flow so we can ask the questions needed to identify the matter.
 		}
 
-		// --- Deterministic pre-resolve (ProSe owns routing & required fields) ---
-		$memory_ctx   = $this->memory->context( $intake, $conversation );
-		$resolved_pre = $this->fields_provider->resolve( $intake, $message );
-		$missing_pre  = $this->fields_provider->missing_prioritized( $resolved_pre['fields'], $intake );
-		$workflow_pre = $intake->workflow();
-		$was_complete = empty( $missing_pre ) && null !== $workflow_pre && '' !== $workflow_pre;
-		$prefilled    = $this->apply_message_prefill( $message, $intake, $resolved_pre );
+		// --- Deterministic pre-resolve (Workflow Engine owns routing & missing facts) ---
+		$memory_ctx          = $this->memory->context( $intake, $conversation );
+		$missing_payload_pre = $this->workflow_engine->get_missing_facts( $intake, $message );
+		$resolved_pre        = $missing_payload_pre['resolved'];
+		$missing_pre         = $missing_payload_pre['all'];
+		$workflow_pre        = $intake->workflow();
+		$was_complete        = empty( $missing_pre ) && null !== $workflow_pre && '' !== $workflow_pre;
+		$prefilled           = $this->apply_message_prefill( $message, $intake, $resolved_pre );
 
 		if ( ! empty( $prefilled ) ) {
 			$this->sync_child_facts( $intake );
-			$resolved_pre = $this->fields_provider->resolve( $intake, $message );
-			$missing_pre  = $this->fields_provider->missing_prioritized( $resolved_pre['fields'], $intake );
-			$workflow_pre = $intake->workflow();
-			$was_complete = empty( $missing_pre ) && null !== $workflow_pre && '' !== $workflow_pre;
+			$missing_payload_pre = $this->workflow_engine->get_missing_facts( $intake, $message );
+			$resolved_pre          = $missing_payload_pre['resolved'];
+			$missing_pre           = $missing_payload_pre['all'];
+			$workflow_pre          = $intake->workflow();
+			$was_complete          = empty( $missing_pre ) && null !== $workflow_pre && '' !== $workflow_pre;
 		}
 
 		$this->apply_supplemental_case_state( $message, $intake, $procedural_node, $workflow_pre );
-		$resolved_pre = $this->fields_provider->resolve( $intake, $message );
-		$missing_pre  = $this->fields_provider->missing_prioritized( $resolved_pre['fields'], $intake );
-		$workflow_pre = $intake->workflow();
+		$missing_payload_pre = $this->workflow_engine->get_missing_facts( $intake, $message );
+		$resolved_pre        = $missing_payload_pre['resolved'];
+		$missing_pre         = $missing_payload_pre['all'];
+		$workflow_pre        = $intake->workflow();
 
-		$missing_ai   = $this->conversation_missing( $missing_pre, $workflow_pre );
-		$stage_pre    = $this->stage_context( $workflow_pre, $intake, null !== $workflow_pre && '' !== $workflow_pre, $procedural_node );
+		$missing_ai     = $missing_payload_pre['conversation'];
+		$completion_pre = (int) $missing_payload_pre['completion'];
+		$workflow_state_pre = $this->resolve_workflow_state( $intake, $procedural_node );
+		$procedural_node    = (string) ( $workflow_state_pre['procedural_node'] ?? $procedural_node );
+		$stage_pre    = $this->stage_context( $workflow_pre, $intake, ! empty( $workflow_state_pre['intake_complete'] ), $procedural_node );
 		$brief_pre    = $this->resolve_filing_brief( $workflow_pre, $intake, $stage_pre );
 		$brief_sent   = ! empty( $state['case_profile']['guidance_brief_delivered'] );
 
-		$completion_pre = $this->completion->calculate(
-			$resolved_pre['required_field_defs'],
-			$intake->plain_facts()
+		$case_memory_pre = Case_Memory::build(
+			$intake,
+			$missing_payload_pre,
+			$stage_pre
 		);
 
 		$roadmap_pre = $this->roadmap_presenter->present(
@@ -382,10 +401,10 @@ final class AI_Intake_Interpreter {
 			$intake,
 			array(
 				'extraction_defs'       => $resolved_pre['extraction_defs'] ?? $resolved_pre['required_field_defs'],
-				'missing'               => $missing_ai,
+				'case_memory'           => $case_memory_pre,
 				'workflow'              => $workflow_pre,
 				'workflow_info'         => $this->workflow_info( $workflow_pre, $completion_pre, $intake, null !== $workflow_pre && '' !== $workflow_pre ),
-				'package'               => $this->package_context( $missing_ai, $completion_pre, $workflow_pre ),
+				'package'               => $this->package_context( $missing_pre, $completion_pre, $workflow_pre ),
 				'completion'            => $completion_pre,
 				'contradictions'        => $this->consistency->check( $intake ),
 				'summary'               => $conversation_notes,
@@ -399,6 +418,10 @@ final class AI_Intake_Interpreter {
 				'procedural_roadmap'    => $roadmap_pre,
 				'reference_knowledge'   => $this->knowledge_context->for_message( $message, $workflow_pre, null ),
 				'user_context'          => $user_context,
+				'gathering_hints'       => array(
+					'bullets' => \ProSe\Core\Routing\Routing_Discriminator_Catalog::gathering_bullets( $missing_ai ),
+					'issue'   => (string) ( $intake->issue() ?? '' ),
+				),
 			),
 			$this->provider,
 			$this->logger
@@ -409,12 +432,10 @@ final class AI_Intake_Interpreter {
 		$this->apply_supplemental_case_state( $message, $intake, $procedural_node );
 
 		// --- Deterministic post-resolve with the new facts (authoritative) ---
-		$resolved       = $this->fields_provider->resolve( $intake, $message );
-		$missing        = $this->fields_provider->missing_prioritized( $resolved['fields'], $intake );
-		$completion_pct = $this->completion->calculate(
-			$resolved['required_field_defs'],
-			$intake->plain_facts()
-		);
+		$missing_payload = $this->workflow_engine->get_missing_facts( $intake, $message );
+		$resolved        = $missing_payload['resolved'];
+		$missing         = $missing_payload['all'];
+		$completion_pct  = (int) $missing_payload['completion'];
 		$contradictions = $this->consistency->check( $intake );
 
 		$this->memory->maybe_update_summary( $intake, $conversation, $this->provider, $this->logger );
@@ -422,7 +443,9 @@ final class AI_Intake_Interpreter {
 		$reply        = trim( (string) $turn['reply'] );
 		$workflow     = $intake->workflow();
 		$has_workflow = null !== $workflow && '' !== $workflow;
-		$stage_ctx    = $this->stage_context( $workflow, $intake, $has_workflow, $procedural_node );
+		$workflow_state = $this->resolve_workflow_state( $intake, $procedural_node );
+		$procedural_node = (string) ( $workflow_state['procedural_node'] ?? $procedural_node );
+		$stage_ctx    = $this->stage_context( $workflow, $intake, ! empty( $workflow_state['intake_complete'] ), $procedural_node );
 		$filing_brief = $this->resolve_filing_brief( $workflow, $intake, $stage_ctx );
 		$brief_extra  = array();
 		$account_reply = $this->build_account_meta_reply( $message, $user_context, $intake );
@@ -488,11 +511,23 @@ final class AI_Intake_Interpreter {
 			}
 		}
 
-		$conversation_missing = $this->conversation_missing( $missing, $workflow );
+		$conversation_missing = $missing_payload['conversation'];
+		$case_memory          = Case_Memory::build(
+			$intake,
+			$missing_payload,
+			$stage_ctx,
+			$turn['raw_confidence']
+		);
 		$pending_hint         = '';
 
 		if ( ! $has_workflow && ! empty( $conversation_missing ) ) {
-			$pending_hint = (string) ( $conversation_missing[0]['field'] ?? '' );
+			if ( count( $conversation_missing ) > 1 ) {
+				$pending_hint = '';
+				$intake->set_pending_field( '' );
+			} else {
+				$first        = $conversation_missing[0];
+				$pending_hint = (string) ( $first['key'] ?? $first['field'] ?? '' );
+			}
 		} elseif ( $has_workflow ) {
 			$intake->set_pending_field( '' );
 		}
@@ -510,6 +545,9 @@ final class AI_Intake_Interpreter {
 				$intent      = 'guidance';
 				$next_action = 'guidance';
 			}
+		} elseif ( $has_workflow && ! empty( $missing ) ) {
+			$intent      = 'gathering';
+			$next_action = 'ask_question';
 		} elseif ( ! empty( $brief_extra['guidance_brief_delivered'] ) ) {
 			$intent      = 'guidance';
 			$next_action = 'guidance';
@@ -554,7 +592,9 @@ final class AI_Intake_Interpreter {
 				$brief_extra,
 				$roadmap_extra,
 				array(
-					'procedural_node' => (string) ( $stage_ctx['procedural_node'] ?? $procedural_node ),
+					'procedural_node' => (string) ( $workflow_state['procedural_node'] ?? $procedural_node ),
+					'workflow_state'  => $workflow_state,
+					'case_memory'     => $case_memory,
 				)
 			)
 		);
@@ -628,14 +668,38 @@ final class AI_Intake_Interpreter {
 			);
 		}
 
-		return ( new \ProSe\Core\Forms\Engine\Stage_Form_Presenter() )->present(
-			array(
-				'workflow'        => $workflow,
-				'facts'           => $intake->plain_facts(),
-				'intake_complete' => $complete || ( null !== $workflow && '' !== $workflow ),
-				'issue'           => (string) ( $intake->plain_facts()['issue'] ?? 'divorce' ),
-				'current_node'    => $current_node,
-			)
+		$resolved = $this->fields_provider->resolve( $intake, '' );
+
+		return $this->workflow_engine->determine_stage(
+			$workflow,
+			$intake->plain_facts(),
+			$current_node,
+			$complete,
+			(array) ( $resolved['required_field_defs'] ?? array() )
+		);
+	}
+
+	/**
+	 * Canonical workflow state for this turn.
+	 *
+	 * @param Intake_State $intake          Intake state.
+	 * @param string       $procedural_node Stored procedural node.
+	 * @return array<string, mixed>
+	 */
+	private function resolve_workflow_state( Intake_State $intake, string $procedural_node ): array {
+		$workflow = (string) ( $intake->workflow() ?? '' );
+
+		if ( '' === $workflow ) {
+			return array();
+		}
+
+		$resolved = $this->fields_provider->resolve( $intake, '' );
+
+		return $this->workflow_engine->resolve_state(
+			$workflow,
+			$intake->plain_facts(),
+			$procedural_node,
+			(array) ( $resolved['required_field_defs'] ?? array() )
 		);
 	}
 
@@ -669,6 +733,10 @@ final class AI_Intake_Interpreter {
 		}
 
 		$candidates = is_array( $resolved['candidate_workflows'] ?? null ) ? $resolved['candidate_workflows'] : array();
+		$workflow_state = $this->resolve_workflow_state(
+			$intake,
+			(string) ( $stage_ctx['procedural_node'] ?? '' )
+		);
 
 		return array(
 			'issue'                 => $issue,
@@ -679,10 +747,11 @@ final class AI_Intake_Interpreter {
 			'stage_context'         => $stage_ctx,
 			'procedural_navigator'  => $navigator,
 			'workflow_resolved'     => null !== $workflow && '' !== $workflow,
-			'intake_complete'       => empty( $missing ) && null !== $workflow && '' !== $workflow,
+			'intake_complete'       => ! empty( $workflow_state['intake_complete'] ),
 			'candidate_workflows'   => $candidates,
 			'routing_status'        => (string) ( $resolved['routing_status'] ?? '' ),
-			'procedural_node'       => (string) ( $stage_ctx['procedural_node'] ?? $stage_ctx['current_stage']['id'] ?? '' ),
+			'procedural_node'       => (string) ( $stage_ctx['procedural_node'] ?? $workflow_state['procedural_node'] ?? '' ),
+			'workflow_state'        => $workflow_state,
 		);
 	}
 
@@ -922,12 +991,7 @@ final class AI_Intake_Interpreter {
 			return;
 		}
 
-		$procedural_node = $this->procedural_state->infer_procedural_node(
-			$workflow,
-			$procedural_node,
-			$plain,
-			$message
-		);
+		unset( $workflow );
 	}
 
 	/**
@@ -1057,7 +1121,7 @@ final class AI_Intake_Interpreter {
 		$conversation_missing = $this->conversation_missing( $missing, $workflow );
 		$missing_keys         = array_map(
 			static function ( array $field ): string {
-				return (string) ( $field['field'] ?? '' );
+				return (string) ( $field['key'] ?? $field['field'] ?? '' );
 			},
 			$conversation_missing
 		);
@@ -1116,16 +1180,9 @@ final class AI_Intake_Interpreter {
 	 */
 	private function build_gathering_fallback( array $missing, ?string $workflow = null ): string {
 		$conversation = $this->conversation_missing( $missing, $workflow );
+		$issue        = null;
 
-		foreach ( $conversation as $field ) {
-			$question = trim( (string) ( $field['question'] ?? '' ) );
-
-			if ( '' !== $question ) {
-				return $question;
-			}
-		}
-
-		return __( 'Could you tell me a bit more about your legal matter so I can help you find the right path?', 'prose-core' );
+		return Routing_Discriminator_Catalog::conversational_gathering_prompt( $conversation, $issue );
 	}
 
 	/**
@@ -1178,6 +1235,7 @@ final class AI_Intake_Interpreter {
 			'intent'               => $intent,
 			'fact_updates'         => $applied,
 			'missing_fields'       => $missing_fields,
+			'case_memory'          => (array) ( $case_profile_extra['case_memory'] ?? array() ),
 			'contradictions'       => $contradictions,
 			'clarifications'       => $clarifications,
 			'pending_field'        => $state->pending_field(),
@@ -1191,7 +1249,67 @@ final class AI_Intake_Interpreter {
 			'completion'           => $completion,
 			'workflow'             => $state->workflow(),
 			'conversation_id'      => $state->conversation_id(),
-			'quick_answers'        => \ProSe\Core\Intake\Question_Selector::quick_answers_for_field( $state->pending_field() ),
+			'quick_answers'        => $this->resolve_quick_answers(
+				(array) ( $case_profile_extra['case_memory']['missing_information'] ?? array() ),
+				$state->pending_field()
+			),
+			'quick_suggestions'    => $this->resolve_quick_suggestions(
+				(array) ( $case_profile_extra['case_memory']['missing_information'] ?? array() ),
+				(string) ( $state->issue() ?? '' )
+			),
+			'quick_answer_groups'  => array(),
+		);
+	}
+
+	/**
+	 * Natural-language quick suggestions — optional helpers, not the conversation.
+	 *
+	 * @param array<int, array<string, mixed>> $conversation_missing Conversation gaps.
+	 * @param string                           $issue                Issue hint.
+	 * @return array<int, array{label: string, value: string, field: string}>
+	 */
+	private function resolve_quick_suggestions( array $conversation_missing, string $issue ): array {
+		return Routing_Discriminator_Catalog::quick_suggestions( $conversation_missing, $issue );
+	}
+
+	/**
+	 * @deprecated Use resolve_quick_suggestions().
+	 *
+	 * @param array<int, array<string, mixed>> $conversation_missing Conversation gaps.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function resolve_quick_answer_groups( array $conversation_missing ): array {
+		return array();
+	}
+
+	/**
+	 * Flat quick answers for backward compatibility (single-topic turns only).
+	 *
+	 * @param array<int, array<string, mixed>> $conversation_missing Conversation gaps.
+	 * @param string                            $pending_field        Pending field hint.
+	 * @return array<int, array{label: string, value: string}>
+	 */
+	private function resolve_quick_answers( array $conversation_missing, string $pending_field ): array {
+		$suggestions = $this->resolve_quick_suggestions( $conversation_missing, '' );
+
+		if ( ! empty( $suggestions ) ) {
+			return array();
+		}
+
+		if ( 1 !== count( $conversation_missing ) ) {
+			return array();
+		}
+
+		$field = $conversation_missing[0];
+		$key   = (string) ( $field['key'] ?? $field['field'] ?? $pending_field );
+
+		if ( '' === $key ) {
+			return array();
+		}
+
+		return \ProSe\Core\Intake\Question_Selector::quick_answers_for_field(
+			$key,
+			(string) ( $field['type'] ?? null )
 		);
 	}
 
@@ -2045,19 +2163,20 @@ final class AI_Intake_Interpreter {
 			return null;
 		}
 
+		$workflow_state = $this->resolve_workflow_state( $intake, $procedural_node );
+		$procedural_node = (string) ( $workflow_state['procedural_node'] ?? $procedural_node );
 		$presenter = new \ProSe\Core\Forms\Engine\Stage_Form_Presenter();
 		$facts     = $intake->plain_facts();
-		$stage_ctx = $presenter->present(
-			array(
-				'workflow'        => $workflow,
-				'facts'           => $facts,
-				'intake_complete'   => true,
-				'issue'           => (string) ( $intake->issue() ?? 'divorce' ),
-				'current_node'    => $procedural_node,
-			)
+		$resolved  = $this->fields_provider->resolve( $intake, '' );
+		$stage_ctx = $this->workflow_engine->determine_stage(
+			$workflow,
+			$facts,
+			$procedural_node,
+			! empty( $workflow_state['intake_complete'] ),
+			(array) ( $resolved['required_field_defs'] ?? array() )
 		);
 
-		if ( empty( $stage_ctx['forms_visible'] ) ) {
+		if ( empty( $workflow_state['intake_complete'] ) ) {
 			$resolved   = $this->fields_provider->resolve( $intake, '' );
 			$missing    = $this->fields_provider->missing_prioritized( $resolved['fields'], $intake );
 			$completion = $this->completion->calculate(

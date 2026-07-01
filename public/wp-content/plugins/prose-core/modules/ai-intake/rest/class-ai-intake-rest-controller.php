@@ -192,7 +192,9 @@ final class AI_Intake_Rest_Controller {
 			$response['completion']      = $result['completion'] ?? 0;
 			$response['next_question']   = $result['question'] ?? '';
 			$response['next_action']     = $result['next_action'] ?? '';
-			$response['quick_answers']   = is_array( $result['quick_answers'] ?? null ) ? $result['quick_answers'] : array();
+			$response['quick_answers']        = is_array( $result['quick_answers'] ?? null ) ? $result['quick_answers'] : array();
+			$response['quick_suggestions']    = is_array( $result['quick_suggestions'] ?? null ) ? $result['quick_suggestions'] : array();
+			$response['quick_answer_groups']  = is_array( $result['quick_answer_groups'] ?? null ) ? $result['quick_answer_groups'] : array();
 			$response['workflow']        = $result['workflow'] ?? null;
 			$case_profile = is_array( $response['case_profile'] ) ? $response['case_profile'] : array();
 

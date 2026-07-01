@@ -270,6 +270,9 @@
 						item.document_type === 'merged_package'
 							? 'prose-dashboard__document-row prose-dashboard__document-row--merged'
 							: 'prose-dashboard__document-row';
+					if (item.is_completed) {
+						rowClass += ' prose-dashboard__document-row--completed';
+					}
 					var action = item.download_url
 						? '<a class="prose-dashboard__document-action" href="' +
 							escapeAttr(item.download_url) +
@@ -279,6 +282,11 @@
 						: '<span class="prose-dashboard__document-status">' +
 							escapeHtml(I18N.pending || 'Pending') +
 							'</span>';
+					var finishedMeta = item.finished_message
+						? '<span class="prose-dashboard__document-finished">' +
+							escapeHtml(item.finished_message) +
+							'</span>'
+						: '';
 
 					return (
 						'<li class="' +
@@ -288,6 +296,7 @@
 						'<span class="prose-dashboard__document-title">' +
 						escapeHtml(displayTitle) +
 						'</span>' +
+						finishedMeta +
 						renderDocumentIncludes(item) +
 						'</div>' +
 						action +

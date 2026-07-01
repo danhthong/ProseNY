@@ -243,8 +243,9 @@ function enqueue_dashboard_assets(): void {
 				'nextLikelyStep' => __( 'Next likely step', 'prose-app' ),
 				'progressNote'  => __( 'For your reference only — not a mandatory checklist.', 'prose-app' ),
 				'noCaseProgress' => __( 'Case progress appears after intake identifies a workflow.', 'prose-app' ),
-				'download'      => __( 'Download', 'prose-app' ),
-				'pending'       => __( 'Pending', 'prose-app' ),
+						'download'      => __( 'Download', 'prose-app' ),
+						'pending'       => __( 'Pending', 'prose-app' ),
+						'documentFinishedAt' => __( 'You finished this document at %s', 'prose-app' ),
 			),
 		)
 	);

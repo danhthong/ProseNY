@@ -13,6 +13,7 @@ use ProSe\Core\Guidance\Eligibility_Presenter;
 use ProSe\Core\Guidance\Filing_Guidance_Brief_Resolver;
 use ProSe\Core\Guidance\Procedural_Roadmap_Presenter;
 use ProSe\Core\Intake\Case_Lifecycle_Service;
+use ProSe\Core\Intake\Completed_Stage_Document_Store;
 use ProSe\Core\Intake\Rest\Courtflow_Session_Store;
 use ProSe\Core\Loader;
 use ProSe\Core\PackageBuilder\Merged_Blank_Pdf_Service;
@@ -94,22 +95,28 @@ final class User_Dashboard_Rest_Controller {
 	private Merged_Blank_Pdf_Service $merged_pdfs;
 
 	/**
+	 * @var Completed_Stage_Document_Store
+	 */
+	private Completed_Stage_Document_Store $completed_documents;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Courtflow_Session_Store|null $session_store Optional session store.
 	 */
 	public function __construct( ?Courtflow_Session_Store $session_store = null ) {
-		$this->cases             = new Case_Repository();
-		$this->conversations     = new Conversation_Repository();
-		$this->messages          = new Message_Repository();
-		$this->documents         = new User_Document_Repository();
-		$this->subscription      = new Subscription_Status();
-		$this->workflows         = new Workflow_Catalog();
-		$this->roadmap_presenter = new Procedural_Roadmap_Presenter();
-		$this->session_store     = $session_store ?? new Courtflow_Session_Store();
-		$this->lifecycle_service = new Case_Lifecycle_Service();
-		$this->eligibility       = new Eligibility_Presenter();
-		$this->merged_pdfs       = new Merged_Blank_Pdf_Service();
+		$this->cases               = new Case_Repository();
+		$this->conversations       = new Conversation_Repository();
+		$this->messages            = new Message_Repository();
+		$this->documents           = new User_Document_Repository();
+		$this->subscription        = new Subscription_Status();
+		$this->workflows           = new Workflow_Catalog();
+		$this->roadmap_presenter   = new Procedural_Roadmap_Presenter();
+		$this->session_store       = $session_store ?? new Courtflow_Session_Store();
+		$this->lifecycle_service   = new Case_Lifecycle_Service();
+		$this->eligibility         = new Eligibility_Presenter();
+		$this->merged_pdfs         = new Merged_Blank_Pdf_Service();
+		$this->completed_documents = new Completed_Stage_Document_Store();
 	}
 
 	/**
@@ -376,6 +383,7 @@ final class User_Dashboard_Rest_Controller {
 		$conversation_id = (int) $row->conversation_id;
 		$case_id         = ! empty( $row->case_id ) ? (int) $row->case_id : 0;
 		$context         = $this->decode_context( (string) ( $row->context_json ?? '' ) );
+		$case_profile    = is_array( $context['case_profile'] ?? null ) ? $context['case_profile'] : array();
 		$documents       = array();
 		$seen            = array();
 
@@ -387,6 +395,12 @@ final class User_Dashboard_Rest_Controller {
 			$seen[ $key ] = true;
 			$documents[]  = $document;
 		};
+
+		foreach ( $this->completed_documents->dashboard_documents( $case_profile ) as $document ) {
+			$key = 'completed:' . (string) ( $document['completion_key'] ?? $document['display_title'] ?? $document['title'] ?? '' );
+
+			$add_document( $document, $key );
+		}
 
 		$stage_forms      = $this->stage_forms_for_row( $context, $row );
 		$stage_title      = $this->stage_title_for_row( $context, $row );

@@ -15,6 +15,7 @@ use ProSe\Core\Routing\Case_Profile;
 use ProSe\Core\Routing\Court_Routing_Explainer;
 use ProSe\Core\Routing\Routing_Engine;
 use ProSe\Core\Routing\Workflow_Catalog;
+use ProSe\Core\Routing\Workflow_Engine;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -61,6 +62,11 @@ final class Case_Actions_Resolver {
 	private Stage_Form_Presenter $stage_presenter;
 
 	/**
+	 * @var Workflow_Engine
+	 */
+	private Workflow_Engine $workflow_engine;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Package_Resolver|null         $packages        Package resolver.
@@ -68,19 +74,22 @@ final class Case_Actions_Resolver {
 	 * @param Merged_Blank_Pdf_Service|null $merged          Merged blank PDF service.
 	 * @param Routing_Engine|null           $routing         Routing engine.
 	 * @param Stage_Form_Presenter|null     $stage_presenter Stage form presenter.
+	 * @param Workflow_Engine|null          $workflow_engine Workflow engine.
 	 */
 	public function __construct(
 		?Package_Resolver $packages = null,
 		?Workflow_Catalog $workflows = null,
 		?Merged_Blank_Pdf_Service $merged = null,
 		?Routing_Engine $routing = null,
-		?Stage_Form_Presenter $stage_presenter = null
+		?Stage_Form_Presenter $stage_presenter = null,
+		?Workflow_Engine $workflow_engine = null
 	) {
 		$this->packages        = $packages ?? new Package_Resolver();
 		$this->workflows       = $workflows ?? new Workflow_Catalog();
 		$this->merged          = $merged ?? new Merged_Blank_Pdf_Service();
 		$this->routing         = $routing ?? new Routing_Engine( $this->workflows );
 		$this->stage_presenter = $stage_presenter ?? new Stage_Form_Presenter();
+		$this->workflow_engine = $workflow_engine ?? new Workflow_Engine();
 	}
 
 	/**
@@ -105,13 +114,23 @@ final class Case_Actions_Resolver {
 
 		$workflow_resolved = ! empty( $routing_status['resolved'] );
 		$case_known        = $workflow_resolved || '' !== $issue || $this->has_case_signals( $facts );
-		$intake_complete   = $this->is_intake_complete( $workflow_resolved, $completion, $intent, $missing );
-		$procedural_node   = trim( (string) ( $case_profile['procedural_node'] ?? '' ) );
+		$required_defs     = $this->required_field_defs( $workflow );
+		$workflow_state    = $this->workflow_engine->resolve_state(
+			$workflow,
+			$facts,
+			trim( (string) ( $case_profile['procedural_node'] ?? '' ) ),
+			$required_defs,
+			Completed_Stage_Document_Store::completed_stage_count( $case_profile )
+		);
+		$procedural_node   = (string) ( $workflow_state['procedural_node'] ?? '' );
+		$intake_complete   = ! empty( $workflow_state['intake_complete'] )
+			|| $this->is_intake_complete( $workflow_resolved, (int) ( $workflow_state['completion'] ?? $completion ), $intent, $missing );
+		$completion        = (int) ( $workflow_state['completion'] ?? $completion );
 		$stage_context     = $this->stage_presenter->present(
 			array(
 				'workflow'        => $workflow,
 				'facts'           => $facts,
-				'intake_complete' => $workflow_resolved,
+				'intake_complete' => $intake_complete,
 				'issue'           => $issue,
 				'routing_missing' => $routing_missing,
 				'current_node'    => $procedural_node,
@@ -226,7 +245,23 @@ final class Case_Actions_Resolver {
 			'can_complete_stage'  => $can_complete_stage,
 			'next_stage_title'    => $next_stage_title,
 			'current_stage_title' => trim( (string) ( $stage_context['current_stage']['title'] ?? '' ) ),
+			'workflow_state'      => $workflow_state,
 		);
+	}
+
+	/**
+	 * @param string $workflow Workflow key.
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function required_field_defs( string $workflow ): array {
+		if ( '' === $workflow ) {
+			return array();
+		}
+
+		$definition = $this->workflows->by_key( $workflow );
+		$fields     = is_array( $definition['required_fields'] ?? null ) ? $definition['required_fields'] : array();
+
+		return $fields;
 	}
 
 	/**
@@ -689,7 +724,9 @@ final class Case_Actions_Resolver {
 			$value = $facts[ $key ];
 
 			if ( is_bool( $value ) ) {
-				return $value ? '1' : '0';
+				return $value
+					? __( 'Yes', 'prose-core' )
+					: __( 'No', 'prose-core' );
 			}
 
 			if ( is_numeric( $value ) ) {

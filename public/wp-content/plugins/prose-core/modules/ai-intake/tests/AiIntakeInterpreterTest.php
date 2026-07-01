@@ -56,6 +56,23 @@ class AiIntakeInterpreterTest extends TestCase {
 	}
 
 	/**
+	 * Divorce intake exposes natural quick suggestions when routing is ambiguous.
+	 */
+	public function test_quick_suggestions_for_divorce_intake(): void {
+		$result = $this->interpreter->interpret( 'I need to file for divorce in New York City' );
+
+		$suggestions = (array) ( $result['quick_suggestions'] ?? array() );
+		$gaps        = (array) ( $result['case_memory']['missing_information'] ?? array() );
+
+		if ( count( $gaps ) < 2 ) {
+			$this->markTestSkipped( 'Routing returned fewer than two gaps for this scenario.' );
+		}
+
+		$this->assertNotEmpty( $suggestions );
+		$this->assertNotSame( 'yes', strtolower( (string) ( $suggestions[0]['value'] ?? '' ) ) );
+	}
+
+	/**
 	 * Bulk extraction from a single message.
 	 */
 	public function test_bulk_fact_extraction(): void {

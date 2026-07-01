@@ -45,4 +45,37 @@ class ProceduralStageCompleterTest extends TestCase {
 		$this->assertNotEmpty( $result['message'] ?? '' );
 		$this->assertStringContainsString( 'service', strtolower( (string) ( $result['message'] ?? '' ) ) );
 	}
+
+	/**
+	 * Completing service advances when commencement was already confirmed with partial intake.
+	 */
+	public function test_service_completion_advances_with_partial_intake(): void {
+		$completer = new Procedural_Stage_Completer();
+		$result    = $completer->complete_current_stage(
+			array(
+				'workflow'        => 'uncontested_divorce_no_children_nyc',
+				'procedural_node' => 'NODE_1002_SERVICE_COMPLETE',
+				'facts'           => array(
+					'county'        => 'Queens',
+					'spouse_agrees' => true,
+					'children'      => false,
+				),
+				'progress'            => 60,
+				'completed_documents' => array(
+					array(
+						'stage_id'     => 'commencement',
+						'stage_title'  => 'Starting the Case',
+						'completed_at' => '2026-07-01 12:00:00',
+					),
+				),
+			)
+		);
+
+		$this->assertIsArray( $result );
+		$this->assertTrue( $result['advanced'] );
+		$this->assertSame( 'NODE_1010_JUDGMENT', $result['case_profile']['procedural_node'] ?? '' );
+		$this->assertSame( 'calendar', $result['stage_context']['current_stage']['id'] ?? '' );
+		$this->assertSame( 'service', $result['completed_stage'] ?? '' );
+		$this->assertStringContainsString( 'Final Papers', (string) ( $result['message'] ?? '' ) );
+	}
 }

@@ -213,7 +213,7 @@ class CaseSummaryPresenterTest extends TestCase {
 		$labels = array_column( $rows, 'label' );
 
 		$this->assertContains( 'Required Forms', $labels );
-		$this->assertContains( 'Not Applicable', $labels );
+		$this->assertNotContains( 'Not Applicable', $labels );
 		$this->assertNotContains( 'Forms for this step', $labels );
 	}
 
