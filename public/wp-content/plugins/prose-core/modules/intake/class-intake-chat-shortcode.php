@@ -227,6 +227,7 @@ final class Intake_Chat_Shortcode {
 						/* translators: %s: next procedural stage title. */
 						'completeStageNext' => __( 'I completed this step — continue to %s', 'prose-core' ),
 						'completingStage' => __( 'Moving to next stage…', 'prose-core' ),
+						'completingStageGuidance' => __( 'Preparing personalized stage guidance…', 'prose-core' ),
 						'completeStageError' => __( 'Could not advance to the next stage. Please try again.', 'prose-core' ),
 					),
 				)

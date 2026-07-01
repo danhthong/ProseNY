@@ -11,6 +11,7 @@ use ProSe\Core\Forms\Engine\Stage_Form_Group_Presenter;
 use ProSe\Core\Guidance\Filing_Guidance_Brief_Resolver;
 use ProSe\Core\Guidance\Procedural_Roadmap_Presenter;
 use ProSe\Core\Intake\Case_Summary_Presenter;
+use ProSe\Core\Intake\Completed_Stage_Document_Store;
 use ProSe\Core\Intake\Completion_Calculator;
 use ProSe\Core\Intake\Procedural_State_Inferrer;
 use ProSe\Core\Intake\Document_Request_Detector;
@@ -224,6 +225,10 @@ final class AI_Intake_Interpreter {
 		$case_profile    = is_array( $state['case_profile'] ?? null ) ? $state['case_profile'] : array();
 		$procedural_node = trim( (string) ( $case_profile['procedural_node'] ?? '' ) );
 
+		if ( ! empty( $state['stage_guidance_only'] ) ) {
+			return $this->build_stage_guidance_result( $intake, $case_profile, $state );
+		}
+
 		if ( '' === $intake->conversation_id() ) {
 			$intake->set_conversation_id( $this->generate_conversation_id() );
 		}
@@ -260,7 +265,7 @@ final class AI_Intake_Interpreter {
 			}
 		}
 
-		if ( $this->is_stage_advance_request( $message ) ) {
+		if ( $this->is_stage_advance_request( $message ) && empty( $state['stage_guidance_only'] ) ) {
 			$advance = $this->attempt_stage_advance( $intake, $case_profile, $procedural_node );
 
 			if ( null !== $advance ) {
@@ -352,9 +357,9 @@ final class AI_Intake_Interpreter {
 
 		$missing_ai     = $missing_payload_pre['conversation'];
 		$completion_pre = (int) $missing_payload_pre['completion'];
-		$workflow_state_pre = $this->resolve_workflow_state( $intake, $procedural_node );
+		$workflow_state_pre = $this->resolve_workflow_state( $intake, $procedural_node, $case_profile );
 		$procedural_node    = (string) ( $workflow_state_pre['procedural_node'] ?? $procedural_node );
-		$stage_pre    = $this->stage_context( $workflow_pre, $intake, ! empty( $workflow_state_pre['intake_complete'] ), $procedural_node );
+		$stage_pre    = $this->stage_context( $workflow_pre, $intake, ! empty( $workflow_state_pre['intake_complete'] ), $procedural_node, $case_profile );
 		$brief_pre    = $this->resolve_filing_brief( $workflow_pre, $intake, $stage_pre );
 		$brief_sent   = ! empty( $state['case_profile']['guidance_brief_delivered'] );
 
@@ -443,9 +448,9 @@ final class AI_Intake_Interpreter {
 		$reply        = trim( (string) $turn['reply'] );
 		$workflow     = $intake->workflow();
 		$has_workflow = null !== $workflow && '' !== $workflow;
-		$workflow_state = $this->resolve_workflow_state( $intake, $procedural_node );
+		$workflow_state = $this->resolve_workflow_state( $intake, $procedural_node, $case_profile );
 		$procedural_node = (string) ( $workflow_state['procedural_node'] ?? $procedural_node );
-		$stage_ctx    = $this->stage_context( $workflow, $intake, ! empty( $workflow_state['intake_complete'] ), $procedural_node );
+		$stage_ctx    = $this->stage_context( $workflow, $intake, ! empty( $workflow_state['intake_complete'] ), $procedural_node, $case_profile );
 		$filing_brief = $this->resolve_filing_brief( $workflow, $intake, $stage_ctx );
 		$brief_extra  = array();
 		$account_reply = $this->build_account_meta_reply( $message, $user_context, $intake );
@@ -661,7 +666,7 @@ final class AI_Intake_Interpreter {
 	 * @param bool         $complete Whether intake is complete.
 	 * @return array<string, mixed>
 	 */
-	private function stage_context( ?string $workflow, Intake_State $intake, bool $complete, string $current_node = '' ): array {
+	private function stage_context( ?string $workflow, Intake_State $intake, bool $complete, string $current_node = '', array $case_profile = array() ): array {
 		if ( null === $workflow || '' === $workflow ) {
 			return array(
 				'forms_visible' => false,
@@ -675,18 +680,20 @@ final class AI_Intake_Interpreter {
 			$intake->plain_facts(),
 			$current_node,
 			$complete,
-			(array) ( $resolved['required_field_defs'] ?? array() )
+			(array) ( $resolved['required_field_defs'] ?? array() ),
+			Completed_Stage_Document_Store::completed_stage_count( $case_profile )
 		);
 	}
 
 	/**
 	 * Canonical workflow state for this turn.
 	 *
-	 * @param Intake_State $intake          Intake state.
-	 * @param string       $procedural_node Stored procedural node.
+	 * @param Intake_State         $intake          Intake state.
+	 * @param string               $procedural_node Stored procedural node.
+	 * @param array<string, mixed> $case_profile    Case profile snapshot.
 	 * @return array<string, mixed>
 	 */
-	private function resolve_workflow_state( Intake_State $intake, string $procedural_node ): array {
+	private function resolve_workflow_state( Intake_State $intake, string $procedural_node, array $case_profile = array() ): array {
 		$workflow = (string) ( $intake->workflow() ?? '' );
 
 		if ( '' === $workflow ) {
@@ -699,7 +706,69 @@ final class AI_Intake_Interpreter {
 			$workflow,
 			$intake->plain_facts(),
 			$procedural_node,
-			(array) ( $resolved['required_field_defs'] ?? array() )
+			(array) ( $resolved['required_field_defs'] ?? array() ),
+			Completed_Stage_Document_Store::completed_stage_count( $case_profile )
+		);
+	}
+
+	/**
+	 * Guidance-only turn after the user confirms a procedural stage in the UI.
+	 *
+	 * @param Intake_State         $intake       Intake state.
+	 * @param array<string, mixed> $case_profile Case profile (must not be regressed).
+	 * @param array<string, mixed> $state        Request state.
+	 * @return array<string, mixed>
+	 */
+	private function build_stage_guidance_result( Intake_State $intake, array $case_profile, array $state ): array {
+		$actions = ( new \ProSe\Core\Intake\Case_Actions_Resolver() )->resolve( $case_profile );
+		$intake_context = array(
+			'conversation_summary' => $intake->conversation_summary(),
+		);
+
+		if ( is_array( $state['conversation_tail'] ?? null ) ) {
+			$intake_context['conversation_tail'] = $state['conversation_tail'];
+		}
+
+		if ( is_array( $state['case_memory'] ?? null ) ) {
+			$intake_context['case_memory'] = $state['case_memory'];
+		}
+
+		$service = new Stage_Transition_Guidance_Service();
+		$result  = $service->generate(
+			array(
+				'advanced'        => true,
+				'completed_stage' => sanitize_key( (string) ( $state['completed_stage'] ?? '' ) ),
+				'case_profile'    => $case_profile,
+				'stage_context'   => is_array( $actions['stage_context'] ?? null ) ? $actions['stage_context'] : array(),
+				'actions'         => $actions,
+				'message'         => '',
+			),
+			$intake_context
+		);
+		$guidance = trim( (string) ( $result['guidance'] ?? '' ) );
+
+		if ( '' === $guidance ) {
+			$guidance = __( 'Use Get Documents in Case Actions for the forms for this step. Ask me if you need help with any form.', 'prose-core' );
+		}
+
+		$missing_payload = $this->workflow_engine->get_missing_facts( $intake, '' );
+		$missing         = $missing_payload['all'];
+		$completion      = (int) ( $missing_payload['completion'] ?? 0 );
+
+		return $this->build_result(
+			$intake,
+			array(),
+			$missing,
+			array(),
+			array(),
+			'guidance',
+			'guidance',
+			$guidance,
+			1.0,
+			false,
+			$completion,
+			'',
+			$case_profile
 		);
 	}
 
@@ -735,7 +804,8 @@ final class AI_Intake_Interpreter {
 		$candidates = is_array( $resolved['candidate_workflows'] ?? null ) ? $resolved['candidate_workflows'] : array();
 		$workflow_state = $this->resolve_workflow_state(
 			$intake,
-			(string) ( $stage_ctx['procedural_node'] ?? '' )
+			(string) ( $stage_ctx['procedural_node'] ?? '' ),
+			$intake->to_case_profile( $completion )
 		);
 
 		return array(
@@ -2163,9 +2233,8 @@ final class AI_Intake_Interpreter {
 			return null;
 		}
 
-		$workflow_state = $this->resolve_workflow_state( $intake, $procedural_node );
+		$workflow_state = $this->resolve_workflow_state( $intake, $procedural_node, $case_profile );
 		$procedural_node = (string) ( $workflow_state['procedural_node'] ?? $procedural_node );
-		$presenter = new \ProSe\Core\Forms\Engine\Stage_Form_Presenter();
 		$facts     = $intake->plain_facts();
 		$resolved  = $this->fields_provider->resolve( $intake, '' );
 		$stage_ctx = $this->workflow_engine->determine_stage(
@@ -2173,7 +2242,8 @@ final class AI_Intake_Interpreter {
 			$facts,
 			$procedural_node,
 			! empty( $workflow_state['intake_complete'] ),
-			(array) ( $resolved['required_field_defs'] ?? array() )
+			(array) ( $resolved['required_field_defs'] ?? array() ),
+			Completed_Stage_Document_Store::completed_stage_count( $case_profile )
 		);
 
 		if ( empty( $workflow_state['intake_complete'] ) ) {

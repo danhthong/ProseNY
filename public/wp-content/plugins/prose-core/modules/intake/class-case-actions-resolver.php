@@ -195,6 +195,7 @@ final class Case_Actions_Resolver {
 
 		$summary_rows = array_merge(
 			$case_summary_rows,
+			Completed_Stage_Document_Store::summary_action_rows( $case_profile ),
 			$this->build_summary( $workflow, $facts, $package_id, $package_label, $issue, $court_routing )
 		);
 

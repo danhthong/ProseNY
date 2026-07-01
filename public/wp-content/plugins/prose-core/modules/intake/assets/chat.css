@@ -167,6 +167,13 @@
 	color: #047857;
 }
 
+.prose-intake__bubble--stage-guidance {
+	background: #f5f3ff;
+	border-color: #c4b5fd;
+	color: #3730a3;
+	max-width: min( 100%, 52rem );
+}
+
 .prose-intake__bubble--error {
 	background: #fef2f2;
 	color: #b91c1c;

@@ -7,6 +7,7 @@
 
 namespace ProSe\Core\Intake;
 
+use ProSe\Core\Ai_Intake\Stage_Transition_Guidance_Service;
 use ProSe\Core\Loader;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -60,20 +61,30 @@ final class Intake_Rest_Controller {
 	private Procedural_Stage_Completer $stage_completer;
 
 	/**
+	 * Stage transition AI guidance.
+	 *
+	 * @var Stage_Transition_Guidance_Service
+	 */
+	private Stage_Transition_Guidance_Service $stage_guidance;
+
+	/**
 	 * Constructor.
 	 *
-	 * @param Intake_Agent|null                  $agent           Intake agent.
-	 * @param Case_Actions_Resolver|null         $actions         Case actions resolver.
-	 * @param Procedural_Stage_Completer|null    $stage_completer Stage completer.
+	 * @param Intake_Agent|null                       $agent           Intake agent.
+	 * @param Case_Actions_Resolver|null              $actions         Case actions resolver.
+	 * @param Procedural_Stage_Completer|null         $stage_completer Stage completer.
+	 * @param Stage_Transition_Guidance_Service|null  $stage_guidance  Stage guidance service.
 	 */
 	public function __construct(
 		?Intake_Agent $agent = null,
 		?Case_Actions_Resolver $actions = null,
-		?Procedural_Stage_Completer $stage_completer = null
+		?Procedural_Stage_Completer $stage_completer = null,
+		?Stage_Transition_Guidance_Service $stage_guidance = null
 	) {
 		$this->agent           = $agent ?? new Intake_Agent();
 		$this->actions         = $actions ?? new Case_Actions_Resolver();
 		$this->stage_completer = $stage_completer ?? new Procedural_Stage_Completer();
+		$this->stage_guidance  = $stage_guidance ?? new Stage_Transition_Guidance_Service();
 	}
 
 	/**
@@ -224,6 +235,25 @@ final class Intake_Rest_Controller {
 					'message' => $result->get_error_message(),
 				)
 			)->set_status( (int) ( $result->get_error_data()['status'] ?? 400 ) );
+		}
+
+		$intake_context = $request->get_param( 'intake_context' );
+
+		if ( ! is_array( $intake_context ) ) {
+			$intake_context = array();
+		}
+
+		$guidance_result = $this->stage_guidance->generate( $result, $intake_context );
+
+		if ( '' !== trim( (string) ( $guidance_result['guidance'] ?? '' ) ) ) {
+			$result['transition_ack'] = (string) ( $result['message'] ?? '' );
+			$result['ai_guidance']    = (string) $guidance_result['guidance'];
+			$result['ai_used']        = ! empty( $guidance_result['ai_used'] );
+			$result['message']        = (string) $guidance_result['guidance'];
+
+			if ( ! empty( $guidance_result['checklist'] ) ) {
+				$result['stage_checklist'] = $guidance_result['checklist'];
+			}
 		}
 
 		return rest_ensure_response(

@@ -99,6 +99,41 @@ final class Completed_Stage_Document_Store {
 	}
 
 	/**
+	 * Sidebar rows for documents the user finished at prior procedural stages.
+	 *
+	 * @param array<string, mixed> $case_profile Case profile.
+	 * @return array<int, array{label: string, value: string}>
+	 */
+	public static function summary_action_rows( array $case_profile ): array {
+		$store = new self();
+		$rows  = array();
+
+		foreach ( self::entries_from_profile( $case_profile ) as $entry ) {
+			if ( ! is_array( $entry ) ) {
+				continue;
+			}
+
+			$formatted = $store->format_dashboard_document( $entry );
+			$title     = trim( (string) ( $formatted['display_title'] ?? $formatted['title'] ?? '' ) );
+			$stage     = trim( (string) ( $formatted['stage_title'] ?? '' ) );
+			$finished  = trim( (string) ( $formatted['finished_message'] ?? '' ) );
+
+			if ( '' === $title ) {
+				continue;
+			}
+
+			$label = '' !== $stage ? $stage . ' — ' . $title : $title;
+
+			$rows[] = array(
+				'label' => $label,
+				'value' => '' !== $finished ? $finished : __( 'Completed', 'prose-core' ),
+			);
+		}
+
+		return $rows;
+	}
+
+	/**
 	 * @param array<string, mixed> $case_profile Case profile.
 	 * @return array<int, array<string, mixed>>
 	 */

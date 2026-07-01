@@ -272,6 +272,16 @@
 		}
 
 		/**
+		 * Internal stage-guidance prompt — never show in the transcript.
+		 *
+		 * @param {string} text Message text.
+		 * @return {boolean}
+		 */
+		function isInternalStageGuidancePrompt( text ) {
+			return String( text || '' ).indexOf( 'I just marked a procedural stage as complete in CourtFlow.' ) === 0;
+		}
+
+		/**
 		 * Paint transcript and action panel from the current session.
 		 *
 		 * @return {void}
@@ -284,6 +294,10 @@
 			if ( history.length ) {
 				history.forEach( function ( turn ) {
 					if ( ! turn || ! turn.content ) {
+						return;
+					}
+
+					if ( 'user' === turn.role && isInternalStageGuidancePrompt( turn.content ) ) {
 						return;
 					}
 
@@ -1089,7 +1103,46 @@
 				profile.completed_documents = session.case_profile.completed_documents;
 			}
 
+			if ( session.case_profile && session.case_profile.roadmap ) {
+				profile.roadmap = session.case_profile.roadmap;
+			}
+
+			if ( session.case_profile && session.case_profile.workflow_state ) {
+				profile.workflow_state = session.case_profile.workflow_state;
+			}
+
+			if ( session.case_profile && session.case_profile.case_memory ) {
+				profile.case_memory = session.case_profile.case_memory;
+			}
+
+			if ( session.case_profile && session.case_profile.progress != null ) {
+				profile.progress = session.case_profile.progress;
+			}
+
 			return profile;
+		}
+
+		/**
+		 * Build intake session context for AI stage-transition guidance.
+		 *
+		 * @return {Object}
+		 */
+		function buildIntakeContextForStageComplete() {
+			var state = session.state && typeof session.state === 'object' ? session.state : {};
+			var profile = session.case_profile || {};
+			var context = {
+				conversation_tail: Array.isArray( session.conversation ) ? session.conversation.slice( -8 ) : []
+			};
+
+			if ( state.conversation_summary ) {
+				context.conversation_summary = String( state.conversation_summary );
+			}
+
+			if ( profile.case_memory ) {
+				context.case_memory = profile.case_memory;
+			}
+
+			return context;
 		}
 
 		/**
@@ -1159,12 +1212,14 @@
 			var actionNode = actions.stage_context && actions.stage_context.procedural_node;
 
 			if ( profileNode && actionNode && profileNode !== actionNode ) {
-				session.case_profile = session.case_profile || {};
-				session.case_profile.procedural_node = actionNode;
+				if ( ! actionsStaleForProfile( session.case_profile, actions ) ) {
+					session.case_profile = session.case_profile || {};
+					session.case_profile.procedural_node = actionNode;
 
-				if ( session.state && typeof session.state === 'object' ) {
-					session.state.procedural_node = actionNode;
-					session.state.case_profile = session.case_profile;
+					if ( session.state && typeof session.state === 'object' ) {
+						session.state.procedural_node = actionNode;
+						session.state.case_profile = session.case_profile;
+					}
 				}
 			}
 
@@ -1391,6 +1446,158 @@
 		}
 
 		/**
+		 * Human-readable stage label from a slug.
+		 *
+		 * @param {string} slug Stage id.
+		 * @return {string}
+		 */
+		function humanizeStage( slug ) {
+			if ( ! slug ) {
+				return '';
+			}
+
+			return String( slug ).replace( /_/g, ' ' ).replace( /\b\w/g, function ( letter ) {
+				return letter.toUpperCase();
+			} );
+		}
+
+		/**
+		 * Ask the AI interpreter for detailed next-stage guidance after stage completion.
+		 *
+		 * @param {Object} stageData Complete-stage API payload.
+		 * @return {Promise<void>}
+		 */
+		function fetchStageGuidanceAfterComplete( stageData ) {
+			if ( ! CONFIG.useAi || ! CONFIG.restUrl ) {
+				return Promise.resolve();
+			}
+
+			var serverGuidance = stageData.ai_guidance ? String( stageData.ai_guidance ).trim() : '';
+			var serverMessage = stageData.message ? String( stageData.message ).trim() : '';
+
+			if ( stageData.ai_used && ( serverGuidance || serverMessage ) ) {
+				return Promise.resolve();
+			}
+
+			var completedSlug = stageData.completed_stage ? String( stageData.completed_stage ) : '';
+			var completedTitle = humanizeStage( completedSlug );
+			var currentTitle = '';
+
+			if ( stageData.actions && stageData.actions.current_stage_title ) {
+				currentTitle = String( stageData.actions.current_stage_title );
+			} else if ( stageData.stage_context && stageData.stage_context.current_stage ) {
+				currentTitle = String( stageData.stage_context.current_stage.title || '' );
+			}
+
+			if ( ! currentTitle && session.actions && session.actions.current_stage_title ) {
+				currentTitle = String( session.actions.current_stage_title );
+			}
+
+			if ( ! currentTitle ) {
+				currentTitle = humanizeStage(
+					( stageData.stage_context && stageData.stage_context.current_stage )
+						? stageData.stage_context.current_stage.id
+						: ''
+				);
+			}
+
+			var promptParts = [
+				'I just marked a procedural stage as complete in CourtFlow.'
+			];
+
+			if ( completedTitle ) {
+				promptParts.push( 'Completed stage: ' + completedTitle + '.' );
+			}
+
+			if ( currentTitle ) {
+				promptParts.push( 'I am now at the "' + currentTitle + '" stage.' );
+			}
+
+			promptParts.push(
+				'Explain clearly what I need to do at this stage: practical steps in order, which forms to prepare or file, anything to watch for, and what typically happens next. Use Get Documents in Case Actions when mentioning blank forms.'
+			);
+
+			var guidanceBubble = addBubble(
+				'agent',
+				STRINGS.completingStageGuidance || 'Preparing next-step guidance…'
+			);
+			guidanceBubble.classList.add( 'prose-intake__bubble--thinking' );
+
+			var pinnedProfile = Object.assign( {}, session.case_profile || {} );
+			var pinnedState = Object.assign( {}, session.state && typeof session.state === 'object' ? session.state : {} );
+
+			pinnedState.case_profile = pinnedProfile;
+			pinnedState.stage_guidance_only = true;
+			pinnedState.completed_stage = completedSlug;
+
+			if ( pinnedProfile.procedural_node ) {
+				pinnedState.procedural_node = pinnedProfile.procedural_node;
+			}
+
+			return fetch( CONFIG.restUrl, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-WP-Nonce': CONFIG.nonce || ''
+				},
+				body: JSON.stringify( {
+					message: promptParts.join( ' ' ),
+					case_profile: pinnedProfile,
+					state: pinnedState,
+					conversation: session.conversation || []
+				} )
+			} )
+				.then( function ( res ) {
+					if ( ! res.ok ) {
+						throw new Error( 'HTTP ' + res.status );
+					}
+
+					return res.json();
+				} )
+				.then( function ( data ) {
+					var result = data.result && typeof data.result === 'object' ? data.result : data;
+					var guidance = ( data.next_question || result.question || '' ).trim();
+					var text = guidance || serverGuidance || serverMessage;
+
+					if ( ! text && stageData.message ) {
+						text = String( stageData.message );
+					}
+
+					if ( ! text ) {
+						guidanceBubble.remove();
+						return;
+					}
+
+					guidanceBubble.textContent = text;
+					guidanceBubble.classList.remove( 'prose-intake__bubble--thinking' );
+					guidanceBubble.classList.add( 'prose-intake__bubble--complete' );
+
+					session.conversation = session.conversation || [];
+					session.conversation.push( { role: 'assistant', content: text } );
+
+					saveSession(
+						session.conversation_id,
+						session.case_profile,
+						session.conversation,
+						session.state,
+						session.actions
+					);
+				} )
+				.catch( function () {
+					var fallback = serverGuidance || serverMessage || stageData.message || '';
+
+					if ( fallback ) {
+						guidanceBubble.textContent = String( fallback );
+						guidanceBubble.classList.remove( 'prose-intake__bubble--thinking' );
+						guidanceBubble.classList.add( 'prose-intake__bubble--complete' );
+						return;
+					}
+
+					guidanceBubble.remove();
+				} );
+		}
+
+		/**
 		 * Advance to the next procedural stage after the user confirms completion.
 		 *
 		 * @param {HTMLButtonElement|null} buttonEl Button element.
@@ -1404,9 +1611,15 @@
 
 			busy = true;
 
+			var guidanceBubble = addBubble(
+				'agent',
+				STRINGS.completingStageGuidance || 'Preparing personalized stage guidance…'
+			);
+			guidanceBubble.classList.add( 'prose-intake__bubble--thinking' );
+
 			if ( buttonEl ) {
 				buttonEl.disabled = true;
-				buttonEl.textContent = STRINGS.completingStage || 'Moving to next stage…';
+				buttonEl.textContent = STRINGS.completingStageGuidance || 'Preparing personalized stage guidance…';
 			}
 
 			return fetch( CONFIG.completeStageUrl, {
@@ -1417,7 +1630,8 @@
 				},
 				body: JSON.stringify( {
 					case_profile: buildCaseProfileForStageComplete(),
-					conversation_id: session.conversation_id || ''
+					conversation_id: session.conversation_id || '',
+					intake_context: buildIntakeContextForStageComplete()
 				} )
 			} )
 				.then( function ( res ) {
@@ -1425,6 +1639,7 @@
 				} )
 				.then( function ( data ) {
 					if ( ! data || ! data.success ) {
+						guidanceBubble.remove();
 						var serverMessage = data && data.message ? String( data.message ) : '';
 						var errorBubble = addBubble( 'agent', serverMessage || STRINGS.completeStageError || 'Could not advance to the next stage. Please try again.' );
 						errorBubble.classList.add( 'prose-intake__bubble--error' );
@@ -1457,40 +1672,51 @@
 						session.actions
 					);
 
-					var message = data.message ? String( data.message ) : '';
+					var aiGuidance = data.ai_guidance ? String( data.ai_guidance ).trim() : '';
+					var guidanceText = aiGuidance || ( data.message ? String( data.message ).trim() : '' );
+					var guidancePromise = Promise.resolve();
 
-					if ( message ) {
-						var stageBubble = addBubble( 'agent', message );
-						stageBubble.classList.add( 'prose-intake__bubble--complete' );
+					if ( guidanceText ) {
+						guidanceBubble.textContent = guidanceText;
+						guidanceBubble.classList.remove( 'prose-intake__bubble--thinking' );
+						guidanceBubble.classList.add( 'prose-intake__bubble--stage-guidance' );
+						guidanceBubble.classList.add( 'prose-intake__bubble--complete' );
 
-						if ( CONFIG.useAi ) {
-							session.conversation = session.conversation || [];
-							session.conversation.push( { role: 'assistant', content: message } );
-							saveSession(
-								session.conversation_id,
-								session.case_profile,
-								session.conversation,
-								session.state,
-								session.actions
-							);
+						session.conversation = session.conversation || [];
+						session.conversation.push( { role: 'assistant', content: guidanceText } );
+						saveSession(
+							session.conversation_id,
+							session.case_profile,
+							session.conversation,
+							session.state,
+							session.actions
+						);
+					} else {
+						guidanceBubble.remove();
+					}
+
+					if ( CONFIG.useAi && data.advanced && ! ( data.ai_used && guidanceText ) ) {
+						guidancePromise = fetchStageGuidanceAfterComplete( data );
+					}
+
+					return guidancePromise.then( function () {
+						if ( data.advanced ) {
+							document.dispatchEvent( new CustomEvent( 'prose:stage-advanced', {
+								detail: {
+									conversation_id: session.conversation_id,
+									workflow: ( session.actions && session.actions.workflow ) || ( session.case_profile && session.case_profile.workflow ) || '',
+									facts: ( session.case_profile && session.case_profile.facts ) || {},
+									procedural_node: ( session.case_profile && session.case_profile.procedural_node ) || data.procedural_node || '',
+									stage: ( session.actions && session.actions.stage_context && session.actions.stage_context.current_stage )
+										? session.actions.stage_context.current_stage.id
+										: ''
+								}
+							} ) );
 						}
-					}
-
-					if ( data.advanced ) {
-						document.dispatchEvent( new CustomEvent( 'prose:stage-advanced', {
-							detail: {
-								conversation_id: session.conversation_id,
-								workflow: ( session.actions && session.actions.workflow ) || ( session.case_profile && session.case_profile.workflow ) || '',
-								facts: ( session.case_profile && session.case_profile.facts ) || {},
-								procedural_node: ( session.case_profile && session.case_profile.procedural_node ) || data.procedural_node || '',
-								stage: ( session.actions && session.actions.stage_context && session.actions.stage_context.current_stage )
-									? session.actions.stage_context.current_stage.id
-									: ''
-							}
-						} ) );
-					}
+					} );
 				} )
 				.catch( function () {
+					guidanceBubble.remove();
 					var errorBubble = addBubble( 'agent', STRINGS.completeStageError || 'Could not advance to the next stage. Please try again.' );
 					errorBubble.classList.add( 'prose-intake__bubble--error' );
 				} )
@@ -1589,6 +1815,13 @@
 
 					session.conversation_id = data.conversation_id || result.conversation_id || session.conversation_id;
 					session.case_profile = data.case_profile || result.case_profile || session.case_profile || {};
+
+					if ( result.case_memory ) {
+						session.case_profile.case_memory = result.case_memory;
+					} else if ( data.case_memory ) {
+						session.case_profile.case_memory = data.case_memory;
+					}
+
 					session.state = result.state || data.state || session.state || {};
 					syncWorkflowFromResponse( data, result );
 

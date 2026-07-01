@@ -126,6 +126,24 @@ final class Stub_Ai_Provider implements Ai_Provider_Interface {
 			);
 		}
 
+		if ( 'stage_transition' === $mode ) {
+			return wp_json_encode(
+				array(
+					'guidance'  => 'You have successfully completed the prior procedural stage. The next stage focuses on preparing and filing the required court documents for this step. Review each form carefully, gather supporting information before you fill them out, and use Get Documents in Case Actions for blank forms. This is informational guidance only, not legal advice.',
+					'checklist' => array(
+						array(
+							'label'     => 'Downloaded the forms for this stage',
+							'completed' => false,
+						),
+						array(
+							'label'     => 'Prepared the required documents',
+							'completed' => false,
+						),
+					),
+				)
+			);
+		}
+
 		$updates = array();
 
 		if ( preg_match( '/\bmaybe\b/i', $message ) ) {

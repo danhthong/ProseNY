@@ -90,6 +90,29 @@ class CompletedStageDocumentStoreTest extends TestCase {
 	}
 
 	/**
+	 * Completed documents appear in the Case Actions summary rows.
+	 */
+	public function test_summary_action_rows_include_finished_message(): void {
+		$rows = Completed_Stage_Document_Store::summary_action_rows(
+			array(
+				'completed_documents' => array(
+					array(
+						'stage_id'     => 'commencement',
+						'stage_title'  => 'Starting the Case',
+						'form_code'    => 'UD-1',
+						'title'        => 'Summons With Notice',
+						'completed_at' => '2026-07-01 14:30:00',
+					),
+				),
+			)
+		);
+
+		$this->assertCount( 1, $rows );
+		$this->assertStringContainsString( 'Starting the Case', (string) ( $rows[0]['label'] ?? '' ) );
+		$this->assertStringContainsString( 'You finished this document at', (string) ( $rows[0]['value'] ?? '' ) );
+	}
+
+	/**
 	 * Procedural stage completer records documents when advancing.
 	 */
 	public function test_stage_completer_records_completed_documents(): void {
